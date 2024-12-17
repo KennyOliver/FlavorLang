@@ -18,3 +18,15 @@ FlavorLang/
 ├── main.c         # Entry point for testing
 └── test.flv       # Sample FlavorLang code
 ```
+
+## Tokenizer Workflow
+
+1. **Input**: `test.flv` as a string.
+2. **Scan**: Read said string char by char.
+3. ##Recognize tokens##:
+
+- Skip whitespace & comments.
+- Recognize keywords, strings, numbers, operators, and delimiters.
+- Record the line number for error reporting.
+
+4. **Output**: An array of tokens.
