@@ -123,7 +123,7 @@ ASTNode *parse_print_statement(Token *tokens)
         }
         else
         {
-            fprintf(stderr, "Error: Unexpected token '%s' in `scran` statement\n", get_current(tokens)->lexeme);
+            fprintf(stderr, "Error: Unexpected token \"%s\" in `scran` statement\n", get_current(tokens)->lexeme);
             exit(1);
         }
 
