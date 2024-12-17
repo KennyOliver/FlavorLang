@@ -80,7 +80,6 @@ ASTNode *parse(Token *tokens)
         ASTNode *new_node = NULL;
 
         // Match statements based on token type
-        char *lexeme = get_current(tokens)->lexeme;
         if (strcmp(get_current(tokens)->lexeme, "let") == 0)
         {
             new_node = parse_variable_declaration(tokens);
