@@ -207,3 +207,19 @@ scran "You chose:", favorite;
   Keywords like add, mix, cook, and serve make code approachable and enjoyable.
 - **Debug-Friendly**:
   Easily trace and test your code step-by-step with --chef mode.
+
+---
+
+## Tokenizer
+
+| Token Type | Examples                       | Description                                         |
+| ---------- | ------------------------------ | --------------------------------------------------- |
+| KEYWORD    | `scran`, `prep`, `serve`, `if` | Reserved keywords in the language.                  |
+| IDENTIFIER | `cake`, `temperature`          | Variable or function names.                         |
+| NUMBER     | `42`, `200`, `3.14`            | Integer or floating-point numbers.                  |
+| STRING     | `"Hello World!"`               | String literals.                                    |
+| SYMBOL     | `=`, `:`, `,`, `+`, `-`        | Operators, colons, parentheses, etc.                |
+| NEWLINE    | `\n`                           | Marks the end of a line.                            |
+| WHITESPACE | ` `, `\t`                      | Spaces or tabs (can be ignored).                    |
+| COMMENT    | `#`                            | This is a comment Lines starting with # (optional). |
+| EOF        | End of input                   | Signals the end of the program.                     |
