@@ -42,7 +42,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
 
     // Parse the value (string or number)
     Token *value = get_current(tokens);
-    if (value->type != TOKEN_STRING || value->type != TOKEN_NUMBER)
+    if (value->type != TOKEN_STRING && value->type != TOKEN_NUMBER)
     {
         fprintf(stderr, "Error: Expected string or number literal after `=`\n");
         exit(1);
