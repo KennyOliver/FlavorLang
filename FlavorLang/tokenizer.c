@@ -31,3 +31,16 @@ char *read_file(const char *filename)
     fclose(file);
     return buffer;
 }
+
+Token *tokenize(const char *source)
+{
+    int line = 1;
+    size_t pos = 0;
+    size_t length = strlen(source);
+
+    // Preallocate memory for tokens
+    // 1024 is a magic number picked for tokenizing small-medium programs
+    Token *tokens = malloc(sizeof(Token) * 1024);
+
+    return tokens;
+}
