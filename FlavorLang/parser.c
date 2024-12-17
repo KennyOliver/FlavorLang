@@ -43,7 +43,20 @@ ASTNode *parse_variable_declaration(Token *tokens)
 
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = AST_ASSIGNMENT;
-    node->assignment.value;
+
+    ASTNode *value_node = malloc(sizeof(ASTNode));
+    if (!value_node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for value_node\n");
+        exit(1);
+    }
+
+    value_node->type = AST_LITERAL;
+    value_node->literal.type = LITERAL_STRING;
+    value_node->literal.value.string = strdup(value->lexeme);
+
+    node->assignment.value = value_node;
+
     node->next = NULL;
 
     printf("Parsed variable declaration: `%s = %s`\n", name->lexeme, value->lexeme);
