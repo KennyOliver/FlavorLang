@@ -35,7 +35,7 @@ flavor recipe.flv --chef  # Debug mode
 | `plate`   | Write to file                | Writes data to a file.                                |
 | `garnish` | Append to file               | Appends data to a file.                               |
 | `gather`  | Read from file               | Reads data from a file.                               |
-| `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.               |
+| `book`    | Import `.flv` file           | Imports logic from another `.flv` file.               |
 
 ---
 
