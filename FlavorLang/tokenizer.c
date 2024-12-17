@@ -22,7 +22,8 @@ const char *KEYWORDS[] = {
     "gather",
     "book"};
 
-const char *OPERATORS[] = {
+const char OPERATORS[] = {
+    '=',
     '+',
     '-',
     '*',
@@ -186,7 +187,7 @@ Token *tokenize(const char *source)
         }
 
         // Delimiters (e.g., ';', '(', ')', etc.)
-        if (c == ';' || c == '(' || c == ')')
+        if (c == ',' || c == ':' || c == ';' || c == '(' || c == ')')
         {
             tokens[token_count] = (Token){
                 TOKEN_DELIMITER,
