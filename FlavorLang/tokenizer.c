@@ -27,7 +27,9 @@ const char OPERATORS[] = {
     '+',
     '-',
     '*',
-    '/'};
+    '/',
+    '<',
+    '>'};
 
 char *read_file(const char *filename)
 {
