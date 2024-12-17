@@ -17,11 +17,12 @@ flavor recipe.flv --chef  # Debug mode
 
 | Keyword   | Usage                        | Description                                           |
 | --------- | ---------------------------- | ----------------------------------------------------- |
-| `food`    | Define variables             | Declares and initializes variables.                   |
+| `let`     | Define variables             | Declares and initializes variables.                   |
 | `if`      | Conditional logic            | Executes code only if a condition is true.            |
 | `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.     |
 | `else`    | Conditional fallback         | Executes code if any prior `if` conditions are false. |
 | `for`     | For-loop                     | Iterates a block for a set number of times.           |
+| `to`      | For-loop range               | The range specifier for a `for` loop                  |
 | `while`   | While-loop                   | Repeatedly runs code while a condition is true.       |
 | `when`    | Switch-case equivalent       | Matches a value to multiple cases.                    |
 | `is`      | Case clause                  | Defines a case inside `when`.                         |
@@ -56,8 +57,8 @@ scran "Hello world!";
 Use `food` to declare and initialize variables.
 
 ```
-food name = "Chef";
-food age = 25;
+let name = "Chef";
+let age = 25;
 
 scran "Name:", name;
 scran "Age:", age;
@@ -103,18 +104,19 @@ scran "All flour has been added!";
 
 ### 6. 📦 Functions with Return
 
-Use `prep` to define functions and serve to return values.
+Use `prep` to define functions and `serve` to return values.
+Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
 
 ```
-prep bake_cake with food temperature:
+prep bake_cake with let temperature:
     if temperature < 180:
         scran "Temperature is too low to bake!";
-        burn "Cake burned!";
+        burn "Cake burned!";  # Stops function execution immediately
     else:
         scran "Baking cake at", temperature, "degrees!";
         serve "Cake is ready!";
 
-food result = bake_cake with 200;
+let result = bake_cake with 200;
 scran result;
 ```
 
