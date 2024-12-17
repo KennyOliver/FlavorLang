@@ -67,7 +67,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
 // Parse a `scran` print statement
 // scran <string>;
 // scran <identifier>;
-// scran <string/identifier> <string/identifier etc;
+// scran <string|identifier> <string|identifier> etc;
 ASTNode *parse_print_statement(Token *tokens)
 {
     expect(tokens, TOKEN_KEYWORD, "Expected `scran` keyword");
