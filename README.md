@@ -40,6 +40,27 @@ flavor recipe.flv --chef  # Debug mode
 
 ---
 
+## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax
+
+```ebnf
+program       ::= statement* ;
+statement     ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
+variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
+print_statement      ::= "scran" expression ("," expression)* ";" ;
+if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
+loop_statement       ::= "while" condition ":" block
+                       | "for" "let" IDENTIFIER "=" expression "to" expression ":" block ;
+function_definition  ::= "prep" IDENTIFIER "with" parameter_list ":" block ;
+block                ::= statement+ ;
+condition            ::= expression comparison_operator expression ;
+expression           ::= NUMBER | STRING | IDENTIFIER | (expression math_operator expression) ;
+comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+math_operator        ::= "+" | "-" | "*" | "/" ;
+parameter_list       ::= IDENTIFIER ("," IDENTIFIER)* ;
+```
+
+---
+
 ## 🍳 **Syntax Examples**
 
 Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
