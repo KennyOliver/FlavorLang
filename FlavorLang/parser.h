@@ -20,12 +20,12 @@ typedef struct
     {
         LITERAL_STRING,
         LITERAL_NUMBER
-    } literal_type;
+    } type;
     union
     {
         char *string;
         double number;
-    } literal_value;
+    } value;
 } LiteralNode;
 
 // AST Node Structure

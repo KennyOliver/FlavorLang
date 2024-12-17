@@ -43,7 +43,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
 
     ASTNode *node = malloc(sizeof(ASTNode));
     node->type = AST_ASSIGNMENT;
-    node->value = strdup(value->lexeme);
+    node->assignment.value;
     node->next = NULL;
 
     printf("Parsed variable declaration: `%s = %s`\n", name->lexeme, value->lexeme);
@@ -53,18 +53,72 @@ ASTNode *parse_variable_declaration(Token *tokens)
 
 // Parse a `scran` print statement
 // scran <string>;
+// scran <identifier>;
+// scran <string/identifier> <string/identifier etc;
 ASTNode *parse_print_statement(Token *tokens)
 {
     expect(tokens, TOKEN_KEYWORD, "Expected `scran` keyword");
-    Token *value = get_current(tokens);
-    expect(tokens, TOKEN_STRING, "Expected string literal after `scran`");
-
-    expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
     ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
     node->type = AST_PRINT;
-    node->value = strdup(value->lexeme);
-    node->next = NULL;
+    node->to_print.arguments = malloc(sizeof(ASTNode *) * MAX_ARGUMENTS);
+    if (!node->to_print.arguments)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for arguments\n");
+        exit(1);
+    }
+    node->to_print.arg_count = 0;
+
+    // Token *value = get_current(tokens);
+    // expect(tokens, TOKEN_STRING, "Expected string literal after `scran`");
+
+    // node->next = NULL;
+
+    // Parse arguments until `;` reached
+    while (node->type != TOKEN_DELIMITER && node->type != TOKEN_EOF)
+    {
+        if (node->to_print.arg_count >= MAX_ARGUMENTS)
+        {
+            fprintf(stderr, "Error: Too many arguments in `scran` statement (max %d)\n", MAX_ARGUMENTS);
+            exit(1);
+        }
+
+        ASTNode *arg = malloc(sizeof(ASTNode));
+        if (!arg)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for argument node\n");
+            exit(1);
+        }
+
+        // Handle string or identifier arguments
+        if (node->type == TOKEN_STRING)
+        {
+            arg->type = AST_LITERAL;
+            arg->literal.type = LITERAL_STRING;
+            arg->literal.value.string = strdup(get_current(tokens)->lexeme);
+        }
+        else if (node->type == TOKEN_IDENTIFIER)
+        {
+            arg->type = AST_ASSIGNMENT;
+            arg->variable_name = strdup(get_current(tokens)->lexeme);
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unexpected token '%s' in `scran` statement\n", get_current(tokens)->lexeme);
+            exit(1);
+        }
+
+        node->to_print.arguments[node->to_print.arg_count++] = arg;
+        to_next(tokens);
+    }
+
+    expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
     printf("Parsed print statement: `scran %s`\n", value->lexeme);
     return node;
