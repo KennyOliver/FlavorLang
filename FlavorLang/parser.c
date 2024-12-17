@@ -28,22 +28,40 @@ void expect(Token *tokens, TokenType expected, const char *error_message)
 }
 
 // Parse a `let` variable declaration
-// let <identifier> = <string>;
+// let <identifier> = <string|number>;
 ASTNode *parse_variable_declaration(Token *tokens)
 {
     expect(tokens, TOKEN_KEYWORD, "Expected `let` keyword");
+
+    // Parse variable name
     Token *name = get_current(tokens);
     expect(tokens, TOKEN_IDENTIFIER, "Expected variable name");
 
+    // Expect '=' operator
     expect(tokens, TOKEN_OPERATOR, "Expected `=` after variable name");
-    Token *value = get_current(tokens);
-    expect(tokens, TOKEN_STRING, "Expected string literal after `=`");
 
+    // Parse the value (string or number)
+    Token *value = get_current(tokens);
+    if (value->type != TOKEN_STRING || value->type != TOKEN_NUMBER)
+    {
+        fprintf(stderr, "Error: Expected string or number literal after `=`\n");
+        exit(1);
+    }
+
+    // Expect `;` after variable declaration
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after variable declaration");
 
+    // Allocate memory for the variable assignment AST node
     ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
     node->type = AST_ASSIGNMENT;
+    node->assignment.variable_name = strdup(name->lexeme);
 
+    // Allocate memory for the value node
     ASTNode *value_node = malloc(sizeof(ASTNode));
     if (!value_node)
     {
@@ -52,14 +70,34 @@ ASTNode *parse_variable_declaration(Token *tokens)
     }
 
     value_node->type = AST_LITERAL;
-    value_node->literal.type = LITERAL_STRING;
-    value_node->literal.value.string = strdup(value->lexeme);
+    // value_node->literal.type = LITERAL_STRING;
+    // value_node->literal.value.string = strdup(value->lexeme);
 
+    // Determine if value is string or number
+    if (value->type == TOKEN_STRING)
+    {
+        value_node->literal.type = LITERAL_STRING;
+        value_node->literal.value.string = strdup(value->lexeme);
+    }
+    else if (value->type == TOKEN_NUMBER)
+    {
+        value_node->literal.type = LITERAL_NUMBER;
+        value_node->literal.value.number = atoi(value->lexeme); // convert lexeme to int
+    }
+
+    // Attach value node ot assignment node
     node->assignment.value = value_node;
-
     node->next = NULL;
 
-    printf("Parsed variable declaration: `%s = %s`\n", name->lexeme, value->lexeme);
+    // Debugging output
+    if (value->type == TOKEN_STRING)
+    {
+        printf("Parsed variable declaration: `%s = \"%s\"`\n", name->lexeme, value->lexeme);
+    }
+    else
+    {
+        printf("Parsed variable declaration: `%s = %s`\n", name->lexeme, value->lexeme);
+    }
 
     return node;
 }
