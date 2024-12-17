@@ -27,25 +27,25 @@ flavor recipe.flv --taste  # Interactive mode -->
 
 | Keyword   | Usage                        | Description                                           |
 | --------- | ---------------------------- | ----------------------------------------------------- |
-| `recipe`  | Import file                  | Import logic from another file.                       |
-| `prep`    | Define a function            | Prepares a reusable block of logic                    |
-| `serve`   | Return statement             | Returns a value and stops function.                   |
+| `food`    | Define variables             | Declares and initializes variables.                   |
+| `if`      | Conditional logic            | Executes code only if a condition is true.            |
+| `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.     |
+| `else`    | Conditional fallback         | Executes code if any prior `if` conditions are false. |
+| `for`     | For-loop                     | Iterates a block for a set number of times.           |
+| `while`   | While-loop                   | Repeatedly runs code while a condition is true.       |
+| `when`    | Switch-case equivalent       | Matches a value to multiple cases.                    |
+| `is`      | Case clause                  | Defines a case inside `when`.                         |
+| `prep`    | Define a function            | Prepares a reusable block of logic.                   |
+| `serve`   | Return statement             | Returns a value and stops function execution.         |
+| `try`     | Try block                    | Executes code that might fail.                        |
+| `crumbs`  | Catch block                  | Handles errors during execution.                      |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.           |
-| `scran`   | Print or output              | Ouputs a value or message immediately.                |
+| `scran`   | Print or output              | Outputs a value or message immediately.               |
 | `taste`   | Input from console           | Reads user input.                                     |
 | `plate`   | Write to file                | Writes data to a file.                                |
 | `garnish` | Append to file               | Appends data to a file.                               |
 | `gather`  | Read from file               | Reads data from a file.                               |
-| `try`     | Try block                    | Executes code that might fail.                        |
-| `crumbs`  | Catch block                  | Handles errors during execution.                      |
-| `for`     | For-loop                     | Iterates a block for a set number of times.           |
-| `while`   | While-loop                   | Repeatedly runs code while a condition is true.       |
-| `when`    | Switch-case equivalent       | matches a value to multiple cases.                    |
-| `is`      | Case clause                  | define a case inside `when`.                          |
-| `if`      | Conditional logic            | Executes code only if a condition is true.            |
-| `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.     |
-| `else`    | Conditional fallback         | Executes code if any prior `if` conditions are false. |
-| `food`    | Define variables             | Declares and initializes variables.                   |
+| `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.               |
 
 ## 🧑‍🍳 Syntax Examples
 
