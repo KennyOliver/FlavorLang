@@ -1,5 +1,5 @@
 # A simple FlavorLang test program
-food name = "Chef Kenny";
+let name = "Chef Kenny";
 scran "Hello,", name;
 
 prep say_hello:
