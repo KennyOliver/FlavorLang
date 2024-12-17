@@ -1,27 +1,17 @@
 # 🌶️ **FlavorLang** &mdash; _Cook 'n' Code_
 
-**FlavorLang** is a language designed around the art of cooking. From adding ingredients to cooking & serving, you can create programs as flavorful as your imagination. With a unique set of keywords, FlavorLang combines utility, creativity, and fun!
+**FlavorLang** is a language designed around cooking. From adding ingredients to cooking & serving, you can create programs as flavorful as your imagination. With a unique set of keywords, FlavorLang combines utility, creativity, and fun!
 
 ---
 
 ## 🚀 **Execution Flags & Behaviors**
-
-<!-- | **Flag**     | **Behavior** | **Description**                     |
-| ------------ | ------------ | ----------------------------------- |
-| **`--chef`** | Debug mode   | Prints step-by-step execution logs. | -->
-
-<!-- | **`--cook`**  | Optimized execution | Focuses on performance.             |
-| **`--taste`** | Interactive mode    | Opens a REPL shell.                 | -->
-
-<!-- ### Example Usage -->
 
 ```bash
 flavor recipe.flv         # Default execution
 flavor recipe.flv --chef  # Debug mode
 ```
 
-<!-- flavor recipe.flv --cook   # Optimized run
-flavor recipe.flv --taste  # Interactive mode -->
+---
 
 ## Syntax Keywords
 
@@ -47,9 +37,11 @@ flavor recipe.flv --taste  # Interactive mode -->
 | `gather`  | Read from file               | Reads data from a file.                               |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.               |
 
+---
+
 ## 🍳 **Syntax Examples**
 
-Below are examples showcasing the unique (& fun) syntax of FlavorLang.
+Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
 
 ### 1. 👋 **Hello World**
 
@@ -180,7 +172,7 @@ food favorite = taste;
 scran "You chose:", favorite;
 ```
 
-These examples give a taste of FlavorLang and its cooking-inspired syntax.
+---
 
 ## Why FlavorLang?
 
