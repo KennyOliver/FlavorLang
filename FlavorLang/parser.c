@@ -53,3 +53,14 @@ ASTNode *parse(Token *tokens)
 
     return head;
 }
+
+void free_ast(ASTNode *node)
+{
+    while (node)
+    {
+        ASTNode *temp = node->next;
+        node = node->next;
+        free(temp->value);
+        free(temp);
+    }
+}
