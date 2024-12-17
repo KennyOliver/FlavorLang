@@ -8,7 +8,7 @@ typedef enum
 {
     AST_ASSIGNMENT,
     AST_FUNCTION_CALL,
-    AST_PRINT_STATEMENT,
+    AST_PRINT,
     AST_STRING_LITERAL
 } ASTNodeType;
 

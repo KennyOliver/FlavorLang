@@ -62,7 +62,7 @@ ASTNode *parse_print_statement(Token *tokens)
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = AST_PRINT_STATEMENT;
+    node->type = AST_PRINT;
     node->value = strdup(value->lexeme);
     node->next = NULL;
 
