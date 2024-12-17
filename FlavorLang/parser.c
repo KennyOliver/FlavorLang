@@ -8,12 +8,26 @@ Token *get_current(Token *tokens)
     return &tokens[current_token];
 }
 
-Token *get_next(Token *tokens)
+Token *to_next(Token *tokens)
 {
     return &tokens[++current_token];
 }
 
-void expect(Token *tokens, TokenType expected, const char *error_message);
+void expect(Token *tokens, TokenType expected, const char *error_message)
+{
+    if (get_current(tokens)->type != expected)
+    {
+        fprintf(stderr, "Parser Error: %s (found '%s' on line %d)",
+                error_message,
+                get_current(tokens)->lexeme,
+                get_current(tokens)->line);
+        exit(1);
+    }
+
+    to_next(tokens);
+}
+
+ASTNode *parse_variable_declaration(Token *tokens);
 
 ASTNode *parse(Token *tokens)
 {
