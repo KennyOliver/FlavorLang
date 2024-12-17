@@ -20,5 +20,22 @@ ASTNode *parse(Token *tokens)
     ASTNode *head = NULL; // start of AST
     ASTNode *current_node = NULL;
 
+    while (get_current(tokens)->type != TOKEN_EOF)
+    {
+        ASTNode *new_node = NULL;
+
+        // Append new node to AST
+        if (head == NULL)
+        {
+            head = new_node;
+        }
+        else
+        {
+            current_node->next = new_node;
+        }
+
+        current_node = new_node;
+    }
+
     return head;
 }
