@@ -88,6 +88,29 @@ Token *tokenize(const char *source)
             token_count++;
             continue;
         }
+
+        // Strings ('"')
+        if (c == '"')
+        {
+            size_t start = ++pos;
+            while (pos < length && source[pos] != '"')
+            {
+                // Stop at closing quote mark "
+                pos++;
+            }
+            if (source[pos] != '"')
+            {
+                fprintf(stderr, "Error: Unterminated string on line %d\n", line);
+                exit(1);
+            }
+            tokens[token_count] = (Token){
+                TOKEN_STRING,
+                strndup(&source[start], pos - start),
+                line};
+            token_count++;
+            pos++; // skip closing quote mark "
+            continue;
+        }
     }
 
     return tokens;
