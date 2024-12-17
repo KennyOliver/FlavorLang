@@ -46,8 +46,27 @@ ASTNode *parse_variable_declaration(Token *tokens)
     node->value = strdup(value->lexeme);
     node->next = NULL;
 
-    printf("Parsed variable declaration: %s = %s\n", name->lexeme, value->lexeme);
+    printf("Parsed variable declaration: `%s = %s`\n", name->lexeme, value->lexeme);
 
+    return node;
+}
+
+// Parse a `scran` print statement
+// scran <string>;
+ASTNode *parse_print_statement(Token *tokens)
+{
+    expect(tokens, TOKEN_KEYWORD, "Expected `scran` keyword");
+    Token *value = get_current(tokens);
+    expect(tokens, TOKEN_STRING, "Expected string literal after `scran`");
+
+    expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = AST_PRINT_STATEMENT;
+    node->value = strdup(value->lexeme);
+    node->next = NULL;
+
+    printf("Parsed print statement: `scran %s`\n", value->lexeme);
     return node;
 }
 
@@ -65,6 +84,10 @@ ASTNode *parse(Token *tokens)
         if (strcmp(get_current(tokens)->lexeme, "let") == 0)
         {
             new_node = parse_variable_declaration(tokens);
+        }
+        else if (strcmp(get_current(tokens)->lexeme, "scran" == 0))
+        {
+            new_node = parse_print_statement(tokens);
         }
         else
         {
