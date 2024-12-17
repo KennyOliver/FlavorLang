@@ -42,6 +42,8 @@ Token *tokenize(const char *source)
     // 1024 is a magic number picked for tokenizing small-medium programs
     Token *tokens = malloc(sizeof(Token) * 1024);
 
+    size_t token_count = 0;
+
     while (pos < length)
     {
         char c = source[pos];
@@ -68,7 +70,22 @@ Token *tokenize(const char *source)
             {
                 pos++;
             }
+            continue;
+        }
 
+        // Numbers (ints only for now for simplicity)
+        if (isdigit(c))
+        {
+            size_t start = pos;
+            while (pos < length && isdigit(source[pos]))
+            {
+                pos++;
+            }
+            tokens[token_count] = (Token){
+                TOKEN_NUMBER,
+                strndup(&source[start], pos - start),
+                line};
+            token_count++;
             continue;
         }
     }
