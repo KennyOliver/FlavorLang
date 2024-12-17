@@ -75,7 +75,7 @@ scran "Hello world!";
 
 ### 2. 🍲 Defining Variables
 
-Use `food` to declare and initialize variables.
+Use `let` to declare and initialize variables.
 
 ```py
 let name = "Chef";
@@ -90,7 +90,7 @@ scran "Age:", age;
 Use `if`, `elif`, and `else` to control program flow.
 
 ```py
-food oven_temperature = 200;
+let oven_temperature = 200;
 
 if oven_temperature > 180:
     scran "The oven is hot!";
@@ -105,7 +105,7 @@ else:
 Use `for` to iterate a block of code.
 
 ```py
-for food i = 1 to 5:
+for let i = 1 to 5:
     scran "Mixing... Step", i;
 ```
 
@@ -114,11 +114,11 @@ for food i = 1 to 5:
 Use `while` for condition-based repetition.
 
 ```py
-food flour_added = 0;
+let flour_added = 0;
 
 while flour_added < 3:
     scran "Adding flour...";
-    food flour_added = flour_added + 1;
+    let flour_added = flour_added + 1;
 
 scran "All flour has been added!";
 ```
@@ -163,7 +163,7 @@ crumbs:
 plate "output.txt" with "Freshly baked cake ready to serve!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
-food data = gather "output.txt";
+let data = gather "output.txt";
 scran "File Contents:";
 scran data;
 ```
@@ -173,7 +173,7 @@ scran data;
 Use `when` and `is` for multiple condition matching.
 
 ```py
-food dessert = "cake";
+let dessert = "cake";
 
 when dessert:
     is "cake":
