@@ -72,6 +72,7 @@ ASTNode *parse_print_statement(Token *tokens)
 {
     expect(tokens, TOKEN_KEYWORD, "Expected `scran` keyword");
 
+    // Allocate memory for the AST_PRINT node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
@@ -93,8 +94,8 @@ ASTNode *parse_print_statement(Token *tokens)
 
     // node->next = NULL;
 
-    // Parse arguments until `;` reached
-    while (node->type != TOKEN_DELIMITER && node->type != TOKEN_EOF)
+    // Parse arguments until `;` (delimiter) or EOF is reached
+    while (get_current(tokens)->type != TOKEN_DELIMITER && get_current(tokens)->type != TOKEN_EOF)
     {
         if (node->to_print.arg_count >= MAX_ARGUMENTS)
         {
@@ -110,13 +111,13 @@ ASTNode *parse_print_statement(Token *tokens)
         }
 
         // Handle string or identifier arguments
-        if (node->type == TOKEN_STRING)
+        if (get_current(tokens)->type == TOKEN_STRING)
         {
             arg->type = AST_LITERAL;
             arg->literal.type = LITERAL_STRING;
             arg->literal.value.string = strdup(get_current(tokens)->lexeme);
         }
-        else if (node->type == TOKEN_IDENTIFIER)
+        else if (get_current(tokens)->type == TOKEN_IDENTIFIER)
         {
             arg->type = AST_ASSIGNMENT;
             arg->variable_name = strdup(get_current(tokens)->lexeme);
@@ -127,6 +128,7 @@ ASTNode *parse_print_statement(Token *tokens)
             exit(1);
         }
 
+        // Add argument to the `to_print.arguments` array
         node->to_print.arguments[node->to_print.arg_count++] = arg;
         to_next(tokens);
     }
