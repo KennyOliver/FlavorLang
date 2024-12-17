@@ -1,4 +1,4 @@
-# 🌶️ **FlavorLang** &mdash; _A Recipe for Code_
+# 🌶️ **FlavorLang** &mdash; _Cook 'n' Code_
 
 **FlavorLang** is a programming language designed around the art of cooking. From adding ingredients to stirring or baking, you can create programs as flavorful as your imagination. With a unique set of **flags** that influence program behavior, FlavorLang combines utility, creativity, and fun!
 
@@ -87,8 +87,11 @@ Output:
 
 ## 🌟 Why FlavorLang?
 
-- 🍴 Unique & Fun: Express your programs like recipes!
-- 🔄 Flexible Execution: File extensions and flags allow customized program behavior.
-- 🧩 Readable Syntax: Keywords like add, mix, cook, and serve make code approachable and enjoyable.
-- 🛠️ Debug-Friendly: Easily trace and test your code step-by-step with --chef mode.
-- 🎯 Interactive Development: Use --taste mode for a REPL-style shell to experiment live.
+- 🍴 **Unique & Fun**:
+  Express your programs like recipes!
+- 🔄 **Flexible Execution**:
+  File extensions and flags allow customized program behavior.
+- 🧩 **Readable Syntax**:
+  Keywords like add, mix, cook, and serve make code approachable and enjoyable.
+- 🛠️ **Debug-Friendly**:
+  Easily trace and test your code step-by-step with --chef mode.
