@@ -22,6 +22,12 @@ const char *KEYWORDS[] = {
     "gather",
     "book"};
 
+const char *OPERATORS[] = {
+    '+',
+    '-',
+    '*',
+    '/'};
+
 char *read_file(const char *filename)
 {
     // Open file in read mode
@@ -164,6 +170,18 @@ Token *tokenize(const char *source)
                 token_count++;
             }
 
+            continue;
+        }
+
+        // Operators (+, -, *, /)
+        if (strchr(OPERATORS, c))
+        {
+            tokens[token_count] = (Token){
+                TOKEN_OPERATOR,
+                strndup(&source[pos], 1),
+                line};
+            token_count++;
+            pos++;
             continue;
         }
     }
