@@ -135,7 +135,26 @@ ASTNode *parse_print_statement(Token *tokens)
 
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
-    printf("Parsed print statement: `scran %s`\n", node->literal.value.string);
+    printf("Parsed print statement with %d arguments:\n", node->to_print.arg_count);
+
+    // Debugging
+    for (int i = 0; i < node->to_print.arg_count; i++)
+    {
+        ASTNode *arg = node->to_print.arguments[i];
+        if (arg->type == AST_LITERAL)
+        {
+            printf("  Argument %d: STRING = \"%s\"\n", i + 1, arg->literal.value.string);
+        }
+        else if (arg->type == AST_ASSIGNMENT)
+        {
+            printf("  Argument %d: VARIABLE = \"%s\"\n", i + 1, arg->variable_name);
+        }
+        else
+        {
+            printf("  Argument %d: UNKNOWN TYPE\n", i + 1);
+        }
+    }
+
     return node;
 }
 
