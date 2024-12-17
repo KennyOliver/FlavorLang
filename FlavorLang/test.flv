@@ -1,0 +1,9 @@
+# A simple FlavorLang test program
+let name = "Chef Kenny";
+scran "Hello,", name;
+
+prep say_hello:
+    scran "Welcome to FlavorLang!";
+serve;
+
+say_hello();
