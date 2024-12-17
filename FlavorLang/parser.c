@@ -135,23 +135,23 @@ ASTNode *parse_print_statement(Token *tokens)
 
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
-    printf("Parsed print statement with %d arguments:\n", node->to_print.arg_count);
+    printf("Parsed print statement with %zu arguments:\n", node->to_print.arg_count);
 
     // Debugging
-    for (int i = 0; i < node->to_print.arg_count; i++)
+    for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
         if (arg->type == AST_LITERAL)
         {
-            printf("  Argument %d: STRING = \"%s\"\n", i + 1, arg->literal.value.string);
+            printf("  Argument %zu: STRING = \"%s\"\n", i + 1, arg->literal.value.string);
         }
         else if (arg->type == AST_ASSIGNMENT)
         {
-            printf("  Argument %d: VARIABLE = \"%s\"\n", i + 1, arg->variable_name);
+            printf("  Argument %zu: VARIABLE = \"%s\"\n", i + 1, arg->variable_name);
         }
         else
         {
-            printf("  Argument %d: UNKNOWN TYPE\n", i + 1);
+            printf("  Argument %zu: UNKNOWN TYPE\n", i + 1);
         }
     }
 
