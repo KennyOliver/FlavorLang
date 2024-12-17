@@ -47,61 +47,148 @@ flavor recipe.flv --taste  # Interactive mode -->
 | `gather`  | Read from file               | Reads data from a file.                               |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.               |
 
-## 🧑‍🍳 Syntax Examples
+## 🍳 **Syntax Examples**
 
-### 1. Adding and Mixing Ingredients
+Below are examples showcasing the unique (& fun) syntax of FlavorLang.
+
+### 1. 👋 **Hello World**
+
+The simplest program to print "Hello world!".
+
+```flv
+scran "Hello world!";
+```
+
+### 2. 🍲 Defining Variables
+
+Use `food` to declare and initialize variables.
 
 ```
-add ingredients "flour" "water" "yeast";
-mix well;
+food name = "Chef";
+food age = 25;
+
+scran "Name:", name;
+scran "Age:", age;
 ```
 
-### 2. Conditional Cooking
+### 3. 🔄 Conditional Logic
+
+Use `if`, `elif`, and `else` to control program flow.
 
 ```
+food oven_temperature = 200;
+
 if oven_temperature > 180:
-    cook "cake" for 25 minutes;
+    scran "The oven is hot!";
+elif oven_temperature == 180:
+    scran "The oven is just right!";
 else:
-    wait 5 minutes;
+    scran "The oven is too cold!";
 ```
 
-### 3. Loops (While Mixing)
+### 4. 🔁 For Loop
+
+Use `for` to iterate a block of code.
 
 ```
-add "flour";
-while mixing:
-    add "sugar";
-    stir;
+for food i = 1 to 5:
+    scran "Mixing... Step", i;
 ```
 
-### 4. Functions (Recipes)
+### 5. 🔄 While Loop
+
+Use `while` for condition-based repetition.
 
 ```
-recipe make_pizza with "toppings":
-    add "dough" "sauce" toppings;
-    temp 180 "c";
-    cook for 15 minutes;
-    serve;
+food flour_added = 0;
 
-make_pizza with "cheese" "pepperoni";
+while flour_added < 3:
+    scran "Adding flour...";
+    food flour_added = flour_added + 1;
+
+scran "All flour has been added!";
 ```
 
-Output:
+### 6. 📦 Functions with Return
+
+Use `prep` to define functions and serve to return values.
 
 ```
-[Step 1] Adding ingredients: flour, water, yeast.
-[Step 2] Mixing...
-[Step 3] Baking for 25 minutes at 180°C.
-[Step 4] Serving: pizza with cheese, pepperoni.
+prep bake_cake with food temperature:
+    if temperature < 180:
+        scran "Temperature is too low to bake!";
+        burn "Cake burned!";
+    else:
+        scran "Baking cake at", temperature, "degrees!";
+        serve "Cake is ready!";
+
+food result = bake_cake with 200;
+scran result;
 ```
 
-## 🌟 Why FlavorLang?
+### 7. 🛠️ Error Handling
 
-- 🍴 **Unique & Fun**:
+Use `try` and `crumbs` to handle errors.
+
+```
+try:
+    burn "This recipe failed!";
+    scran "This won't run!";
+crumbs:
+    scran "Caught an error: Recipe needs improvement.";
+```
+
+### 8. 📄 File Operations
+
+- `Plate`: Write to a file.
+- `Garnish`: Append to a file.
+- `Gather`: Read from a file.
+
+```
+plate "output.txt" with "Freshly baked cake ready to serve!";
+garnish "output.txt" with "\nDon't forget the toppings!";
+
+food data = gather "output.txt";
+scran "File Contents:";
+scran data;
+```
+
+### 9. 🔎 Switch-Case Logic
+
+Use `when` and `is` for multiple condition matching.
+
+```
+food dessert = "cake";
+
+when dessert:
+    is "cake":
+        scran "Bake the cake!";
+    is "pie":
+        scran "Prepare the pie!";
+    else:
+        scran "Dessert not on the menu.";
+```
+
+### 10. 📥 User Input
+
+Use `taste` to accept input from the user.
+
+```
+scran "What's your favorite dessert?";
+food favorite = taste;
+
+scran "You chose:", favorite;
+```
+
+These examples give a taste of FlavorLang and its cooking-inspired syntax.
+
+## Why FlavorLang?
+
+- **Unique & Fun**:
   Express your programs like recipes!
-- 🔄 **Flexible Execution**:
+- **Flexible Execution**:
   File extensions and flags allow customized program behavior.
-- 🧩 **Readable Syntax**:
+- **Readable Syntax**:
   Keywords like add, mix, cook, and serve make code approachable and enjoyable.
-- 🛠️ **Debug-Friendly**:
+- **Debug-Friendly**:
   Easily trace and test your code step-by-step with --chef mode.
