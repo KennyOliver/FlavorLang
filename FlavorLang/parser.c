@@ -185,7 +185,7 @@ void free_ast(ASTNode *node)
     {
         ASTNode *temp = node->next;
         node = node->next;
-        free(temp->value);
+        free(node);
         free(temp);
     }
 }
