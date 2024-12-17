@@ -23,7 +23,7 @@ FlavorLang/
 
 1. **Input**: `test.flv` as a string.
 2. **Scan**: Read said string char by char.
-3. ##Recognize tokens##:
+3. **Recognize tokens**:
 
 - Skip whitespace & comments.
 - Recognize keywords, strings, numbers, operators, and delimiters.
