@@ -158,6 +158,7 @@ Token *tokenize(const char *source)
                         TOKEN_KEYWORD,
                         lexeme,
                         line};
+                    token_count++;
                     break;
                 }
             }
