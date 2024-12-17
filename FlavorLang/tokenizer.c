@@ -184,6 +184,18 @@ Token *tokenize(const char *source)
             pos++;
             continue;
         }
+
+        // Delimiters (e.g., ';', '(', ')', etc.)
+        if (c == ';' || c == '(' || c == ')')
+        {
+            tokens[token_count] = (Token){
+                TOKEN_DELIMITER,
+                strndup(&source[pos], 1),
+                line};
+            token_count++;
+            pos++;
+            continue;
+        }
     }
 
     return tokens;
