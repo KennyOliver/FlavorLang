@@ -133,7 +133,7 @@ ASTNode *parse_print_statement(Token *tokens)
 
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
-    printf("Parsed print statement: `scran %s`\n", value->lexeme);
+    printf("Parsed print statement: `scran %s`\n", node->literal.value.string);
     return node;
 }
 
