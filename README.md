@@ -6,23 +6,22 @@
 
 ## 🚀 **Execution Flags & Behaviors**
 
-| **Flag**      | **Behavior**        | **Description**                     |
-| ------------- | ------------------- | ----------------------------------- |
-| **`--chef`**  | Debug mode          | Prints step-by-step execution logs. |
-| **`--cook`**  | Optimized execution | Focuses on performance.             |
-| **`--taste`** | Interactive mode    | Opens a REPL shell.                 |
+| **Flag**     | **Behavior** | **Description**                     |
+| ------------ | ------------ | ----------------------------------- |
+| **`--chef`** | Debug mode   | Prints step-by-step execution logs. |
 
-<!-- | **`--prep`**  | Dry run             | Syntax checking only—no execution.  | -->
+<!-- | **`--cook`**  | Optimized execution | Focuses on performance.             |
+| **`--taste`** | Interactive mode    | Opens a REPL shell.                 | -->
 
 ### Example Usage
 
 ```bash
 flavor recipe.flv          # Default execution
 flavor recipe.flv --chef   # Debug mode
-flavor recipe.flv --cook   # Optimized run
-flavor recipe.flv --taste  # Interactive mode
-flavor recipe.flv --prep   # Syntax check only
 ```
+
+<!-- flavor recipe.flv --cook   # Optimized run
+flavor recipe.flv --taste  # Interactive mode -->
 
 ## Syntax Keywords
 
