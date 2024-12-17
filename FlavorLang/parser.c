@@ -85,7 +85,7 @@ ASTNode *parse(Token *tokens)
         {
             new_node = parse_variable_declaration(tokens);
         }
-        else if (strcmp(get_current(tokens)->lexeme, "scran" == 0))
+        else if (strcmp(get_current(tokens)->lexeme, "scran") == 0)
         {
             new_node = parse_print_statement(tokens);
         }
