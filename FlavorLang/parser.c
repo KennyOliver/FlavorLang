@@ -42,7 +42,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after variable declaration");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    node->type = AST_VARIABLE_DECLARATION;
+    node->type = AST_ASSIGNMENT;
     node->value = strdup(value->lexeme);
     node->next = NULL;
 
