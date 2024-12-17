@@ -2,7 +2,25 @@
 
 const char *KEYWORDS[] = {
     "let",
-    ""};
+    "if",
+    "elif",
+    "else",
+    "for",
+    "to",
+    "while",
+    "when",
+    "is",
+    "prep",
+    "serve",
+    "try",
+    "crumbs",
+    "burn",
+    "scran",
+    "taste",
+    "plate",
+    "garnish",
+    "gather",
+    "book"};
 
 char *read_file(const char *filename)
 {
@@ -109,6 +127,43 @@ Token *tokenize(const char *source)
                 line};
             token_count++;
             pos++; // skip closing quote mark "
+            continue;
+        }
+
+        // Identifiers & Keywords
+        if (isalpha(c) || c == '_')
+        {
+            size_t start = pos;
+            while (pos < length && (isalnum(source[pos]) || source[pos] == '_'))
+            {
+                pos++;
+            }
+            char *lexeme = strndup(&source[start], pos - start);
+
+            // Check if keyword
+            int is_keyword = 0;
+            for (int i = 0; KEYWORDS[i]; i++)
+            {
+                if (strcmp(lexeme, KEYWORDS[i]) == 0)
+                {
+                    is_keyword = 1;
+                    tokens[token_count] = (Token){
+                        TOKEN_KEYWORD,
+                        lexeme,
+                        line};
+                    break;
+                }
+            }
+
+            if (!is_keyword)
+            {
+                tokens[token_count] = (Token){
+                    TOKEN_IDENTIFIER,
+                    lexeme,
+                    line};
+                token_count++;
+            }
+
             continue;
         }
     }
