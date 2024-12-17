@@ -48,7 +48,7 @@ Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 
 The simplest program to print "Hello world!".
 
-```flv
+```py
 scran "Hello world!";
 ```
 
@@ -56,7 +56,7 @@ scran "Hello world!";
 
 Use `food` to declare and initialize variables.
 
-```
+```py
 let name = "Chef";
 let age = 25;
 
@@ -68,7 +68,7 @@ scran "Age:", age;
 
 Use `if`, `elif`, and `else` to control program flow.
 
-```
+```py
 food oven_temperature = 200;
 
 if oven_temperature > 180:
@@ -83,7 +83,7 @@ else:
 
 Use `for` to iterate a block of code.
 
-```
+```py
 for food i = 1 to 5:
     scran "Mixing... Step", i;
 ```
@@ -92,7 +92,7 @@ for food i = 1 to 5:
 
 Use `while` for condition-based repetition.
 
-```
+```py
 food flour_added = 0;
 
 while flour_added < 3:
@@ -107,7 +107,7 @@ scran "All flour has been added!";
 Use `prep` to define functions and `serve` to return values.
 Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
 
-```
+```py
 prep bake_cake with let temperature:
     if temperature < 180:
         scran "Temperature is too low to bake!";
@@ -124,7 +124,7 @@ scran result;
 
 Use `try` and `crumbs` to handle errors.
 
-```
+```py
 try:
     burn "This recipe failed!";
     scran "This won't run!";
@@ -138,7 +138,7 @@ crumbs:
 - `Garnish`: Append to a file.
 - `Gather`: Read from a file.
 
-```
+```py
 plate "output.txt" with "Freshly baked cake ready to serve!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
@@ -151,7 +151,7 @@ scran data;
 
 Use `when` and `is` for multiple condition matching.
 
-```
+```py
 food dessert = "cake";
 
 when dessert:
@@ -167,9 +167,9 @@ when dessert:
 
 Use `taste` to accept input from the user.
 
-```
+```py
 scran "What's your favorite dessert?";
-food favorite = taste;
+let favorite = taste;
 
 scran "You chose:", favorite;
 ```
