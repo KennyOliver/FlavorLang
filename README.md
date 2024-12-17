@@ -6,14 +6,14 @@
 
 ## 🚀 **Execution Flags & Behaviors**
 
-| **Flag**     | **Behavior** | **Description**                     |
+<!-- | **Flag**     | **Behavior** | **Description**                     |
 | ------------ | ------------ | ----------------------------------- |
-| **`--chef`** | Debug mode   | Prints step-by-step execution logs. |
+| **`--chef`** | Debug mode   | Prints step-by-step execution logs. | -->
 
 <!-- | **`--cook`**  | Optimized execution | Focuses on performance.             |
 | **`--taste`** | Interactive mode    | Opens a REPL shell.                 | -->
 
-### Example Usage
+<!-- ### Example Usage -->
 
 ```bash
 flavor recipe.flv         # Default execution
