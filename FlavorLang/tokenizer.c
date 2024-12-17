@@ -42,5 +42,36 @@ Token *tokenize(const char *source)
     // 1024 is a magic number picked for tokenizing small-medium programs
     Token *tokens = malloc(sizeof(Token) * 1024);
 
+    while (pos < length)
+    {
+        char c = source[pos];
+
+        // Skip whitespace
+        if (c == ' ' || c == '\t' || c == '\r')
+        {
+            pos++;
+            continue;
+        }
+
+        // Newline
+        if (c == '\n')
+        {
+            line++;
+            pos++;
+            continue;
+        }
+
+        // Comments (lines starting with '#')
+        if (c == '#')
+        {
+            while (pos < length && source[pos] != '\n')
+            {
+                pos++;
+            }
+
+            continue;
+        }
+    }
+
     return tokens;
 }
