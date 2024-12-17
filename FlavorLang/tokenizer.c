@@ -196,7 +196,17 @@ Token *tokenize(const char *source)
             pos++;
             continue;
         }
+
+        // Unknown character
+        fprintf(stderr, "Error: Unexpected character '%c', on line %d\n", c, line);
+        exit(1);
     }
+
+    // Add EOF token
+    tokens[token_count] = (Token){
+        TOKEN_EOF,
+        NULL,
+        line};
 
     return tokens;
 }
