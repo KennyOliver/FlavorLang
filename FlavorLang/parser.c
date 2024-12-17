@@ -27,7 +27,29 @@ void expect(Token *tokens, TokenType expected, const char *error_message)
     to_next(tokens);
 }
 
-ASTNode *parse_variable_declaration(Token *tokens);
+// Parse a `let` variable declaration
+// let <identifier> = <string>;
+ASTNode *parse_variable_declaration(Token *tokens)
+{
+    expect(tokens, TOKEN_KEYWORD, "Expected `let` keyword");
+    Token *name = get_current(tokens);
+    expect(tokens, TOKEN_IDENTIFIER, "Expected variable name");
+
+    expect(tokens, TOKEN_OPERATOR, "Expected `=` after variable name");
+    Token *value = get_current(tokens);
+    expect(tokens, TOKEN_STRING, "Expected string literal after `=`");
+
+    expect(tokens, TOKEN_DELIMITER, "Expected `;` after variable declaration");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    node->type = AST_VARIABLE_DECLARATION;
+    node->value = strdup(value->lexeme);
+    node->next = NULL;
+
+    printf("Parsed variable declaration: %s = %s\n", name->lexeme, value->lexeme);
+
+    return node;
+}
 
 ASTNode *parse(Token *tokens)
 {
