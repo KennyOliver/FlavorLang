@@ -26,17 +26,17 @@ flavor recipe.flv --prep   # Syntax check only
 
 ## Syntax Keywords
 
-| Keyword | Usage                        | Description                                 |
-| ------- | ---------------------------- | ------------------------------------------- |
-| recipe  | Import file                  | Import logic from another file.             |
-| prep    | Define a function            | Prepares a reusable block of logic          |
-| serve   | Return statement             | Returns a value and stops function.         |
-| burn    | Force exit or raise an error | Stops execution immediately with a message. |
-| scran   | Print or output              | Ouputs a value or message immediately.      |
-| taste   | Input from console           | Reads user input.                           |
-| plate   | Write to file                | Writes data to a file.                      |
-| garnish | Append to file               | Appends data to a file.                     |
-| gather  | Read from file               | Reads data from a file.                     |
+| Keyword   | Usage                        | Description                                 |
+| --------- | ---------------------------- | ------------------------------------------- |
+| `recipe`  | Import file                  | Import logic from another file.             |
+| `prep`    | Define a function            | Prepares a reusable block of logic          |
+| `serve`   | Return statement             | Returns a value and stops function.         |
+| `burn`    | Force exit or raise an error | Stops execution immediately with a message. |
+| `scran`   | Print or output              | Ouputs a value or message immediately.      |
+| `taste`   | Input from console           | Reads user input.                           |
+| `plate`   | Write to file                | Writes data to a file.                      |
+| `garnish` | Append to file               | Appends data to a file.                     |
+| `gather`  | Read from file               | Reads data from a file.                     |
 
 ## 🧑‍🍳 Syntax Examples
 
