@@ -436,6 +436,10 @@ ASTNode *parse(Token *tokens)
         {
             new_node = parse_print_statement(tokens);
         }
+        else if (strcmp(get_current(tokens)->lexeme, "if") == 0)
+        {
+            new_node = parse_conditional_block(tokens);
+        }
         else
         {
             fprintf(stderr, "Parser Error: Unexpected token '%s' on line %d",
