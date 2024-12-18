@@ -362,32 +362,52 @@ ASTNode *parse_block(Token *tokens)
     ASTNode *head = NULL; // Head of the linked list
     ASTNode *tail = NULL; // Tail of the linked list
 
-    while (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ";") != 0)
+    while (get_current(tokens)->type != TOKEN_EOF)
     {
         Token *current = get_current(tokens);
+
+        // Check if we've reached the end of the block
+        if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
+        {
+            to_next(tokens); // Consume the semicolon
+            break;
+        }
+
+        // Handle case where we hit an elif/else - this means we're done with this block
+        if (current->type == TOKEN_KEYWORD &&
+            (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0))
+        {
+            break;
+        }
+
         ASTNode *statement = NULL;
 
-        // If the current token is "scran", parse a print statement
-        if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "scran") == 0)
+        // Parse statements based on token type
+        if (current->type == TOKEN_KEYWORD)
         {
-            statement = parse_print_statement(tokens);
+            if (strcmp(current->lexeme, "scran") == 0)
+            {
+                statement = parse_print_statement(tokens);
+            }
+            else if (strcmp(current->lexeme, "if") == 0)
+            {
+                statement = parse_conditional_block(tokens);
+            }
+            else
+            {
+                fprintf(stderr, "Error: Unexpected keyword '%s' in block\n",
+                        current->lexeme ? current->lexeme : "null");
+                exit(1);
+            }
         }
-        // If the current token is "if", parse a conditional block
-        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "if") == 0)
+        else if (current->type == TOKEN_EOF)
         {
-            statement = parse_conditional_block(tokens); // handle `if` block
-        }
-        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "elif") == 0)
-        {
-            statement = parse_conditional_block(tokens); // handle `elif` block
-        }
-        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "else") == 0)
-        {
-            statement = parse_conditional_block(tokens); // handle `else` block
+            break;
         }
         else
         {
-            fprintf(stderr, "Error: Unexpected token `%s` in block\n", current->lexeme);
+            fprintf(stderr, "Error: Unexpected token '%s' in block\n",
+                    current->lexeme ? current->lexeme : "null");
             exit(1);
         }
 
@@ -404,7 +424,6 @@ ASTNode *parse_block(Token *tokens)
         }
     }
 
-    to_next(tokens); // Consume the final `;`
     return head;
 }
 
