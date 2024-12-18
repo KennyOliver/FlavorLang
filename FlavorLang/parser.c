@@ -88,7 +88,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
         value_node->literal.value.number = atoi(value->lexeme); // convert lexeme to int
     }
 
-    // Attach value node ot assignment node
+    // Attach value node to assignment node
     node->assignment.value = value_node;
     node->next = NULL;
 
