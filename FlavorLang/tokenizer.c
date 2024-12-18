@@ -37,7 +37,7 @@ char *read_file(const char *filename)
     FILE *file = fopen(filename, "r");
     if (!file)
     {
-        fprintf(stderr, "Error: Could not open file %s\n", filename);
+        fprintf(stderr, "Error: Could not open file `%s`\n", filename);
         exit(1);
     }
 
