@@ -223,7 +223,30 @@ ASTNode *parse_print_statement(Token *tokens)
 
 ASTNode *parse_expression(Token *tokens);
 
-ASTNode *parse_block(Token *tokens);
+ASTNode *parse_block(Token *tokens)
+{
+    ASTNode *head = NULL;
+    ASTNode *current = NULL;
+
+    while (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ";") != 0)
+    {
+        ASTNode *statement = parse_print_statement(tokens); // parse print statements for now
+
+        if (!head)
+        {
+            head = statement;
+            current = statement;
+        }
+        else
+        {
+            current->next = statement;
+            current = statement;
+        }
+    }
+
+    to_next(tokens); // consume the final `;`
+    return head;
+}
 
 ASTNode *parse_conditional_block(Token *tokens)
 {
