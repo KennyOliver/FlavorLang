@@ -129,12 +129,6 @@ ASTNode *parse_print_statement(Token *tokens)
     }
     node->to_print.arg_count = 0;
 
-    // Token *value = get_current(tokens);
-    // expect(tokens, TOKEN_STRING, "Expected string literal after `scran`");
-
-    // node->next = NULL;
-
-    // Parse arguments separated by `,` until `;` (delimiter) or EOF is reached
     while (get_current(tokens)->type != TOKEN_DELIMITER && get_current(tokens)->type != TOKEN_EOF)
     {
         if (node->to_print.arg_count >= MAX_ARGUMENTS)
@@ -338,22 +332,33 @@ ASTNode *parse_expression(Token *tokens)
 
 ASTNode *parse_block(Token *tokens)
 {
-    ASTNode *head = NULL;
-    ASTNode *current = NULL;
+    ASTNode *head = NULL; // head of linked list
+    ASTNode *tail = NULL; // tail of linked list
 
     while (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ";") != 0)
     {
-        ASTNode *statement = parse_print_statement(tokens); // parse print statements for now
+        Token *current = get_current(tokens);
+        ASTNode *statement = NULL;
+
+        if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "scran") == 0)
+        {
+            statement = parse_print_statement(tokens);
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unexpected token `%s` in block\n", current->lexeme);
+            exit(1);
+        }
 
         if (!head)
         {
             head = statement;
-            current = statement;
+            tail = statement;
         }
         else
         {
-            current->next = statement;
-            current = statement;
+            tail->next = statement;
+            tail = statement;
         }
     }
 
