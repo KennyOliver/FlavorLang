@@ -3,6 +3,19 @@
 // Global index for tracking current token position
 size_t current_token = 0;
 
+Token *get_current(Token *tokens);
+Token *to_next(Token *tokens);
+void expect(Token *tokens, TokenType expected, const char *error_message);
+ASTNode *parse_variable_declaration(Token *tokens);
+ASTNode *parse_print_statement(Token *tokens);
+ASTNode *parse_identifier(Token *tokens);
+ASTNode *parse_literal_or_identifier(Token *tokens);
+ASTNode *parse_expression(Token *tokens);
+ASTNode *parse_block(Token *tokens);
+ASTNode *parse_conditional_block(Token *tokens);
+ASTNode *parse(Token *tokens);
+void free_ast(ASTNode *node);
+
 Token *get_current(Token *tokens)
 {
     return &tokens[current_token];
@@ -332,17 +345,31 @@ ASTNode *parse_expression(Token *tokens)
 
 ASTNode *parse_block(Token *tokens)
 {
-    ASTNode *head = NULL; // head of linked list
-    ASTNode *tail = NULL; // tail of linked list
+    ASTNode *head = NULL; // Head of the linked list
+    ASTNode *tail = NULL; // Tail of the linked list
 
     while (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ";") != 0)
     {
         Token *current = get_current(tokens);
         ASTNode *statement = NULL;
 
+        // If the current token is "scran", parse a print statement
         if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "scran") == 0)
         {
             statement = parse_print_statement(tokens);
+        }
+        // If the current token is "if", parse a conditional block
+        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "if") == 0)
+        {
+            statement = parse_conditional_block(tokens); // handle `if` block
+        }
+        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "elif") == 0)
+        {
+            statement = parse_conditional_block(tokens); // handle `elif` block
+        }
+        else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "else") == 0)
+        {
+            statement = parse_conditional_block(tokens); // handle `else` block
         }
         else
         {
@@ -350,6 +377,7 @@ ASTNode *parse_block(Token *tokens)
             exit(1);
         }
 
+        // Add the statement to the linked list
         if (!head)
         {
             head = statement;
@@ -362,7 +390,7 @@ ASTNode *parse_block(Token *tokens)
         }
     }
 
-    to_next(tokens); // consume the final `;`
+    to_next(tokens); // Consume the final `;`
     return head;
 }
 
