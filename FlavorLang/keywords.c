@@ -1,7 +1,7 @@
 #include "keywords.h"
 #include <string.h>
 
-extern const char *KEYWORDS[] = {
+const char *KEYWORDS[] = {
     "let",     // let
     "if",      // if
     "elif",    // else if
@@ -24,7 +24,9 @@ extern const char *KEYWORDS[] = {
     "book"     // import
 };
 
-extern const char *OPERATORS[] = {
+const size_t KEYWORDS_COUNT = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]);
+
+const char *OPERATORS[] = {
     "=",
     "==",
     "+",
@@ -35,3 +37,5 @@ extern const char *OPERATORS[] = {
     ">",
     ">=",
     "<="};
+
+const size_t OPERATORS_COUNT = sizeof(OPERATORS) / sizeof(OPERATORS[0]);
