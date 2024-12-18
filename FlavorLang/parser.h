@@ -11,7 +11,8 @@ typedef enum
     AST_ASSIGNMENT,
     AST_FUNCTION_CALL,
     AST_PRINT,
-    AST_LITERAL
+    AST_LITERAL,
+    AST_CONDITIONAL
 } ASTNodeType;
 
 typedef struct
@@ -27,6 +28,13 @@ typedef struct
         double number;
     } value;
 } LiteralNode;
+
+typedef struct
+{
+    ASTNode *condition;  // the condition (e.g., oven_temperature > 180)
+    ASTNode *body;       // the body of the `if` block
+    ASTNode *else_branch // optional: points to next `elif` or `else` block
+} ASTConditional;
 
 // AST Node Structure
 typedef struct ASTNode
@@ -50,6 +58,9 @@ typedef struct ASTNode
 
         // Literal: a string or number
         LiteralNode literal;
+
+        // Conditional: `if`, `elif`, or `else`
+        ASTConditional conditional;
 
         // Variable: identifier
         char *variable_name;
