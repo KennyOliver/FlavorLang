@@ -1,2 +1,10 @@
-let name = "Kenny";
-scran "Hello," name;
+#1
+scran "Hello world!";
+
+
+# 2
+let name = "Chef";
+let age = 25;
+
+scran "Name:", name;
+scran "Age:", age;

@@ -106,8 +106,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
 }
 
 // Parse a `scran` print statement
-// scran <string>;
-// scran <identifier>;
+// scran <string|identifier>;
 // scran <string|identifier> <string|identifier> etc;
 ASTNode *parse_print_statement(Token *tokens)
 {
@@ -135,7 +134,7 @@ ASTNode *parse_print_statement(Token *tokens)
 
     // node->next = NULL;
 
-    // Parse arguments until `;` (delimiter) or EOF is reached
+    // Parse arguments separated by `,` until `;` (delimiter) or EOF is reached
     while (get_current(tokens)->type != TOKEN_DELIMITER && get_current(tokens)->type != TOKEN_EOF)
     {
         if (node->to_print.arg_count >= MAX_ARGUMENTS)
@@ -172,8 +171,15 @@ ASTNode *parse_print_statement(Token *tokens)
         // Add argument to the `to_print.arguments` array
         node->to_print.arguments[node->to_print.arg_count++] = arg;
         to_next(tokens);
+
+        // If the next token is `,` then skip it and continue parsing
+        if (get_current(tokens)->type == TOKEN_DELIMITER && strcmp(get_current(tokens)->lexeme, ",") == 0)
+        {
+            to_next(tokens);
+        }
     }
 
+    // Expect `;` after parsing all arguments
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after `scran` statement");
 
     printf("Parsed print statement with %zu arguments:\n", node->to_print.arg_count);
