@@ -318,13 +318,20 @@ ASTNode *parse_expression(Token *tokens)
         exit(1);
     }
 
-    // Left-hand side (variable or expression)
     node->type = AST_BINARY_OP;
-    node->binary_op.left = parse_identifier(tokens);
 
-    // Operator (e.g., '>', '<')
+    // Parse left-hand side
+    if (get_current(tokens)->type == TOKEN_IDENTIFIER)
+    {
+        node->binary_op.left = parse_identifier(tokens);
+    }
+    else
+    {
+        node->binary_op.left = parse_literal_or_identifier(tokens);
+    }
+
+    // Parse operator
     Token *operator= get_current(tokens);
-
     if (operator->type == TOKEN_OPERATOR)
     {
         node->binary_op.operator= strdup(operator->lexeme);
@@ -332,13 +339,20 @@ ASTNode *parse_expression(Token *tokens)
     }
     else
     {
-        fprintf(stderr, "Error: Expected operator in condition\n");
+        fprintf(stderr, "Error: Expected operator in condition, got '%s'\n", operator->lexeme);
         free(node);
         exit(1);
     }
 
-    // Right-hand side (value or expression)
-    node->binary_op.right = parse_literal_or_identifier(tokens);
+    // Parse right-hand side
+    if (get_current(tokens)->type == TOKEN_IDENTIFIER)
+    {
+        node->binary_op.right = parse_identifier(tokens);
+    }
+    else
+    {
+        node->binary_op.right = parse_literal_or_identifier(tokens);
+    }
 
     return node;
 }
@@ -396,8 +410,6 @@ ASTNode *parse_block(Token *tokens)
 
 ASTNode *parse_conditional_block(Token *tokens)
 {
-    expect(tokens, TOKEN_KEYWORD, "Expected `if` keyword");
-
     // Allocate memory for the AST_CONDITIONAL node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
@@ -408,38 +420,56 @@ ASTNode *parse_conditional_block(Token *tokens)
 
     node->type = AST_CONDITIONAL;
 
-    // Parse the condition
-    node->conditional.condition = parse_expression(tokens);
+    // Check if this is an 'if' or 'elif' block (which need conditions)
+    // or an 'else' block (which doesn't)
+    Token *current = get_current(tokens);
+    if (strcmp(current->lexeme, "if") == 0 || strcmp(current->lexeme, "elif") == 0)
+    {
+        to_next(tokens); // consume 'if' or 'elif'
 
-    // Expect the `:` delimiter
-    expect(tokens, TOKEN_DELIMITER, "Expected `:` after conditional");
+        // Parse the condition for 'if' or 'elif'
+        node->conditional.condition = parse_expression(tokens);
+
+        // Expect and consume the ':' delimiter
+        if (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ":") != 0)
+        {
+            fprintf(stderr, "Error: Expected ':' after condition but got '%s'\n", get_current(tokens)->lexeme);
+            exit(1);
+        }
+        to_next(tokens); // Consume the ':'
+    }
+    else if (strcmp(current->lexeme, "else") == 0)
+    {
+        to_next(tokens); // consume 'else'
+
+        // No condition for else block
+        node->conditional.condition = NULL;
+
+        // Expect and consume the ':' delimiter
+        if (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ":") != 0)
+        {
+            fprintf(stderr, "Error: Expected ':' after 'else' but got '%s'\n", get_current(tokens)->lexeme);
+            exit(1);
+        }
+        to_next(tokens); // Consume the ':'
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected 'if', 'elif', or 'else' but got '%s'\n", current->lexeme);
+        exit(1);
+    }
 
     // Parse the body
     node->conditional.body = parse_block(tokens);
 
     // Check for `elif` or `else`
-    Token *current = get_current(tokens);
-    if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "elif") == 0)
+    current = get_current(tokens);
+    if (current->type == TOKEN_KEYWORD)
     {
-        to_next(tokens);                                                 // 'consume' `elif`
-        node->conditional.else_branch = parse_conditional_block(tokens); // recusrively parse `elif`
-    }
-    else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "else") == 0)
-    {
-        to_next(tokens); // 'consume' `else`
-        expect(tokens, TOKEN_DELIMITER, "Expected `:` after `else`");
-
-        node->conditional.else_branch = malloc(sizeof(ASTNode));
-        if (!node->conditional.else_branch)
+        if (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0)
         {
-            fprintf(stderr, "Error: Memory allocation failed for `else` branch\n");
-            exit(1);
+            node->conditional.else_branch = parse_conditional_block(tokens);
         }
-
-        node->conditional.else_branch->type = AST_CONDITIONAL;
-        node->conditional.else_branch->conditional.body = parse_block(tokens);
-        node->conditional.else_branch->conditional.condition = NULL; // no condition for `else`
-        node->conditional.else_branch->conditional.else_branch = NULL;
     }
     else
     {
@@ -447,7 +477,6 @@ ASTNode *parse_conditional_block(Token *tokens)
     }
 
     printf("Parsed conditional statement\n");
-
     return node;
 }
 
