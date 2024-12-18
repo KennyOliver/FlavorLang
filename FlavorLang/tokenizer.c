@@ -214,3 +214,11 @@ Token *tokenize(const char *source)
 
     return tokens;
 }
+
+void print_tokens(Token *tokens)
+{
+    for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
+    {
+        printf("Token Type: %d, Lexeme: %s, Line: %d\n", tokens[i].type, tokens[i].lexeme, tokens[i].line);
+    }
+}

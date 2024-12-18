@@ -24,12 +24,8 @@ int main(int argc, char **argv)
 
     // Tokenize
     Token *tokens = tokenize(source);
+    print_tokens(tokens);
     printf("Tokenization complete.\n");
-    // for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
-    // {
-    //     printf("Token Type: %d, Lexeme: %s, Line: %d\n", tokens[i].type, tokens[i].lexeme, tokens[i].line);
-    //     free(tokens[i].lexeme);
-    // }
 
     // Parse
     ASTNode *ast = parse(tokens);
