@@ -221,7 +221,11 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
-ASTNode *parse_conditionals(Token *tokens)
+ASTNode *parse_expression(Token *tokens);
+
+ASTNode *parse_block(Token *tokens);
+
+ASTNode *parse_conditional_block(Token *tokens)
 {
     expect(tokens, TOKEN_KEYWORD, "Expected `if` keyword");
 
@@ -235,9 +239,43 @@ ASTNode *parse_conditionals(Token *tokens)
 
     node->type = AST_CONDITIONAL;
 
+    // Parse the condition
+    node->conditional.condition = parse_expression(tokens);
+
+    // Expect the `:` delimiter
     expect(tokens, TOKEN_DELIMITER, "Expected `:` after conditional");
 
-    expect(tokens, TOKEN_DELIMITER, "Expected `;` after `if` conditional");
+    // Parse the body
+    node->conditional.body = parse_block(tokens);
+
+    // Check for `elif` or `else`
+    Token *current = get_current(tokens);
+    if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "elif") == 0)
+    {
+        to_next(tokens);                                            // 'consume' `elif`
+        node->conditional.else_branch = parse_conditionals(tokens); // recusrively parse `elif`
+    }
+    else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "else") == 0)
+    {
+        to_next(tokens); // 'consume' `else`
+        expect(tokens, TOKEN_DELIMITER, "Expected `:` after `else`");
+
+        node->conditional.else_branch = malloc(sizeof(ASTNode));
+        if (!node->conditional.else_branch)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for `else` branch\n");
+            exit(1);
+        }
+
+        node->conditional.else_branch->type = AST_CONDITIONAL;
+        node->conditional.else_branch->conditional.body = parse_block(tokens);
+        node->conditional.else_branch->conditional.condition = NULL; // no condition for `else`
+        node->conditional.else_branch->conditional.else_branch = NULL;
+    }
+    else
+    {
+        node->conditional.else_branch = NULL; // no `elif` or `else` present
+    }
 
     printf("Parsed conditional statement\n");
 
