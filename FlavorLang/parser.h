@@ -34,16 +34,16 @@ typedef struct
 
 typedef struct
 {
-    ASTNode *condition;  // the condition (e.g., oven_temperature > 180)
-    ASTNode *body;       // the body of the `if` block
-    ASTNode *else_branch // optional: points to next `elif` or `else` block (otherwise NULL)
+    ASTNode *condition;   // the condition (e.g., oven_temperature > 180)
+    ASTNode *body;        // the body of the `if` block
+    ASTNode *else_branch; // optional: points to next `elif` or `else` block (otherwise NULL)
 } ASTConditional;
 
 typedef struct
 {
     ASTNode *left;
     ASTNode *right;
-    char operator; // operator (e.g., '<', '>', etc)
+    char *operator; // operator (e.g., '<', '>', etc)
 } ASTBinaryOp;
 
 // AST Node Structure

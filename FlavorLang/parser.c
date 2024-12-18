@@ -388,8 +388,8 @@ ASTNode *parse_conditional_block(Token *tokens)
     Token *current = get_current(tokens);
     if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "elif") == 0)
     {
-        to_next(tokens);                                            // 'consume' `elif`
-        node->conditional.else_branch = parse_conditionals(tokens); // recusrively parse `elif`
+        to_next(tokens);                                                 // 'consume' `elif`
+        node->conditional.else_branch = parse_conditional_block(tokens); // recusrively parse `elif`
     }
     else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "else") == 0)
     {
