@@ -1,0 +1,6 @@
+plate "output.txt" with "Freshly baked cake ready to serve!";
+garnish "output.txt" with "\nDon't forget the toppings!";
+
+let data = gather "output.txt";
+scran "File Contents:";
+scran data;

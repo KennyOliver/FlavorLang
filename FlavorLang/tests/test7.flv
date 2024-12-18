@@ -1,0 +1,5 @@
+try:
+    burn "This recipe failed!";
+    scran "This won't run!";
+crumbs:
+    scran "Caught an error: Recipe needs improvement.";
