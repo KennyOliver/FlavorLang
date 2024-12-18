@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#define INITIAL_TOKEN_CAPACITY 1024
+
 // Token management functions
 Token *create_token(TokenType type, const char *lexeme, int line);
 void free_token(Token *token);

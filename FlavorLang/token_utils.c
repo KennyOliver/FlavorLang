@@ -3,7 +3,6 @@
 #include <string.h>
 #include <ctype.h>
 
-#define INITIAL_TOKEN_CAPACITY 1024
 #define TOKEN_ARRAY_GROWTH_FACTOR 2
 
 Token *create_token(TokenType type, const char *lexeme, int line)
