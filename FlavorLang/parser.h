@@ -33,7 +33,7 @@ typedef struct
 {
     ASTNode *condition;  // the condition (e.g., oven_temperature > 180)
     ASTNode *body;       // the body of the `if` block
-    ASTNode *else_branch // optional: points to next `elif` or `else` block
+    ASTNode *else_branch // optional: points to next `elif` or `else` block (otherwise NULL)
 } ASTConditional;
 
 // AST Node Structure
