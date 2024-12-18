@@ -22,14 +22,17 @@ const char *KEYWORDS[] = {
     "gather",
     "book"};
 
-const char OPERATORS[] = {
-    '=',
-    '+',
-    '-',
-    '*',
-    '/',
-    '<',
-    '>'};
+const char *OPERATORS[] = {
+    "=",
+    "==",
+    "+",
+    "-",
+    "*",
+    "/",
+    "<",
+    ">",
+    ">=",
+    "<="};
 
 char *read_file(const char *filename)
 {
@@ -177,16 +180,34 @@ Token *tokenize(const char *source)
             continue;
         }
 
-        // Operators (+, -, *, /)
-        if (strchr(OPERATORS, c))
+        // Operators
+        if (strchr("=+-*/<>", c))
         {
-            tokens[token_count] = (Token){
-                TOKEN_OPERATOR,
-                strndup(&source[pos], 1),
-                line};
-            token_count++;
-            pos++;
-            continue;
+            // Check for multi-character operators
+            if (
+                (c == '=' && source[pos + 1] == '=') || // ==
+                (c == '>' && source[pos + 1] == '=') || // >=
+                (c == '<' && source[pos + 1] == '='))
+            {
+                tokens[token_count] = (Token){
+                    TOKEN_OPERATOR,
+                    strndup(&source[pos], 2), // capture 2 characters
+                    line};
+                token_count++;
+                pos += 2;
+                continue;
+            }
+            else
+            {
+                // Single-character operators
+                tokens[token_count] = (Token){
+                    TOKEN_OPERATOR,
+                    strndup(&source[pos], 1),
+                    line};
+                token_count++;
+                pos++;
+                continue;
+            }
         }
 
         // Delimiters (e.g., ';', '(', ')', etc.)
