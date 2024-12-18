@@ -161,7 +161,7 @@ ASTNode *parse_print_statement(Token *tokens)
         {
             arg->type = AST_LITERAL;
             arg->literal.type = LITERAL_NUMBER;
-            arg->literal.value.number = atoi(get_current(tokens)->lexeme); // convert lexeme to int
+            arg->literal.value.number = atof(get_current(tokens)->lexeme); // convert lexeme to int
         }
         else if (get_current(tokens)->type == TOKEN_IDENTIFIER)
         {
