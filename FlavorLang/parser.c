@@ -224,7 +224,7 @@ ASTNode *parse_print_statement(Token *tokens)
 /**
  * Parse an identifier token (variable name).
  * @param tokens all the tokens from the tokenizer
- * @return node
+ * @return ASTNode*
  */
 ASTNode *parse_identifier(Token *tokens)
 {
@@ -253,7 +253,54 @@ ASTNode *parse_identifier(Token *tokens)
     return node;
 }
 
-ASTNode *parse_literal_or_identifier(Token *tokens);
+/**
+ * @brief Determines whetehr the current token is a literal (e.g., number, string) or an identifier.
+ * Delegates to `parse_literal()` or `parse_identifier()` accordingly
+ *
+ * @param tokens
+ * @return ASTNode*
+ */
+ASTNode *parse_literal_or_identifier(Token *tokens)
+{
+    Token *current = get_current(tokens);
+
+    if (current->type == TOKEN_NUMBER || current->type == TOKEN_STRING)
+    {
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+            exit(1);
+        }
+
+        node->type = AST_LITERAL;
+        node->literal.type = (current->type == TOKEN_NUMBER) ? LITERAL_NUMBER : LITERAL_STRING;
+
+        if (node->literal.type == LITERAL_NUMBER)
+        {
+            node->literal.value.number = atof(current->lexeme); // convert string to number
+        }
+        else
+        {
+            node->literal.value.string = strdup(current->lexeme);
+        }
+
+        node->next = NULL;
+
+        to_next(tokens);
+
+        return node;
+    }
+    else if (current->type == TOKEN_IDENTIFIER)
+    {
+        return parse_identifier(tokens);
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected literal or identifier, but got \"%s\"\n", current->lexeme);
+        exit(1);
+    }
+}
 
 ASTNode *parse_expression(Token *tokens)
 {
