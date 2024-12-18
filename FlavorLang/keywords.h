@@ -9,4 +9,8 @@ extern const size_t KEYWORDS_COUNT;
 extern const char *OPERATORS[];
 extern const size_t OPERATORS_COUNT;
 
+// Utility functions for keyword & operator checking
+int is_keyword(const char *lexeme);
+int is_operator(const char *lexeme);
+
 #endif
