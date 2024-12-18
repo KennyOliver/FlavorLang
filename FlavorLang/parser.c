@@ -221,6 +221,11 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
+/**
+ * Parse an identifier token (variable name).
+ * @param tokens all the tokens from the tokenizer
+ * @return node
+ */
 ASTNode *parse_identifier(Token *tokens)
 {
     Token *current = get_current(tokens);
