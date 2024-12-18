@@ -278,7 +278,7 @@ void free_ast(ASTNode *node)
             }
             free(node->to_print.arguments);
         }
-        else if (node->type == AST_LITERAL)
+        else if (node->type == AST_ASSIGNMENT)
         {
             free(node->assignment.variable_name); // free variable name
             free(node->assignment.value);         // free assigned value node
