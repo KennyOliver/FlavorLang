@@ -5,6 +5,8 @@
 
 #define MAX_ARGUMENTS 1024
 
+typedef struct ASTNode ASTNode;
+
 // AST Node Types
 typedef enum
 {
