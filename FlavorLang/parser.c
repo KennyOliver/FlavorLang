@@ -221,6 +221,29 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
+ASTNode *parse_conditionals(Token *tokens)
+{
+    expect(tokens, TOKEN_KEYWORD, "Expected `if` keyword");
+
+    // Allocate memory for the AST_CONDITIONAL node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    node->type = AST_CONDITIONAL;
+
+    expect(tokens, TOKEN_DELIMITER, "Expected `:` after conditional");
+
+    expect(tokens, TOKEN_DELIMITER, "Expected `;` after `if` conditional");
+
+    printf("Parsed conditional statement\n");
+
+    return node;
+}
+
 ASTNode *parse(Token *tokens)
 {
     ASTNode *head = NULL; // start of AST
