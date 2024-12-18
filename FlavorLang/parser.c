@@ -3,6 +3,19 @@
 // Global index for tracking current token position
 size_t current_token = 0;
 
+Token *get_current(Token *tokens);
+Token *to_next(Token *tokens);
+void expect(Token *tokens, TokenType expected, const char *error_message);
+ASTNode *parse_variable_declaration(Token *tokens);
+ASTNode *parse_print_statement(Token *tokens);
+ASTNode *parse_identifier(Token *tokens);
+ASTNode *parse_literal_or_identifier(Token *tokens);
+ASTNode *parse_expression(Token *tokens);
+ASTNode *parse_block(Token *tokens);
+ASTNode *parse_conditional_block(Token *tokens);
+ASTNode *parse(Token *tokens);
+void free_ast(ASTNode *node);
+
 Token *get_current(Token *tokens)
 {
     return &tokens[current_token];
@@ -129,12 +142,6 @@ ASTNode *parse_print_statement(Token *tokens)
     }
     node->to_print.arg_count = 0;
 
-    // Token *value = get_current(tokens);
-    // expect(tokens, TOKEN_STRING, "Expected string literal after `scran`");
-
-    // node->next = NULL;
-
-    // Parse arguments separated by `,` until `;` (delimiter) or EOF is reached
     while (get_current(tokens)->type != TOKEN_DELIMITER && get_current(tokens)->type != TOKEN_EOF)
     {
         if (node->to_print.arg_count >= MAX_ARGUMENTS)
@@ -221,6 +228,277 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
+/**
+ * Parse an identifier token (variable name).
+ * @param tokens all the tokens from the tokenizer
+ * @return ASTNode*
+ */
+ASTNode *parse_identifier(Token *tokens)
+{
+    Token *current = get_current(tokens);
+
+    if (current->type != TOKEN_IDENTIFIER)
+    {
+        fprintf(stderr, "Error: Expected identifier, but got \"%s\"\n", current->lexeme);
+        exit(1);
+    }
+
+    // Allocate and populate an ASTNode for the identifier
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    node->type = AST_ASSIGNMENT;
+    node->variable_name = strdup(current->lexeme); // copy variable name
+    node->next = NULL;
+
+    to_next(tokens);
+
+    return node;
+}
+
+/**
+ * @brief Determines whetehr the current token is a literal (e.g., number, string) or an identifier.
+ * Delegates to `parse_literal()` or `parse_identifier()` accordingly
+ *
+ * @param tokens
+ * @return ASTNode*
+ */
+ASTNode *parse_literal_or_identifier(Token *tokens)
+{
+    Token *current = get_current(tokens);
+
+    if (current->type == TOKEN_NUMBER || current->type == TOKEN_STRING)
+    {
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+            exit(1);
+        }
+
+        node->type = AST_LITERAL;
+        node->literal.type = (current->type == TOKEN_NUMBER) ? LITERAL_NUMBER : LITERAL_STRING;
+
+        if (node->literal.type == LITERAL_NUMBER)
+        {
+            node->literal.value.number = atof(current->lexeme); // convert string to number
+        }
+        else
+        {
+            node->literal.value.string = strdup(current->lexeme);
+        }
+
+        node->next = NULL;
+
+        to_next(tokens);
+
+        return node;
+    }
+    else if (current->type == TOKEN_IDENTIFIER)
+    {
+        return parse_identifier(tokens);
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected literal or identifier, but got \"%s\"\n", current->lexeme);
+        exit(1);
+    }
+}
+
+ASTNode *parse_expression(Token *tokens)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    node->type = AST_BINARY_OP;
+
+    // Parse left-hand side
+    if (get_current(tokens)->type == TOKEN_IDENTIFIER)
+    {
+        node->binary_op.left = parse_identifier(tokens);
+    }
+    else
+    {
+        node->binary_op.left = parse_literal_or_identifier(tokens);
+    }
+
+    // Parse operator
+    Token *operator= get_current(tokens);
+    if (operator->type == TOKEN_OPERATOR)
+    {
+        node->binary_op.operator= strdup(operator->lexeme);
+        to_next(tokens);
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected operator in condition, got '%s'\n", operator->lexeme);
+        free(node);
+        exit(1);
+    }
+
+    // Parse right-hand side
+    if (get_current(tokens)->type == TOKEN_IDENTIFIER)
+    {
+        node->binary_op.right = parse_identifier(tokens);
+    }
+    else
+    {
+        node->binary_op.right = parse_literal_or_identifier(tokens);
+    }
+
+    return node;
+}
+
+ASTNode *parse_block(Token *tokens)
+{
+    ASTNode *head = NULL; // Head of the linked list
+    ASTNode *tail = NULL; // Tail of the linked list
+
+    while (get_current(tokens)->type != TOKEN_EOF)
+    {
+        Token *current = get_current(tokens);
+
+        // Check if we've reached the end of the block
+        if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
+        {
+            to_next(tokens); // Consume the semicolon
+            break;
+        }
+
+        // Handle case where we hit an elif/else - this means we're done with this block
+        if (current->type == TOKEN_KEYWORD &&
+            (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0))
+        {
+            break;
+        }
+
+        ASTNode *statement = NULL;
+
+        // Parse statements based on token type
+        if (current->type == TOKEN_KEYWORD)
+        {
+            if (strcmp(current->lexeme, "scran") == 0)
+            {
+                statement = parse_print_statement(tokens);
+            }
+            else if (strcmp(current->lexeme, "if") == 0)
+            {
+                statement = parse_conditional_block(tokens);
+            }
+            else
+            {
+                fprintf(stderr, "Error: Unexpected keyword '%s' in block\n",
+                        current->lexeme ? current->lexeme : "null");
+                exit(1);
+            }
+        }
+        else if (current->type == TOKEN_EOF)
+        {
+            break;
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unexpected token '%s' in block\n",
+                    current->lexeme ? current->lexeme : "null");
+            exit(1);
+        }
+
+        // Add the statement to the linked list
+        if (!head)
+        {
+            head = statement;
+            tail = statement;
+        }
+        else
+        {
+            tail->next = statement;
+            tail = statement;
+        }
+    }
+
+    return head;
+}
+
+ASTNode *parse_conditional_block(Token *tokens)
+{
+    // Allocate memory for the AST_CONDITIONAL node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    node->type = AST_CONDITIONAL;
+
+    // Check if this is an 'if' or 'elif' block (which need conditions)
+    // or an 'else' block (which doesn't)
+    Token *current = get_current(tokens);
+    if (strcmp(current->lexeme, "if") == 0 || strcmp(current->lexeme, "elif") == 0)
+    {
+        to_next(tokens); // consume 'if' or 'elif'
+
+        // Parse the condition for 'if' or 'elif'
+        node->conditional.condition = parse_expression(tokens);
+
+        // Expect and consume the ':' delimiter
+        if (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ":") != 0)
+        {
+            fprintf(stderr, "Error: Expected ':' after condition but got '%s'\n", get_current(tokens)->lexeme);
+            exit(1);
+        }
+        to_next(tokens); // Consume the ':'
+    }
+    else if (strcmp(current->lexeme, "else") == 0)
+    {
+        to_next(tokens); // consume 'else'
+
+        // No condition for else block
+        node->conditional.condition = NULL;
+
+        // Expect and consume the ':' delimiter
+        if (get_current(tokens)->type != TOKEN_DELIMITER || strcmp(get_current(tokens)->lexeme, ":") != 0)
+        {
+            fprintf(stderr, "Error: Expected ':' after 'else' but got '%s'\n", get_current(tokens)->lexeme);
+            exit(1);
+        }
+        to_next(tokens); // Consume the ':'
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected 'if', 'elif', or 'else' but got '%s'\n", current->lexeme);
+        exit(1);
+    }
+
+    // Parse the body
+    node->conditional.body = parse_block(tokens);
+
+    // Check for `elif` or `else`
+    current = get_current(tokens);
+    if (current->type == TOKEN_KEYWORD)
+    {
+        if (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0)
+        {
+            node->conditional.else_branch = parse_conditional_block(tokens);
+        }
+    }
+    else
+    {
+        node->conditional.else_branch = NULL; // no `elif` or `else` present
+    }
+
+    printf("Parsed conditional statement\n");
+    return node;
+}
+
 ASTNode *parse(Token *tokens)
 {
     ASTNode *head = NULL; // start of AST
@@ -238,6 +516,10 @@ ASTNode *parse(Token *tokens)
         else if (strcmp(get_current(tokens)->lexeme, "scran") == 0)
         {
             new_node = parse_print_statement(tokens);
+        }
+        else if (strcmp(get_current(tokens)->lexeme, "if") == 0)
+        {
+            new_node = parse_conditional_block(tokens);
         }
         else
         {

@@ -5,13 +5,17 @@
 
 #define MAX_ARGUMENTS 1024
 
+typedef struct ASTNode ASTNode;
+
 // AST Node Types
 typedef enum
 {
     AST_ASSIGNMENT,
     AST_FUNCTION_CALL,
     AST_PRINT,
-    AST_LITERAL
+    AST_LITERAL,
+    AST_CONDITIONAL,
+    AST_BINARY_OP
 } ASTNodeType;
 
 typedef struct
@@ -27,6 +31,20 @@ typedef struct
         double number;
     } value;
 } LiteralNode;
+
+typedef struct
+{
+    ASTNode *condition;   // the condition (e.g., oven_temperature > 180)
+    ASTNode *body;        // the body of the `if` block
+    ASTNode *else_branch; // optional: points to next `elif` or `else` block (otherwise NULL)
+} ASTConditional;
+
+typedef struct
+{
+    ASTNode *left;
+    ASTNode *right;
+    char *operator; // operator (e.g., '<', '>', etc)
+} ASTBinaryOp;
 
 // AST Node Structure
 typedef struct ASTNode
@@ -50,6 +68,12 @@ typedef struct ASTNode
 
         // Literal: a string or number
         LiteralNode literal;
+
+        // Binary operation
+        ASTBinaryOp binary_op;
+
+        // Conditional: `if`, `elif`, or `else`
+        ASTConditional conditional;
 
         // Variable: identifier
         char *variable_name;

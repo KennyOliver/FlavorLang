@@ -1,0 +1,9 @@
+let dessert = "cake";
+
+when dessert:
+    is "cake":
+        scran "Bake the cake!";
+    is "pie":
+        scran "Prepare the pie!";
+    else:
+        scran "Dessert not on the menu.";

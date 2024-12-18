@@ -1,0 +1,5 @@
+let name = "Chef";
+let age = 25;
+
+scran "Name:", name;
+scran "Age:", age;
