@@ -12,7 +12,8 @@ typedef enum
     AST_FUNCTION_CALL,
     AST_PRINT,
     AST_LITERAL,
-    AST_CONDITIONAL
+    AST_CONDITIONAL,
+    AST_BINARY_OP
 } ASTNodeType;
 
 typedef struct
@@ -36,6 +37,13 @@ typedef struct
     ASTNode *else_branch // optional: points to next `elif` or `else` block (otherwise NULL)
 } ASTConditional;
 
+typedef struct
+{
+    ASTNode *left;
+    ASTNode *right;
+    char operator; // operator (e.g., '<', '>', etc)
+} ASTBinaryOp;
+
 // AST Node Structure
 typedef struct ASTNode
 {
@@ -58,6 +66,9 @@ typedef struct ASTNode
 
         // Literal: a string or number
         LiteralNode literal;
+
+        // Binary operation
+        ASTBinaryOp binary_op;
 
         // Conditional: `if`, `elif`, or `else`
         ASTConditional conditional;

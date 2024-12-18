@@ -221,7 +221,43 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
-ASTNode *parse_expression(Token *tokens);
+ASTNode *parse_identifier(Token *tokens);
+
+ASTNode *parse_literal_or_identifier(Token *tokens);
+
+ASTNode *parse_expression(Token *tokens)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    // Left-hand side (variable or expression)
+    node->type = AST_BINARY_OP;
+    node->binary_op.left = parse_identifier(tokens);
+
+    // Operator (e.g., '>', '<')
+    Token *operator= get_current(tokens);
+
+    if (operator->type == TOKEN_OPERATOR)
+    {
+        node->binary_op.operator= strdup(operator->lexeme);
+        to_next(tokens);
+    }
+    else
+    {
+        fprintf(stderr, "Error: Expected operator in condition\n");
+        free(node);
+        exit(1);
+    }
+
+    // Right-hand side (value or expression)
+    node->binary_op.right = parse_literal_or_identifier(tokens);
+
+    return node;
+}
 
 ASTNode *parse_block(Token *tokens)
 {
