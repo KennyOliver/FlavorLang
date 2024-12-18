@@ -1,38 +1,5 @@
 #include "tokenizer.h"
-
-const char *KEYWORDS[] = {
-    "let",
-    "if",
-    "elif",
-    "else",
-    "for",
-    "to",
-    "while",
-    "when",
-    "is",
-    "prep",
-    "serve",
-    "try",
-    "crumbs",
-    "burn",
-    "scran",
-    "taste",
-    "plate",
-    "garnish",
-    "gather",
-    "book"};
-
-const char *OPERATORS[] = {
-    "=",
-    "==",
-    "+",
-    "-",
-    "*",
-    "/",
-    "<",
-    ">",
-    ">=",
-    "<="};
+#include "keywords.h"
 
 char *read_file(const char *filename)
 {
