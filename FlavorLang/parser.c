@@ -17,7 +17,7 @@ void expect(Token *tokens, TokenType expected, const char *error_message)
 {
     if (get_current(tokens)->type != expected)
     {
-        fprintf(stderr, "Parser Error: %s (found '%s' on line %d)",
+        fprintf(stderr, "Parser Error: %s (found \"%s\" on line %d)",
                 error_message,
                 get_current(tokens)->lexeme,
                 get_current(tokens)->line);
@@ -47,6 +47,9 @@ ASTNode *parse_variable_declaration(Token *tokens)
         fprintf(stderr, "Error: Expected string or number literal after `=`\n");
         exit(1);
     }
+
+    // Advance the token pointer after parsing the value
+    to_next(tokens);
 
     // Expect `;` after variable declaration
     expect(tokens, TOKEN_DELIMITER, "Expected `;` after variable declaration");
