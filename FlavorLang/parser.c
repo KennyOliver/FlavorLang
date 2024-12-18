@@ -221,7 +221,32 @@ ASTNode *parse_print_statement(Token *tokens)
     return node;
 }
 
-ASTNode *parse_identifier(Token *tokens);
+ASTNode *parse_identifier(Token *tokens)
+{
+    Token *current = get_current(tokens);
+
+    if (current->type != TOKEN_IDENTIFIER)
+    {
+        fprintf(stderr, "Error: Expected identifier, but got \"%s\"\n", current->lexeme);
+        exit(1);
+    }
+
+    // Allocate and populate an ASTNode for the identifier
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for ASTNode\n");
+        exit(1);
+    }
+
+    node->type = AST_ASSIGNMENT;
+    node->variable_name = strdup(current->lexeme); // copy variable name
+    node->next = NULL;
+
+    to_next(tokens);
+
+    return node;
+}
 
 ASTNode *parse_literal_or_identifier(Token *tokens);
 
