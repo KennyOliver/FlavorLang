@@ -88,7 +88,7 @@ ASTNode *parse_variable_declaration(Token *tokens)
         value_node->literal.value.number = atoi(value->lexeme); // convert lexeme to int
     }
 
-    // Attach value node ot assignment node
+    // Attach value node to assignment node
     node->assignment.value = value_node;
     node->next = NULL;
 
@@ -157,6 +157,12 @@ ASTNode *parse_print_statement(Token *tokens)
             arg->literal.type = LITERAL_STRING;
             arg->literal.value.string = strdup(get_current(tokens)->lexeme);
         }
+        else if (get_current(tokens)->type == TOKEN_NUMBER)
+        {
+            arg->type = AST_LITERAL;
+            arg->literal.type = LITERAL_NUMBER;
+            arg->literal.value.number = atof(get_current(tokens)->lexeme); // convert lexeme to int
+        }
         else if (get_current(tokens)->type == TOKEN_IDENTIFIER)
         {
             arg->type = AST_ASSIGNMENT;
@@ -190,15 +196,25 @@ ASTNode *parse_print_statement(Token *tokens)
         ASTNode *arg = node->to_print.arguments[i];
         if (arg->type == AST_LITERAL)
         {
-            printf("  Argument %zu: STRING = \"%s\"\n", i + 1, arg->literal.value.string);
+            switch (arg->literal.type)
+            {
+            case LITERAL_STRING:
+                printf("\tArgument %zu: STRING = \"%s\"\n", i + 1, arg->literal.value.string);
+                break;
+            case LITERAL_NUMBER:
+                printf("\tArgument %zu: NUMBER = \"%f\"\n", i + 1, arg->literal.value.number);
+                break;
+            default:
+                printf("\tArgument %zu: UNKNOWN LITERAL TYPE\n", i + 1);
+            }
         }
         else if (arg->type == AST_ASSIGNMENT)
         {
-            printf("  Argument %zu: VARIABLE = \"%s\"\n", i + 1, arg->variable_name);
+            printf("\tArgument %zu: VARIABLE = \"%s\"\n", i + 1, arg->variable_name);
         }
         else
         {
-            printf("  Argument %zu: UNKNOWN TYPE\n", i + 1);
+            printf("\tArgument %zu: UNKNOWN TYPE\n", i + 1);
         }
     }
 
@@ -262,7 +278,7 @@ void free_ast(ASTNode *node)
             }
             free(node->to_print.arguments);
         }
-        else if (node->type == AST_LITERAL)
+        else if (node->type == AST_ASSIGNMENT)
         {
             free(node->assignment.variable_name); // free variable name
             free(node->assignment.value);         // free assigned value node
