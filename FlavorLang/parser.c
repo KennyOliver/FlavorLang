@@ -245,9 +245,32 @@ void free_ast(ASTNode *node)
 {
     while (node)
     {
-        ASTNode *temp = node->next;
-        node = node->next;
-        free(node);
-        free(temp);
+        ASTNode *temp = node->next; // save next node pointer
+
+        // Free current node base on its type
+        if (node->type == AST_PRINT)
+        {
+            for (size_t i = 0; i < node->to_print.arg_count; i++)
+            {
+                free_ast(node->to_print.arguments[i]); // free each argument node
+            }
+            free(node->to_print.arguments);
+        }
+        else if (node->type == AST_LITERAL)
+        {
+            free(node->assignment.variable_name); // free variable name
+            free(node->assignment.value);         // free assigned value node
+        }
+        else if (node->type == AST_LITERAL)
+        {
+            if (node->literal.type == LITERAL_STRING)
+            {
+                free(node->literal.value.string); // free the string literal
+            }
+            // No need to free memory for LITERAL_NUMBER
+        }
+
+        free(node);  // free current node itself
+        node = temp; // go to next node
     }
 }
