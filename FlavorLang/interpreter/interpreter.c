@@ -114,19 +114,21 @@ double interpret_binary_op(ASTNode *node, Environment *env)
     double left = interpret(node->binary_op.left, env);
     double right = interpret(node->binary_op.right, env);
 
-    if (strcmp(node->binary_op.operator, "+") == 0)
+    char *operator= node->binary_op.operator;
+
+    if (strcmp(operator, "+") == 0)
     {
         return left + right;
     }
-    else if (strcmp(node->binary_op.operator, "-") == 0)
+    else if (strcmp(operator, "-") == 0)
     {
         return left - right;
     }
-    else if (strcmp(node->binary_op.operator, "*") == 0)
+    else if (strcmp(operator, "*") == 0)
     {
         return left * right;
     }
-    else if (strcmp(node->binary_op.operator, "/") == 0)
+    else if (strcmp(operator, "/") == 0)
     {
         if (right == 0)
         {
@@ -136,8 +138,28 @@ double interpret_binary_op(ASTNode *node, Environment *env)
 
         return left / right;
     }
+    else if (strcmp(operator, "<"))
+    {
+        return left < right;
+    }
+    else if (strcmp(operator, "<="))
+    {
+        return left <= right;
+    }
+    else if (strcmp(operator, ">"))
+    {
+        return left > right;
+    }
+    else if (strcmp(operator, ">="))
+    {
+        return left >= right;
+    }
+    else if (strcmp(operator, "=="))
+    {
+        return left == right;
+    }
 
-    fprintf(stderr, "Error: Unsupported operator `%s`.\n", node->binary_op.operator);
+    fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
     exit(1);
 }
 
