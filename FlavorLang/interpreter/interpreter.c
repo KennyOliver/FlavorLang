@@ -81,74 +81,23 @@ LiteralValue interpret_literal(ASTNode *node)
     return value;
 }
 
-// void interpret_assignment(ASTNode *node, Environment *env)
-// {
-//     LiteralValue value = interpret(node->assignment.value, env);
-
-//     // Check if the variable exists
-//     for (size_t i = 0; i < env->variable_count; i++)
-//     {
-//         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
-//         {
-//             // Free memory if updating an existing string
-//             if (env->variables[i].value.type == TYPE_STRING)
-//             {
-//                 free(env->variables[i].value.data.string);
-//             }
-
-//             env->variables[i].value = value;
-//             env->variables[i].value.type = value.type;
-//             return;
-//         }
-//     }
-
-//     // Add a new variable
-//     if (env->variable_count == env->capacity)
-//     {
-//         env->capacity *= 2;
-//         env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
-//     }
-
-//     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
-//     env->variables[env->variable_count].value = value;
-//     env->variables[env->variable_count].value.type = value.type;
-//     env->variable_count++;
-// }
-
-// LiteralValue interpret_assignment(ASTNode *node, Environment *env)
-// {
-//     printf("DEBUG: Looking up variable: %s\n", node->variable_name);
-//     for (size_t i = 0; i < env->variable_count; i++)
-//     {
-//         if (strcmp(env->variables[i].variable_name, node->variable_name) == 0)
-//         {
-//             LiteralValue result;
-//             result.type = env->variables[i].value.type;
-//             result.data = env->variables[i].value.data;
-//             printf("DEBUG: Found variable value: %f\n", result.data.number);
-//             return result;
-//         }
-//     }
-
-//     fprintf(stderr, "Error: Variable `%s` not found.\n", node->variable_name);
-//     exit(1);
-// }
-
 LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
     LiteralValue value = interpret(node->assignment.value, env);
 
-    // Check if the variable exists
-    Variable *existing_var = get_variable(env, node->assignment.variable_name);
-    if (existing_var)
+    // Debug: Value being assigned
+    printf("DEBUG: Assigning variable `%s` with value `%f`\n",
+           node->assignment.variable_name, value.data.number);
+
+    // Check if the variable already exists
+    for (size_t i = 0; i < env->variable_count; i++)
     {
-        // Update the variable
-        if (existing_var->value.type == TYPE_STRING)
+        if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
-            free(existing_var->value.data.string);
+            // Updatge existing variable
+            env->variables[i].value = value;
+            return value;
         }
-        existing_var->value = value;
-        return value;
     }
 
     // Add a new variable
@@ -161,6 +110,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
     env->variables[env->variable_count].value = value;
     env->variable_count++;
+
     return value;
 }
 
