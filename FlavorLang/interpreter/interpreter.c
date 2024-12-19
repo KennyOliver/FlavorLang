@@ -2,6 +2,7 @@
 #include "../parser/ast_types.h"
 #include <stdio.h>
 
+void interpret_program(ASTNode *program, Environment *env);
 double interpret(ASTNode *node, Environment *env);
 double interpret_literal(ASTNode *node);
 double interpret_assignment(ASTNode *node, Environment *env);
@@ -49,4 +50,14 @@ void interpret_program(ASTNode *program, Environment *env)
         interpret(current, env);
         current = current->next;
     }
+}
+
+double interpret_print(ASTNode *node, Environment *env)
+{
+    for (size_t i = 0; i < node->to_print.arg_count; i++)
+    {
+        double value = interpret(node->to_print.arguments[i], env);
+        printf("%f ", value);
+    }
+    printf("\n");
 }
