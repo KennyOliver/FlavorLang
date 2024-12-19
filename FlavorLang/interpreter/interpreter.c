@@ -7,7 +7,7 @@ double interpret(ASTNode *node, Environment *env);
 double interpret_literal(ASTNode *node);
 double interpret_assignment(ASTNode *node, Environment *env);
 double interpret_binary_op(ASTNode *node, Environment *env);
-double interpret_print(ASTNode *node, Environment *env);
+void interpret_print(ASTNode *node, Environment *env);
 double interpret_conditional(ASTNode *node, Environment *env);
 
 double interpret(ASTNode *node, Environment *env)
@@ -67,12 +67,23 @@ double interpret_literal(ASTNode *node)
     }
 }
 
-double interpret_print(ASTNode *node, Environment *env)
+void interpret_print(ASTNode *node, Environment *env)
 {
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
-        double value = interpret(node->to_print.arguments[i], env);
-        printf("%f ", value);
+        ASTNode *arg = node->to_print.arguments[i];
+
+        if (arg->type == AST_LITERAL && arg->literal.type == LITERAL_STRING)
+        {
+            // Handle string literals directly
+            printf("%s ", arg->literal.value.string);
+        }
+        else
+        {
+            // Evaluate and print numeric expressions
+            double value = interpret(arg, env);
+            printf("%f ", value);
+        }
     }
     printf("\n");
 }
