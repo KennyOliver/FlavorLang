@@ -1,6 +1,7 @@
 #include "interpreter.h"
 #include "../parser/ast_types.h"
 #include <stdio.h>
+#include <string.h>
 
 double interpret(ASTNode *node, Environment *env);
 void interpret_program(ASTNode *program, Environment *env);
@@ -65,6 +66,19 @@ double interpret_literal(ASTNode *node)
         fprintf(stderr, "Error: Unsupported literal type.\n");
         exit(1);
     }
+}
+
+double interpret_variable(ASTNode *node, Environment *env)
+{
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, node->variable_name) == 0)
+        {
+            return env->variables[i].value;
+        }
+    }
+
+    fprintf(stderr, "Error: Variable `%s` not found.\n", node->variable_name);
 }
 
 void interpret_print(ASTNode *node, Environment *env)
