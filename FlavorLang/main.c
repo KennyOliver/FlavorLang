@@ -1,5 +1,6 @@
 #include "tokenizer/tokenizer.h"
 #include "parser/parser.h"
+#include "interpreter/interpreter.h"
 
 int main(int argc, char **argv)
 {
@@ -31,9 +32,17 @@ int main(int argc, char **argv)
     ASTNode *ast = parse_program(tokens);
     printf("Parsing complete.\n");
 
+    // Create environment
+    Environment env;
+    init_environment(&env);
+
+    // Interpret
+    interpret_program(ast, &env);
+
     // Clean up memory
     free(tokens);
     free(source);
+    free_environment(&env);
     free_ast(ast);
 
     return 0;

@@ -410,6 +410,13 @@ void free_ast(ASTNode *node)
             free_ast(node->binary_op.left);
             free_ast(node->binary_op.right);
             break;
+
+        case AST_FUNCTION_CALL:
+            fprintf(stderr, "Error: `AST_FUNCTION_CALL` not implemented yet.\n");
+
+        default:
+            fprintf(stderr, "Error: Unknown ASTNode type.\n");
+            exit(1);
         }
 
         free(node);
