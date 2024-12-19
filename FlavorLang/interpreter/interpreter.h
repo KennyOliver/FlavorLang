@@ -4,10 +4,23 @@
 #include <stdlib.h>
 #include "../parser/ast_types.h"
 
+typedef enum
+{
+    TYPE_NUMBER,
+    TYPE_STRING
+} LiteralType;
+
+typedef union
+{
+    double number;
+    char *string;
+} LiteralValue;
+
 typedef struct
 {
     char *variable_name;
-    double value;
+    LiteralType type;
+    LiteralValue value;
 } Variable;
 
 typedef struct
