@@ -35,4 +35,7 @@ void free_environment(Environment *env)
     free(env->variables);
 }
 
+// Interpret program
+void interpret_program(ASTNode *program, Environment *env);
+
 #endif

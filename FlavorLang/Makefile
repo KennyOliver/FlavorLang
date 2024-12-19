@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Directories
-SRC_DIRS = . parser tokenizer
+SRC_DIRS = . tokenizer parser interpreter
 OBJ_DIR = obj
 BIN = flavor
 
@@ -20,7 +20,7 @@ $(BIN): $(OBJS)
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: %.c
-	@mkdir -p $(OBJ_DIR)/parser $(OBJ_DIR)/tokenizer
+	@mkdir -p $(OBJ_DIR)/tokenizer $(OBJ_DIR)/parser $(OBJ_DIR)/interpreter
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean up generated files

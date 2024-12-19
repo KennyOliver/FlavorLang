@@ -4,7 +4,6 @@
 #include <string.h>
 
 double interpret(ASTNode *node, Environment *env);
-void interpret_program(ASTNode *program, Environment *env);
 double interpret_literal(ASTNode *node);
 double interpret_assignment(ASTNode *node, Environment *env);
 double interpret_binary_op(ASTNode *node, Environment *env);
