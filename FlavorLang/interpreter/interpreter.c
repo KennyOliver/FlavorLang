@@ -14,7 +14,7 @@ LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        LiteralValue value = {.number = 0}; // default value
+        LiteralValue value = {.data.number = 0}; // default value
         return value;
     }
 
@@ -24,17 +24,17 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return interpret_literal(node);
     case AST_ASSIGNMENT:
         interpret_assignment(node, env);
-        LiteralValue value = {.number = 0}; // assignment has no direct result
+        LiteralValue value = {.data.number = 0}; // assignment has no direct result
         return value;
     case AST_BINARY_OP:
         return interpret_binary_op(node, env);
     case AST_PRINT:
         interpret_print(node, env);
-        LiteralValue value = {.number = 0}; // print has no direct result
+        LiteralValue value = {.data.number = 0}; // print has no direct result
         return value;
     case AST_CONDITIONAL:
         interpret_conditional(node, env);
-        LiteralValue value = {.number = 0}; // conditional has no direct result
+        LiteralValue value = {.data.number = 0}; // conditional has no direct result
         return value;
     case AST_FUNCTION_CALL:
         fprintf(stderr, "Error: Function calls not implemented yet.\n");
@@ -63,11 +63,11 @@ LiteralValue interpret_literal(ASTNode *node)
     {
     case LITERAL_NUMBER:
         value.type = TYPE_NUMBER;
-        value.number = node->literal.value.number;
+        value.data.number = node->literal.value.number;
         break;
     case LITERAL_STRING:
         value.type = TYPE_STRING;
-        value.string = strdup(node->literal.value.string); // copy string
+        value.data.string = strdup(node->literal.value.string); // copy string
         break;
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
@@ -86,13 +86,13 @@ void interpret_assignment(ASTNode *node, Environment *env)
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
             // Free memory if updating an existing string
-            if (env->variables[i].type == TYPE_STRING)
+            if (env->variables[i].value.type == TYPE_STRING)
             {
-                free(env->variables[i].value.string);
+                free(env->variables[i].value.data.string);
             }
 
             env->variables[i].value = value;
-            env->variables[i].type = value.type;
+            env->variables[i].value.type = value.type;
             return;
         }
     }
@@ -106,7 +106,7 @@ void interpret_assignment(ASTNode *node, Environment *env)
 
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
     env->variables[env->variable_count].value = value;
-    env->variables[env->variable_count].type = value.type;
+    env->variables[env->variable_count].value.type = value.type;
     env->variable_count++;
 }
 
@@ -116,11 +116,11 @@ double interpret_variable(ASTNode *node, Environment *env)
     {
         if (strcmp(env->variables[i].variable_name, node->variable_name) == 0)
         {
-            if (env->variables[i].type == TYPE_NUMBER)
+            if (env->variables[i].value.type == TYPE_NUMBER)
             {
-                return env->variables[i].value.number;
+                return env->variables[i].value.data.number;
             }
-            else if (env->variables[i].type == TYPE_STRING)
+            else if (env->variables[i].value.type == TYPE_STRING)
             {
                 //
             }
@@ -149,24 +149,24 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 
     if (strcmp(operator, "+") == 0)
     {
-        result.number = left.number + right.number;
+        result.data.number = left.data.number + right.data.number;
     }
     else if (strcmp(operator, "-") == 0)
     {
-        result.number = left.number - right.number;
+        result.data.number = left.data.number - right.data.number;
     }
     else if (strcmp(operator, "*") == 0)
     {
-        result.number = left.number * right.number;
+        result.data.number = left.data.number * right.data.number;
     }
     else if (strcmp(operator, "/") == 0)
     {
-        if (right.number == 0)
+        if (right.data.number == 0)
         {
             fprintf(stderr, "Error: Division by zero.\n");
             exit(1);
         }
-        result.number = left.number / right.number;
+        result.data.number = left.data.number / right.data.number;
     }
     else
     {
@@ -217,20 +217,20 @@ void interpret_print(ASTNode *node, Environment *env)
                 fprintf(stderr, "Error: Undefined variable `%s`.\n", arg->variable_name);
             }
 
-            if (var->type == TYPE_STRING)
+            if (var->value.type == TYPE_STRING)
             {
-                printf("%s ", var->value.string);
+                printf("%s ", var->value.data.string);
             }
-            else if (var->type == TYPE_NUMBER)
+            else if (var->value.type == TYPE_NUMBER)
             {
-                printf("%f ", var->value.number);
+                printf("%f ", var->value.data.number);
             }
         }
         else
         {
             // Evaluate and print numeric expressions
             LiteralValue value = interpret(arg, env);
-            printf("%f ", value);
+            printf("%f ", value.data.number);
         }
     }
     printf("\n");
@@ -240,7 +240,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
 {
     LiteralValue condition_value = interpret(node->conditional.condition, env);
 
-    if (condition_value)
+    if (condition_value.data.number)
     {
         interpret(node->conditional.body, env);
     }

@@ -10,16 +10,19 @@ typedef enum
     TYPE_STRING
 } LiteralType;
 
-typedef union
+typedef struct
 {
-    double number;
-    char *string;
+    LiteralType type;
+    union
+    {
+        double number;
+        char *string;
+    } data;
 } LiteralValue;
 
 typedef struct
 {
     char *variable_name;
-    LiteralType type;
     LiteralValue value;
 } Variable;
 
