@@ -149,49 +149,57 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 
     char *operator= node->binary_op.operator;
 
-    if (strcmp(operator, "+") == 0)
+    switch (operator[0])
     {
+    case '+':
         result.data.number = left.data.number + right.data.number;
-    }
-    else if (strcmp(operator, "-") == 0)
-    {
+        break;
+    case '-':
         result.data.number = left.data.number - right.data.number;
-    }
-    else if (strcmp(operator, "*") == 0)
-    {
+        break;
+    case '*':
         result.data.number = left.data.number * right.data.number;
-    }
-    else if (strcmp(operator, "/") == 0)
-    {
+        break;
+    case '/':
         if (right.data.number == 0)
         {
             fprintf(stderr, "Error: Division by zero.\n");
             exit(1);
         }
         result.data.number = left.data.number / right.data.number;
-    }
-    else if (strcmp(operator, "<") == 0)
-    {
-        result.data.number = (left.data.number < right.data.number) ? 1.0 : 0.0;
-    }
-    else if (strcmp(operator, "<=") == 0)
-    {
-        result.data.number = (left.data.number <= right.data.number) ? 1.0 : 0.0;
-    }
-    else if (strcmp(operator, ">") == 0)
-    {
-        result.data.number = (left.data.number > right.data.number) ? 1.0 : 0.0;
-    }
-    else if (strcmp(operator, ">=") == 0)
-    {
-        result.data.number = (left.data.number >= right.data.number) ? 1.0 : 0.0;
-    }
-    else if (strcmp(operator, "==") == 0)
-    {
-        result.data.number = (left.data.number == right.data.number) ? 1.0 : 0.0;
-    }
-    else
-    {
+        break;
+    case '<':
+        if (operator[1] == '=')
+        {
+            result.data.number = (left.data.number <= right.data.number) ? 1.0 : 0.0;
+        }
+        else
+        {
+            result.data.number = (left.data.number < right.data.number) ? 1.0 : 0.0;
+        }
+        break;
+    case '>':
+        if (operator[1] == '=')
+        {
+            result.data.number = (left.data.number >= right.data.number) ? 1.0 : 0.0;
+        }
+        else
+        {
+            result.data.number = (left.data.number > right.data.number) ? 1.0 : 0.0;
+        }
+        break;
+    case '=':
+        if (operator[1] == '=')
+        {
+            result.data.number = (left.data.number == right.data.number) ? 1.0 : 0.0;
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
+            exit(1);
+        }
+        break;
+    default:
         fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
         exit(1);
     }
