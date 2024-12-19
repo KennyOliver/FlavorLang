@@ -173,6 +173,26 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         }
         result.data.number = left.data.number / right.data.number;
     }
+    else if (strcmp(operator, "<") == 0)
+    {
+        result.data.number = left.data.number < right.data.number;
+    }
+    else if (strcmp(operator, "<=") == 0)
+    {
+        result.data.number = left.data.number <= right.data.number;
+    }
+    else if (strcmp(operator, ">") == 0)
+    {
+        result.data.number = left.data.number > right.data.number;
+    }
+    else if (strcmp(operator, ">=") == 0)
+    {
+        result.data.number = left.data.number >= right.data.number;
+    }
+    else if (strcmp(operator, "==") == 0)
+    {
+        result.data.number = left.data.number == right.data.number;
+    }
     else
     {
         fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
