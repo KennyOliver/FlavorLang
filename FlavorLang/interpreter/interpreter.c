@@ -10,12 +10,20 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 void interpret_print(ASTNode *node, Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 
+// Helper function to create a default LiteralValue (zero number)
+LiteralValue create_default_value()
+{
+    LiteralValue value = {
+        .type = TYPE_NUMBER,
+        .data = {.number = 0}};
+    return value;
+}
+
 LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        LiteralValue value = {.data.number = 0}; // default value
-        return value;
+        return create_default_value();
     }
 
     switch (node->type)
@@ -24,18 +32,15 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return interpret_literal(node);
     case AST_ASSIGNMENT:
         interpret_assignment(node, env);
-        LiteralValue value = {.data.number = 0}; // assignment has no direct result
-        return value;
+        return create_default_value();
     case AST_BINARY_OP:
         return interpret_binary_op(node, env);
     case AST_PRINT:
         interpret_print(node, env);
-        LiteralValue value = {.data.number = 0}; // print has no direct result
-        return value;
+        return create_default_value();
     case AST_CONDITIONAL:
         interpret_conditional(node, env);
-        LiteralValue value = {.data.number = 0}; // conditional has no direct result
-        return value;
+        return create_default_value();
     case AST_FUNCTION_CALL:
         fprintf(stderr, "Error: Function calls not implemented yet.\n");
         exit(1);
