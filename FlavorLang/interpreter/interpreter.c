@@ -16,7 +16,7 @@ LiteralValue create_default_value()
 {
     LiteralValue value = {
         .type = TYPE_NUMBER,
-        .data = {.number = 2}};
+        .data = {.number = 0}};
     return value;
 }
 
@@ -32,6 +32,15 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     case AST_LITERAL:
         return interpret_literal(node);
     case AST_ASSIGNMENT:
+        printf("DEBUG: Interpreted node type: %d\n", node->type);
+        if (node->type == TYPE_NUMBER)
+        {
+            printf("DEBUG: Node is a number: %f\n", node->literal.value.number);
+        }
+        else if (node->type == TYPE_STRING)
+        {
+            printf("DEBUG: Node is a string: %s\n", node->literal.value.string);
+        }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
         return interpret_binary_op(node, env);
@@ -87,11 +96,11 @@ LiteralValue interpret_literal(ASTNode *node)
 
 LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
-    LiteralValue value = interpret(node->assignment.value, env);
-
-    // Debug: Value being assigned
-    printf("DEBUG: Assigning variable `%s` with value `%f`\n",
-           node->assignment.variable_name, value.data.number);
+    if (!node->assignment.variable_name)
+    {
+        fprintf(stderr, "Error: Variable name for assignment is NULL.\n");
+        exit(1); // or handle gracefully
+    }
 
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++)
@@ -99,14 +108,17 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
             // Update existing variable
-            env->variables[i].value = value;
-            printf("DEBUG: Updated variable `%s` to value `%f`\n",
-                   node->assignment.variable_name, value.data.number);
-            return value;
+            if (node->assignment.value) // check if there's a new value to assign
+            {
+                env->variables[i].value = interpret(node->assignment.value, env);
+                printf("DEBUG: Updated variable `%s` to value `%f`\n",
+                       node->assignment.variable_name, env->variables[i].value.data.number);
+            }
+            return env->variables[i].value;
         }
     }
 
-    // Add a new variable if it doesn't exist
+    // Add a new variable if it doesn't exist (original logic)
     if (env->variable_count == env->capacity)
     {
         env->capacity *= 2;
@@ -114,11 +126,11 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     }
 
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
-    env->variables[env->variable_count].value = value;
+    env->variables[env->variable_count].value = interpret(node->assignment.value, env);
     env->variable_count++;
 
-    printf("DEBUG: New variable `%s` with value `%f`\n", node->assignment.variable_name, value.data.number);
-    return value;
+    printf("DEBUG: New variable `%s` with value `%f`\n", node->assignment.variable_name, env->variables[env->variable_count].value.data.number);
+    return env->variables[env->variable_count].value;
 }
 
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
@@ -273,11 +285,11 @@ void interpret_conditional(ASTNode *node, Environment *env)
     }
     else if (node->conditional.else_branch)
     {
-        printf("DEBUG: executing else branch\n");
+        printf("DEBUG: executing next `elif`/`else` branch\n");
         interpret(node->conditional.else_branch, env);
     }
 
-    // Debug: Print oven_temperature after conditional evaluation
+    // Ensure oven_temperature is updated after conditional execution
     for (size_t i = 0; i < env->variable_count; i++)
     {
         if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
