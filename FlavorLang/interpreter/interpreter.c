@@ -175,3 +175,22 @@ void interpret_conditional(ASTNode *node, Environment *env)
         interpret(node->conditional.else_branch, env);
     }
 }
+
+// Initialize the environment
+void init_environment(Environment *env)
+{
+    env->variable_count = 0;
+    env->capacity = 10;
+    env->variables = malloc(env->capacity * sizeof(Variable));
+}
+
+// Free the environment
+void free_environment(Environment *env)
+{
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        free(env->variables[i].variable_name);
+    }
+
+    free(env->variables);
+}
