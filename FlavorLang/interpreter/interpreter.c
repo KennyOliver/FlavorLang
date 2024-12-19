@@ -114,27 +114,6 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     return value;
 }
 
-double interpret_variable(ASTNode *node, Environment *env)
-{
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, node->variable_name) == 0)
-        {
-            if (env->variables[i].value.type == TYPE_NUMBER)
-            {
-                return env->variables[i].value.data.number;
-            }
-            else if (env->variables[i].value.type == TYPE_STRING)
-            {
-                //
-            }
-        }
-    }
-
-    fprintf(stderr, "Error: Variable `%s` not found.\n", node->variable_name);
-    exit(1);
-}
-
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     LiteralValue left = interpret(node->binary_op.left, env);
