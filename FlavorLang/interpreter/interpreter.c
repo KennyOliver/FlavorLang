@@ -106,6 +106,7 @@ double interpret_variable(ASTNode *node, Environment *env)
     }
 
     fprintf(stderr, "Error: Variable `%s` not found.\n", node->variable_name);
+    exit(1);
 }
 
 double interpret_binary_op(ASTNode *node, Environment *env)
