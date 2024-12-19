@@ -1,5 +1,5 @@
-#include "tokenizer.h"
-#include "parser.h"
+#include "tokenizer/tokenizer.h"
+#include "parser/parser.h"
 
 int main(int argc, char **argv)
 {
@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     printf("Tokenization complete.\n");
 
     // Parse
-    ASTNode *ast = parse(tokens);
+    ASTNode *ast = parse_program(tokens);
     printf("Parsing complete.\n");
 
     // Clean up memory

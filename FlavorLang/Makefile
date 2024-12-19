@@ -1,10 +1,31 @@
+# Compiler and Flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
 
-all: flavor
+# Directories
+SRC_DIRS = . parser tokenizer
+OBJ_DIR = obj
+BIN = flavor
 
-flavor: main.c tokenizer.c parser.c
-	$(CC) $(CFLAGS) -o flavor main.c tokenizer.c parser.c
+# Collect source and header files
+SRCS = $(foreach dir, $(SRC_DIRS), $(wildcard $(dir)/*.c))
+OBJS = $(SRCS:%.c=$(OBJ_DIR)/%.o)
 
+# Default target
+all: $(BIN)
+
+# Build the executable
+$(BIN): $(OBJS)
+	$(CC) $(CFLAGS) -o $@ $^
+
+# Compile source files to object files
+$(OBJ_DIR)/%.o: %.c
+	@mkdir -p $(OBJ_DIR)/parser $(OBJ_DIR)/tokenizer
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean up generated files
 clean:
-	rm -f flavor
+	rm -rf $(OBJ_DIR) $(BIN)
+
+# For testing purposes
+.PHONY: all clean
