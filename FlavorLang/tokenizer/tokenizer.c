@@ -15,6 +15,7 @@ static void handle_identifier_or_keyword(const char *source, size_t *pos, size_t
                                          Token **tokens, size_t *token_count, size_t *capacity, int line);
 static void handle_operator(const char *source, size_t *pos, size_t length,
                             Token **tokens, size_t *token_count, size_t *capacity, int line);
+void print_tokens(Token *tokens);
 
 char *read_file(const char *filename)
 {
@@ -200,5 +201,13 @@ static void handle_operator(const char *source, size_t *pos, size_t length,
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, line);
         free(lexeme);
         (*pos)++;
+    }
+}
+
+void print_tokens(Token *tokens)
+{
+    for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
+    {
+        printf("Token Type: %d, Lexeme: %s, Line: %d\n", tokens[i].type, tokens[i].lexeme, tokens[i].line);
     }
 }
