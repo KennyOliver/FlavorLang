@@ -16,7 +16,7 @@ LiteralValue create_default_value()
 {
     LiteralValue value = {
         .type = TYPE_NUMBER,
-        .data = {.number = 0}};
+        .data = {.number = 2}};
     return value;
 }
 
@@ -64,20 +64,24 @@ void interpret_program(ASTNode *program, Environment *env)
 LiteralValue interpret_literal(ASTNode *node)
 {
     LiteralValue value;
+    printf("DEBUG: Interpreting literal value...\n");
+
     switch (node->literal.type)
     {
     case LITERAL_NUMBER:
+        printf("DEBUG: LITERAL_NUMBER, value: %f\n", node->literal.value.number);
         value.type = TYPE_NUMBER;
         value.data.number = node->literal.value.number;
         break;
     case LITERAL_STRING:
         value.type = TYPE_STRING;
-        value.data.string = strdup(node->literal.value.string); // copy string
+        value.data.string = strdup(node->literal.value.string);
         break;
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
         exit(1);
     }
+
     return value;
 }
 
@@ -94,13 +98,15 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     {
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
-            // Updatge existing variable
+            // Update existing variable
             env->variables[i].value = value;
+            printf("DEBUG: Updated variable `%s` to value `%f`\n",
+                   node->assignment.variable_name, value.data.number);
             return value;
         }
     }
 
-    // Add a new variable
+    // Add a new variable if it doesn't exist
     if (env->variable_count == env->capacity)
     {
         env->capacity *= 2;
@@ -111,6 +117,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].value = value;
     env->variable_count++;
 
+    printf("DEBUG: New variable `%s` with value `%f`\n", node->assignment.variable_name, value.data.number);
     return value;
 }
 
@@ -198,7 +205,7 @@ Variable *get_variable(Environment *env, const char *variable_name)
 
 void interpret_print(ASTNode *node, Environment *env)
 {
-    printf("interpret_print(ASTNode *node, Environment *env)");
+    // printf("interpret_print(ASTNode *node, Environment *env)\n");
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
@@ -246,6 +253,16 @@ void interpret_print(ASTNode *node, Environment *env)
 void interpret_conditional(ASTNode *node, Environment *env)
 {
     printf("DEBUG: interpret_conditional called\n");
+
+    // Debug: Print oven_temperature before conditional evaluation
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
+        {
+            printf("DEBUG: Before conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
+        }
+    }
+
     LiteralValue condition_value = interpret(node->conditional.condition, env);
     printf("DEBUG: condition evaluated to: %f\n", condition_value.data.number);
 
@@ -258,6 +275,15 @@ void interpret_conditional(ASTNode *node, Environment *env)
     {
         printf("DEBUG: executing else branch\n");
         interpret(node->conditional.else_branch, env);
+    }
+
+    // Debug: Print oven_temperature after conditional evaluation
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
+        {
+            printf("DEBUG: After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
+        }
     }
 }
 
