@@ -2,13 +2,13 @@
 #include "../parser/ast_types.h"
 #include <stdio.h>
 
-void interpret_program(ASTNode *program, Environment *env);
 double interpret(ASTNode *node, Environment *env);
+void interpret_program(ASTNode *program, Environment *env);
 double interpret_literal(ASTNode *node);
 double interpret_assignment(ASTNode *node, Environment *env);
 double interpret_binary_op(ASTNode *node, Environment *env);
 void interpret_print(ASTNode *node, Environment *env);
-double interpret_conditional(ASTNode *node, Environment *env);
+void interpret_conditional(ASTNode *node, Environment *env);
 
 double interpret(ASTNode *node, Environment *env)
 {
@@ -86,4 +86,18 @@ void interpret_print(ASTNode *node, Environment *env)
         }
     }
     printf("\n");
+}
+
+void interpret_conditional(ASTNode *node, Environment *env)
+{
+    double condition_value = interpret(node->conditional.condition, env);
+
+    if (condition_value)
+    {
+        interpret(node->conditional.body, env);
+    }
+    else if (node->conditional.else_branch)
+    {
+        interpret(node->conditional.else_branch, env);
+    }
 }
