@@ -81,6 +81,38 @@ double interpret_variable(ASTNode *node, Environment *env)
     fprintf(stderr, "Error: Variable `%s` not found.\n", node->variable_name);
 }
 
+double interpret_binary_op(ASTNode *node, Environment *env)
+{
+    double left = interpret(node->binary_op.left, env);
+    double right = interpret(node->binary_op.right, env);
+
+    if (strcmp(node->binary_op.operator, "+") == 0)
+    {
+        return left + right;
+    }
+    else if (strcmp(node->binary_op.operator, "-") == 0)
+    {
+        return left - right;
+    }
+    else if (strcmp(node->binary_op.operator, "*") == 0)
+    {
+        return left * right;
+    }
+    else if (strcmp(node->binary_op.operator, "/") == 0)
+    {
+        if (right == 0)
+        {
+            fprintf(stderr, "Error: Division by zero.\n");
+            exit(1);
+        }
+
+        return left / right;
+    }
+
+    fprintf(stderr, "Error: Unsupported operator `%s`.\n", node->binary_op.operator);
+    exit(1);
+}
+
 void interpret_print(ASTNode *node, Environment *env)
 {
     for (size_t i = 0; i < node->to_print.arg_count; i++)
