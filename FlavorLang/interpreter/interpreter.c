@@ -77,7 +77,7 @@ double interpret_assignment(ASTNode *node, Environment *env)
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
             env->variables[i].value = value;
-            return;
+            return value;
         }
     }
 
@@ -91,6 +91,8 @@ double interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
     env->variables[env->variable_count].value = value;
     env->variable_count++;
+
+    return value;
 }
 
 double interpret_variable(ASTNode *node, Environment *env)
