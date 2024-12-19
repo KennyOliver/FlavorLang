@@ -67,6 +67,32 @@ double interpret_literal(ASTNode *node)
     }
 }
 
+double interpret_assignment(ASTNode *node, Environment *env)
+{
+    double value = interpret(node->assignment.value, env);
+
+    // Check if the variable exists
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
+        {
+            env->variables[i].value = value;
+            return;
+        }
+    }
+
+    // Add a new variable
+    if (env->variable_count == env->capacity)
+    {
+        env->capacity *= 2;
+        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+    }
+
+    env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
+    env->variables[env->variable_count].value = value;
+    env->variable_count++;
+}
+
 double interpret_variable(ASTNode *node, Environment *env)
 {
     for (size_t i = 0; i < env->variable_count; i++)
