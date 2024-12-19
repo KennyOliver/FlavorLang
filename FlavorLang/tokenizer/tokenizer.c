@@ -5,7 +5,6 @@
 #include <ctype.h>
 
 // Forward declarations of internal functions
-// static void handle_comment(const char *source, size_t *pos, int *line);
 static void handle_comment(const char *source, size_t *pos);
 static void handle_number(const char *source, size_t *pos, size_t length,
                           Token **tokens, size_t *token_count, size_t *capacity, int line);
@@ -80,7 +79,6 @@ Token *tokenize(const char *source)
 
         if (c == '#')
         {
-            // handle_comment(source, &pos, &line);
             handle_comment(source, &pos);
             continue;
         }
@@ -123,7 +121,6 @@ Token *tokenize(const char *source)
     return tokens;
 }
 
-// static void handle_comment(const char *source, size_t *pos, int *line)
 static void handle_comment(const char *source, size_t *pos)
 {
     while (source[*pos] != '\0' && source[*pos] != '\n')
