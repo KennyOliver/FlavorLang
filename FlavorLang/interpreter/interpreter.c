@@ -283,18 +283,36 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
     }
 
-    LiteralValue condition_value = interpret(node->conditional.condition, env);
-    printf("DEBUG: condition evaluated to: %f\n", condition_value.data.number);
+    ASTNode *current_branch = node;
+    int condition_met = 0; // Initialize to false
 
-    if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
+    while (current_branch) // Continue as long as we have a branch
     {
-        printf("DEBUG: executing true branch\n");
-        interpret(node->conditional.body, env);
-    }
-    else if (node->conditional.else_branch)
-    {
-        printf("DEBUG: executing next `elif`/`else` branch\n");
-        interpret(node->conditional.else_branch, env);
+        // Handle else branch
+        if (!current_branch->conditional.condition) // This is an else branch
+        {
+            printf("`ELSE` BRANCH\n");
+            if (!condition_met)
+            {
+                interpret(current_branch->conditional.body, env);
+            }
+            break;
+        }
+
+        // Handle if/elif branches
+        printf("`IF/ELIF` BRANCH\n");
+        LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
+        printf("DEBUG: condition evaluated to: %f\n", condition_value.data.number);
+
+        if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
+        {
+            printf("DEBUG: executing true branch\n");
+            interpret(current_branch->conditional.body, env);
+            condition_met = 1;
+            break;
+        }
+
+        current_branch = current_branch->conditional.else_branch; // Move to the next branch
     }
 
     // Ensure oven_temperature is updated after conditional execution
