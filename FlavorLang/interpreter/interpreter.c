@@ -52,6 +52,21 @@ void interpret_program(ASTNode *program, Environment *env)
     }
 }
 
+double interpret_literal(ASTNode *node)
+{
+    switch (node->literal.type)
+    {
+    case LITERAL_NUMBER:
+        return node->literal.value.number;
+    case LITERAL_STRING:
+        fprintf("%s", node->literal.value.string);
+        return 0;
+    default:
+        fprintf(stderr, "Error: Unsupported literal type.\n");
+        exit(1);
+    }
+}
+
 double interpret_print(ASTNode *node, Environment *env)
 {
     for (size_t i = 0; i < node->to_print.arg_count; i++)
