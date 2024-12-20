@@ -1,6 +1,7 @@
 #include "tokenizer.h"
 #include "keywords.h"
 #include "token_utils.h"
+#include "../debug/debug.h"
 #include <string.h>
 #include <ctype.h>
 
@@ -201,20 +202,23 @@ static void handle_operator(const char *source, size_t *pos, size_t length,
     }
 }
 
-void print_tokens(Token *tokens)
+void debug_print_tokens(Token *tokens)
 {
-    int last_line = 0;
-
-    for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
+    if (debug_flag)
     {
-        if (tokens[i].line != last_line)
+        int last_line = 0;
+
+        for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
         {
-            printf("[Line %d] Token Type: %d | Lexeme: %s\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
-            last_line = tokens[i].line; // last_line++ would only work if there were no empty lines
-        }
-        else
-        {
-            printf("\t Token Type: %d | Lexeme: %s\n", tokens[i].type, tokens[i].lexeme);
+            if (tokens[i].line != last_line)
+            {
+                printf("[Line %d] Token Type: %d | Lexeme: %s\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
+                last_line = tokens[i].line; // last_line++ would only work if there were no empty lines
+            }
+            else
+            {
+                printf("\t Token Type: %d | Lexeme: %s\n", tokens[i].type, tokens[i].lexeme);
+            }
         }
     }
 }

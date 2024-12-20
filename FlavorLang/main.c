@@ -1,6 +1,7 @@
 #include "tokenizer/tokenizer.h"
 #include "parser/parser.h"
 #include "interpreter/interpreter.h"
+#include "debug/debug.h"
 
 int main(int argc, char **argv)
 {
@@ -10,12 +11,14 @@ int main(int argc, char **argv)
         fprintf(stderr, "Reason: no `.flv` source file was provided\n");
         return 1;
     }
-    else if (argc > 2)
+    else if (argc > 3)
     {
         fprintf(stderr, "Usage: `%s <file.flv>`\n", argv[0]);
         fprintf(stderr, "Reason: FlavorLang currently only accepts one `.flv` source file\n");
         return 1;
     }
+
+    parse_cli_args(argc, argv);
 
     // Get filename
     const char *filename = argv[1];
@@ -25,12 +28,12 @@ int main(int argc, char **argv)
 
     // Tokenize
     Token *tokens = tokenize(source);
-    print_tokens(tokens);
-    printf("Tokenization complete.\n");
+    debug_print_tokens(tokens);
+    debug_print("Tokenization complete.");
 
     // Parse
     ASTNode *ast = parse_program(tokens);
-    printf("Parsing complete.\n");
+    debug_print("Parsing complete.");
 
     // Create environment
     Environment env;
