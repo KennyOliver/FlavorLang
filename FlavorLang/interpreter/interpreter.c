@@ -108,11 +108,18 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
             // Update existing variable
-            if (node->assignment.value) // check if there's a new value to assign
-            {
+            if (node->assignment.value)
+            { // check if there's a new value to assign
                 env->variables[i].value = interpret(node->assignment.value, env);
-                printf("DEBUG: Updated variable `%s` to value `%f`\n",
-                       node->assignment.variable_name, env->variables[i].value.data.number);
+                printf("DEBUG: Updated variable `%s` to value ", node->assignment.variable_name);
+                if (env->variables[i].value.type == TYPE_STRING)
+                {
+                    printf("'%s'\n", env->variables[i].value.data.string);
+                }
+                else
+                {
+                    printf("%f\n", env->variables[i].value.data.number);
+                }
             }
             return env->variables[i].value;
         }
@@ -129,30 +136,104 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].value = interpret(node->assignment.value, env);
     env->variable_count++;
 
-    printf("DEBUG: New variable `%s` with value `%f`\n", node->assignment.variable_name, env->variables[env->variable_count].value.data.number);
-    return env->variables[env->variable_count].value;
+    printf("DEBUG: New variable `%s` with value ", node->assignment.variable_name);
+    if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
+    {
+        printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
+    }
+    else
+    {
+        printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
+    }
+
+    return env->variables[env->variable_count - 1].value;
 }
 
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
-
-    if (left.type != TYPE_NUMBER || right.type != TYPE_NUMBER)
-    {
-        fprintf(stderr, "Error: Binary operations only supported for numbers.\n");
-        exit(1);
-    }
+    printf("1\n");
 
     LiteralValue result;
-    result.type = TYPE_NUMBER;
+    result.type = left.type;
+    printf("2\n");
 
+    // Ensure the operator is a valid string
     char *operator= node->binary_op.operator;
+    if (operator== NULL)
+    {
+        fprintf(stderr, "Error: Operator is NULL.\n");
+        exit(1);
+    }
 
     switch (operator[0])
     {
     case '+':
-        result.data.number = left.data.number + right.data.number;
+        printf("3\n");
+
+        // Check if at least one of the operands is a string
+        if (left.type == TYPE_STRING || right.type == TYPE_STRING)
+        {
+            // If left is a string, concatenate the right, convert right to string if it's a number
+            if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
+            {
+                char num_str[50];
+                snprintf(num_str, sizeof(num_str), "%f", right.data.number);
+                char *new_string = malloc(strlen(left.data.string) + strlen(num_str) + 1);
+                if (new_string == NULL)
+                {
+                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
+                    exit(1);
+                }
+                strcpy(new_string, left.data.string);
+                strcat(new_string, num_str);
+                result.data.string = new_string;
+            }
+            // If right is a string, concatenate the left, convert left to string if it's a number
+            else if (right.type == TYPE_STRING && left.type == TYPE_NUMBER)
+            {
+                char num_str[50];
+                snprintf(num_str, sizeof(num_str), "%f", left.data.number);
+                char *new_string = malloc(strlen(num_str) + strlen(right.data.string) + 1);
+                if (new_string == NULL)
+                {
+                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
+                    exit(1);
+                }
+                strcpy(new_string, num_str);
+                strcat(new_string, right.data.string);
+                result.data.string = new_string;
+            }
+            // If both are strings, concatenate them
+            else if (left.type == TYPE_STRING && right.type == TYPE_STRING)
+            {
+                char *new_string = malloc(strlen(left.data.string) + strlen(right.data.string) + 1);
+                if (new_string == NULL)
+                {
+                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
+                    exit(1);
+                }
+                strcpy(new_string, left.data.string);
+                strcat(new_string, right.data.string);
+                result.data.string = new_string;
+            }
+            else
+            {
+                fprintf(stderr, "Error: Unsupported types for operator `+`.\n");
+                exit(1);
+            }
+        }
+        // If both operands are numbers, just add them
+        else if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER)
+        {
+            result.data.number = left.data.number + right.data.number;
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unsupported types for operator `+`.\n");
+            exit(1);
+        }
         break;
     case '-':
         result.data.number = left.data.number - right.data.number;
@@ -169,7 +250,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         result.data.number = left.data.number / right.data.number;
         break;
     case '<':
-        if (operator[1] == '=')
+        if (operator[1] && operator[1] == '=')
         {
             result.data.number = (left.data.number <= right.data.number) ? 1.0 : 0.0;
         }
@@ -179,7 +260,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         }
         break;
     case '>':
-        if (operator[1] == '=')
+        if (operator[1] && operator[1] == '=')
         {
             result.data.number = (left.data.number >= right.data.number) ? 1.0 : 0.0;
         }
@@ -189,7 +270,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         }
         break;
     case '=':
-        if (operator[1] == '=')
+        if (operator[1] && operator[1] == '=')
         {
             result.data.number = (left.data.number == right.data.number) ? 1.0 : 0.0;
         }
@@ -204,8 +285,34 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    printf("DEBUG: Binary operation `%f %s %f`\n",
-           left.data.number, node->binary_op.operator, right.data.number);
+    switch (result.type)
+    {
+    case TYPE_STRING:
+        if (left.type == TYPE_STRING && right.type == TYPE_STRING)
+        {
+            printf("DEBUG: Binary operation `\"%s\" %s %f`\n",
+                   left.data.string, node->binary_op.operator, right.data.string);
+        }
+        else if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
+        {
+            printf("DEBUG: Binary operation `\"%s\" %s %f`\n",
+                   left.data.string, node->binary_op.operator, right.data.number);
+        }
+        else if (left.type == TYPE_NUMBER && right.type == TYPE_STRING)
+        {
+            printf("DEBUG: Binary operation `%f %s \"%s\"`\n",
+                   left.data.number, node->binary_op.operator, right.data.string);
+        }
+        else
+        {
+            printf("DEBUG: Binary operation `%s %s %s`\n",
+                   left.data.string, node->binary_op.operator, right.data.string);
+        }
+        break;
+    default:
+        printf("DEBUG: Binary operation `%f %s %f`\n",
+               left.data.number, node->binary_op.operator, right.data.number);
+    }
 
     return result;
 }
