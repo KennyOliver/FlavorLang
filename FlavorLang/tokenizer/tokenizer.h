@@ -9,7 +9,6 @@ char *read_file(const char *filename);
 // Converts source code to tokens
 Token *tokenize(const char *source);
 
-// Print tokens
-void print_tokens(Token *tokens);
+void debug_print_tokens(Token *tokens);
 
 #endif

@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
     // Tokenize
     Token *tokens = tokenize(source);
-    print_tokens(tokens);
+    debug_print_tokens(tokens);
     printf("Tokenization complete.\n");
 
     // Parse
