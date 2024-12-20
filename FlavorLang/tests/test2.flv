@@ -1,5 +1,19 @@
-let name = "Chef" + "test";
+let name = "Chef";
 let age = 25;
 
 scran "Name:", name;
 scran "Age:", age;
+
+
+# Extra tests
+let str_str = "X" + " Y";
+scran str_str;
+
+let str_int = "X" + 1;
+scran str_int;
+
+let int_str = 1 + "Y";
+scran int_str;
+
+let int_int = 1 + 2;
+scran int_int;
