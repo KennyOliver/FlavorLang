@@ -1,10 +1,12 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-extern int debug_flag;
+#include <stdbool.h>
+
+extern bool debug_flag;
 
 void parse_cli_args(int argc, char *argv[]);
 
-void debug_print(const char *message);
+void debug_print(const char *message, ...);
 
 #endif

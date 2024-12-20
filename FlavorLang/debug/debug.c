@@ -1,17 +1,18 @@
-#include "debug.h";
+#include "debug.h"
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+#include <stdarg.h>
 
-int debug_flag = 0;
+bool debug_flag = false;
 
-void parse_args(int argc, char *argv[])
+void parse_cli_args(int argc, char *argv[])
 {
     for (int i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "--debug") == 0)
         {
-            debug_flag = 1;
+            debug_flag = true;
         }
     }
 }
@@ -23,12 +24,24 @@ void get_timestamp(char *buffer, size_t size)
     strftime(buffer, size, "%H:%M:%S", t);
 }
 
-void debug_print(const char *message)
+void debug_print(const char *format, ...)
 {
     if (debug_flag)
     {
         char timestamp[20];
         get_timestamp(timestamp, sizeof(timestamp));
-        printf("[DEBUG | %s]\n", timestamp, message);
+
+        printf("[DEBUG %s] ", timestamp);
+
+        // Handle variable arguments
+        va_list args;
+        va_start(args, format);
+
+        vprintf(format, args);
+
+        // End variable argument processing
+        va_end(args);
+
+        printf("\n");
     }
 }
