@@ -1,4 +1,4 @@
-let name = "Chef";
+let name = "Chef" + "test";
 let age = 25;
 
 scran "Name:", name;

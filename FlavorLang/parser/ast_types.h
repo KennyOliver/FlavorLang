@@ -13,7 +13,8 @@ typedef enum
     AST_PRINT,
     AST_LITERAL,
     AST_CONDITIONAL,
-    AST_BINARY_OP
+    AST_BINARY_OP,
+    AST_IDENTIFIER
 } ASTNodeType;
 
 typedef struct

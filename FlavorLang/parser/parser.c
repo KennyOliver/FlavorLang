@@ -58,47 +58,22 @@ ASTNode *parse_variable_declaration(ParserState *state)
     // Expect '=' operator
     expect_token(state, TOKEN_OPERATOR, "Expected '=' after variable name");
 
-    // Parse the value
-    Token *value = get_current_token(state);
-    if (value->type != TOKEN_STRING && value->type != TOKEN_NUMBER)
-    {
-        parser_error("Expected string or number literal after '='", value);
-    }
-
     // Create AST node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
-        parser_error("Memory allocation failed", value);
+        parser_error("Memory allocation failed", get_current_token(state));
     }
 
     node->type = AST_ASSIGNMENT;
     node->assignment.variable_name = strdup(name->lexeme);
 
-    // Create value node
-    ASTNode *value_node = malloc(sizeof(ASTNode));
-    if (!value_node)
-    {
-        free(node);
-        parser_error("Memory allocation failed", value);
-    }
+    // Parse the value as an expression (which can handle both simple literals
+    // and complex expressions with operators)
+    node->assignment.value = parse_expression(state);
 
-    value_node->type = AST_LITERAL;
-    if (value->type == TOKEN_STRING)
-    {
-        value_node->literal.type = LITERAL_STRING;
-        value_node->literal.value.string = strdup(value->lexeme);
-    }
-    else
-    {
-        value_node->literal.type = LITERAL_NUMBER;
-        value_node->literal.value.number = atof(value->lexeme);
-    }
-
-    node->assignment.value = value_node;
     node->next = NULL;
 
-    advance_token(state); // Consume value token
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after variable declaration");
 
     return node;
@@ -165,7 +140,7 @@ ASTNode *parse_identifier(ParserState *state)
         parser_error("Memory allocation failed", current);
     }
 
-    node->type = AST_ASSIGNMENT;
+    node->type = AST_IDENTIFIER;
     node->variable_name = strdup(current->lexeme);
     node->next = NULL;
 
@@ -198,12 +173,24 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         }
 
         node->next = NULL;
+
         advance_token(state);
         return node;
     }
     else if (current->type == TOKEN_IDENTIFIER)
     {
-        return parse_identifier(state);
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node)
+        {
+            parser_error("Memory allocation failed", current);
+        }
+
+        node->type = AST_IDENTIFIER;
+        node->variable_name = strdup(current->lexeme);
+        node->next = NULL;
+
+        advance_token(state);
+        return node;
     }
 
     parser_error("Expected literal or identifier", current);
@@ -212,6 +199,15 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 
 ASTNode *parse_expression(ParserState *state)
 {
+    ASTNode *left = parse_literal_or_identifier(state);
+
+    // Check if there's an operator that follows
+    Token *current = get_current_token(state);
+    if (current->type != TOKEN_OPERATOR)
+    {
+        return left; // just return the literal/identifier if no operator
+    }
+
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
@@ -221,19 +217,15 @@ ASTNode *parse_expression(ParserState *state)
     node->type = AST_BINARY_OP;
 
     // Parse left-hand side
-    node->binary_op.left = parse_literal_or_identifier(state);
+    node->binary_op.left = left;
 
     // Parse operator
-    Token *operator= get_current_token(state);
-    if (operator->type != TOKEN_OPERATOR)
-    {
-        parser_error("Expected operator in expression", operator);
-    }
-    node->binary_op.operator= strdup(operator->lexeme);
+    node->binary_op.operator= strdup(current->lexeme);
     advance_token(state);
 
     // Parse right-hand side
     node->binary_op.right = parse_literal_or_identifier(state);
+    // Note: No need to advance_token since already handled by `parse_literal_or_identifier`
 
     node->next = NULL;
     return node;
