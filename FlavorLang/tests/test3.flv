@@ -1,6 +1,6 @@
 let oven_temperature = 200;
 
-if oven_temperature < 180:
+if oven_temperature > 180:
     scran "The oven is hot!";
 elif oven_temperature == 180:
     scran "The oven is just right!";
