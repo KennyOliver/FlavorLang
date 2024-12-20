@@ -22,3 +22,13 @@ void get_timestamp(char *buffer, size_t size)
     struct tm *t = localtime(&now);
     strftime(buffer, size, "%H:%M:%S", t);
 }
+
+void debug_print(const char *message)
+{
+    if (debug_flag)
+    {
+        char timestamp[20];
+        get_timestamp(timestamp, sizeof(timestamp));
+        printf("[DEBUG | %s]\n", timestamp, message);
+    }
+}
