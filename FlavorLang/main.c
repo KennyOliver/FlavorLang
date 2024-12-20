@@ -29,11 +29,11 @@ int main(int argc, char **argv)
     // Tokenize
     Token *tokens = tokenize(source);
     debug_print_tokens(tokens);
-    printf("Tokenization complete.\n");
+    debug_print("Tokenization complete.");
 
     // Parse
     ASTNode *ast = parse_program(tokens);
-    printf("Parsing complete.\n");
+    debug_print("Parsing complete.");
 
     // Create environment
     Environment env;
