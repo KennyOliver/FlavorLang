@@ -2,6 +2,7 @@
 #include "../parser/ast_types.h"
 #include <stdio.h>
 #include <string.h>
+#include "../debug/debug.h"
 
 LiteralValue interpret(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);
@@ -32,14 +33,14 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     case AST_LITERAL:
         return interpret_literal(node);
     case AST_ASSIGNMENT:
-        printf("DEBUG: Interpreted node type: %d\n", node->type);
+        debug_print("Interpreted node type: %d", (int)node->type);
         if (node->type == TYPE_NUMBER)
         {
-            printf("DEBUG: Node is a number: %f\n", node->literal.value.number);
+            debug_print("Node is a number: %f", node->literal.value.number);
         }
         else if (node->type == TYPE_STRING)
         {
-            printf("DEBUG: Node is a string: %s\n", node->literal.value.string);
+            debug_print("Node is a string: %s", node->literal.value.string);
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
@@ -73,12 +74,12 @@ void interpret_program(ASTNode *program, Environment *env)
 LiteralValue interpret_literal(ASTNode *node)
 {
     LiteralValue value;
-    printf("DEBUG: Interpreting literal value...\n");
+    debug_print("Interpreting literal value...\n");
 
     switch (node->literal.type)
     {
     case LITERAL_NUMBER:
-        printf("DEBUG: LITERAL_NUMBER, value: %f\n", node->literal.value.number);
+        debug_print("LITERAL_NUMBER, value: %f", node->literal.value.number);
         value.type = TYPE_NUMBER;
         value.data.number = node->literal.value.number;
         break;
@@ -111,7 +112,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
             if (node->assignment.value)
             { // check if there's a new value to assign
                 env->variables[i].value = interpret(node->assignment.value, env);
-                printf("DEBUG: Updated variable `%s` to value ", node->assignment.variable_name);
+                debug_print("Updated variable `%s` to value ", node->assignment.variable_name);
                 if (env->variables[i].value.type == TYPE_STRING)
                 {
                     printf("'%s'\n", env->variables[i].value.data.string);
@@ -136,7 +137,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].value = interpret(node->assignment.value, env);
     env->variable_count++;
 
-    printf("DEBUG: New variable `%s` with value ", node->assignment.variable_name);
+    debug_print("New variable `%s` with value ", node->assignment.variable_name);
     if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
     {
         printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
@@ -290,28 +291,28 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     case TYPE_STRING:
         if (left.type == TYPE_STRING && right.type == TYPE_STRING)
         {
-            printf("DEBUG: Binary operation `\"%s\" %s %f`\n",
-                   left.data.string, node->binary_op.operator, right.data.string);
+            debug_print("Binary operation `\"%s\" %s %f`\n",
+                        left.data.string, node->binary_op.operator, right.data.string);
         }
         else if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
         {
-            printf("DEBUG: Binary operation `\"%s\" %s %f`\n",
-                   left.data.string, node->binary_op.operator, right.data.number);
+            debug_print("Binary operation `\"%s\" %s %f`\n",
+                        left.data.string, node->binary_op.operator, right.data.number);
         }
         else if (left.type == TYPE_NUMBER && right.type == TYPE_STRING)
         {
-            printf("DEBUG: Binary operation `%f %s \"%s\"`\n",
-                   left.data.number, node->binary_op.operator, right.data.string);
+            debug_print("Binary operation `%f %s \"%s\"`\n",
+                        left.data.number, node->binary_op.operator, right.data.string);
         }
         else
         {
-            printf("DEBUG: Binary operation `%s %s %s`\n",
-                   left.data.string, node->binary_op.operator, right.data.string);
+            debug_print("Binary operation `%s %s %s`\n",
+                        left.data.string, node->binary_op.operator, right.data.string);
         }
         break;
     default:
-        printf("DEBUG: Binary operation `%f %s %f`\n",
-               left.data.number, node->binary_op.operator, right.data.number);
+        debug_print("Binary operation `%f %s %f`\n",
+                    left.data.number, node->binary_op.operator, right.data.number);
     }
 
     return result;
@@ -379,14 +380,14 @@ void interpret_print(ASTNode *node, Environment *env)
 
 void interpret_conditional(ASTNode *node, Environment *env)
 {
-    printf("DEBUG: interpret_conditional called\n");
+    debug_print("interpret_conditional called\n");
 
     // Debug: Print oven_temperature before conditional evaluation
     for (size_t i = 0; i < env->variable_count; i++)
     {
         if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
         {
-            printf("DEBUG: Before conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
+            debug_print("Before conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
         }
     }
 
@@ -409,11 +410,11 @@ void interpret_conditional(ASTNode *node, Environment *env)
         // Handle if/elif branches
         printf("`IF/ELIF` BRANCH\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        printf("DEBUG: condition evaluated to: %f\n", condition_value.data.number);
+        debug_print("condition evaluated to: %f\n", condition_value.data.number);
 
         if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
         {
-            printf("DEBUG: executing true branch\n");
+            debug_print("executing true branch\n");
             interpret(current_branch->conditional.body, env);
             condition_met = 1;
             break;
@@ -427,7 +428,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
     {
         if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
         {
-            printf("DEBUG: After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
+            debug_print("After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
         }
     }
 }
