@@ -1,7 +1,7 @@
-let name = "Chef";
+let name = "Hello, " + "world!" + " :)";
 let age = 25;
 
-scran "Name:", name;
+scran name;
 scran "Age:", age;
 
 

@@ -110,7 +110,7 @@ ASTNode *parse_print_statement(ParserState *state)
         }
 
         // Parse the argument
-        ASTNode *arg = parse_literal_or_identifier(state);
+        ASTNode *arg = parse_expression(state);
         node->to_print.arguments[node->to_print.arg_count++] = arg;
 
         // Check for comma separator
@@ -194,40 +194,35 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
     }
 
     parser_error("Expected literal or identifier", current);
-    return NULL; // Unreachable due to parser_error, but keeps compiler happy
+    return NULL; // unreachable due to parser_error, but keeps compiler happy
+}
+
+ASTNode *parse_term(ParserState *state)
+{
+    return parse_literal_or_identifier(state);
 }
 
 ASTNode *parse_expression(ParserState *state)
 {
-    ASTNode *left = parse_literal_or_identifier(state);
+    ASTNode *node = parse_term(state);
 
-    // Check if there's an operator that follows
-    Token *current = get_current_token(state);
-    if (current->type != TOKEN_OPERATOR)
+    // Check for binary operators
+    while (get_current_token(state)->type == TOKEN_OPERATOR)
     {
-        return left; // just return the literal/identifier if no operator
+        Token *operator= get_current_token(state);
+        advance_token(state);
+
+        ASTNode *rhs = parse_term(state);
+        ASTNode *new_node = malloc(sizeof(ASTNode));
+
+        new_node->type = AST_BINARY_OP;
+        new_node->binary_op.operator= strdup(operator->lexeme);
+        new_node->binary_op.left = node;
+        new_node->binary_op.right = rhs;
+
+        node = new_node;
     }
 
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-
-    node->type = AST_BINARY_OP;
-
-    // Parse left-hand side
-    node->binary_op.left = left;
-
-    // Parse operator
-    node->binary_op.operator= strdup(current->lexeme);
-    advance_token(state);
-
-    // Parse right-hand side
-    node->binary_op.right = parse_literal_or_identifier(state);
-    // Note: No need to advance_token since already handled by `parse_literal_or_identifier`
-
-    node->next = NULL;
     return node;
 }
 
