@@ -8,7 +8,7 @@
 
 ```bash
 flavor recipe.flv         # Default execution
-flavor recipe.flv --chef  # Debug mode
+flavor recipe.flv --debug  # Debug mode
 ```
 
 ---
