@@ -140,7 +140,7 @@ ASTNode *parse_identifier(ParserState *state)
         parser_error("Memory allocation failed", current);
     }
 
-    node->type = AST_IDENTIFIER;
+    node->type = AST_ASSIGNMENT;
     node->variable_name = strdup(current->lexeme);
     node->next = NULL;
 
@@ -185,7 +185,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
             parser_error("Memory allocation failed", current);
         }
 
-        node->type = AST_IDENTIFIER;
+        node->type = AST_ASSIGNMENT;
         node->variable_name = strdup(current->lexeme);
         node->next = NULL;
 

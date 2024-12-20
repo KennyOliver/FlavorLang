@@ -108,11 +108,18 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
             // Update existing variable
-            if (node->assignment.value) // check if there's a new value to assign
-            {
+            if (node->assignment.value)
+            { // check if there's a new value to assign
                 env->variables[i].value = interpret(node->assignment.value, env);
-                printf("DEBUG: Updated variable `%s` to value `%f`\n",
-                       node->assignment.variable_name, env->variables[i].value.data.number);
+                printf("DEBUG: Updated variable `%s` to value ", node->assignment.variable_name);
+                if (env->variables[i].value.type == TYPE_STRING)
+                {
+                    printf("'%s'\n", env->variables[i].value.data.string);
+                }
+                else
+                {
+                    printf("%f\n", env->variables[i].value.data.number);
+                }
             }
             return env->variables[i].value;
         }
@@ -129,20 +136,23 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].value = interpret(node->assignment.value, env);
     env->variable_count++;
 
-    printf("DEBUG: New variable `%s` with value `%f`\n", node->assignment.variable_name, env->variables[env->variable_count].value.data.number);
-    return env->variables[env->variable_count].value;
+    printf("DEBUG: New variable `%s` with value ", node->assignment.variable_name);
+    if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
+    {
+        printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
+    }
+    else
+    {
+        printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
+    }
+
+    return env->variables[env->variable_count - 1].value;
 }
 
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
-
-    if (left.type != TYPE_NUMBER || right.type != TYPE_NUMBER)
-    {
-        fprintf(stderr, "Error: Binary operations only supported for numbers.\n");
-        exit(1);
-    }
 
     LiteralValue result;
     result.type = TYPE_NUMBER;
@@ -152,7 +162,15 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     switch (operator[0])
     {
     case '+':
-        result.data.number = left.data.number + right.data.number;
+        if (left.type == TYPE_STRING && right.type == TYPE_STRING)
+        {
+            result.data.string = strcat(left.data.string, right.data.string);
+            result.type = TYPE_STRING;
+        }
+        else
+        {
+            result.data.number = left.data.number + right.data.number;
+        }
         break;
     case '-':
         result.data.number = left.data.number - right.data.number;
@@ -204,8 +222,16 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    printf("DEBUG: Binary operation `%f %s %f`\n",
-           left.data.number, node->binary_op.operator, right.data.number);
+    switch (result.type)
+    {
+    case TYPE_STRING:
+        printf("DEBUG: Binary operation `%s %s %s`\n",
+               left.data.string, node->binary_op.operator, right.data.string);
+        break;
+    default:
+        printf("DEBUG: Binary operation `%f %s %f`\n",
+               left.data.number, node->binary_op.operator, right.data.number);
+    }
 
     return result;
 }
