@@ -154,11 +154,9 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
-    printf("1\n");
 
     LiteralValue result;
     result.type = left.type;
-    printf("2\n");
 
     // Ensure the operator is a valid string
     char *operator= node->binary_op.operator;
@@ -171,8 +169,6 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     switch (operator[0])
     {
     case '+':
-        printf("3\n");
-
         // Check if at least one of the operands is a string
         if (left.type == TYPE_STRING || right.type == TYPE_STRING)
         {
