@@ -1,5 +1,6 @@
 #include "parser.h"
 #include <string.h>
+#include "../debug/debug.h"
 
 ASTNode *parse_program(Token *tokens)
 {
@@ -17,6 +18,10 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_variable_declaration(state);
         }
+        else if (token->type == TOKEN_IDENTIFIER)
+        {
+            new_node = parse_variable_assignment(state);
+        }
         else if (strcmp(token->lexeme, "scran") == 0)
         {
             new_node = parse_print_statement(state);
@@ -24,6 +29,10 @@ ASTNode *parse_program(Token *tokens)
         else if (strcmp(token->lexeme, "if") == 0)
         {
             new_node = parse_conditional_block(state);
+        }
+        else if (strcmp(token->lexeme, "while") == 0)
+        {
+            new_node = parse_while_block(state);
         }
         else
         {
@@ -49,14 +58,14 @@ ASTNode *parse_program(Token *tokens)
 
 ASTNode *parse_variable_declaration(ParserState *state)
 {
-    expect_token(state, TOKEN_KEYWORD, "Expected 'let' keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
 
     // Parse variable name
     Token *name = get_current_token(state);
     expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
 
     // Expect '=' operator
-    expect_token(state, TOKEN_OPERATOR, "Expected '=' after variable name");
+    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
 
     // Create AST node
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -75,6 +84,36 @@ ASTNode *parse_variable_declaration(ParserState *state)
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after variable declaration");
+
+    return node;
+}
+
+ASTNode *parse_variable_assignment(ParserState *state)
+{
+    debug_print("Starting variable assignment parse");
+
+    // Parse variable name
+    Token *name = get_current_token(state);
+    debug_print("Variable assignment name: %s", name->lexeme);
+
+    advance_token(state);
+
+    // Expect `=` operator
+    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_ASSIGNMENT;
+    // node->assignment.variable_name = strdup(name->lexeme);
+    node->assignment.variable_name = name->lexeme;
+    node->assignment.value = parse_expression(state);
+    node->next = NULL;
+
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
 
     return node;
 }
@@ -185,7 +224,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
             parser_error("Memory allocation failed", current);
         }
 
-        node->type = AST_ASSIGNMENT;
+        node->type = AST_VARIABLE;
         node->variable_name = strdup(current->lexeme);
         node->next = NULL;
 
@@ -228,18 +267,23 @@ ASTNode *parse_expression(ParserState *state)
 
 ASTNode *parse_block(ParserState *state)
 {
+    debug_print("Starting to parse block");
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
     while (get_current_token(state)->type != TOKEN_EOF)
     {
         Token *current = get_current_token(state);
+        debug_print("Parsing token in block: type=%d, lexeme=%s",
+                    current->type,
+                    current->lexeme);
 
         // Check for block end conditions
+        // Handle semicolons between statements without breaking the block
         if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
         {
             advance_token(state);
-            break;
+            continue; // continue to next statement instead of breaking
         }
 
         if (current->type == TOKEN_KEYWORD &&
@@ -260,10 +304,22 @@ ASTNode *parse_block(ParserState *state)
             {
                 statement = parse_conditional_block(state);
             }
+            else if (strcmp(current->lexeme, "while") == 0)
+            {
+                statement = parse_while_block(state);
+            }
+            else if (strcmp(current->lexeme, "let") == 0)
+            {
+                statement = parse_variable_declaration(state);
+            }
             else
             {
                 parser_error("Unexpected keyword in block", current);
             }
+        }
+        else if (current->type == TOKEN_IDENTIFIER)
+        {
+            statement = parse_variable_assignment(state);
         }
         else if (current->type == TOKEN_EOF)
         {
@@ -358,6 +414,47 @@ ASTNode *parse_conditional_block(ParserState *state)
     return node;
 }
 
+ASTNode *parse_while_block(ParserState *state)
+{
+    // Allocate memory for the ASTNode
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    // Set the node type to loop
+    node->type = AST_LOOP;
+
+    // Ensure the current token is 'while'
+    Token *current = get_current_token(state);
+    if (strcmp(current->lexeme, "while") != 0)
+    {
+        parser_error("Expected `while` keyword", current);
+    }
+    advance_token(state);
+
+    // Parse the condition expression
+    node->loop.condition = parse_expression(state);
+
+    // Expect a colon after the condition
+    current = get_current_token(state);
+    if (current->type != TOKEN_DELIMITER || strcmp(current->lexeme, ":") != 0)
+    {
+        parser_error("Expected `:` after while condition", current);
+    }
+    advance_token(state);
+
+    // Parse the loop body (indented block)
+    node->loop.body = parse_block(state);
+
+    // Add code to re-evaluate the condition after each iteration
+    node->loop.re_evaluate_condition = 1; // Flag to indicate re-evaluation
+
+    node->next = NULL;
+    return node;
+}
+
 void free_ast(ASTNode *node)
 {
     while (node)
@@ -398,8 +495,18 @@ void free_ast(ASTNode *node)
             free_ast(node->binary_op.right);
             break;
 
+        case AST_LOOP:
+            free_ast(node->loop.condition);
+            free_ast(node->loop.body);
+            break;
+
+        case AST_VARIABLE:
+            free(node->variable_name);
+            break;
+
         case AST_FUNCTION_CALL:
-            fprintf(stderr, "Error: `AST_FUNCTION_CALL` not implemented yet.\n");
+            // Handle function call cleanup if needed
+            break;
 
         default:
             fprintf(stderr, "Error: Unknown ASTNode type.\n");

@@ -6,11 +6,13 @@
 
 LiteralValue interpret(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);
+LiteralValue interpret_variable(ASTNode *node, Environment *env);
 LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
 void interpret_print(ASTNode *node, Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
+void interpret_while_loop(ASTNode *node, Environment *env);
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
@@ -28,11 +30,15 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     }
 
+    debug_print("`interpret()` called\n");
+
     switch (node->type)
     {
     case AST_LITERAL:
+        debug_print("Matched: `AST_LITERAL`");
         return interpret_literal(node);
     case AST_ASSIGNMENT:
+        debug_print("Matched: `AST_ASSIGNMENT`");
         debug_print("Interpreted node type: %d", (int)node->type);
         if (node->type == TYPE_NUMBER)
         {
@@ -44,16 +50,27 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
+        debug_print("Matched: `AST_BINARY_OP`");
         return interpret_binary_op(node, env);
     case AST_PRINT:
+        debug_print("Matched: `AST_PRINT`");
         interpret_print(node, env);
         return create_default_value();
     case AST_CONDITIONAL:
+        debug_print("Matched: `AST_CONDITIONAL`");
         interpret_conditional(node, env);
         return create_default_value();
     case AST_FUNCTION_CALL:
+        debug_print("Matched: `AST_FUNCTION_CALL`");
         fprintf(stderr, "Error: Function calls not implemented yet.\n");
         exit(1);
+    case AST_LOOP:
+        debug_print("Matched: `AST_LOOP`");
+        interpret_while_loop(node, env);
+        return create_default_value();
+    case AST_VARIABLE:
+        debug_print("Matched: `AST_VARIABLE`");
+        return interpret_variable(node, env);
     default:
         fprintf(stderr, "Error: Unsupported ASTNode type.\n");
         exit(1);
@@ -66,6 +83,7 @@ void interpret_program(ASTNode *program, Environment *env)
 
     while (current)
     {
+        debug_print("Executing top-level statement\n");
         interpret(current, env);
         current = current->next;
     }
@@ -95,47 +113,68 @@ LiteralValue interpret_literal(ASTNode *node)
     return value;
 }
 
+LiteralValue interpret_variable(ASTNode *node, Environment *env)
+{
+    Variable *var = get_variable(env, node->variable_name);
+    if (!var)
+    {
+        fprintf(stderr, "Error: Undefined variable `%s`.\n", node->variable_name);
+        exit(1);
+    }
+    debug_print("Retrieved variable `%s` with value `%f`",
+                node->variable_name,
+                var->value.data.number);
+    return var->value;
+}
+
 LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
     if (!node->assignment.variable_name)
     {
         fprintf(stderr, "Error: Variable name for assignment is NULL.\n");
-        exit(1); // or handle gracefully
+        exit(1);
     }
+
+    debug_print("Interpreting assignment for variable: `%s`", node->assignment.variable_name);
+
+    // Get the new value first
+    LiteralValue new_value = interpret(node->assignment.value, env);
+    debug_print("Assignment: variable `%s`, new value computed: `%f`",
+                node->assignment.variable_name,
+                new_value.data.number);
 
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++)
     {
         if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
         {
+            debug_print("Updating existing variable `%s` from `%f` to `%f`",
+                        node->assignment.variable_name,
+                        env->variables[i].value.data.number,
+                        new_value.data.number);
+
             // Update existing variable
-            if (node->assignment.value)
-            { // check if there's a new value to assign
-                env->variables[i].value = interpret(node->assignment.value, env);
-                debug_print("Updated variable `%s` to value ", node->assignment.variable_name);
-                if (env->variables[i].value.type == TYPE_STRING)
-                {
-                    printf("'%s'\n", env->variables[i].value.data.string);
-                }
-                else
-                {
-                    printf("%f\n", env->variables[i].value.data.number);
-                }
-            }
+            env->variables[i].value = new_value;
+
+            debug_print("Variable `%s` is now `%f`",
+                        node->assignment.variable_name,
+                        env->variables[i].value.data.number);
+
             return env->variables[i].value;
         }
     }
 
-    // Add a new variable if it doesn't exist (original logic)
+    // Add new variable if it doesn't exist
     if (env->variable_count == env->capacity)
     {
         env->capacity *= 2;
         env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+        if (!env->variables)
+        {
+            fprintf(stderr, "Error: Memory reallocation failed.\n");
+            exit(1);
+        }
     }
-
-    env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
-    env->variables[env->variable_count].value = interpret(node->assignment.value, env);
-    env->variable_count++;
 
     // debug_print("New variable `%s` with value ", node->assignment.variable_name);
     // if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
@@ -147,7 +186,16 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     //     printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
     // }
 
-    return env->variables[env->variable_count - 1].value;
+    env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
+    env->variables[env->variable_count].value = new_value;
+
+    debug_print("Created new variable %s with value %f",
+                node->assignment.variable_name,
+                new_value.data.number);
+
+    env->variable_count++;
+
+    return new_value;
 }
 
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
@@ -155,16 +203,15 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
 
-    LiteralValue result;
-    result.type = left.type;
+    debug_print("Binary operation: left=`%f`, operator=`%s`, right=`%f`",
+                left.data.number,
+                node->binary_op.operator,
+                right.data.number);
 
-    // Ensure the operator is a valid string
+    LiteralValue result;
+    result.type = TYPE_NUMBER;
+
     char *operator= node->binary_op.operator;
-    if (operator== NULL)
-    {
-        fprintf(stderr, "Error: Operator is NULL.\n");
-        exit(1);
-    }
 
     switch (operator[0])
     {
@@ -174,66 +221,40 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         {
             result.type = TYPE_STRING;
 
-            // If left is a string, concatenate the right, convert right to string if it's a number
-            if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
+            // If either operand is a number, convert it to a string
+            char num_str1[50] = {0};
+            char num_str2[50] = {0};
+            if (left.type == TYPE_NUMBER)
             {
-                char num_str[50];
-                snprintf(num_str, sizeof(num_str), "%f", right.data.number);
-                char *new_string = malloc(strlen(left.data.string) + strlen(num_str) + 1);
-                if (new_string == NULL)
-                {
-                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
-                    exit(1);
-                }
-                strcpy(new_string, left.data.string);
-                strcat(new_string, num_str);
-                result.data.string = new_string;
+                snprintf(num_str1, sizeof(num_str1), "%f", left.data.number);
             }
-            // If right is a string, concatenate the left, convert left to string if it's a number
-            else if (left.type == TYPE_NUMBER && right.type == TYPE_STRING)
+            if (right.type == TYPE_NUMBER)
             {
-                printf("TEST\n");
-                char num_str[50];
-                snprintf(num_str, sizeof(num_str), "%f", left.data.number);
-                char *new_string = malloc(strlen(num_str) + strlen(right.data.string) + 1);
-                if (new_string == NULL)
-                {
-                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
-                    exit(1);
-                }
-                strcpy(new_string, num_str);
-                strcat(new_string, right.data.string);
-                result.data.string = new_string;
+                snprintf(num_str2, sizeof(num_str2), "%f", right.data.number);
             }
-            // If both are strings, concatenate them
-            else if (left.type == TYPE_STRING && right.type == TYPE_STRING)
+
+            // Concatenate the strings
+            char *new_string = malloc(strlen(num_str1) + strlen(num_str2) +
+                                      strlen(left.type == TYPE_STRING ? left.data.string : "") +
+                                      strlen(right.type == TYPE_STRING ? right.data.string : "") + 1);
+            if (new_string == NULL)
             {
-                char *new_string = malloc(strlen(left.data.string) + strlen(right.data.string) + 1);
-                if (new_string == NULL)
-                {
-                    fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
-                    exit(1);
-                }
-                strcpy(new_string, left.data.string);
-                strcat(new_string, right.data.string);
-                result.data.string = new_string;
-            }
-            else
-            {
-                fprintf(stderr, "Error: Unsupported types for operator `+`.\n");
+                fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
                 exit(1);
             }
-        }
-        // If both operands are numbers, just add them
-        else if (left.type == TYPE_NUMBER && right.type == TYPE_NUMBER)
-        {
-            result.data.number = left.data.number + right.data.number;
+            strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
+            strcat(new_string, right.type == TYPE_STRING ? right.data.string : num_str2);
+            result.data.string = new_string;
         }
         else
         {
-            fprintf(stderr, "Error: Unsupported types for operator `+`.\n");
-            exit(1);
+            result.data.number = left.data.number + right.data.number;
+            debug_print("Addition result: `%f + %f = %f`",
+                        left.data.number,
+                        right.data.number,
+                        result.data.number);
         }
+        break;
         break;
     case '-':
         result.data.number = left.data.number - right.data.number;
@@ -319,15 +340,19 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 
 Variable *get_variable(Environment *env, const char *variable_name)
 {
+    debug_print("Looking up variable: `%s`", variable_name);
     for (size_t i = 0; i < env->variable_count; i++)
     {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0)
         {
+            debug_print("Variable found: `%s` with value `%f`",
+                        variable_name,
+                        env->variables[i].value.data.number);
             return &env->variables[i];
         }
     }
-
-    return NULL; // variable not found
+    debug_print("Variable not found: `%s`", variable_name);
+    return NULL;
 }
 
 void interpret_print(ASTNode *node, Environment *env)
@@ -379,7 +404,7 @@ void interpret_print(ASTNode *node, Environment *env)
 
 void interpret_conditional(ASTNode *node, Environment *env)
 {
-    debug_print("interpret_conditional called\n");
+    debug_print("`interpret_conditional` called");
 
     // Debug: Print oven_temperature before conditional evaluation
     for (size_t i = 0; i < env->variable_count; i++)
@@ -398,23 +423,37 @@ void interpret_conditional(ASTNode *node, Environment *env)
         // Handle else branch
         if (!current_branch->conditional.condition) // This is an else branch
         {
-            printf("`ELSE` BRANCH\n");
+            debug_print("Executing ELSE branch\n");
             if (!condition_met)
             {
-                interpret(current_branch->conditional.body, env);
+                // Execute all statements in the body
+                ASTNode *current_statement = current_branch->conditional.body;
+                while (current_statement)
+                {
+                    debug_print("Executing statement in else branch\n");
+                    interpret(current_statement, env);
+                    current_statement = current_statement->next;
+                }
             }
             break;
         }
 
         // Handle if/elif branches
-        printf("`IF/ELIF` BRANCH\n");
+        debug_print("Evaluating IF/ELIF branch\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        debug_print("condition evaluated to: %f\n", condition_value.data.number);
+        debug_print("Condition evaluated to: %f\n", condition_value.data.number);
 
         if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
         {
-            debug_print("executing true branch\n");
-            interpret(current_branch->conditional.body, env);
+            debug_print("Condition is true, executing branch body\n");
+            // Execute all statements in the body
+            ASTNode *current_statement = current_branch->conditional.body;
+            while (current_statement)
+            {
+                debug_print("Executing statement in true branch\n");
+                interpret(current_statement, env);
+                current_statement = current_statement->next;
+            }
             condition_met = 1;
             break;
         }
@@ -430,6 +469,56 @@ void interpret_conditional(ASTNode *node, Environment *env)
             debug_print("After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
         }
     }
+
+    debug_print("`interpret_conditional` completed");
+}
+
+void interpret_while_loop(ASTNode *node, Environment *env)
+{
+    debug_print("`interpret_while_loop` called");
+
+    ASTNode *condition = node->loop.condition;
+    ASTNode *body = node->loop.body;
+
+    while (1)
+    {
+        debug_print("Starting new iteration of `while` loop");
+
+        LiteralValue condition_value = interpret(condition, env);
+
+        if (condition_value.type == TYPE_NUMBER)
+        {
+            debug_print("Condition evaluated to: %f", condition_value.data.number);
+        }
+
+        if (condition_value.data.number != 0)
+        {
+            debug_print("`while` condition is true, executing body");
+
+            ASTNode *current = body;
+            while (current != NULL)
+            {
+                debug_print("Executing body statement of type: %d", current->type);
+                interpret(current, env);
+                current = current->next;
+            }
+
+            debug_print("After body execution:");
+            for (size_t i = 0; i < env->variable_count; i++)
+            {
+                debug_print("Variable '%s': value = %f",
+                            env->variables[i].variable_name,
+                            env->variables[i].value.data.number);
+            }
+        }
+        else
+        {
+            debug_print("`while` condition is false, exiting loop");
+            break;
+        }
+    }
+
+    debug_print("`interpret_while_loop` completed");
 }
 
 // Initialize the environment
