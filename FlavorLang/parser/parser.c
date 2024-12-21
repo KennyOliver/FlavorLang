@@ -17,6 +17,10 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_variable_declaration(state);
         }
+        else if (token->type == TOKEN_IDENTIFIER)
+        {
+            new_node = parse_variable_assignment(state);
+        }
         else if (strcmp(token->lexeme, "scran") == 0)
         {
             new_node = parse_print_statement(state);
@@ -75,6 +79,31 @@ ASTNode *parse_variable_declaration(ParserState *state)
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after variable declaration");
+
+    return node;
+}
+
+ASTNode *parse_variable_assignment(ParserState *state)
+{
+    // Parse variable name
+    Token *name = get_current_token(state);
+    expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
+
+    // Expect `=` operator
+    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_ASSIGNMENT;
+    node->assignment.variable_name = name->lexeme;
+    node->assignment.value = parse_expression(state);
+    node->next = NULL;
+
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
 
     return node;
 }
@@ -264,6 +293,10 @@ ASTNode *parse_block(ParserState *state)
             {
                 parser_error("Unexpected keyword in block", current);
             }
+        }
+        else if (current->type == TOKEN_IDENTIFIER)
+        {
+            statement = parse_variable_assignment(state);
         }
         else if (current->type == TOKEN_EOF)
         {

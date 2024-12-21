@@ -10,6 +10,7 @@ void free_ast(ASTNode *node);
 
 // Statement parsing
 ASTNode *parse_variable_declaration(ParserState *state);
+ASTNode *parse_variable_assignment(ParserState *state);
 ASTNode *parse_print_statement(ParserState *state);
 ASTNode *parse_conditional_block(ParserState *state);
 
