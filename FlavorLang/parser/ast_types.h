@@ -13,7 +13,9 @@ typedef enum
     AST_PRINT,
     AST_LITERAL,
     AST_CONDITIONAL,
-    AST_BINARY_OP
+    AST_BINARY_OP,
+    AST_LOOP,
+    AST_VARIABLE
 } ASTNodeType;
 
 typedef struct
@@ -44,6 +46,13 @@ typedef struct
     char *operator;
 } ASTBinaryOp;
 
+typedef struct
+{
+    struct ASTNode *condition;
+    int re_evaluate_condition;
+    struct ASTNode *body;
+} ASTLoop;
+
 // AST Node Structure
 typedef struct ASTNode
 {
@@ -62,12 +71,22 @@ typedef struct ASTNode
             struct ASTNode **arguments;
             size_t arg_count;
         } to_print;
+
         // Literal
         LiteralNode literal;
+
         // Binary operation
         ASTBinaryOp binary_op;
+
         // Conditional
         ASTConditional conditional;
+
+        // While loop
+        union
+        {
+            ASTLoop loop;
+        };
+
         // Variable
         char *variable_name;
     };
