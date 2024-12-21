@@ -137,15 +137,15 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].value = interpret(node->assignment.value, env);
     env->variable_count++;
 
-    debug_print("New variable `%s` with value ", node->assignment.variable_name);
-    if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
-    {
-        printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
-    }
-    else
-    {
-        printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
-    }
+    // debug_print("New variable `%s` with value ", node->assignment.variable_name);
+    // if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
+    // {
+    //     printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
+    // }
+    // else
+    // {
+    //     printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
+    // }
 
     return env->variables[env->variable_count - 1].value;
 }
