@@ -470,7 +470,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
     }
 
-    debug_print("`interpret_while_loop` completed");
+    debug_print("`interpret_conditional` completed");
 }
 
 void interpret_while_loop(ASTNode *node, Environment *env)
@@ -482,41 +482,27 @@ void interpret_while_loop(ASTNode *node, Environment *env)
 
     while (1)
     {
-        // Debug: Indicate the start of a new loop iteration
         debug_print("Starting new iteration of `while` loop");
 
-        // Evaluate the condition
         LiteralValue condition_value = interpret(condition, env);
 
-        // Debug: Print the condition value
         if (condition_value.type == TYPE_NUMBER)
         {
             debug_print("Condition evaluated to: %f", condition_value.data.number);
         }
-        else
-        {
-            debug_print("Condition evaluated to non-number type, exiting loop");
-            break;
-        }
 
-        // Check the condition value
-        if (condition_value.data.number != 0) // Non-zero is true
+        if (condition_value.data.number != 0)
         {
             debug_print("`while` condition is true, executing body");
 
-            // Debug: Print current state of relevant variables in the environment
-            for (size_t i = 0; i < env->variable_count; i++)
+            ASTNode *current = body;
+            while (current != NULL)
             {
-                debug_print("Variable '%s': value = %f",
-                            env->variables[i].variable_name,
-                            env->variables[i].value.data.number);
+                debug_print("Executing body statement of type: %d", current->type);
+                interpret(current, env);
+                current = current->next;
             }
 
-            // Execute the body
-            debug_print("Executing the body\n");
-            interpret(body, env);
-
-            // Debug: Print state of variables after executing the body
             debug_print("After body execution:");
             for (size_t i = 0; i < env->variable_count; i++)
             {

@@ -1,4 +1,4 @@
-let flour_added = 0;
+let flour_added = 1;
 
 while flour_added < 3:
     scran "Adding flour...";
