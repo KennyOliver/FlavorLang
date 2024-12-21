@@ -1,6 +1,6 @@
 let flour_added = 0;
 
-while flour_added < 3:
+if flour_added < 3:
     scran "Adding flour...";
     flour_added = flour_added + 1;
 
