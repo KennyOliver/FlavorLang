@@ -66,6 +66,7 @@ void interpret_program(ASTNode *program, Environment *env)
 
     while (current)
     {
+        debug_print("Executing top-level statement\n");
         interpret(current, env);
         current = current->next;
     }
@@ -380,16 +381,6 @@ void interpret_print(ASTNode *node, Environment *env)
 void interpret_conditional(ASTNode *node, Environment *env)
 {
     debug_print("interpret_conditional called\n");
-
-    // Debug: Print oven_temperature before conditional evaluation
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
-        {
-            debug_print("Before conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
-        }
-    }
-
     ASTNode *current_branch = node;
     int condition_met = 0; // Initialize to false
 
@@ -398,37 +389,43 @@ void interpret_conditional(ASTNode *node, Environment *env)
         // Handle else branch
         if (!current_branch->conditional.condition) // This is an else branch
         {
-            printf("`ELSE` BRANCH\n");
+            debug_print("Executing ELSE branch\n");
             if (!condition_met)
             {
-                interpret(current_branch->conditional.body, env);
+                // Execute all statements in the body
+                ASTNode *current_statement = current_branch->conditional.body;
+                while (current_statement)
+                {
+                    debug_print("Executing statement in else branch\n");
+                    interpret(current_statement, env);
+                    current_statement = current_statement->next;
+                }
             }
             break;
         }
 
         // Handle if/elif branches
-        printf("`IF/ELIF` BRANCH\n");
+        debug_print("Evaluating IF/ELIF branch\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        debug_print("condition evaluated to: %f\n", condition_value.data.number);
+        debug_print("Condition evaluated to: %f\n", condition_value.data.number);
 
         if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
         {
-            debug_print("executing true branch\n");
-            interpret(current_branch->conditional.body, env);
+            debug_print("Condition is true, executing branch body\n");
+            // Execute all statements in the body
+            ASTNode *current_statement = current_branch->conditional.body;
+            while (current_statement)
+            {
+                debug_print("Executing statement in true branch\n");
+                interpret(current_statement, env);
+                current_statement = current_statement->next;
+            }
             condition_met = 1;
             break;
         }
 
-        current_branch = current_branch->conditional.else_branch; // Move to the next branch
-    }
-
-    // Ensure oven_temperature is updated after conditional execution
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
-        {
-            debug_print("After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
-        }
+        debug_print("Condition is false, checking next branch\n");
+        current_branch = current_branch->conditional.else_branch;
     }
 }
 

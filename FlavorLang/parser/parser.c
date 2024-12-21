@@ -265,10 +265,11 @@ ASTNode *parse_block(ParserState *state)
         Token *current = get_current_token(state);
 
         // Check for block end conditions
+        // Handle semicolons between statements without breaking the block
         if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
         {
             advance_token(state);
-            break;
+            continue; // continue to next statement instead of breaking
         }
 
         if (current->type == TOKEN_KEYWORD &&

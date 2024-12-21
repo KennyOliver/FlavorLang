@@ -13,6 +13,7 @@ ASTNode *parse_variable_declaration(ParserState *state);
 ASTNode *parse_variable_assignment(ParserState *state);
 ASTNode *parse_print_statement(ParserState *state);
 ASTNode *parse_conditional_block(ParserState *state);
+ASTNode *parse_while_block(ParserState *state);
 
 // Expression parsing
 ASTNode *parse_expression(ParserState *state);
