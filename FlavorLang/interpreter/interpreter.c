@@ -172,6 +172,8 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         // Check if at least one of the operands is a string
         if (left.type == TYPE_STRING || right.type == TYPE_STRING)
         {
+            result.type = TYPE_STRING;
+
             // If left is a string, concatenate the right, convert right to string if it's a number
             if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
             {
@@ -188,8 +190,9 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
                 result.data.string = new_string;
             }
             // If right is a string, concatenate the left, convert left to string if it's a number
-            else if (right.type == TYPE_STRING && left.type == TYPE_NUMBER)
+            else if (left.type == TYPE_NUMBER && right.type == TYPE_STRING)
             {
+                printf("TEST\n");
                 char num_str[50];
                 snprintf(num_str, sizeof(num_str), "%f", left.data.number);
                 char *new_string = malloc(strlen(num_str) + strlen(right.data.string) + 1);
