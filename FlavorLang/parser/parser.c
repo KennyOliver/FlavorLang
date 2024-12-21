@@ -96,7 +96,6 @@ ASTNode *parse_variable_assignment(ParserState *state)
     Token *name = get_current_token(state);
     debug_print("Variable assignment name: %s", name->lexeme);
 
-    // expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
     advance_token(state);
 
     // Expect `=` operator
@@ -109,6 +108,7 @@ ASTNode *parse_variable_assignment(ParserState *state)
     }
 
     node->type = AST_ASSIGNMENT;
+    // node->assignment.variable_name = strdup(name->lexeme);
     node->assignment.variable_name = name->lexeme;
     node->assignment.value = parse_expression(state);
     node->next = NULL;
@@ -495,8 +495,18 @@ void free_ast(ASTNode *node)
             free_ast(node->binary_op.right);
             break;
 
+        case AST_LOOP:
+            free_ast(node->loop.condition);
+            free_ast(node->loop.body);
+            break;
+
+        case AST_VARIABLE:
+            free(node->variable_name);
+            break;
+
         case AST_FUNCTION_CALL:
-            fprintf(stderr, "Error: `AST_FUNCTION_CALL` not implemented yet.\n");
+            // Handle function call cleanup if needed
+            break;
 
         default:
             fprintf(stderr, "Error: Unknown ASTNode type.\n");
