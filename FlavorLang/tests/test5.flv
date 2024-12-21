@@ -2,6 +2,7 @@ let flour_added = 0;
 
 while flour_added < 3:
     scran "Adding flour...";
-    let flour_added = flour_added + 1;
+    flour_added = flour_added + 1;
 
 scran "All flour has been added!";
+scran "Flour added:", flour_added;
