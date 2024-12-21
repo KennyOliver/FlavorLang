@@ -30,11 +30,15 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     }
 
+    debug_print("`interpret()` called\n");
+
     switch (node->type)
     {
     case AST_LITERAL:
+        debug_print("Matched: `AST_LITERAL`");
         return interpret_literal(node);
     case AST_ASSIGNMENT:
+        debug_print("Matched: `AST_ASSIGNMENT`");
         debug_print("Interpreted node type: %d", (int)node->type);
         if (node->type == TYPE_NUMBER)
         {
@@ -46,20 +50,26 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
+        debug_print("Matched: `AST_BINARY_OP`");
         return interpret_binary_op(node, env);
     case AST_PRINT:
+        debug_print("Matched: `AST_PRINT`");
         interpret_print(node, env);
         return create_default_value();
     case AST_CONDITIONAL:
+        debug_print("Matched: `AST_CONDITIONAL`");
         interpret_conditional(node, env);
         return create_default_value();
     case AST_FUNCTION_CALL:
+        debug_print("Matched: `AST_FUNCTION_CALL`");
         fprintf(stderr, "Error: Function calls not implemented yet.\n");
         exit(1);
     case AST_LOOP:
+        debug_print("Matched: `AST_LOOP`");
         interpret_while_loop(node, env);
         return create_default_value();
     case AST_VARIABLE:
+        debug_print("Matched: `AST_VARIABLE`");
         return interpret_variable(node, env);
     default:
         fprintf(stderr, "Error: Unsupported ASTNode type.\n");
