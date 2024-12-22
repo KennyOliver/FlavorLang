@@ -217,6 +217,10 @@ scran "You chose:", favorite;
 
 ## Tokenizer
 
+The FlavorLang tokenizer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens serve as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
+
+### Tokenizer Overview
+
 | Token Type | Examples                       | Description                                         |
 | ---------- | ------------------------------ | --------------------------------------------------- |
 | KEYWORD    | `scran`, `prep`, `serve`, `if` | Reserved keywords in the language.                  |
@@ -228,3 +232,99 @@ scran "You chose:", favorite;
 | WHITESPACE | ` `, `\t`                      | Spaces or tabs (can be ignored).                    |
 | COMMENT    | `#`                            | This is a comment Lines starting with # (optional). |
 | EOF        | End of input                   | Signals the end of the program.                     |
+
+### How the Tokenizer Works
+
+#### 1. Input and Initialization
+
+    - The tokenizer reads the entire source code from a file or string input.
+    - It initializes a token buffer to store the tokens and processes the input character by character.
+
+#### 2. Character Classification
+
+Each character in the source is categorized into one of the following types:
+
+- **Whitespace**: Skipped, with line numbers updated for newlines.
+- **Comments**: Ignored after the `#` symbol until the end of the line.
+- **Numbers**: Sequences of digits are recognized as numeric literals.
+- **Strings**: Text enclosed in double quotes `"` is identified as a string literal.
+- **Identifiers or Keywords**: Alphanumeric sequences starting with a valid character are checked against a keyword list or treated as identifiers.
+- **Operators**: Symbols like `=`, `+`, and `>=` are parsed as operators.
+- **Delimiters**: Characters such as `,`, `:`, and `(` are directly tokenized.
+- **_Unexpected characters trigger a syntax error._**
+
+#### 3. Token Construction
+
+- For each recognized character or sequence, a token is created with the following attributes:
+- Type: The kind of token (e.g., TOKEN_NUMBER, TOKEN_IDENTIFIER, TOKEN_OPERATOR).
+- Lexeme: The string representation of the token.
+- Line Number: The line where the token was encountered.
+- Tokens are stored in a dynamically allocated array, which grows as needed.
+
+#### 4. End of File
+
+- After processing all characters, a special `TOKEN_EOF` is appended to signal the end of the input.
+
+### Tokenizing Key Constructs
+
+#### 1. Comments
+
+- Begin with `#` and continue until the end of the line.
+- Ignored entirely by the tokenizer.
+
+#### 2. Numbers
+
+- Consist of one or more digits (0-9).
+- **Example**: `123` → `TOKEN_NUMBER`
+
+#### 3. Strings
+
+- Enclosed in double quotes `"`and may span multiple characters.
+- Unterminated strings result in a syntax error.
+- **Example**: `"Hello"` → `TOKEN_STRING`
+
+#### 4. Identifiers and Keywords
+
+- **Identifiers**: Alphanumeric sequences used for variables and function names.
+- **Keywords**: Reserved words like `for`, `if`, and `let`.
+- The tokenizer determines if a sequence matches a keyword using the is_keyword function.
+- **Example**: `for` → `TOKEN_KEYWORD`, `myVar` → `TOKEN_IDENTIFIER`
+
+#### 5. Operators
+
+- Single or multi-character symbols (=, ==, >=).
+- Multi-character operators are recognized first to ensure proper tokenization.
+- Example: `>=` → `TOKEN_OPERATOR`
+
+#### 6. Delimiters
+
+- Single-character symbols like `,`, `:`, and `(` are tokenized directly.
+- Example: `,` → `TOKEN_DELIMITER`
+
+### Debugging Tokens
+
+- The tokenizer includes a debugging flag `--debug` to print all generated tokens.
+- Each token’s type, lexeme, and line number are displayed for easier inspection of the tokenization process.
+
+### Example Output:
+
+```
+[Line 1] Token Type: 1 | Lexeme: for
+[Line 1] Token Type: 2 | Lexeme: x
+[Line 1] Token Type: 3 | Lexeme: in
+...
+```
+
+### Error Handling
+
+- The tokenizer raises errors for:
+- Unexpected characters.
+- Unterminated string literals.
+- Memory allocation failures.
+- Each error includes the line number to assist with debugging.
+
+### Future Enhancements
+
+- Support for additional operators and delimiters.
+- Improved error recovery to handle malformed inputs gracefully.
+- Optimizations for performance with large files.
