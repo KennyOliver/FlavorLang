@@ -11,6 +11,8 @@ flavor recipe.flv          # Default execution
 flavor recipe.flv --debug  # Debug mode
 ```
 
+The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
+
 ---
 
 ## Syntax Keywords
