@@ -258,6 +258,21 @@ let favorite = taste;
 scran "You chose:", favorite;
 ```
 
+### 11. ⛔️ Raise Error <a id="user-input"></a>
+
+Use `burn` to raise an error and halt execution.
+
+```py
+let time = 20;
+
+scran "Before error.";
+
+if time > 15:
+    burn "The food got burnt!";
+
+scran "After error?";
+```
+
 ---
 
 ## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
