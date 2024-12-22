@@ -17,29 +17,29 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ## Syntax Keywords
 
-| Keyword   | Usage                        | Description                                                                                 |
-| --------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `let`     | Define variables             | Declares and initializes variables.                                                         |
-| `if`      | Conditional logic            | Executes code only if a condition is true.                                                  |
-| `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.                                           |
-| `else`    | Conditional fallback         | Executes code if any prior `if`/`is` conditions are false.                                  |
-| `for`     | For-loop                     | Iterates over a range or sequence, executing a block of code for each step.                 |
-| `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            |
-| `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. |
-| `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             |
-| `when`    | Switch-case equivalent       | Matches a value to multiple cases.                                                          |
-| `is`      | Case clause                  | Defines a case inside `when`.                                                               |
-| `prep`    | Define a function            | Prepares a reusable block of logic.                                                         |
-| `serve`   | Return statement             | Returns a value and stops function execution.                                               |
-| `try`     | Try block                    | Executes code that might fail.                                                              |
-| `crumbs`  | Catch block                  | Handles errors during execution.                                                            |
-| `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 |
-| `scran`   | Print or output              | Outputs a value or message immediately.                                                     |
-| `taste`   | Input from console           | Reads user input.                                                                           |
-| `plate`   | Write to file                | Writes data to a file.                                                                      |
-| `garnish` | Append to file               | Appends data to a file.                                                                     |
-| `gather`  | Read from file               | Reads data from a file.                                                                     |
-| `book`    | Import `.flv` file           | Imports logic from another `.flv` file.                                                     |
+| Keyword   | Usage                        | Description                                                                                 | Implemented? |
+| --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
+| `let`     | Define variables             | Declares and initializes variables.                                                         | ✅           |
+| `if`      | Conditional logic            | Executes code only if a condition is true.                                                  | ✅           |
+| `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.                                           | ✅           |
+| `else`    | Conditional fallback         | Executes code if any prior `if`/`is` conditions are false.                                  | ✅           |
+| `for`     | For-loop                     | Iterates over a range or sequence, executing a block of code for each step.                 | ❌           |
+| `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            | ❌           |
+| `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. | ❌           |
+| `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             | ✅           |
+| `when`    | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
+| `is`      | Case clause                  | Defines a case inside `when`.                                                               | ❌           |
+| `prep`    | Define a function            | Prepares a reusable block of logic.                                                         | ❌           |
+| `serve`   | Return statement             | Returns a value and stops function execution.                                               | ❌           |
+| `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
+| `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
+| `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ❌           |
+| `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
+| `taste`   | Input from console           | Reads user input.                                                                           | ❌           |
+| `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
+| `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
+| `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |
+| `book`    | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
 
 ---
 
@@ -134,7 +134,7 @@ Use `prep` to define functions and `serve` to return values.
 Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
 
 ```py
-prep bake_cake with let temperature:
+prep bake_cake(temperature):
     if temperature < 180:
         scran "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
@@ -142,7 +142,7 @@ prep bake_cake with let temperature:
         scran "Baking cake at", temperature, "degrees!";
         serve "Cake is ready!";
 
-let result = bake_cake with 200;
+let result = bake_cake(200);
 scran result;
 ```
 
