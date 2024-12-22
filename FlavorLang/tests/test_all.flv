@@ -37,7 +37,7 @@ show "All flour has been added!";
 
 
 # 6
-prep bake_cake with let temperature:
+create bake_cake with let temperature:
     if temperature < 180:
         show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
@@ -73,7 +73,7 @@ when dessert:
     is "cake":
         show "Bake the cake!";
     is "pie":
-        show "Prepare the pie!";
+        show "createare the pie!";
     else:
         show "Dessert not on the menu.";
 

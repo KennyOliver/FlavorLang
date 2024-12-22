@@ -1,4 +1,4 @@
-prep bake_cake with let temperature:
+create bake_cake with let temperature:
     if temperature < 180:
         show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately

@@ -111,7 +111,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             | ✅           |
 | `when`    | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
 | `is`      | Case clause                  | Defines a case inside `when`.                                                               | ❌           |
-| `prep`    | Define a function            | Prepares a reusable block of logic.                                                         | ❌           |
+| `create`  | Define a function            | createares a reusable block of logic.                                                       | ❌           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ❌           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
@@ -189,11 +189,11 @@ show "All flour has been added!";
 
 ### 6. 📦 Functions with Return <a id="functions-with-return"></a>
 
-Use `prep` to define functions and `deliver` to return values.
+Use `create` to define functions and `deliver` to return values.
 Note that `burn` **takes precedence** over `deliver`, stopping execution immediately.
 
 ```py
-prep bake_cake(temperature):
+create bake_cake(temperature):
     if temperature < 180:
         show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
@@ -243,7 +243,7 @@ when dessert:
     is "cake":
         show "Bake the cake!";
     is "pie":
-        show "Prepare the pie!";
+        show "createare the pie!";
     else:
         show "Dessert not on the menu.";
 ```
@@ -286,7 +286,7 @@ print_statement      ::= "show" expression ("," expression)* ";" ;
 if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
 loop_statement       ::= "while" condition ":" block
                        | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
-function_definition  ::= "prep" IDENTIFIER "with" parameter_list ":" block ;
+function_definition  ::= "create" IDENTIFIER "with" parameter_list ":" block ;
 block                ::= statement+ ;
 condition            ::= expression comparison_operator expression ;
 expression           ::= NUMBER | STRING | IDENTIFIER | (expression math_operator expression) ;
@@ -314,17 +314,17 @@ The FlavorLang tokenizer is responsible for breaking down source code into its f
 
 ### Overview <a id="tokenizer-overview"></a>
 
-| Token Type | Examples                        | Description                                         |
-| ---------- | ------------------------------- | --------------------------------------------------- |
-| KEYWORD    | `show`, `prep`, `deliver`, `if` | Redeliverd keywords in the language.                |
-| IDENTIFIER | `cake`, `temperature`           | Variable or function names.                         |
-| NUMBER     | `42`, `200`, `3.14`             | Integer or floating-point numbers.                  |
-| STRING     | `"Hello World!"`                | String literals.                                    |
-| SYMBOL     | `=`, `:`, `,`, `+`, `-`         | Operators, colons, parentheses, etc.                |
-| NEWLINE    | `\n`                            | Marks the end of a line.                            |
-| WHITESPACE | ` `, `\t`                       | Spaces or tabs (can be ignored).                    |
-| COMMENT    | `#`                             | This is a comment Lines starting with # (optional). |
-| EOF        | End of input                    | Signals the end of the program.                     |
+| Token Type | Examples                          | Description                                         |
+| ---------- | --------------------------------- | --------------------------------------------------- |
+| KEYWORD    | `show`, `create`, `deliver`, `if` | Redeliverd keywords in the language.                |
+| IDENTIFIER | `cake`, `temperature`             | Variable or function names.                         |
+| NUMBER     | `42`, `200`, `3.14`               | Integer or floating-point numbers.                  |
+| STRING     | `"Hello World!"`                  | String literals.                                    |
+| SYMBOL     | `=`, `:`, `,`, `+`, `-`           | Operators, colons, parentheses, etc.                |
+| NEWLINE    | `\n`                              | Marks the end of a line.                            |
+| WHITESPACE | ` `, `\t`                         | Spaces or tabs (can be ignored).                    |
+| COMMENT    | `#`                               | This is a comment Lines starting with # (optional). |
+| EOF        | End of input                      | Signals the end of the program.                     |
 
 ### How the Tokenizer Works
 

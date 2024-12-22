@@ -11,7 +11,7 @@ const char *KEYWORDS[] = {
     "while",   // while
     "when",    // switch
     "is",      // case
-    "prep",    // function
+    "create",  // function
     "deliver", // return
     "try",     // try
     "crumbs",  // catch
