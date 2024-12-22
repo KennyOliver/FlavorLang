@@ -7,7 +7,8 @@
 typedef enum
 {
     TYPE_NUMBER,
-    TYPE_STRING
+    TYPE_STRING,
+    TYPE_ERROR
 } LiteralType;
 
 typedef struct
