@@ -20,6 +20,7 @@
    - [File Operations](#file-operations)
    - [Switch-Case Logic](#switch-case-logic)
    - [User Input](#user-input)
+   - [Raise an Error](#raise-error)
 5. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 6. [Why FlavorLang?](#why-flavorlang)
 7. [Tokenizer](#tokenizer)
@@ -258,7 +259,7 @@ let favorite = taste;
 scran "You chose:", favorite;
 ```
 
-### 11. ⛔️ Raise Error <a id="user-input"></a>
+### 11. ⛔️ Raise an Error <a id="raise-error"></a>
 
 Use `burn` to raise an error and halt execution.
 
