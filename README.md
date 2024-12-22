@@ -399,3 +399,115 @@ Each character in the source is categorized into one of the following types:
 - Support for additional operators and delimiters.
 - Improved error recovery to handle malformed inputs gracefully.
 - Optimizations for performance with large files.
+
+---
+
+## Parser
+
+The parser converts the tokenized input into an Abstract Syntax Tree (AST), which represents the logical structure of the program.
+
+### Key Structures
+
+- `ASTNode`: Represents a node in the syntax tree.
+- `ParserState`: Tracks the current token and handles parsing state.
+- `Token`: Represents individual units from the lexer (keywords, operators, literals, etc.).
+
+### Main Parsing Functions
+
+#### 1. `parse_program`
+
+- **Purpose**: Entry point for the parser. Processes the entire token stream.
+- **Steps**:
+  - Initializes `ParserState`.
+  - Iterates over tokens until `TOKEN_EOF` is reached.
+  - Based on the token type, invokes specific parsing functions (e.g., `parse_variable_declaration`, `parse_conditional_block`).
+  - Links parsed nodes into a linked list to form the AST.
+
+#### 2. `parse_variable_declaration`
+
+- **Purpose**: Parses `let` statements (e.g., `let x = 10;`).
+- **Steps**:
+  - Ensures the token sequence matches `let <identifier> = <expression>;`.
+  - Creates an `AST_ASSIGNMENT` node, storing the variable name and its value.
+  - Expects a semicolon at the end of the declaration.
+
+#### 3. `parse_variable_assignment`
+
+- **Purpose**: Parses assignments (e.g., `x = 20;`).
+  - **Steps**:
+  - Reads the identifier and ensures it’s followed by = and an expression.
+  - Creates an `AST_ASSIGNMENT` node linking the variable and its new value.
+  - Expects a semicolon at the end of the assignment.
+
+#### 4. `parse_print_statement`
+
+- **Purpose**: Parses `scran` (print) statements (e.g., `scran "Hello";`).
+  - **Steps**:
+  - Reads the scran keyword and parses arguments until a semicolon.
+  - Stores arguments in an AST_PRINT node.
+
+#### 5. `parse_expression`
+
+- **Purpose**: Parses mathematical or logical expressions.
+- **Steps**:
+  - Calls parse_term to handle individual terms (identifiers, literals).
+  - Recursively parses binary operators to build a tree structure for expressions.
+  - **Output**: An `AST_BINARY_OP` node with left and right subtrees.
+
+#### 6. `parse_conditional_block`
+
+- **Purpose**: Parses `if`, `elif`, and `else` blocks.
+- **Steps**:
+  - Reads the condition after `if` or `elif` and expects a colon.
+  - Parses the block body and recursively handles `elif` or `else`.
+  - Creates an `AST_CONDITIONAL` node with condition, body, and optional `else` branch.
+
+#### 7. `parse_while_block`
+
+- **Purpose**: Parses `while` loops.
+- **Steps**:
+  - Ensures the `while` keyword is followed by a condition and colon.
+  - Parses the loop body and stores the condition in an `AST_LOOP` node.
+
+#### 8. `parse_block`
+
+- **Purpose**: Parses a series of statements in a block (e.g., an indented region).
+- **Steps**:
+  - Reads tokens until an end marker (e.g., `elif`, `else`, `EOF`).
+  - Calls appropriate parsing functions for each statement.
+
+### Supporting Functions
+
+- `parse_literal_or_identifier`: Determines if a token is a literal (e.g., number, string) or identifier and creates the appropriate AST node.
+- `parse_term`: A wrapper around `parse_literal_or_identifier`.
+- `free_ast`: Recursively frees all memory associated with the AST.
+
+### Error Handling
+
+- parser_error: Reports unexpected tokens or syntax violations and terminates parsing.
+- expect_token: Ensures the next token matches the expected type or lexeme.
+
+### Workflow Example:
+
+Given the code snippet:
+
+```
+let x = 10;
+
+if x > 5:
+    scran "Big";
+```
+
+#### 1. Tokenized Input:
+
+```
+[TOKEN_KEYWORD(let), TOKEN_IDENTIFIER(x), TOKEN_OPERATOR(=), TOKEN_NUMBER(10), ...]
+```
+
+#### 2. Parser Output (AST):
+
+```
+AST_ASSIGNMENT -> AST_CONDITIONAL
+-> (Condition: AST_BINARY_OP(x > 5))
+-> (Body: AST_PRINT("Big"))
+```
