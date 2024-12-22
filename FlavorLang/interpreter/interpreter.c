@@ -11,6 +11,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
 void interpret_print(ASTNode *node, Environment *env);
+Variable interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 
@@ -56,6 +57,12 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         debug_print("Matched: `AST_PRINT`");
         interpret_print(node, env);
         return create_default_value();
+    case AST_INPUT:
+    {
+        debug_print("Matched: `AST_INPUT`");
+        Variable v = interpret_input(env);
+        return v.value;
+    }
     case AST_CONDITIONAL:
         debug_print("Matched: `AST_CONDITIONAL`");
         interpret_conditional(node, env);
@@ -121,9 +128,20 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env)
         fprintf(stderr, "Error: Undefined variable `%s`.\n", node->variable_name);
         exit(1);
     }
-    debug_print("Retrieved variable `%s` with value `%f`",
-                node->variable_name,
-                var->value.data.number);
+
+    if (var->value.type == TYPE_NUMBER)
+    {
+        debug_print("Retrieved variable `%s` with value `%f`",
+                    node->variable_name,
+                    var->value.data.number);
+    }
+    else if (var->value.type == TYPE_STRING)
+    {
+        debug_print("Retrieved variable `%s` with value `%s...`",
+                    node->variable_name,
+                    var->value.data.string);
+    }
+
     return var->value;
 }
 
@@ -139,9 +157,16 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 
     // Get the new value first
     LiteralValue new_value = interpret(node->assignment.value, env);
-    debug_print("Assignment: variable `%s`, new value computed: `%f`",
-                node->assignment.variable_name,
-                new_value.data.number);
+
+    // Debug print the value
+    if (new_value.type == TYPE_STRING)
+    {
+        debug_print("Assignment value is string: '%s'\n", new_value.data.string);
+    }
+    else
+    {
+        debug_print("Assignment value is number: %f\n", new_value.data.number);
+    }
 
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++)
@@ -189,9 +214,18 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
     env->variables[env->variable_count].value = new_value;
 
-    debug_print("Created new variable %s with value %f",
-                node->assignment.variable_name,
-                new_value.data.number);
+    if (new_value.type == TYPE_NUMBER)
+    {
+        debug_print("Created new variable `%s` with value `%f`",
+                    node->assignment.variable_name,
+                    new_value.data.number);
+    }
+    else if (new_value.type == TYPE_STRING)
+    {
+        debug_print("Created new variable `%s` with value `%s`",
+                    node->assignment.variable_name,
+                    new_value.data.string);
+    }
 
     env->variable_count++;
 
@@ -345,9 +379,18 @@ Variable *get_variable(Environment *env, const char *variable_name)
     {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0)
         {
-            debug_print("Variable found: `%s` with value `%f`",
-                        variable_name,
-                        env->variables[i].value.data.number);
+            if (env->variables[i].value.type == TYPE_NUMBER)
+            {
+                debug_print("Variable found: `%s` with value `%f`",
+                            variable_name,
+                            env->variables[i].value.data.number);
+            }
+            else if (env->variables[i].value.type == TYPE_STRING)
+            {
+                debug_print("Variable found: `%s` with value `%s`",
+                            variable_name,
+                            env->variables[i].value.data.string);
+            }
             return &env->variables[i];
         }
     }
@@ -357,7 +400,7 @@ Variable *get_variable(Environment *env, const char *variable_name)
 
 void interpret_print(ASTNode *node, Environment *env)
 {
-    // printf("interpret_print(ASTNode *node, Environment *env)\n");
+    debug_print("`interpret_print()`");
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
@@ -365,7 +408,6 @@ void interpret_print(ASTNode *node, Environment *env)
         if (arg->type == AST_LITERAL)
         {
             // // Handle string literals directly
-            // printf("%s ", arg->literal.value.string);
             if (arg->literal.type == LITERAL_STRING)
             {
                 printf("%s ", arg->literal.value.string);
@@ -392,6 +434,23 @@ void interpret_print(ASTNode *node, Environment *env)
                 printf("%f ", var->value.data.number);
             }
         }
+        else if (arg->type == AST_VARIABLE)
+        {
+            Variable *var = get_variable(env, arg->variable_name);
+            if (!var)
+            {
+                fprintf(stderr, "Error: Undefined variable `%s`.\n", arg->variable_name);
+            }
+
+            if (var->value.type == TYPE_STRING)
+            {
+                printf("%s ", var->value.data.string);
+            }
+            else if (var->value.type == TYPE_NUMBER)
+            {
+                printf("%f ", var->value.data.number);
+            }
+        }
         else
         {
             // Evaluate and print numeric expressions
@@ -400,6 +459,93 @@ void interpret_print(ASTNode *node, Environment *env)
         }
     }
     printf("\n");
+}
+
+Variable *allocate_variable(Environment *env, const char *name)
+{
+    // Check if the variable already exists
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, name) == 0)
+        {
+            return &env->variables[i]; // return existing variable
+        }
+    }
+
+    // If the variable doesn't exist, allocate it in memory
+    if (env->variable_count == env->capacity)
+    {
+        env->capacity *= 2;
+        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+        if (!env->variables)
+        {
+            fprintf(stderr, "Error: Memory allocation failed.\n");
+            exit(1);
+        }
+    }
+
+    env->variables[env->variable_count].variable_name = strdup(name);
+    env->variable_count++;
+
+    return &env->variables[env->variable_count - 1];
+}
+
+Variable interpret_input(Environment *env)
+{
+    size_t buffer_size = 128;
+    size_t input_length = 0;
+    char *input_buffer = malloc(buffer_size);
+    if (!input_buffer)
+    {
+        fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
+        // Return an empty or error `Variable`
+        Variable error_var = {.value.type = TYPE_ERROR};
+        return error_var;
+    }
+
+    // Read input
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF)
+    {
+        if (input_length + 1 >= buffer_size)
+        {
+            buffer_size *= 2;
+            char *new_buffer = realloc(input_buffer, buffer_size);
+            if (!new_buffer)
+            {
+                fprintf(stderr, "Error: Failed to reallocate memory for input buffer.\n");
+                free(input_buffer);
+                // Return an empty or error `Variable`
+                Variable error_var = {.value.type = TYPE_ERROR};
+                return error_var;
+            }
+            input_buffer = new_buffer;
+        }
+        input_buffer[input_length++] = c;
+    }
+    input_buffer[input_length] = '\0';
+
+    debug_print("Read input: '%s'\n", input_buffer);
+
+    // Allocate variable
+    Variable *var = allocate_variable(env, "input_value");
+    if (!var)
+    {
+        fprintf(stderr, "Error: Failed to create variable for input.\n");
+        free(input_buffer);
+        // Return an empty or error `Variable`
+        Variable error_var = {.value.type = TYPE_ERROR};
+        return error_var;
+    }
+
+    var->value.type = TYPE_STRING;
+    var->value.data.string = strdup(input_buffer);
+
+    debug_print("Stored value: '%s'\n", var->value.data.string);
+
+    free(input_buffer);
+
+    return *var;
 }
 
 void interpret_conditional(ASTNode *node, Environment *env)

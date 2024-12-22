@@ -116,7 +116,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ❌           |
 | `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
-| `taste`   | Input from console           | Reads user input.                                                                           | ❌           |
+| `taste`   | Input from console           | Reads user input.                                                                           | ✅           |
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
 | `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |

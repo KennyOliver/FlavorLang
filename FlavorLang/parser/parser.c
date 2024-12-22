@@ -26,6 +26,11 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_print_statement(state);
         }
+        else if (strcmp(token->lexeme, "taste") == 0)
+        {
+            printf("TEST\n");
+            new_node = parse_input(state);
+        }
         else if (strcmp(token->lexeme, "if") == 0)
         {
             new_node = parse_conditional_block(state);
@@ -165,6 +170,23 @@ ASTNode *parse_print_statement(ParserState *state)
     return node;
 }
 
+ASTNode *parse_input(ParserState *state)
+{
+    expect_token(state, TOKEN_KEYWORD, "Expected `taste` keyword");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_INPUT;
+
+    expect_token(state, TOKEN_DELIMITER, "Expected ';' after scran statement");
+    node->next = NULL;
+    return node;
+}
+
 ASTNode *parse_identifier(ParserState *state)
 {
     Token *current = get_current_token(state);
@@ -226,6 +248,20 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 
         node->type = AST_VARIABLE;
         node->variable_name = strdup(current->lexeme);
+        node->next = NULL;
+
+        advance_token(state);
+        return node;
+    }
+    else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "taste") == 0)
+    {
+        ASTNode *node = malloc(sizeof(ASTNode));
+        if (!node)
+        {
+            parser_error("Memory allocation failed", current);
+        }
+
+        node->type = AST_INPUT;
         node->next = NULL;
 
         advance_token(state);
@@ -471,6 +507,10 @@ void free_ast(ASTNode *node)
             free(node->to_print.arguments);
             break;
 
+        case AST_INPUT:
+            // No cleanup needed!
+            break;
+
         case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
             free_ast(node->assignment.value);
@@ -509,7 +549,7 @@ void free_ast(ASTNode *node)
             break;
 
         default:
-            fprintf(stderr, "Error: Unknown ASTNode type.\n");
+            fprintf(stderr, "Error: Unknown ASTNode type in `free_ast`.\n");
             exit(1);
         }
 
