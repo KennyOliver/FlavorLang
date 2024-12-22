@@ -9,7 +9,7 @@ const char *KEYWORDS[] = {
     "for",     // for
     "to",      // for range
     "while",   // while
-    "when",    // switch
+    "check",   // switch
     "is",      // case
     "create",  // function
     "deliver", // return

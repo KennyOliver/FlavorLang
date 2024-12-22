@@ -109,8 +109,8 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            | ❌           |
 | `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. | ❌           |
 | `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             | ✅           |
-| `when`    | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
-| `is`      | Case clause                  | Defines a case inside `when`.                                                               | ❌           |
+| `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
+| `is`      | Case clause                  | Defines a case inside `check`.                                                              | ❌           |
 | `create`  | Define a function            | createares a reusable block of logic.                                                       | ❌           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ❌           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
@@ -234,12 +234,12 @@ show data;
 
 ### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
 
-Use `when` and `is` for multiple condition matching.
+Use `check` and `is` for multiple condition matching.
 
 ```py
 let dessert = "cake";
 
-when dessert:
+check dessert:
     is "cake":
         show "Bake the cake!";
     is "pie":

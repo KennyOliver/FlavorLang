@@ -69,7 +69,7 @@ show data;
 # 9
 let dessert = "cake";
 
-when dessert:
+check dessert:
     is "cake":
         show "Bake the cake!";
     is "pie":
