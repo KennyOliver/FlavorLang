@@ -154,9 +154,16 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 
     // Get the new value first
     LiteralValue new_value = interpret(node->assignment.value, env);
-    debug_print("Assignment: variable `%s`, new value computed: `%f`",
-                node->assignment.variable_name,
-                new_value.data.number);
+
+    // Debug print the value
+    if (new_value.type == TYPE_STRING)
+    {
+        printf("Debug - Assignment value is string: '%s'\n", new_value.data.string);
+    }
+    else
+    {
+        printf("Debug - Assignment value is number: %f\n", new_value.data.number);
+    }
 
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++)
@@ -447,9 +454,8 @@ Variable *allocate_variable(Environment *env, const char *name)
 
 void interpret_input(Environment *env)
 {
-    // Buffer initializatino for dynamic input handling
-    size_t buffer_size = 128; // initial buffer size
-    size_t input_length = 0;  // actual input length
+    size_t buffer_size = 128;
+    size_t input_length = 0;
     char *input_buffer = malloc(buffer_size);
     if (!input_buffer)
     {
@@ -457,7 +463,7 @@ void interpret_input(Environment *env)
         return;
     }
 
-    // Read input dynamically (since input length is unknown)
+    // Read input
     int c;
     while ((c = getchar()) != '\n' && c != EOF)
     {
@@ -471,14 +477,14 @@ void interpret_input(Environment *env)
                 free(input_buffer);
                 return;
             }
-
             input_buffer = new_buffer;
         }
         input_buffer[input_length++] = c;
     }
-    input_buffer[input_length] = '\0'; // NULL-terminate the input string
+    input_buffer[input_length] = '\0';
 
-    // Create a new variable to store the input
+    printf("Debug - Read input: '%s'\n", input_buffer);
+
     Variable *var = allocate_variable(env, "input_value");
     if (!var)
     {
@@ -487,20 +493,11 @@ void interpret_input(Environment *env)
         return;
     }
 
-    // Allocate memory for the variable's value (string)
-    var->value.data.string = malloc(input_length + 1);
-    if (!var->value.data.string)
-    {
-        fprintf(stderr, "Error: Failed to allocate memory for input value.\n");
-        free(input_buffer);
-        free(var);
-        return;
-    }
-
-    strcpy(var->value.data.string, input_buffer);
     var->value.type = TYPE_STRING;
+    var->value.data.string = strdup(input_buffer);
 
-    // Free the temporary input buffer
+    printf("Debug - Stored value: '%s'\n", var->value.data.string);
+
     free(input_buffer);
 }
 
