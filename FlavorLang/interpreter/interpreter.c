@@ -24,17 +24,6 @@ LiteralValue create_default_value()
     return value;
 }
 
-LiteralValue create_default_value_string()
-{
-    LiteralValue value = {
-        .type = TYPE_STRING,
-        .data = {
-            .string = "",
-        }};
-
-    return value;
-}
-
 LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
@@ -70,7 +59,7 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     case AST_INPUT:
         interpret_input(env);
-        return create_default_value_string();
+        return create_default_value();
     case AST_CONDITIONAL:
         debug_print("Matched: `AST_CONDITIONAL`");
         interpret_conditional(node, env);
