@@ -450,7 +450,7 @@ The parser converts the tokenized input into an Abstract Syntax Tree (AST), whic
 - **Purpose**: Parses `scran` (print) statements (e.g., `scran "Hello";`).
   - **Steps**:
   - Reads the scran keyword and parses arguments until a semicolon.
-  - Stores arguments in an AST_PRINT node.
+  - Stores arguments in an `AST_PRINT` node.
 
 #### 5. `parse_expression`
 
@@ -517,3 +517,89 @@ AST_ASSIGNMENT -> AST_CONDITIONAL
 -> (Condition: AST_BINARY_OP(x > 5))
 -> (Body: AST_PRINT("Big"))
 ```
+
+---
+
+## Interpreter
+
+The interpreter in FlavorLang is tasked with processing the abstract syntax tree (AST) produced by the parser. Through this process, it systematically evaluates different elements of FlavorLang, including variable assignments, complex expressions, loops, and conditionals.
+
+### 1. Core Interpretation Flow
+
+- `interpret()`function: The main entry point for interpreting an AST node. It recursively processes the node based on its type.
+- Each node in the AST represents a different construct in the program (e.g., literals, assignments, binary operations, print statements).
+- The interpreter evaluates these nodes and carries out the corresponding operations.
+
+### 2. Key Components
+
+- **Literal Values**:
+  - The interpreter supports literal values (e.g., numbers, strings).
+  - The `interpret_literal()`function extracts the value and returns a `LiteralValue`that contains the appropriate data (either a number or string).
+- **Variables**:
+
+  - The interpreter can read and modify variables.
+  - The `interpret_variable()`function retrieves a variable’s value from the environment.
+  - The `interpret_assignment()`function handles variable assignment, either updating existing variables or creating new ones in the environment.
+
+- **Binary Operations**:
+
+  - Binary operations (e.g., `+`, `-`, `*`, `/`) are handled by the `interpret_binary_op()`function.
+  - The interpreter evaluates both operands and applies the operator to produce the result. Special cases include string concatenation and comparisons (`<`, `<=`, `>`, `>=`, `==`).
+
+- **Print Statements**:
+
+  - The `interpret_print()`function evaluates the arguments of the print statement and outputs them (either literals, variables, or expressions).
+
+- **Conditionals**:
+
+  - The `interpret_conditional()`function processes `if`/`else` branches, evaluating the condition and executing the appropriate body.
+  - It continues evaluating `elif` or `else` branches if the condition fails, stopping once a condition evaluates as true.
+
+- **Loops**:
+  - The `interpret_while_loop()`function processes while loops by evaluating the loop’s condition and repeatedly executing the loop’s body as long as the condition is true.
+
+### 3. Handling Environment
+
+- The interpreter operates on an `Environment` structure, which stores variables and their values.
+- The `get_variable()`function is used to look up a variable’s value in the environment.
+- The `init_environment()`function initializes the environment, while `free_environment()`cleans up the allocated resources when done.
+
+### 4. Helper Functions
+
+- The interpreter uses helper functions to ensure safe memory management and smooth execution of the program, such as `create_default_value()`for initializing a zeroed `LiteralValue`, or expanding the environment’s variable storage as necessary.
+
+### 5. Flow Control
+
+- The `interpret_program()`function processes the entire program by iterating over each statement and interpreting it.
+- Each type of AST node is handled by a different case in the switch statement in `interpret()`(e.g., `AST_LITERAL`, `AST_ASSIGNMENT`, `AST_BINARY_OP`, etc.).
+
+### 6. Error Handling
+
+- There are multiple checks for errors, such as undefined variables (`get_variable()`), division by zero (`interpret_binary_op()`), and invalid types (`interpret_literal()`).
+- If the program encounters an error, it terminates with a descriptive message and exits (`exit(1)`).
+
+---
+
+### Summary of Steps in `interpret()`
+
+1. **Check Node Type**: The `interpret()`function first checks the type of the AST node (e.g., literal, assignment, binary operation).
+2. **Evaluate Node**: Depending on the node type, it calls the respective function to handle the logic (e.g., `interpret_literal()`for literals, `interpret_assignment()`for assignments).
+3. **Return Value**: After performing the necessary operation (like evaluation or assignment), the function returns a `LiteralValue`representing the result of the operation.
+4. **Error Handling**: In case of an unsupported operation or invalid state (e.g., dividing by zero), the interpreter exits with an error message.
+
+---
+
+### Example Execution Flow
+
+Consider the following AST node for a simple assignment.
+
+```
+x = 5 + 3
+```
+
+The `interpret()` function will:
+
+1. Encounter an `AST_ASSIGNMENT` node.
+2. Call `interpret_assignment()` which will evaluate the right-hand side (`5 + 3`).
+3. This triggers `interpret_binary_op()` which evaluates the operands `5` and `3`, applies the `+` operator, and returns `8`.
+4. Then the interpreter updates the variable x in the environment with the new value (`8`).
