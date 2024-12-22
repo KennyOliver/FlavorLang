@@ -53,7 +53,7 @@ show result;
 try:
     burn "This recipe failed!";
     show "This won't run!";
-crumbs:
+rescue:
     show "Caught an error: Recipe needs improvement.";
 
 

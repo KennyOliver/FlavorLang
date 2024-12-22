@@ -114,7 +114,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `create`  | Define a function            | createares a reusable block of logic.                                                       | ❌           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ❌           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
-| `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
+| `rescue`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ❌           |
 | `show`    | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
 | `taste`   | Input from console           | Reads user input.                                                                           | ✅           |
@@ -207,13 +207,13 @@ show result;
 
 ### 7. 🛠️ Error Handling <a id="error-handling"></a>
 
-Use `try` and `crumbs` to handle errors.
+Use `try` and `rescue` to handle errors.
 
 ```py
 try:
     burn "This recipe failed!";
     show "This won't run!";
-crumbs:
+rescue:
     show "Caught an error: Recipe needs improvement.";
 ```
 

@@ -14,7 +14,7 @@ const char *KEYWORDS[] = {
     "create",  // function
     "deliver", // return
     "try",     // try
-    "crumbs",  // catch
+    "rescue",  // catch
     "burn",    // raise error
     "show",    // output
     "taste",   // input
