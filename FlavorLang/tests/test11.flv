@@ -3,6 +3,6 @@ let time = 20;
 scran "Before error.";
 
 if time > 15:
-    burn "The food got burnt!";
+    burn "Too late!", "The food got burnt!";
 
 scran "After error?";
