@@ -28,7 +28,6 @@ ASTNode *parse_program(Token *tokens)
         }
         else if (strcmp(token->lexeme, "taste") == 0)
         {
-            printf("TEST\n");
             new_node = parse_input(state);
         }
         else if (strcmp(token->lexeme, "if") == 0)
