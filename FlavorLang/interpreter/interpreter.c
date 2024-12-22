@@ -11,6 +11,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
 void interpret_print(ASTNode *node, Environment *env);
+void interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 
@@ -20,6 +21,17 @@ LiteralValue create_default_value()
     LiteralValue value = {
         .type = TYPE_NUMBER,
         .data = {.number = 0}};
+    return value;
+}
+
+LiteralValue create_default_value_string()
+{
+    LiteralValue value = {
+        .type = TYPE_STRING,
+        .data = {
+            .string = "",
+        }};
+
     return value;
 }
 
@@ -56,6 +68,9 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         debug_print("Matched: `AST_PRINT`");
         interpret_print(node, env);
         return create_default_value();
+    case AST_INPUT:
+        interpret_input(env);
+        return create_default_value_string();
     case AST_CONDITIONAL:
         debug_print("Matched: `AST_CONDITIONAL`");
         interpret_conditional(node, env);
@@ -357,7 +372,6 @@ Variable *get_variable(Environment *env, const char *variable_name)
 
 void interpret_print(ASTNode *node, Environment *env)
 {
-    // printf("interpret_print(ASTNode *node, Environment *env)\n");
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
@@ -365,7 +379,6 @@ void interpret_print(ASTNode *node, Environment *env)
         if (arg->type == AST_LITERAL)
         {
             // // Handle string literals directly
-            // printf("%s ", arg->literal.value.string);
             if (arg->literal.type == LITERAL_STRING)
             {
                 printf("%s ", arg->literal.value.string);
@@ -377,6 +390,7 @@ void interpret_print(ASTNode *node, Environment *env)
         }
         else if (arg->type == AST_ASSIGNMENT)
         {
+            printf("TEST\n");
             Variable *var = get_variable(env, arg->variable_name);
             if (!var)
             {
@@ -400,6 +414,94 @@ void interpret_print(ASTNode *node, Environment *env)
         }
     }
     printf("\n");
+}
+
+Variable *allocate_variable(Environment *env, const char *name)
+{
+    // Check if the variable already exists
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, name) == 0)
+        {
+            return &env->variables[i]; // return existing variable
+        }
+    }
+
+    // If the variable doesn't exist, allocate it in memory
+    if (env->variable_count == env->capacity)
+    {
+        env->capacity *= 2;
+        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+        if (!env->variables)
+        {
+            fprintf(stderr, "Error: Memory allocation failed.\n");
+            exit(1);
+        }
+    }
+
+    env->variables[env->variable_count].variable_name = strdup(name);
+    env->variable_count++;
+
+    return &env->variables[env->variable_count - 1];
+}
+
+void interpret_input(Environment *env)
+{
+    // Buffer initializatino for dynamic input handling
+    size_t buffer_size = 128; // initial buffer size
+    size_t input_length = 0;  // actual input length
+    char *input_buffer = malloc(buffer_size);
+    if (!input_buffer)
+    {
+        fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
+        return;
+    }
+
+    // Read input dynamically (since input length is unknown)
+    int c;
+    while ((c = getchar()) != '\n' && c != EOF)
+    {
+        if (input_length + 1 >= buffer_size)
+        {
+            buffer_size *= 2;
+            char *new_buffer = realloc(input_buffer, buffer_size);
+            if (!new_buffer)
+            {
+                fprintf(stderr, "Error: Failed to reallocate memory for input buffer.\n");
+                free(input_buffer);
+                return;
+            }
+
+            input_buffer = new_buffer;
+        }
+        input_buffer[input_length++] = c;
+    }
+    input_buffer[input_length] = '\0'; // NULL-terminate the input string
+
+    // Create a new variable to store the input
+    Variable *var = allocate_variable(env, "input_value");
+    if (!var)
+    {
+        fprintf(stderr, "Error: Failed to create variable for input.\n");
+        free(input_buffer);
+        return;
+    }
+
+    // Allocate memory for the variable's value (string)
+    var->value.data.string = malloc(input_length + 1);
+    if (!var->value.data.string)
+    {
+        fprintf(stderr, "Error: Failed to allocate memory for input value.\n");
+        free(input_buffer);
+        free(var);
+        return;
+    }
+
+    strcpy(var->value.data.string, input_buffer);
+    var->value.type = TYPE_STRING;
+
+    // Free the temporary input buffer
+    free(input_buffer);
 }
 
 void interpret_conditional(ASTNode *node, Environment *env)
