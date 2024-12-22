@@ -26,6 +26,10 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_print_statement(state);
         }
+        else if (strcmp(token->lexeme, "burn") == 0)
+        {
+            new_node = parse_raise_error(state);
+        }
         else if (strcmp(token->lexeme, "taste") == 0)
         {
             new_node = parse_input(state);
@@ -122,10 +126,8 @@ ASTNode *parse_variable_assignment(ParserState *state)
     return node;
 }
 
-ASTNode *parse_print_statement(ParserState *state)
+ASTNode *helper_print(ParserState *state)
 {
-    expect_token(state, TOKEN_KEYWORD, "Expected 'scran' keyword");
-
     // Create print node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
@@ -166,6 +168,24 @@ ASTNode *parse_print_statement(ParserState *state)
 
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after scran statement");
     node->next = NULL;
+    return node;
+}
+
+ASTNode *parse_print_statement(ParserState *state)
+{
+    expect_token(state, TOKEN_KEYWORD, "Expected 'scran' keyword");
+
+    return helper_print(state);
+}
+
+ASTNode *parse_raise_error(ParserState *state)
+{
+    expect_token(state, TOKEN_KEYWORD, "Expected `burn` keyword");
+
+    ASTNode *node = helper_print(state);
+
+    node->type = AST_ERROR;
+
     return node;
 }
 
@@ -335,6 +355,10 @@ ASTNode *parse_block(ParserState *state)
             {
                 statement = parse_print_statement(state);
             }
+            else if (strcmp(current->lexeme, "burn") == 0)
+            {
+                statement = parse_raise_error(state);
+            }
             else if (strcmp(current->lexeme, "if") == 0)
             {
                 statement = parse_conditional_block(state);
@@ -499,6 +523,7 @@ void free_ast(ASTNode *node)
         switch (node->type)
         {
         case AST_PRINT:
+        case AST_ERROR:
             for (size_t i = 0; i < node->to_print.arg_count; i++)
             {
                 free_ast(node->to_print.arguments[i]);
