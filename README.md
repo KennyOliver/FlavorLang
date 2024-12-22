@@ -50,7 +50,7 @@ variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
 print_statement      ::= "scran" expression ("," expression)* ";" ;
 if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
 loop_statement       ::= "while" condition ":" block
-                       | "for" "let" IDENTIFIER "=" expression "to" expression ":" block ;
+                       | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
 function_definition  ::= "prep" IDENTIFIER "with" parameter_list ":" block ;
 block                ::= statement+ ;
 condition            ::= expression comparison_operator expression ;
@@ -58,6 +58,8 @@ expression           ::= NUMBER | STRING | IDENTIFIER | (expression math_operato
 comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 math_operator        ::= "+" | "-" | "*" | "/" ;
 parameter_list       ::= IDENTIFIER ("," IDENTIFIER)* ;
+range                ::= expression ".." expression ;
+step                 ::= expression ;
 ```
 
 ---
