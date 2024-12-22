@@ -108,7 +108,7 @@ else:
 Use `for` to iterate a block of code.
 
 ```py
-for let i = 1 to 5:
+for i in 1..5:
     scran "Mixing... Step", i;
 ```
 
