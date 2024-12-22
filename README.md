@@ -4,6 +4,54 @@
 
 ---
 
+## ⚡ Quick Start
+
+**Get up and running with FlavorLang in just a few steps!**
+
+### 1. Install the Compiler
+
+Clone the repository and build the project.
+
+```bash
+git clone https://github.com/your-repo/FlavorLang.git
+cd FlavorLang
+make
+```
+
+### 2. Write Your First Recipe
+
+Create a file named **`recipe.flv`** with the following content.
+
+```py
+scran "Welcome to FlavorLang!";
+```
+
+### 3. Run the Program
+
+Use the flavor command to execute your program.
+
+```bash
+./flavor recipe.flv
+```
+
+You should see:
+
+```
+Welcome to FlavorLang!
+```
+
+### 4. Debug Your Code
+
+Enable debug mode to inspect tokens and execution flow.
+
+```bash
+./flavor recipe.flv --debug
+```
+
+This will print detailed information about the tokenization and parsing process.
+
+---
+
 ## 🚀 **Execution Flags & Behaviors**
 
 ```bash
