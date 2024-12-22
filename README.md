@@ -96,7 +96,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
+## Syntax Keywords
 
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
