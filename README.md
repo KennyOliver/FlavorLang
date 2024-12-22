@@ -46,7 +46,7 @@
 Clone the repository and build the project.
 
 ```bash
-git clone https://github.com/your-repo/FlavorLang.git
+git clone https://github.com/KennyOliver/FlavorLang.git
 cd FlavorLang
 make
 ```
