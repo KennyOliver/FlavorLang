@@ -1,4 +1,4 @@
-plate "output.txt" with "Freshly baked cake ready to serve!";
+plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";

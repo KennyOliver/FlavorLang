@@ -4,7 +4,7 @@ prep bake_cake with let temperature:
         burn "Cake burned!";  # Stops function execution immediately
     else:
         scran "Baking cake at", temperature, "degrees!";
-        serve "Cake is ready!";
+        deliver "Cake is ready!";
 
 let result = bake_cake with 200;
 scran result;

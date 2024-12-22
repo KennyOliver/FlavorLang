@@ -12,7 +12,7 @@ const char *KEYWORDS[] = {
     "when",    // switch
     "is",      // case
     "prep",    // function
-    "serve",   // return
+    "deliver", // return
     "try",     // try
     "crumbs",  // catch
     "burn",    // raise error

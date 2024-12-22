@@ -112,7 +112,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `when`    | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
 | `is`      | Case clause                  | Defines a case inside `when`.                                                               | ❌           |
 | `prep`    | Define a function            | Prepares a reusable block of logic.                                                         | ❌           |
-| `serve`   | Return statement             | Returns a value and stops function execution.                                               | ❌           |
+| `deliver` | Return statement             | Returns a value and stops function execution.                                               | ❌           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ❌           |
@@ -189,8 +189,8 @@ scran "All flour has been added!";
 
 ### 6. 📦 Functions with Return <a id="functions-with-return"></a>
 
-Use `prep` to define functions and `serve` to return values.
-Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
+Use `prep` to define functions and `deliver` to return values.
+Note that `burn` **takes precedence** over `deliver`, stopping execution immediately.
 
 ```py
 prep bake_cake(temperature):
@@ -199,7 +199,7 @@ prep bake_cake(temperature):
         burn "Cake burned!";  # Stops function execution immediately
     else:
         scran "Baking cake at", temperature, "degrees!";
-        serve "Cake is ready!";
+        deliver "Cake is ready!";
 
 let result = bake_cake(200);
 scran result;
@@ -224,7 +224,7 @@ crumbs:
 - `Gather`: Read from a file.
 
 ```py
-plate "output.txt" with "Freshly baked cake ready to serve!";
+plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";
@@ -303,28 +303,28 @@ step                 ::= expression ;
 
 - **Unique & Fun**: Express your programs like recipes!
 - **Flexible Execution**: File extensions and flags allow customized program behavior.
-- **Readable Syntax**: Keywords like add, mix, cook, and serve make code approachable and enjoyable.
+- **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
 - **Debug-Friendly**: Easily trace and test your code step-by-step with --chef mode.
 
 ---
 
 ## Tokenizer <a id="tokenizer"></a>
 
-The FlavorLang tokenizer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens serve as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
+The FlavorLang tokenizer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens deliver as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
 
 ### Overview <a id="tokenizer-overview"></a>
 
-| Token Type | Examples                       | Description                                         |
-| ---------- | ------------------------------ | --------------------------------------------------- |
-| KEYWORD    | `scran`, `prep`, `serve`, `if` | Reserved keywords in the language.                  |
-| IDENTIFIER | `cake`, `temperature`          | Variable or function names.                         |
-| NUMBER     | `42`, `200`, `3.14`            | Integer or floating-point numbers.                  |
-| STRING     | `"Hello World!"`               | String literals.                                    |
-| SYMBOL     | `=`, `:`, `,`, `+`, `-`        | Operators, colons, parentheses, etc.                |
-| NEWLINE    | `\n`                           | Marks the end of a line.                            |
-| WHITESPACE | ` `, `\t`                      | Spaces or tabs (can be ignored).                    |
-| COMMENT    | `#`                            | This is a comment Lines starting with # (optional). |
-| EOF        | End of input                   | Signals the end of the program.                     |
+| Token Type | Examples                         | Description                                         |
+| ---------- | -------------------------------- | --------------------------------------------------- |
+| KEYWORD    | `scran`, `prep`, `deliver`, `if` | Redeliverd keywords in the language.                |
+| IDENTIFIER | `cake`, `temperature`            | Variable or function names.                         |
+| NUMBER     | `42`, `200`, `3.14`              | Integer or floating-point numbers.                  |
+| STRING     | `"Hello World!"`                 | String literals.                                    |
+| SYMBOL     | `=`, `:`, `,`, `+`, `-`          | Operators, colons, parentheses, etc.                |
+| NEWLINE    | `\n`                             | Marks the end of a line.                            |
+| WHITESPACE | ` `, `\t`                        | Spaces or tabs (can be ignored).                    |
+| COMMENT    | `#`                              | This is a comment Lines starting with # (optional). |
+| EOF        | End of input                     | Signals the end of the program.                     |
 
 ### How the Tokenizer Works
 
