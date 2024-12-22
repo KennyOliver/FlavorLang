@@ -57,7 +57,7 @@ make
 Create a file named **`recipe.flv`** with the following content.
 
 ```py
-scran "Welcome to FlavorLang!";
+show "Welcome to FlavorLang!";
 ```
 
 ### 3. Run the Program
@@ -116,7 +116,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ❌           |
-| `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
+| `show`    | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
 | `taste`   | Input from console           | Reads user input.                                                                           | ✅           |
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
@@ -134,7 +134,7 @@ Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 The simplest program to print "Hello world!".
 
 ```py
-scran "Hello world!";
+show "Hello world!";
 ```
 
 ### 2. 🍲 Defining Variables <a id="defining-variables"></a>
@@ -145,8 +145,8 @@ Use `let` to declare and initialize variables.
 let name = "Chef";
 let age = 25;
 
-scran "Name:", name;
-scran "Age:", age;
+show "Name:", name;
+show "Age:", age;
 ```
 
 ### 3. 🔄 Conditional Logic <a id="conditional-logic"></a>
@@ -157,11 +157,11 @@ Use `if`, `elif`, and `else` to control program flow.
 let oven_temperature = 200;
 
 if oven_temperature > 180:
-    scran "The oven is hot!";
+    show "The oven is hot!";
 elif oven_temperature == 180:
-    scran "The oven is just right!";
+    show "The oven is just right!";
 else:
-    scran "The oven is too cold!";
+    show "The oven is too cold!";
 ```
 
 ### 4. 🔁 For Loop <a id="for-loop"></a>
@@ -170,7 +170,7 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5:
-    scran "Mixing... Step", i;
+    show "Mixing... Step", i;
 ```
 
 ### 5. 🔄 While Loop <a id="while-loop"></a>
@@ -181,10 +181,10 @@ Use `while` for condition-based repetition.
 let flour_added = 0;
 
 while flour_added < 3:
-    scran "Adding flour...";
+    show "Adding flour...";
     let flour_added = flour_added + 1;
 
-scran "All flour has been added!";
+show "All flour has been added!";
 ```
 
 ### 6. 📦 Functions with Return <a id="functions-with-return"></a>
@@ -195,14 +195,14 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 ```py
 prep bake_cake(temperature):
     if temperature < 180:
-        scran "Temperature is too low to bake!";
+        show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
     else:
-        scran "Baking cake at", temperature, "degrees!";
+        show "Baking cake at", temperature, "degrees!";
         deliver "Cake is ready!";
 
 let result = bake_cake(200);
-scran result;
+show result;
 ```
 
 ### 7. 🛠️ Error Handling <a id="error-handling"></a>
@@ -212,9 +212,9 @@ Use `try` and `crumbs` to handle errors.
 ```py
 try:
     burn "This recipe failed!";
-    scran "This won't run!";
+    show "This won't run!";
 crumbs:
-    scran "Caught an error: Recipe needs improvement.";
+    show "Caught an error: Recipe needs improvement.";
 ```
 
 ### 8. 📄 File Operations <a id="file-operations"></a>
@@ -228,8 +228,8 @@ plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";
-scran "File Contents:";
-scran data;
+show "File Contents:";
+show data;
 ```
 
 ### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
@@ -241,11 +241,11 @@ let dessert = "cake";
 
 when dessert:
     is "cake":
-        scran "Bake the cake!";
+        show "Bake the cake!";
     is "pie":
-        scran "Prepare the pie!";
+        show "Prepare the pie!";
     else:
-        scran "Dessert not on the menu.";
+        show "Dessert not on the menu.";
 ```
 
 ### 10. 📥 User Input <a id="user-input"></a>
@@ -253,10 +253,10 @@ when dessert:
 Use `taste` to accept input from the user.
 
 ```py
-scran "What's your favorite dessert?";
+show "What's your favorite dessert?";
 let favorite = taste;
 
-scran "You chose:", favorite;
+show "You chose:", favorite;
 ```
 
 ### 11. ⛔️ Raise an Error <a id="raise-error"></a>
@@ -266,12 +266,12 @@ Use `burn` to raise an error and halt execution.
 ```py
 let time = 20;
 
-scran "Before error.";
+show "Before error.";
 
 if time > 15:
     burn "Too late!", "The food got burnt!";
 
-scran "After error?";
+show "After error?";
 ```
 
 ---
@@ -282,7 +282,7 @@ scran "After error?";
 program       ::= statement* ;
 statement     ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-print_statement      ::= "scran" expression ("," expression)* ";" ;
+print_statement      ::= "show" expression ("," expression)* ";" ;
 if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
 loop_statement       ::= "while" condition ":" block
                        | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
@@ -314,17 +314,17 @@ The FlavorLang tokenizer is responsible for breaking down source code into its f
 
 ### Overview <a id="tokenizer-overview"></a>
 
-| Token Type | Examples                         | Description                                         |
-| ---------- | -------------------------------- | --------------------------------------------------- |
-| KEYWORD    | `scran`, `prep`, `deliver`, `if` | Redeliverd keywords in the language.                |
-| IDENTIFIER | `cake`, `temperature`            | Variable or function names.                         |
-| NUMBER     | `42`, `200`, `3.14`              | Integer or floating-point numbers.                  |
-| STRING     | `"Hello World!"`                 | String literals.                                    |
-| SYMBOL     | `=`, `:`, `,`, `+`, `-`          | Operators, colons, parentheses, etc.                |
-| NEWLINE    | `\n`                             | Marks the end of a line.                            |
-| WHITESPACE | ` `, `\t`                        | Spaces or tabs (can be ignored).                    |
-| COMMENT    | `#`                              | This is a comment Lines starting with # (optional). |
-| EOF        | End of input                     | Signals the end of the program.                     |
+| Token Type | Examples                        | Description                                         |
+| ---------- | ------------------------------- | --------------------------------------------------- |
+| KEYWORD    | `show`, `prep`, `deliver`, `if` | Redeliverd keywords in the language.                |
+| IDENTIFIER | `cake`, `temperature`           | Variable or function names.                         |
+| NUMBER     | `42`, `200`, `3.14`             | Integer or floating-point numbers.                  |
+| STRING     | `"Hello World!"`                | String literals.                                    |
+| SYMBOL     | `=`, `:`, `,`, `+`, `-`         | Operators, colons, parentheses, etc.                |
+| NEWLINE    | `\n`                            | Marks the end of a line.                            |
+| WHITESPACE | ` `, `\t`                       | Spaces or tabs (can be ignored).                    |
+| COMMENT    | `#`                             | This is a comment Lines starting with # (optional). |
+| EOF        | End of input                    | Signals the end of the program.                     |
 
 ### How the Tokenizer Works
 
@@ -463,9 +463,9 @@ The parser converts the tokenized input into an Abstract Syntax Tree (AST), whic
 
 #### 4. `parse_print_statement`
 
-- **Purpose**: Parses `scran` (print) statements (e.g., `scran "Hello";`).
+- **Purpose**: Parses `show` (print) statements (e.g., `show "Hello";`).
   - **Steps**:
-  - Reads the scran keyword and parses arguments until a semicolon.
+  - Reads the show keyword and parses arguments until a semicolon.
   - Stores arguments in an `AST_PRINT` node.
 
 #### 5. `parse_expression`
@@ -517,7 +517,7 @@ Given the code snippet:
 let x = 10;
 
 if x > 5:
-    scran "Big";
+    show "Big";
 ```
 
 #### 1. Tokenized Input:

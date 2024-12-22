@@ -22,7 +22,7 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_variable_assignment(state);
         }
-        else if (strcmp(token->lexeme, "scran") == 0)
+        else if (strcmp(token->lexeme, "show") == 0)
         {
             new_node = parse_print_statement(state);
         }
@@ -151,7 +151,7 @@ ASTNode *helper_print(ParserState *state)
 
         if (node->to_print.arg_count >= MAX_ARGUMENTS)
         {
-            parser_error("Too many arguments in scran statement", get_current_token(state));
+            parser_error("Too many arguments in show statement", get_current_token(state));
         }
 
         // Parse the argument
@@ -166,14 +166,14 @@ ASTNode *helper_print(ParserState *state)
         }
     }
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after scran statement");
+    expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
     node->next = NULL;
     return node;
 }
 
 ASTNode *parse_print_statement(ParserState *state)
 {
-    expect_token(state, TOKEN_KEYWORD, "Expected 'scran' keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected 'show' keyword");
 
     return helper_print(state);
 }
@@ -201,7 +201,7 @@ ASTNode *parse_input(ParserState *state)
 
     node->type = AST_INPUT;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after scran statement");
+    expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
     node->next = NULL;
     return node;
 }
@@ -351,7 +351,7 @@ ASTNode *parse_block(ParserState *state)
         ASTNode *statement = NULL;
         if (current->type == TOKEN_KEYWORD)
         {
-            if (strcmp(current->lexeme, "scran") == 0)
+            if (strcmp(current->lexeme, "show") == 0)
             {
                 statement = parse_print_statement(state);
             }
