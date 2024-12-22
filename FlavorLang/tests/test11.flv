@@ -1,8 +1,8 @@
 let time = 20;
 
-scran "Before error.";
+show "Before error.";
 
 if time > 15:
     burn "Too late!", "The food got burnt!";
 
-scran "After error?";
+show "After error?";

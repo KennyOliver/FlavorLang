@@ -1,4 +1,4 @@
-scran "What's your favorite dessert?";
+show "What's your favorite dessert?";
 let favorite = taste;
 
-scran "You chose:", favorite;
+show "You chose:", favorite;
