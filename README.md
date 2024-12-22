@@ -4,7 +4,34 @@
 
 ---
 
-## ⚡ Quick Start
+## 📖 Table of Contents
+
+1. [Quick Start](#quick-start)
+2. [Execution Flags & Behaviors](#execution-flags--behaviors)
+3. [Syntax Keywords](#syntax-keywords)
+4. [Syntax Examples](#syntax-examples)
+   - [Hello World](#hello-world)
+   - [Defining Variables](#defining-variables)
+   - [Conditional Logic](#conditional-logic)
+   - [For Loop](#for-loop)
+   - [While Loop](#while-loop)
+   - [Functions with Return](#functions-with-return)
+   - [Error Handling](#error-handling)
+   - [File Operations](#file-operations)
+   - [Switch-Case Logic](#switch-case-logic)
+   - [User Input](#user-input)
+5. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
+6. [Why FlavorLang?](#why-flavorlang)
+7. [Tokenizer](#tokenizer)
+   - [Overview](#tokenizer-overview)
+   - [How the Tokenizer Works](#how-the-tokenizer-works)
+   - [Debugging Tokens](#debugging-tokens)
+   - [Error Handling](#tokenizer-error-handling)
+   - [Future Enhancements](#future-enhancements)
+
+---
+
+## ⚡ Quick Start <a id="quick-start"></a>
 
 **Get up and running with FlavorLang in just a few steps!**
 
@@ -52,7 +79,7 @@ This will print detailed information about the tokenization and parsing process.
 
 ---
 
-## 🚀 **Execution Flags & Behaviors**
+## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
 flavor recipe.flv          # Default execution
@@ -63,7 +90,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Syntax Keywords
+## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
@@ -91,7 +118,143 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax
+## 🍳 Syntax Examples <a id="syntax-examples"></a>
+
+Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
+
+### 1. 👋 Hello World <a id="hello-world"></a>
+
+The simplest program to print "Hello world!".
+
+```py
+scran "Hello world!";
+```
+
+### 2. 🍲 Defining Variables <a id="defining-variables"></a>
+
+Use `let` to declare and initialize variables.
+
+```py
+let name = "Chef";
+let age = 25;
+
+scran "Name:", name;
+scran "Age:", age;
+```
+
+### 3. 🔄 Conditional Logic <a id="conditional-logic"></a>
+
+Use `if`, `elif`, and `else` to control program flow.
+
+```py
+let oven_temperature = 200;
+
+if oven_temperature > 180:
+    scran "The oven is hot!";
+elif oven_temperature == 180:
+    scran "The oven is just right!";
+else:
+    scran "The oven is too cold!";
+```
+
+### 4. 🔁 For Loop <a id="for-loop"></a>
+
+Use `for` to iterate a block of code.
+
+```py
+for i in 1..5:
+    scran "Mixing... Step", i;
+```
+
+### 5. 🔄 While Loop <a id="while-loop"></a>
+
+Use `while` for condition-based repetition.
+
+```py
+let flour_added = 0;
+
+while flour_added < 3:
+    scran "Adding flour...";
+    let flour_added = flour_added + 1;
+
+scran "All flour has been added!";
+```
+
+### 6. 📦 Functions with Return <a id="functions-with-return"></a>
+
+Use `prep` to define functions and `serve` to return values.
+Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
+
+```py
+prep bake_cake(temperature):
+    if temperature < 180:
+        scran "Temperature is too low to bake!";
+        burn "Cake burned!";  # Stops function execution immediately
+    else:
+        scran "Baking cake at", temperature, "degrees!";
+        serve "Cake is ready!";
+
+let result = bake_cake(200);
+scran result;
+```
+
+### 7. 🛠️ Error Handling <a id="error-handling"></a>
+
+Use `try` and `crumbs` to handle errors.
+
+```py
+try:
+    burn "This recipe failed!";
+    scran "This won't run!";
+crumbs:
+    scran "Caught an error: Recipe needs improvement.";
+```
+
+### 8. 📄 File Operations <a id="file-operations"></a>
+
+- `Plate`: Write to a file.
+- `Garnish`: Append to a file.
+- `Gather`: Read from a file.
+
+```py
+plate "output.txt" with "Freshly baked cake ready to serve!";
+garnish "output.txt" with "\nDon't forget the toppings!";
+
+let data = gather "output.txt";
+scran "File Contents:";
+scran data;
+```
+
+### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
+
+Use `when` and `is` for multiple condition matching.
+
+```py
+let dessert = "cake";
+
+when dessert:
+    is "cake":
+        scran "Bake the cake!";
+    is "pie":
+        scran "Prepare the pie!";
+    else:
+        scran "Dessert not on the menu.";
+```
+
+### 10. 📥 User Input <a id="user-input"></a>
+
+Use `taste` to accept input from the user.
+
+```py
+scran "What's your favorite dessert?";
+let favorite = taste;
+
+scran "You chose:", favorite;
+```
+
+---
+
+## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
 
 ```ebnf
 program       ::= statement* ;
@@ -114,160 +277,20 @@ step                 ::= expression ;
 
 ---
 
-## 🍳 **Syntax Examples**
+## Why FlavorLang? <a id="why-flavorlang"></a>
 
-Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
-
-### 1. 👋 **Hello World**
-
-The simplest program to print "Hello world!".
-
-```py
-scran "Hello world!";
-```
-
-### 2. 🍲 Defining Variables
-
-Use `let` to declare and initialize variables.
-
-```py
-let name = "Chef";
-let age = 25;
-
-scran "Name:", name;
-scran "Age:", age;
-```
-
-### 3. 🔄 Conditional Logic
-
-Use `if`, `elif`, and `else` to control program flow.
-
-```py
-let oven_temperature = 200;
-
-if oven_temperature > 180:
-    scran "The oven is hot!";
-elif oven_temperature == 180:
-    scran "The oven is just right!";
-else:
-    scran "The oven is too cold!";
-```
-
-### 4. 🔁 For Loop
-
-Use `for` to iterate a block of code.
-
-```py
-for i in 1..5:
-    scran "Mixing... Step", i;
-```
-
-### 5. 🔄 While Loop
-
-Use `while` for condition-based repetition.
-
-```py
-let flour_added = 0;
-
-while flour_added < 3:
-    scran "Adding flour...";
-    let flour_added = flour_added + 1;
-
-scran "All flour has been added!";
-```
-
-### 6. 📦 Functions with Return
-
-Use `prep` to define functions and `serve` to return values.
-Note that `burn` **takes precedence** over `serve`, stopping execution immediately.
-
-```py
-prep bake_cake(temperature):
-    if temperature < 180:
-        scran "Temperature is too low to bake!";
-        burn "Cake burned!";  # Stops function execution immediately
-    else:
-        scran "Baking cake at", temperature, "degrees!";
-        serve "Cake is ready!";
-
-let result = bake_cake(200);
-scran result;
-```
-
-### 7. 🛠️ Error Handling
-
-Use `try` and `crumbs` to handle errors.
-
-```py
-try:
-    burn "This recipe failed!";
-    scran "This won't run!";
-crumbs:
-    scran "Caught an error: Recipe needs improvement.";
-```
-
-### 8. 📄 File Operations
-
-- `Plate`: Write to a file.
-- `Garnish`: Append to a file.
-- `Gather`: Read from a file.
-
-```py
-plate "output.txt" with "Freshly baked cake ready to serve!";
-garnish "output.txt" with "\nDon't forget the toppings!";
-
-let data = gather "output.txt";
-scran "File Contents:";
-scran data;
-```
-
-### 9. 🔎 Switch-Case Logic
-
-Use `when` and `is` for multiple condition matching.
-
-```py
-let dessert = "cake";
-
-when dessert:
-    is "cake":
-        scran "Bake the cake!";
-    is "pie":
-        scran "Prepare the pie!";
-    else:
-        scran "Dessert not on the menu.";
-```
-
-### 10. 📥 User Input
-
-Use `taste` to accept input from the user.
-
-```py
-scran "What's your favorite dessert?";
-let favorite = taste;
-
-scran "You chose:", favorite;
-```
+- **Unique & Fun**: Express your programs like recipes!
+- **Flexible Execution**: File extensions and flags allow customized program behavior.
+- **Readable Syntax**: Keywords like add, mix, cook, and serve make code approachable and enjoyable.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with --chef mode.
 
 ---
 
-## Why FlavorLang?
-
-- **Unique & Fun**:
-  Express your programs like recipes!
-- **Flexible Execution**:
-  File extensions and flags allow customized program behavior.
-- **Readable Syntax**:
-  Keywords like add, mix, cook, and serve make code approachable and enjoyable.
-- **Debug-Friendly**:
-  Easily trace and test your code step-by-step with --chef mode.
-
----
-
-## Tokenizer
+## Tokenizer <a id="tokenizer"></a>
 
 The FlavorLang tokenizer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens serve as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
 
-### Tokenizer Overview
+### Overview <a id="tokenizer-overview"></a>
 
 | Token Type | Examples                       | Description                                         |
 | ---------- | ------------------------------ | --------------------------------------------------- |
@@ -349,12 +372,12 @@ Each character in the source is categorized into one of the following types:
 - Single-character symbols like `,`, `:`, and `(` are tokenized directly.
 - Example: `,` → `TOKEN_DELIMITER`
 
-### Debugging Tokens
+### Debugging Tokens <a id="debugging-tokens"></a>
 
 - The tokenizer includes a debugging flag `--debug` to print all generated tokens.
 - Each token’s type, lexeme, and line number are displayed for easier inspection of the tokenization process.
 
-### Example Output:
+#### Example Output:
 
 ```
 [Line 1] Token Type: 1 | Lexeme: for
@@ -363,7 +386,7 @@ Each character in the source is categorized into one of the following types:
 ...
 ```
 
-### Error Handling
+### Error Handling <a id="tokenizer-error-handling"></a>
 
 - The tokenizer raises errors for:
 - Unexpected characters.
@@ -371,7 +394,7 @@ Each character in the source is categorized into one of the following types:
 - Memory allocation failures.
 - Each error includes the line number to assist with debugging.
 
-### Future Enhancements
+### Future Enhancements <a id="future-enhancements"></a>
 
 - Support for additional operators and delimiters.
 - Improved error recovery to handle malformed inputs gracefully.
