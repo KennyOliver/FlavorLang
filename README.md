@@ -28,6 +28,12 @@
    - [Debugging Tokens](#debugging-tokens)
    - [Error Handling](#tokenizer-error-handling)
    - [Future Enhancements](#future-enhancements)
+8. [Parser](#parser)
+   - [Key Structures](#key-structures)
+   - [Main Parsing Functions](#main-parsing-functions)
+   - [Supporting Functions](#supporting-functions)
+   - [Error Handling](#error-handling)
+   - [Workflow Example](#workflow-example)
 
 ---
 
