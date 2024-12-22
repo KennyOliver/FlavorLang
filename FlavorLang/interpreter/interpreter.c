@@ -11,6 +11,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
 void interpret_print(ASTNode *node, Environment *env);
+void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
@@ -78,6 +79,10 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     case AST_VARIABLE:
         debug_print("Matched: `AST_VARIABLE`");
         return interpret_variable(node, env);
+    case AST_ERROR:
+        debug_print("Matched: `AST_ERROR`");
+        interpret_raise_error(node, env);
+        return create_default_value();
     default:
         fprintf(stderr, "Error: Unsupported ASTNode type.\n");
         exit(1);
@@ -459,6 +464,46 @@ void interpret_print(ASTNode *node, Environment *env)
         }
     }
     printf("\n");
+}
+
+void interpret_raise_error(ASTNode *node, Environment *env)
+{
+    int divider_length = 50;
+    char *error_banner = "  !!! ERROR RAISED !!!  ";
+    int error_banner_length = (divider_length - strlen(error_banner)) / 2 - 1;
+
+    printf("\x1B[31m");
+    printf("\x1B[01m");
+
+    printf("<");
+    for (int i = 1; i < divider_length; i++)
+    {
+        printf("=");
+    }
+    printf(">\n\n ");
+    for (int i = 0; i < error_banner_length; i++)
+    {
+        printf("~");
+    }
+    printf("%s", error_banner);
+    for (int i = 0; i < error_banner_length; i++)
+    {
+        printf("~");
+    }
+    printf(" \n\n");
+
+    interpret_print(node, env);
+
+    printf("\n<");
+    for (int i = 1; i < divider_length; i++)
+    {
+        printf("=");
+    }
+    printf(">\n");
+
+    printf("\x1B[0m");
+
+    exit(1);
 }
 
 Variable *allocate_variable(Environment *env, const char *name)
