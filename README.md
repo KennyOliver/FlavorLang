@@ -121,7 +121,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
 | `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |
-| `book`    | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
+| `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
 
 ---
 

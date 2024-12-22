@@ -21,7 +21,7 @@ const char *KEYWORDS[] = {
     "plate",   // write
     "garnish", // append
     "gather",  // read
-    "book",    // import
+    "recipe",  // import
     NULL       // sentinel value
 };
 
