@@ -16,7 +16,8 @@ typedef enum
     AST_CONDITIONAL,
     AST_BINARY_OP,
     AST_LOOP,
-    AST_VARIABLE
+    AST_VARIABLE,
+    AST_ERROR
 } ASTNodeType;
 
 typedef struct
