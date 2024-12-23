@@ -9,19 +9,20 @@ const char *KEYWORDS[] = {
     "for",     // for
     "to",      // for range
     "while",   // while
-    "when",    // switch
+    "check",   // switch
     "is",      // case
-    "prep",    // function
-    "serve",   // return
+    "break",   // break
+    "create",  // function
+    "deliver", // return
     "try",     // try
-    "crumbs",  // catch
+    "rescue",  // catch
     "burn",    // raise error
-    "scran",   // output
+    "show",    // output
     "taste",   // input
     "plate",   // write
     "garnish", // append
     "gather",  // read
-    "book",    // import
+    "recipe",  // import
     NULL       // sentinel value
 };
 

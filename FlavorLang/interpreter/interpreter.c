@@ -15,6 +15,7 @@ void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
+void interpret_switch(ASTNode *node, Environment *env);
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
@@ -79,6 +80,10 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     case AST_VARIABLE:
         debug_print("Matched: `AST_VARIABLE`");
         return interpret_variable(node, env);
+    case AST_SWITCH:
+        debug_print("Matched: `AST_SWITCH`");
+        interpret_switch(node, env);
+        return create_default_value();
     case AST_ERROR:
         debug_print("Matched: `AST_ERROR`");
         interpret_raise_error(node, env);
@@ -710,6 +715,90 @@ void interpret_while_loop(ASTNode *node, Environment *env)
     }
 
     debug_print("`interpret_while_loop` completed");
+}
+
+void interpret_switch(ASTNode *node, Environment *env)
+{
+    debug_print("`interpret_switch()`\n");
+
+    // First evaluate the switch expression
+    LiteralValue switch_value = interpret(node->switch_case.expression, env);
+    debug_print("Switch expression evaluated");
+
+    // Go through each case
+    ASTCaseNode *current_case = node->switch_case.cases;
+    int break_encountered = 0;
+
+    while (current_case && !break_encountered)
+    {
+        if (current_case->condition == NULL)
+        {
+            // This is the `else` case
+            debug_print("Executing `else` case");
+            if (!break_encountered)
+            {
+                // Execute the `else` block
+                ASTNode *current_statement = current_case->body;
+                while (current_statement && !break_encountered)
+                {
+                    if (current_statement->type == AST_BREAK)
+                    {
+                        break_encountered = 1;
+                        break;
+                    }
+                    interpret(current_statement, env);
+                    current_statement = current_statement->next;
+                }
+            }
+            break;
+        }
+
+        // Evaluate the case condition
+        LiteralValue case_value = interpret(current_case->condition, env);
+
+        // Check if types match and values are equal
+        if (switch_value.type == case_value.type)
+        {
+            int values_match = 0;
+
+            if (switch_value.type == TYPE_NUMBER)
+            {
+                values_match = (switch_value.data.number == case_value.data.number);
+            }
+            else if (switch_value.type == TYPE_STRING)
+            {
+                values_match = (strcmp(switch_value.data.string, case_value.data.string) == 0);
+            }
+
+            if (values_match)
+            {
+                debug_print("Match found, executing case body");
+
+                // Execute all statements in the matching case
+                ASTNode *current_statement = current_case->body;
+                while (current_statement && !break_encountered)
+                {
+                    if (current_statement->type == AST_BREAK)
+                    {
+                        break_encountered = 1;
+                        break;
+                    }
+                    interpret(current_statement, env);
+                    current_statement = current_statement->next;
+                }
+
+                if (break_encountered)
+                {
+                    break;
+                }
+                // Otherwise fall-through to next case (allowing case stacking)
+            }
+        }
+
+        current_case = current_case->next;
+    }
+
+    debug_print("Switch statement interpretation complete");
 }
 
 // Initialize the environment

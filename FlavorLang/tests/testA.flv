@@ -1,9 +1,9 @@
-scran "Hi!";
+show "Hi!";
 
-scran "Test 1:", 1, 2, 3;
+show "Test 1:", 1, 2, 3;
 
 let a = 1;
 let b = 2;
 let c = 3;
 
-scran "Test 2:", a, b, c;
+show "Test 2:", a, b, c;

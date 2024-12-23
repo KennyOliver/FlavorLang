@@ -1,2 +1,2 @@
 for i in 1..5:
-    scran "Mixing... Step", i;
+    show "Mixing... Step", i;

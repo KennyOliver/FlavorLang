@@ -1,85 +1,85 @@
 #1
-scran "Hello world!";
+show "Hello world!";
 
 
 # 2
 let name = "Chef";
 let age = 25;
 
-scran "Name:", name;
-scran "Age:", age;
+show "Name:", name;
+show "Age:", age;
 
 
 # 3
 let oven_temperature = 200;
 
 if oven_temperature > 180:
-    scran "The oven is hot!";
+    show "The oven is hot!";
 elif oven_temperature == 180:
-    scran "The oven is just right!";
+    show "The oven is just right!";
 else:
-    scran "The oven is too cold!";
+    show "The oven is too cold!";
 
 
 # 4
 for let i = 1 to 5:
-    scran "Mixing... Step", i;
+    show "Mixing... Step", i;
 
 
 # 5
 let flour_added = 0;
 
 while flour_added < 3:
-    scran "Adding flour...";
+    show "Adding flour...";
     let flour_added = flour_added + 1;
 
-scran "All flour has been added!";
+show "All flour has been added!";
 
 
 # 6
-prep bake_cake with let temperature:
+create bake_cake with let temperature:
     if temperature < 180:
-        scran "Temperature is too low to bake!";
+        show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
     else:
-        scran "Baking cake at", temperature, "degrees!";
-        serve "Cake is ready!";
+        show "Baking cake at", temperature, "degrees!";
+        deliver "Cake is ready!";
 
 let result = bake_cake with 200;
-scran result;
+show result;
 
 
 # 7
 try:
     burn "This recipe failed!";
-    scran "This won't run!";
-crumbs:
-    scran "Caught an error: Recipe needs improvement.";
+    show "This won't run!";
+rescue:
+    show "Caught an error: Recipe needs improvement.";
 
 
 # 8
-plate "output.txt" with "Freshly baked cake ready to serve!";
+plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";
-scran "File Contents:";
-scran data;
+show "File Contents:";
+show data;
 
 
 # 9
 let dessert = "cake";
 
-when dessert:
+check dessert:
     is "cake":
-        scran "Bake the cake!";
+        show "Bake the cake!";
     is "pie":
-        scran "Prepare the pie!";
+        show "createare the pie!";
     else:
-        scran "Dessert not on the menu.";
+        show "Dessert not on the menu.";
 
 
 # 10
-scran "What's your favorite dessert?";
+show "What's your favorite dessert?";
 let favorite = taste;
 
-scran "You chose:", favorite;
+show "You chose:", favorite;

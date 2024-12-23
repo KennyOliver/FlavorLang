@@ -1,9 +1,11 @@
 let dessert = "cake";
 
-when dessert:
+check dessert:
     is "cake":
-        scran "Bake the cake!";
+        show "Bake the cake!";
     is "pie":
-        scran "Prepare the pie!";
+    is "cookie":
+        show "Prepare the oven!";
+        break;
     else:
-        scran "Dessert not on the menu.";
+        show "Dessert not on the menu.";
