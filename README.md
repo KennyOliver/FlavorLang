@@ -234,19 +234,32 @@ show data;
 
 ### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
 
-Use `check` and `is` for multiple condition matching.
-The fallback case can be provided with an `else`.
+The `check`-`is` syntax in FlavorLang provides an intuitive way to match multiple conditions with beginner-friendly behavior inspired by Python & Go.
+
+- `check` evaluates a value, is matches cases, and else handles unmatched values.
+- **Fallthrough**: Cases fall through by default **unless explicitly stopped** with `break`. This ensures clarity and flexibility for beginners.
+
+#### Example
 
 ```py
 let dessert = "cake";
 
 check dessert:
-    is "cake":
-        show "Bake the cake!";
-    is "pie":
-        show "Prepare the pie!";
-    else:
-        show "Dessert not on the menu.";
+	is "cake":
+		show "Bake the cake!";
+	is "pie":
+	is "cookie":
+		show "Prepare the oven!";
+		break;
+	else:
+		show "Dessert not on the menu.";
+```
+
+#### Output
+
+```
+Bake the cake!
+Dessert not on the menu.
 ```
 
 ### 10. 📥 User Input <a id="user-input"></a>
