@@ -386,6 +386,10 @@ ASTNode *parse_block(ParserState *state)
                 statement = parse_switch_block(state);
                 state->in_switch_block = false;
             }
+            else if (strcmp(current->lexeme, "break") == 0)
+            {
+                statement = parse_break_statement(state);
+            }
             else if (strcmp(current->lexeme, "let") == 0)
             {
                 statement = parse_variable_declaration(state);
@@ -533,6 +537,22 @@ ASTNode *parse_while_block(ParserState *state)
     // Add code to re-evaluate the condition after each iteration
     node->loop.re_evaluate_condition = 1; // Flag to indicate re-evaluation
 
+    node->next = NULL;
+    return node;
+}
+
+ASTNode *parse_break_statement(ParserState *state)
+{
+    expect_token(state, TOKEN_KEYWORD, "Expected `break` keyword");
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after break");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_BREAK;
     node->next = NULL;
     return node;
 }
