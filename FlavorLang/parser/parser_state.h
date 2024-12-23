@@ -3,11 +3,13 @@
 
 #include "../common.h"
 #include <stdio.h>
+#include <stdbool.h>
 
 typedef struct
 {
     Token *tokens;
     size_t current_token;
+    bool in_switch_block;
 } ParserState;
 
 // Create and destroy parser state

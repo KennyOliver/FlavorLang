@@ -42,6 +42,14 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_while_block(state);
         }
+        else if (strcmp(token->lexeme, "check") == 0)
+        {
+            new_node = parse_switch_block(state);
+        }
+        else if (strcmp(token->lexeme, "is") == 0)
+        {
+            new_node = parse_block(state);
+        }
         else
         {
             parser_error("Unexpected token at start of statement", token);
@@ -341,10 +349,15 @@ ASTNode *parse_block(ParserState *state)
             continue; // continue to next statement instead of breaking
         }
 
-        if (current->type == TOKEN_KEYWORD &&
-            (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0))
+        // Handle `is` in check blocks
+        if (current->type == TOKEN_KEYWORD)
         {
-            break;
+            if ((strcmp(current->lexeme, "elif") == 0 ||
+                 strcmp(current->lexeme, "else") == 0) ||
+                (!state->in_switch_block && strcmp(current->lexeme, "is") == 0))
+            {
+                break;
+            }
         }
 
         // Parse statement
@@ -367,9 +380,19 @@ ASTNode *parse_block(ParserState *state)
             {
                 statement = parse_while_block(state);
             }
+            else if (strcmp(current->lexeme, "check") == 0)
+            {
+                state->in_switch_block = true;
+                statement = parse_switch_block(state);
+                state->in_switch_block = false;
+            }
             else if (strcmp(current->lexeme, "let") == 0)
             {
                 statement = parse_variable_declaration(state);
+            }
+            else if (state->in_switch_block && strcmp(current->lexeme, "is") == 0)
+            {
+                break;
             }
             else
             {
@@ -514,6 +537,115 @@ ASTNode *parse_while_block(ParserState *state)
     return node;
 }
 
+ASTNode *parse_switch_block(ParserState *state)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_SWITCH;
+
+    // Handle `check` keyword
+    expect_token(state, TOKEN_KEYWORD, "Expected `check` keyword");
+
+    // Parse switch expression
+    node->switch_case.expression = parse_expression(state);
+
+    // Expect colon
+    expect_token(state, TOKEN_DELIMITER, "Expected `:`");
+
+    // Parse cases
+    node->switch_case.cases = NULL;
+    ASTCaseNode *last_case = NULL;
+
+    Token *current;
+    while ((current = get_current_token(state)))
+    {
+        // Skip any delimiters between cases
+        if (current->type == TOKEN_DELIMITER)
+        {
+            advance_token(state);
+            continue;
+        }
+
+        if (current->type != TOKEN_KEYWORD)
+        {
+            break; // exit if not a keyword (`is`/`else`)
+        }
+
+        if (strcmp(current->lexeme, "is") == 0)
+        {
+            advance_token(state); // consume `is`
+
+            ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
+            if (!case_node)
+            {
+                parser_error("Memory allocation failed", current);
+            }
+
+            // Parse case value
+            case_node->condition = parse_expression(state);
+
+            // Expect colon
+            expect_token(state, TOKEN_DELIMITER, "Expected `:` after case value");
+
+            // Parse case body
+            case_node->body = parse_block(state);
+            case_node->next = NULL;
+
+            // Add to cases list
+            if (!node->switch_case.cases)
+            {
+                node->switch_case.cases = case_node;
+            }
+            else
+            {
+                last_case->next = case_node;
+            }
+            last_case = case_node;
+        }
+        else if (strcmp(current->lexeme, "else") == 0)
+        {
+            advance_token(state); // consume `else`
+
+            ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
+            if (!default_case)
+            {
+                parser_error("Memory allocation failed", current);
+            }
+
+            default_case->condition = NULL; // no condition for `else
+
+            // Expect colon
+            expect_token(state, TOKEN_DELIMITER, "Expected `:` after else");
+
+            // Parse else body
+            default_case->body = parse_block(state);
+            default_case->next = NULL;
+
+            // Add as last case
+            if (!node->switch_case.cases)
+            {
+                node->switch_case.cases = default_case;
+            }
+            else
+            {
+                last_case->next = default_case;
+            }
+            break; // else is always the last case
+        }
+        else
+        {
+            break; // Exit on any other keyword
+        }
+    }
+
+    node->next = NULL;
+    return node;
+}
+
 void free_ast(ASTNode *node)
 {
     while (node)
@@ -572,8 +704,41 @@ void free_ast(ASTNode *node)
             // Handle function call cleanup if needed
             break;
 
+        case AST_SWITCH:
+            if (node->switch_case.expression)
+            {
+                free_ast(node->switch_case.expression);
+            }
+
+            if (node->switch_case.cases)
+            {
+                ASTCaseNode *case_node = node->switch_case.cases;
+
+                while (case_node)
+                {
+                    ASTCaseNode *next = case_node->next;
+
+                    // Free the condition ASTNode if it exists
+                    if (case_node->condition)
+                    {
+                        free_ast(case_node->condition);
+                    }
+
+                    // Free the body
+                    if (case_node->body)
+                    {
+                        free_ast(case_node->body);
+                    }
+
+                    free(case_node);
+                    case_node = next;
+                }
+            }
+
+            break;
+
         default:
-            fprintf(stderr, "Error: Unknown ASTNode type in `free_ast`.\n");
+            fprintf(stderr, "Error: Unknown `ASTNode` type in `free_ast`.\n");
             exit(1);
         }
 

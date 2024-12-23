@@ -16,10 +16,12 @@ typedef enum
     AST_CONDITIONAL,
     AST_BINARY_OP,
     AST_LOOP,
+    AST_SWITCH, // Added AST_SWITCH type
     AST_VARIABLE,
     AST_ERROR
 } ASTNodeType;
 
+// Literal Node
 typedef struct
 {
     enum
@@ -34,6 +36,22 @@ typedef struct
     } value;
 } LiteralNode;
 
+// AST Case Node for "is" and "else" blocks in a switch-case
+typedef struct ASTCaseNode
+{
+    struct ASTNode *condition; // Condition for "is" (NULL for "else")
+    struct ASTNode *body;      // Body of the case
+    struct ASTCaseNode *next;  // Pointer to the next case (linked list)
+} ASTCaseNode;
+
+// AST Switch Node
+typedef struct
+{
+    struct ASTNode *expression; // The expression being checked
+    ASTCaseNode *cases;         // Linked list of cases
+} ASTSwitch;
+
+// AST Conditional Node
 typedef struct
 {
     struct ASTNode *condition;   // the condition (e.g., oven_temperature > 180)
@@ -41,6 +59,7 @@ typedef struct
     struct ASTNode *else_branch; // optional: points to next `elif` or `else` block
 } ASTConditional;
 
+// AST Binary Operation Node
 typedef struct
 {
     struct ASTNode *left;
@@ -48,6 +67,7 @@ typedef struct
     char *operator;
 } ASTBinaryOp;
 
+// AST Loop Node
 typedef struct
 {
     struct ASTNode *condition;
@@ -67,6 +87,7 @@ typedef struct ASTNode
             char *variable_name;
             struct ASTNode *value;
         } assignment;
+
         // Print statement
         struct
         {
@@ -83,16 +104,16 @@ typedef struct ASTNode
         // Conditional
         ASTConditional conditional;
 
+        // Switch
+        ASTSwitch switch_case; // Added field for switch-case
+
         // While loop
-        union
-        {
-            ASTLoop loop;
-        };
+        ASTLoop loop;
 
         // Variable
         char *variable_name;
     };
-    struct ASTNode *next;
+    struct ASTNode *next; // Link to the next statement or node
 } ASTNode;
 
 #endif
