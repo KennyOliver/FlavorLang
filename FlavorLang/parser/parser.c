@@ -349,10 +349,15 @@ ASTNode *parse_block(ParserState *state)
             continue; // continue to next statement instead of breaking
         }
 
-        if (current->type == TOKEN_KEYWORD &&
-            (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0))
+        // Handle `is` in check blocks
+        if (current->type == TOKEN_KEYWORD)
         {
-            break;
+            if ((strcmp(current->lexeme, "elif") == 0 ||
+                 strcmp(current->lexeme, "else") == 0) ||
+                (!state->in_switch_block && strcmp(current->lexeme, "is") == 0))
+            {
+                break;
+            }
         }
 
         // Parse statement
@@ -375,9 +380,19 @@ ASTNode *parse_block(ParserState *state)
             {
                 statement = parse_while_block(state);
             }
+            else if (strcmp(current->lexeme, "check") == 0)
+            {
+                state->in_switch_block = true;
+                statement = parse_switch_block(state);
+                state->in_switch_block = false;
+            }
             else if (strcmp(current->lexeme, "let") == 0)
             {
                 statement = parse_variable_declaration(state);
+            }
+            else if (state->in_switch_block && strcmp(current->lexeme, "is") == 0)
+            {
+                break;
             }
             else
             {
@@ -533,41 +548,54 @@ ASTNode *parse_switch_block(ParserState *state)
     node->type = AST_SWITCH;
 
     // Handle `check` keyword
-    expect_token(state, TOKEN_KEYWORD, "check");
+    expect_token(state, TOKEN_KEYWORD, "Expected `check` keyword");
 
     // Parse switch expression
     node->switch_case.expression = parse_expression(state);
 
     // Expect colon
-    expect_token(state, TOKEN_DELIMITER, ":");
+    expect_token(state, TOKEN_DELIMITER, "Expected `:`");
 
     // Parse cases
     node->switch_case.cases = NULL;
     ASTCaseNode *last_case = NULL;
 
-    while (true)
+    Token *current;
+    while ((current = get_current_token(state)))
     {
-        Token *current = get_current_token(state);
+        // Skip any delimiters between cases
+        if (current->type == TOKEN_DELIMITER)
+        {
+            advance_token(state);
+            continue;
+        }
+
+        if (current->type != TOKEN_KEYWORD)
+        {
+            break; // exit if not a keyword (`is`/`else`)
+        }
 
         if (strcmp(current->lexeme, "is") == 0)
         {
-            // Parse `is` case
-            advance_token(state);
+            advance_token(state); // consume `is`
+
             ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
             if (!case_node)
             {
-                parser_error("Memoory allocation failed", get_current_token(state));
+                parser_error("Memory allocation failed", current);
             }
+
+            // Parse case value
             case_node->condition = parse_expression(state);
 
             // Expect colon
-            expect_token(state, TOKEN_DELIMITER, ":");
+            expect_token(state, TOKEN_DELIMITER, "Expected `:` after case value");
 
-            // Parse body
+            // Parse case body
             case_node->body = parse_block(state);
             case_node->next = NULL;
 
-            // Link case
+            // Add to cases list
             if (!node->switch_case.cases)
             {
                 node->switch_case.cases = case_node;
@@ -576,28 +604,28 @@ ASTNode *parse_switch_block(ParserState *state)
             {
                 last_case->next = case_node;
             }
-
             last_case = case_node;
         }
         else if (strcmp(current->lexeme, "else") == 0)
         {
-            // Parse `else` case
-            advance_token(state);
+            advance_token(state); // consume `else`
+
             ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
             if (!default_case)
             {
-                parser_error("Memoory allocation failed", get_current_token(state));
+                parser_error("Memory allocation failed", current);
             }
-            default_case->condition = NULL;
+
+            default_case->condition = NULL; // no condition for `else
 
             // Expect colon
-            expect_token(state, TOKEN_DELIMITER, ":");
+            expect_token(state, TOKEN_DELIMITER, "Expected `:` after else");
 
-            // Parse body
+            // Parse else body
             default_case->body = parse_block(state);
             default_case->next = NULL;
 
-            // Add as the last case
+            // Add as last case
             if (!node->switch_case.cases)
             {
                 node->switch_case.cases = default_case;
@@ -606,14 +634,15 @@ ASTNode *parse_switch_block(ParserState *state)
             {
                 last_case->next = default_case;
             }
-            break;
+            break; // else is always the last case
         }
         else
         {
-            break;
+            break; // Exit on any other keyword
         }
     }
 
+    node->next = NULL;
     return node;
 }
 
