@@ -109,8 +109,9 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            | ❌           |
 | `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. | ❌           |
 | `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             | ✅           |
-| `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ❌           |
-| `is`      | Case clause                  | Defines a case inside `check`.                                                              | ❌           |
+| `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ✅           |
+| `is`      | Case clause                  | Defines a case inside `check`.                                                              | ✅           |
+| `break`   | Exit control flow            | Stops execution of further cases in `check` and exits the current flow.                     | ✅           |
 | `create`  | Define a function            | createares a reusable block of logic.                                                       | ❌           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ❌           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
@@ -234,19 +235,32 @@ show data;
 
 ### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
 
-Use `check` and `is` for multiple condition matching.
-The fallback case can be provided with an `else`.
+The `check`-`is` syntax in FlavorLang provides an intuitive way to match multiple conditions with beginner-friendly behavior inspired by Python & Go.
+
+- `check` evaluates a value, is matches cases, and else handles unmatched values.
+- **Fallthrough**: Cases fall through by default **unless explicitly stopped** with `break`. This ensures clarity and flexibility for beginners.
+
+#### Example
 
 ```py
 let dessert = "cake";
 
 check dessert:
-    is "cake":
-        show "Bake the cake!";
-    is "pie":
-        show "createare the pie!";
-    else:
-        show "Dessert not on the menu.";
+	is "cake":
+		show "Bake the cake!";
+	is "pie":
+	is "cookie":
+		show "Prepare the oven!";
+		break;
+	else:
+		show "Dessert not on the menu.";
+```
+
+#### Output
+
+```
+Bake the cake!
+Dessert not on the menu.
 ```
 
 ### 10. 📥 User Input <a id="user-input"></a>
