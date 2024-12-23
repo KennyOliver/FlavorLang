@@ -704,8 +704,41 @@ void free_ast(ASTNode *node)
             // Handle function call cleanup if needed
             break;
 
+        case AST_SWITCH:
+            if (node->switch_case.expression)
+            {
+                free_ast(node->switch_case.expression);
+            }
+
+            if (node->switch_case.cases)
+            {
+                ASTCaseNode *case_node = node->switch_case.cases;
+
+                while (case_node)
+                {
+                    ASTCaseNode *next = case_node->next;
+
+                    // Free the condition ASTNode if it exists
+                    if (case_node->condition)
+                    {
+                        free_ast(case_node->condition);
+                    }
+
+                    // Free the body
+                    if (case_node->body)
+                    {
+                        free_ast(case_node->body);
+                    }
+
+                    free(case_node);
+                    case_node = next;
+                }
+            }
+
+            break;
+
         default:
-            fprintf(stderr, "Error: Unknown ASTNode type in `free_ast`.\n");
+            fprintf(stderr, "Error: Unknown `ASTNode` type in `free_ast`.\n");
             exit(1);
         }
 
