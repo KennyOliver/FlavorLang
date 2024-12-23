@@ -235,6 +235,7 @@ show data;
 ### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
 
 Use `check` and `is` for multiple condition matching.
+The fallback case can be provided with an `else`.
 
 ```py
 let dessert = "cake";
