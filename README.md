@@ -35,6 +35,10 @@
    - [Supporting Functions](#supporting-functions)
    - [Error Handling](#error-handling)
    - [Workflow Example](#workflow-example)
+9. [Interpreter](#interpreter)
+   - [Main Interpreter Functions](#Main-Interpreter-Functions)
+   - [Summary of Steps](#Summary-of-Steps)
+   - [Example Execution Flow](#Example-Execution-Flow)
 
 ---
 
@@ -555,13 +559,15 @@ AST_ASSIGNMENT -> AST_CONDITIONAL
 
 The interpreter in FlavorLang is tasked with processing the abstract syntax tree (AST) produced by the parser. Through this process, it systematically evaluates different elements of FlavorLang, including variable assignments, complex expressions, loops, and conditionals.
 
-### 1. Core Interpretation Flow
+### Main Interpreter Functions
+
+#### 1. Core Interpretation Flow
 
 - `interpret()`function: The main entry point for interpreting an AST node. It recursively processes the node based on its type.
 - Each node in the AST represents a different construct in the program (e.g., literals, assignments, binary operations, print statements).
 - The interpreter evaluates these nodes and carries out the corresponding operations.
 
-### 2. Key Components
+#### 2. Key Components
 
 - **Literal Values**:
   - The interpreter supports literal values (e.g., numbers, strings).
@@ -589,36 +595,32 @@ The interpreter in FlavorLang is tasked with processing the abstract syntax tree
 - **Loops**:
   - The `interpret_while_loop()`function processes while loops by evaluating the loop’s condition and repeatedly executing the loop’s body as long as the condition is true.
 
-### 3. Handling Environment
+#### 3. Handling Environment
 
 - The interpreter operates on an `Environment` structure, which stores variables and their values.
 - The `get_variable()`function is used to look up a variable’s value in the environment.
 - The `init_environment()`function initializes the environment, while `free_environment()`cleans up the allocated resources when done.
 
-### 4. Helper Functions
+#### 4. Helper Functions
 
 - The interpreter uses helper functions to ensure safe memory management and smooth execution of the program, such as `create_default_value()`for initializing a zeroed `LiteralValue`, or expanding the environment’s variable storage as necessary.
 
-### 5. Flow Control
+#### 5. Flow Control
 
 - The `interpret_program()`function processes the entire program by iterating over each statement and interpreting it.
 - Each type of AST node is handled by a different case in the switch statement in `interpret()`(e.g., `AST_LITERAL`, `AST_ASSIGNMENT`, `AST_BINARY_OP`, etc.).
 
-### 6. Error Handling
+#### 6. Error Handling
 
 - There are multiple checks for errors, such as undefined variables (`get_variable()`), division by zero (`interpret_binary_op()`), and invalid types (`interpret_literal()`).
 - If the program encounters an error, it terminates with a descriptive message and exits (`exit(1)`).
 
----
-
-### Summary of Steps in `interpret()`
+### Summary of Steps
 
 1. **Check Node Type**: The `interpret()`function first checks the type of the AST node (e.g., literal, assignment, binary operation).
 2. **Evaluate Node**: Depending on the node type, it calls the respective function to handle the logic (e.g., `interpret_literal()`for literals, `interpret_assignment()`for assignments).
 3. **Return Value**: After performing the necessary operation (like evaluation or assignment), the function returns a `LiteralValue`representing the result of the operation.
 4. **Error Handling**: In case of an unsupported operation or invalid state (e.g., dividing by zero), the interpreter exits with an error message.
-
----
 
 ### Example Execution Flow
 
