@@ -719,7 +719,7 @@ void interpret_while_loop(ASTNode *node, Environment *env)
 
 void interpret_switch(ASTNode *node, Environment *env)
 {
-    debug_print("Interpreting switch statement");
+    debug_print("`interpret_switch()`\n");
 
     // First evaluate the switch expression
     LiteralValue switch_value = interpret(node->switch_case.expression, env);
@@ -727,20 +727,25 @@ void interpret_switch(ASTNode *node, Environment *env)
 
     // Go through each case
     ASTCaseNode *current_case = node->switch_case.cases;
-    int match_found = 0;
+    int break_encountered = 0;
 
-    while (current_case)
+    while (current_case && !break_encountered)
     {
         if (current_case->condition == NULL)
         {
             // This is the `else` case
             debug_print("Executing `else` case");
-            if (!match_found)
+            if (!break_encountered)
             {
-                // Execute the `else` block if no matches were found
+                // Execute the `else` block
                 ASTNode *current_statement = current_case->body;
-                while (current_statement)
+                while (current_statement && !break_encountered)
                 {
+                    if (current_statement->type == AST_BREAK)
+                    {
+                        break_encountered = 1;
+                        break;
+                    }
                     interpret(current_statement, env);
                     current_statement = current_statement->next;
                 }
@@ -759,29 +764,34 @@ void interpret_switch(ASTNode *node, Environment *env)
             if (switch_value.type == TYPE_NUMBER)
             {
                 values_match = (switch_value.data.number == case_value.data.number);
-                debug_print("Comparing numbers: `%f == %f`",
-                            switch_value.data.number, case_value.data.number);
             }
             else if (switch_value.type == TYPE_STRING)
             {
                 values_match = (strcmp(switch_value.data.string, case_value.data.string) == 0);
-                debug_print("Comparing strings: `%s == %s`",
-                            switch_value.data.string, case_value.data.string);
             }
 
             if (values_match)
             {
                 debug_print("Match found, executing case body");
-                match_found = 1;
 
                 // Execute all statements in the matching case
                 ASTNode *current_statement = current_case->body;
-                while (current_statement)
+                while (current_statement && !break_encountered)
                 {
+                    if (current_statement->type == AST_BREAK)
+                    {
+                        break_encountered = 1;
+                        break;
+                    }
                     interpret(current_statement, env);
                     current_statement = current_statement->next;
                 }
-                break; // exit after executing the matching case
+
+                if (break_encountered)
+                {
+                    break;
+                }
+                // Otherwise fall-through to next case (allowing case stacking)
             }
         }
 
