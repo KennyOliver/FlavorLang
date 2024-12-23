@@ -51,9 +51,9 @@
 Clone the repository and build the project.
 
 ```bash
-git clone https://github.com/KennyOliver/FlavorLang.git
-cd FlavorLang
-make
+$ git clone https://github.com/KennyOliver/FlavorLang.git
+$ cd FlavorLang
+$ make
 ```
 
 ### 2. Write Your First Recipe
@@ -69,7 +69,7 @@ show "Welcome to FlavorLang!";
 Use the flavor command to execute your program.
 
 ```bash
-./flavor recipe.flv
+$ ./flavor recipe.flv
 ```
 
 You should see:
@@ -83,7 +83,7 @@ Welcome to FlavorLang!
 Enable debug mode to inspect tokens and execution flow.
 
 ```bash
-./flavor recipe.flv --debug
+$ ./flavor recipe.flv --debug
 ```
 
 This will print detailed information about the tokenization and parsing process.
@@ -93,8 +93,8 @@ This will print detailed information about the tokenization and parsing process.
 ## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
-flavor recipe.flv          # Default execution
-flavor recipe.flv --debug  # Debug mode
+$ ./flavor recipe.flv          # Default execution
+$ ./flavor recipe.flv --debug  # Debug mode
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
