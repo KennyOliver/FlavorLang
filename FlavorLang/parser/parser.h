@@ -16,7 +16,7 @@ ASTNode *parse_raise_error(ParserState *state);
 ASTNode *parse_input(ParserState *state);
 ASTNode *parse_conditional_block(ParserState *state);
 ASTNode *parse_while_block(ParserState *state);
-ASTNode *parse_while_block(ParserState *state);
+ASTNode *parse_switch_block(ParserState *state);
 
 // Expression parsing
 ASTNode *parse_expression(ParserState *state);

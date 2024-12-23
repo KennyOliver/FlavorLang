@@ -42,6 +42,14 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_while_block(state);
         }
+        else if (strcmp(token->lexeme, "check") == 0)
+        {
+            new_node = parse_switch_block(state);
+        }
+        else if (strcmp(token->lexeme, "is") == 0)
+        {
+            new_node = parse_block(state);
+        }
         else
         {
             parser_error("Unexpected token at start of statement", token);
@@ -511,6 +519,101 @@ ASTNode *parse_while_block(ParserState *state)
     node->loop.re_evaluate_condition = 1; // Flag to indicate re-evaluation
 
     node->next = NULL;
+    return node;
+}
+
+ASTNode *parse_switch_block(ParserState *state)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+
+    node->type = AST_SWITCH;
+
+    // Handle `check` keyword
+    expect_token(state, TOKEN_KEYWORD, "check");
+
+    // Parse switch expression
+    node->switch_case.expression = parse_expression(state);
+
+    // Expect colon
+    expect_token(state, TOKEN_DELIMITER, ":");
+
+    // Parse cases
+    node->switch_case.cases = NULL;
+    ASTCaseNode *last_case = NULL;
+
+    while (true)
+    {
+        Token *current = get_current_token(state);
+
+        if (strcmp(current->lexeme, "is") == 0)
+        {
+            // Parse `is` case
+            advance_token(state);
+            ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
+            if (!case_node)
+            {
+                parser_error("Memoory allocation failed", get_current_token(state));
+            }
+            case_node->condition = parse_expression(state);
+
+            // Expect colon
+            expect_token(state, TOKEN_DELIMITER, ":");
+
+            // Parse body
+            case_node->body = parse_block(state);
+            case_node->next = NULL;
+
+            // Link case
+            if (!node->switch_case.cases)
+            {
+                node->switch_case.cases = case_node;
+            }
+            else
+            {
+                last_case->next = case_node;
+            }
+
+            last_case = case_node;
+        }
+        else if (strcmp(current->lexeme, "else") == 0)
+        {
+            // Parse `else` case
+            advance_token(state);
+            ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
+            if (!default_case)
+            {
+                parser_error("Memoory allocation failed", get_current_token(state));
+            }
+            default_case->condition = NULL;
+
+            // Expect colon
+            expect_token(state, TOKEN_DELIMITER, ":");
+
+            // Parse body
+            default_case->body = parse_block(state);
+            default_case->next = NULL;
+
+            // Add as the last case
+            if (!node->switch_case.cases)
+            {
+                node->switch_case.cases = default_case;
+            }
+            else
+            {
+                last_case->next = default_case;
+            }
+            break;
+        }
+        else
+        {
+            break;
+        }
+    }
+
     return node;
 }
 
