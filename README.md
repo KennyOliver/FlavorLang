@@ -323,7 +323,7 @@ step                 ::= expression ;
 - **Unique & Fun**: Express your programs like recipes!
 - **Flexible Execution**: File extensions and flags allow customized program behavior.
 - **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
-- **Debug-Friendly**: Easily trace and test your code step-by-step with --chef mode.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
 
 ---
 
