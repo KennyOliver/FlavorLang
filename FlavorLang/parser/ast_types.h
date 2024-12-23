@@ -16,7 +16,8 @@ typedef enum
     AST_CONDITIONAL,
     AST_BINARY_OP,
     AST_LOOP,
-    AST_SWITCH, // Added AST_SWITCH type
+    AST_SWITCH,
+    AST_BREAK,
     AST_VARIABLE,
     AST_ERROR
 } ASTNodeType;
