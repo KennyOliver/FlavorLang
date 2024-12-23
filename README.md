@@ -162,11 +162,11 @@ Use `if`, `elif`, and `else` to control program flow.
 let oven_temperature = 200;
 
 if oven_temperature > 180:
-    show "The oven is hot!";
+	show "The oven is hot!";
 elif oven_temperature == 180:
-    show "The oven is just right!";
+	show "The oven is just right!";
 else:
-    show "The oven is too cold!";
+	show "The oven is too cold!";
 ```
 
 ### 4. 🔁 For Loop <a id="for-loop"></a>
@@ -175,7 +175,7 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5:
-    show "Mixing... Step", i;
+	show "Mixing... Step", i;
 ```
 
 ### 5. 🔄 While Loop <a id="while-loop"></a>
@@ -186,8 +186,8 @@ Use `while` for condition-based repetition.
 let flour_added = 0;
 
 while flour_added < 3:
-    show "Adding flour...";
-    let flour_added = flour_added + 1;
+	show "Adding flour...";
+	let flour_added = flour_added + 1;
 
 show "All flour has been added!";
 ```
@@ -199,12 +199,12 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 
 ```py
 create bake_cake(temperature):
-    if temperature < 180:
-        show "Temperature is too low to bake!";
-        burn "Cake burned!";  # Stops function execution immediately
-    else:
-        show "Baking cake at", temperature, "degrees!";
-        deliver "Cake is ready!";
+	if temperature < 180:
+		show "Temperature is too low to bake!";
+		burn "Cake burned!";  # Stops function execution immediately
+	else:
+		show "Baking cake at", temperature, "degrees!";
+		deliver "Cake is ready!";
 
 let result = bake_cake(200);
 show result;
@@ -216,10 +216,10 @@ Use `try` and `rescue` to handle errors.
 
 ```py
 try:
-    burn "This recipe failed!";
-    show "This won't run!";
+	burn "This recipe failed!";
+	show "This won't run!";
 rescue:
-    show "Caught an error: Recipe needs improvement.";
+	show "Caught an error: Recipe needs improvement.";
 ```
 
 ### 8. 📄 File Operations <a id="file-operations"></a>
@@ -288,7 +288,7 @@ let time = 20;
 show "Before error.";
 
 if time > 15:
-    burn "Too late!", "The food got burnt!";
+	burn "Too late!", "The food got burnt!";
 
 show "After error?";
 ```
