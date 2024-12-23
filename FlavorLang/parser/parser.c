@@ -724,6 +724,10 @@ void free_ast(ASTNode *node)
             // Handle function call cleanup if needed
             break;
 
+        case AST_BREAK:
+            // No cleanup needed!
+            break;
+
         case AST_SWITCH:
             if (node->switch_case.expression)
             {
