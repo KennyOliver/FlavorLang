@@ -23,22 +23,27 @@
    - [Raise an Error](#raise-error)
 5. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 6. [Why FlavorLang?](#why-flavorlang)
-7. [Tokenizer](#tokenizer)
+7. [Debugging](#debugging)
+   - [Overview](#debugging-overview)
+   - [Example Script](#debugging-example-script)
+   - [Debug Output Breakdown](#debugging-debug-output-breakdown)
+   - [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
+8. [Tokenizer](#tokenizer)
    - [Overview](#tokenizer-overview)
    - [How the Tokenizer Works](#how-the-tokenizer-works)
    - [Debugging Tokens](#debugging-tokens)
    - [Error Handling](#tokenizer-error-handling)
    - [Future Enhancements](#future-enhancements)
-8. [Parser](#parser)
+9. [Parser](#parser)
    - [Key Structures](#key-structures)
    - [Main Parsing Functions](#main-parsing-functions)
    - [Supporting Functions](#supporting-functions)
    - [Error Handling](#error-handling)
    - [Workflow Example](#workflow-example)
-9. [Interpreter](#interpreter)
-   - [Main Interpreter Functions](#Main-Interpreter-Functions)
-   - [Summary of Steps](#Summary-of-Steps)
-   - [Example Execution Flow](#Example-Execution-Flow)
+10. [Interpreter](#interpreter)
+    - [Main Interpreter Functions](#Main-Interpreter-Functions)
+    - [Summary of Steps](#Summary-of-Steps)
+    - [Example Execution Flow](#Example-Execution-Flow)
 
 ---
 
@@ -325,6 +330,151 @@ step                 ::= expression ;
 - **Flexible Execution**: File extensions and flags allow customized program behavior.
 - **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
 - **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
+
+---
+
+## Debugging
+
+### Overview <a id="debugging-overview"></a>
+
+In this section, `test3.flv` is used as an example to demonstrate how the --debug flag works in the Flavor interpreter. The --debug flag provides step-by-step insights into the tokenization, parsing, and execution of the script. This helps developers debug their code and understand the internal processing of statements like if, elif, else, and show.
+
+### Example Script <a id="debugging-example-script"></a>
+
+```
+let oven_temperature = 200;
+
+if oven_temperature > 180:
+    show "The oven is hot!";
+elif oven_temperature == 180:
+    show "The oven is just right!";
+else:
+    show "The oven is too cold!";
+```
+
+- This script assigns a value to the variable oven_temperature and checks its value using conditional statements.
+- Based on the condition:
+- If the temperature is greater than 180: it shows “The oven is hot!”.
+- If the temperature equals 180: it shows “The oven is just right!”.
+- Otherwise, it shows “The oven is too cold!”.
+
+In this case, `test3.flv` will be executed with the --debug flag to illustrate how the interpreter tokenizes, parses, and executes the script step by step.
+
+### Debug Output Breakdown <a id="debugging-debug-output-breakdown"></a>
+
+This detailed output helps track variable values, condition evaluations, and the flow of execution, which can be extremely useful for understanding how the interpreter processes and executes your script.
+
+#### 1. Tokenization
+
+The tokenizer splits the script into tokens. Each line in the script generates tokens for variable declarations, conditions, and outputs.
+
+Example:
+
+```
+[DEBUG TOK] 1     Type: `0`  Lex: `let`
+[DEBUG TOK]       Type: `1`  Lex: `oven_temperature`
+[DEBUG TOK]       Type: `4`  Lex: `=`
+[DEBUG TOK]       Type: `2`  Lex: `200`
+[DEBUG TOK]       Type: `5`  Lex: `;`
+```
+
+- **Type**: Describes the kind of token (e.g., keyword, operator, literal).
+- **Lex**: The content of the token.
+
+#### 2. Parsing
+
+The parser constructs a logical structure (AST) from the tokens, identifying blocks and conditions.
+
+##### Example
+
+```
+[DEBUG PRS] Starting to parse block
+[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`if`
+[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`show`
+```
+
+Logs indicate the parsing of each token into structured blocks for execution.
+
+#### 3. Interpretation
+
+The interpreter executes the script step by step:
+
+- Assigns values to variables.
+- Evaluates conditional statements.
+- Executes corresponding branches.
+
+##### Example
+
+```
+[DEBUG INT] Matched: `AST_CONDITIONAL`
+[DEBUG INT] `interpret_conditional()` called
+[DEBUG INT] Evaluating `if`/`elif` branch
+[DEBUG INT] Binary operation `200.000000 > 180.000000`
+[DEBUG INT] Condition evaluated to: `1.000000`
+[DEBUG INT] Condition is true, executing branch body
+```
+
+#### `show` in Debug Mode
+
+The show statement is executed as part of the conditional blocks:
+
+##### 1. Tokenization
+
+```
+[DEBUG TOK] 4     Type: `0`  Lex: `show`
+[DEBUG TOK]       Type: `3`  Lex: `The oven is hot!`
+```
+
+##### 2. Parsing
+
+```
+[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`show`
+```
+
+##### 3. Interpretation
+
+This:
+
+```
+[DEBUG INT] Matched: `AST_PRINT`
+[DEBUG INT] `interpret_print()`
+```
+
+Displays this message:
+
+```
+The oven is hot!
+```
+
+### Output With and Without Debugging <a id="debugging-output-with-and-without-debugging"></a>
+
+#### With Debugging (--debug)
+
+Full debug logs for each stage are printed.
+
+```bash
+$ ./flavor tests/test3.flv --debug
+[DEBUG TOK] ...
+[DEBUG INT] ...
+The oven is hot!
+```
+
+#### Without Debugging
+
+Only the final output of the script is shown.
+
+```bash
+$ ./flavor tests/test3.flv
+The oven is hot!
+```
+
+#### Running with Debugging
+
+Run this to enable debugging for `test3.flv`.
+
+```bash
+$ ./flavor tests/test3.flv --debug
+```
 
 ---
 
