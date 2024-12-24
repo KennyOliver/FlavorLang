@@ -106,11 +106,11 @@ ASTNode *parse_variable_declaration(ParserState *state)
 
 ASTNode *parse_variable_assignment(ParserState *state)
 {
-    debug_print("Starting variable assignment parse");
+    debug_print("Starting variable assignment parse\n");
 
     // Parse variable name
     Token *name = get_current_token(state);
-    debug_print("Variable assignment name: %s", name->lexeme);
+    debug_print("Variable assignment name: `%s`\n", name->lexeme);
 
     advance_token(state);
 
@@ -330,7 +330,7 @@ ASTNode *parse_expression(ParserState *state)
 
 ASTNode *parse_block(ParserState *state)
 {
-    debug_print("Starting to parse block");
+    debug_print("Starting to parse block\n");
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 

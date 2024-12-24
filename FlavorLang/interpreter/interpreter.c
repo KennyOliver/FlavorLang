@@ -38,54 +38,54 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     switch (node->type)
     {
     case AST_LITERAL:
-        debug_print("Matched: `AST_LITERAL`");
+        debug_print("Matched: `AST_LITERAL`\n");
         return interpret_literal(node);
     case AST_ASSIGNMENT:
-        debug_print("Matched: `AST_ASSIGNMENT`");
-        debug_print("Interpreted node type: %d", (int)node->type);
+        debug_print("Matched: `AST_ASSIGNMENT`\n");
+        debug_print("Interpreted node type: `%d`\n", (int)node->type);
         if (node->type == TYPE_NUMBER)
         {
-            debug_print("Node is a number: %f", node->literal.value.number);
+            debug_print("Node is a number: `%f`\n", node->literal.value.number);
         }
         else if (node->type == TYPE_STRING)
         {
-            debug_print("Node is a string: %s", node->literal.value.string);
+            debug_print("Node is a string: `%s`\n", node->literal.value.string);
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
-        debug_print("Matched: `AST_BINARY_OP`");
+        debug_print("Matched: `AST_BINARY_OP`\n");
         return interpret_binary_op(node, env);
     case AST_PRINT:
-        debug_print("Matched: `AST_PRINT`");
+        debug_print("Matched: `AST_PRINT`\n");
         interpret_print(node, env);
         return create_default_value();
     case AST_INPUT:
     {
-        debug_print("Matched: `AST_INPUT`");
+        debug_print("Matched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
         return v.value;
     }
     case AST_CONDITIONAL:
-        debug_print("Matched: `AST_CONDITIONAL`");
+        debug_print("Matched: `AST_CONDITIONAL`\n");
         interpret_conditional(node, env);
         return create_default_value();
     case AST_FUNCTION_CALL:
-        debug_print("Matched: `AST_FUNCTION_CALL`");
+        debug_print("Matched: `AST_FUNCTION_CALL`\n");
         fprintf(stderr, "Error: Function calls not implemented yet.\n");
         exit(1);
     case AST_LOOP:
-        debug_print("Matched: `AST_LOOP`");
+        debug_print("Matched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
         return create_default_value();
     case AST_VARIABLE:
-        debug_print("Matched: `AST_VARIABLE`");
+        debug_print("Matched: `AST_VARIABLE`\n");
         return interpret_variable(node, env);
     case AST_SWITCH:
-        debug_print("Matched: `AST_SWITCH`");
+        debug_print("Matched: `AST_SWITCH`\n");
         interpret_switch(node, env);
         return create_default_value();
     case AST_ERROR:
-        debug_print("Matched: `AST_ERROR`");
+        debug_print("Matched: `AST_ERROR`\n");
         interpret_raise_error(node, env);
         return create_default_value();
     default:
@@ -114,7 +114,7 @@ LiteralValue interpret_literal(ASTNode *node)
     switch (node->literal.type)
     {
     case LITERAL_NUMBER:
-        debug_print("LITERAL_NUMBER, value: %f", node->literal.value.number);
+        debug_print("LITERAL_NUMBER, value: `%f`\n", node->literal.value.number);
         value.type = TYPE_NUMBER;
         value.data.number = node->literal.value.number;
         break;
@@ -163,7 +163,7 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    debug_print("Interpreting assignment for variable: `%s`", node->assignment.variable_name);
+    debug_print("Interpreting assignment for variable: `%s`\n", node->assignment.variable_name);
 
     // Get the new value first
     LiteralValue new_value = interpret(node->assignment.value, env);
@@ -211,15 +211,15 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         }
     }
 
-    // debug_print("New variable `%s` with value ", node->assignment.variable_name);
-    // if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
-    // {
-    //     printf("'%s'\n", env->variables[env->variable_count - 1].value.data.string);
-    // }
-    // else
-    // {
-    //     printf("%f\n", env->variables[env->variable_count - 1].value.data.number);
-    // }
+    debug_print("New variable `%s` with value ", node->assignment.variable_name);
+    if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
+    {
+        printf("`%s`\n", env->variables[env->variable_count - 1].value.data.string);
+    }
+    else
+    {
+        printf("`%f`\n", env->variables[env->variable_count - 1].value.data.number);
+    }
 
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
     env->variables[env->variable_count].value = new_value;
@@ -384,7 +384,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 
 Variable *get_variable(Environment *env, const char *variable_name)
 {
-    debug_print("Looking up variable: `%s`", variable_name);
+    debug_print("Looking up variable: `%s`\n", variable_name);
     for (size_t i = 0; i < env->variable_count; i++)
     {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0)
@@ -404,13 +404,13 @@ Variable *get_variable(Environment *env, const char *variable_name)
             return &env->variables[i];
         }
     }
-    debug_print("Variable not found: `%s`", variable_name);
+    debug_print("Variable not found: `%s`\n", variable_name);
     return NULL;
 }
 
 void interpret_print(ASTNode *node, Environment *env)
 {
-    debug_print("`interpret_print()`");
+    debug_print("`interpret_print()`\n");
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
@@ -600,7 +600,7 @@ Variable interpret_input(Environment *env)
 
 void interpret_conditional(ASTNode *node, Environment *env)
 {
-    debug_print("`interpret_conditional` called");
+    debug_print("`interpret_conditional` called\n");
 
     // Debug: Print oven_temperature before conditional evaluation
     for (size_t i = 0; i < env->variable_count; i++)
@@ -666,40 +666,40 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
     }
 
-    debug_print("`interpret_conditional` completed");
+    debug_print("`interpret_conditional` completed\n");
 }
 
 void interpret_while_loop(ASTNode *node, Environment *env)
 {
-    debug_print("`interpret_while_loop` called");
+    debug_print("`interpret_while_loop` called\n");
 
     ASTNode *condition = node->loop.condition;
     ASTNode *body = node->loop.body;
 
     while (1)
     {
-        debug_print("Starting new iteration of `while` loop");
+        debug_print("Starting new iteration of `while` loop\n");
 
         LiteralValue condition_value = interpret(condition, env);
 
         if (condition_value.type == TYPE_NUMBER)
         {
-            debug_print("Condition evaluated to: %f", condition_value.data.number);
+            debug_print("Condition evaluated to: `%f`\n", condition_value.data.number);
         }
 
         if (condition_value.data.number != 0)
         {
-            debug_print("`while` condition is true, executing body");
+            debug_print("`while` condition is true, executing body\n");
 
             ASTNode *current = body;
             while (current != NULL)
             {
-                debug_print("Executing body statement of type: %d", current->type);
+                debug_print("Executing body statement of type: `%d`\n", current->type);
                 interpret(current, env);
                 current = current->next;
             }
 
-            debug_print("After body execution:");
+            debug_print("After body execution:\n");
             for (size_t i = 0; i < env->variable_count; i++)
             {
                 debug_print("Variable '%s': value = %f",
@@ -709,12 +709,12 @@ void interpret_while_loop(ASTNode *node, Environment *env)
         }
         else
         {
-            debug_print("`while` condition is false, exiting loop");
+            debug_print("`while` condition is false, exiting loop\n");
             break;
         }
     }
 
-    debug_print("`interpret_while_loop` completed");
+    debug_print("`interpret_while_loop` completed\n");
 }
 
 void interpret_switch(ASTNode *node, Environment *env)
@@ -723,7 +723,7 @@ void interpret_switch(ASTNode *node, Environment *env)
 
     // First evaluate the switch expression
     LiteralValue switch_value = interpret(node->switch_case.expression, env);
-    debug_print("Switch expression evaluated");
+    debug_print("Switch expression evaluated\n");
 
     // Go through each case
     ASTCaseNode *current_case = node->switch_case.cases;
@@ -734,7 +734,7 @@ void interpret_switch(ASTNode *node, Environment *env)
         if (current_case->condition == NULL)
         {
             // This is the `else` case
-            debug_print("Executing `else` case");
+            debug_print("Executing `else` case\n");
             if (!break_encountered)
             {
                 // Execute the `else` block
@@ -772,7 +772,7 @@ void interpret_switch(ASTNode *node, Environment *env)
 
             if (values_match)
             {
-                debug_print("Match found, executing case body");
+                debug_print("Match found, executing case body\n");
 
                 // Execute all statements in the matching case
                 ASTNode *current_statement = current_case->body;
@@ -798,7 +798,7 @@ void interpret_switch(ASTNode *node, Environment *env)
         current_case = current_case->next;
     }
 
-    debug_print("Switch statement interpretation complete");
+    debug_print("Switch statement interpretation complete\n");
 }
 
 // Initialize the environment
