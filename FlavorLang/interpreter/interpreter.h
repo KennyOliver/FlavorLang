@@ -29,9 +29,20 @@ typedef struct
 
 typedef struct
 {
+    char *name;
+    ASTNode *parameters; // Linked list of parameters
+    ASTNode *body;       // Function body
+} Function;
+
+typedef struct
+{
     Variable *variables;
     size_t variable_count;
     size_t capacity; // to handle dynamic resizing
+
+    Function *functions; // Array of functions
+    size_t function_count;
+    size_t function_capacity;
 } Environment;
 
 // Initialize the environment

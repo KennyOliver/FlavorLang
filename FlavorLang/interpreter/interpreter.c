@@ -10,12 +10,15 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env);
 LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
+void add_variable(Environment *env, Variable var);
 void interpret_print(ASTNode *node, Environment *env);
 void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
+void interpret_function_declaration(ASTNode *node, Environment *env);
+LiteralValue interpret_function_call(ASTNode *node, Environment *env);
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
@@ -30,7 +33,9 @@ LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        return create_default_value();
+        return (LiteralValue){
+            .type = TYPE_ERROR,
+        };
     }
 
     debug_print_int("`interpret()` called\n");
@@ -71,8 +76,11 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     case AST_FUNCTION_CALL:
         debug_print_int("Matched: `AST_FUNCTION_CALL`\n");
-        fprintf(stderr, "Error: Function calls not implemented yet.\n");
-        exit(1);
+        return interpret_function_call(node, env);
+    case AST_FUNCTION_DECLARATION:
+        debug_print_int("Matched: `AST_FUNCTION_DECLARATION`\n");
+        interpret_function_declaration(node, env);
+        return create_default_value();
     case AST_LOOP:
         debug_print_int("Matched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
@@ -395,6 +403,54 @@ Variable *get_variable(Environment *env, const char *variable_name)
     }
     debug_print_int("Variable not found: `%s`\n", variable_name);
     return NULL;
+}
+
+void add_variable(Environment *env, Variable var)
+{
+    // Check if the variable already exists
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, var.variable_name) == 0)
+        {
+            // Update the value of the existing variable
+            if (env->variables[i].value.type == TYPE_STRING && env->variables[i].value.data.string)
+            {
+                free(env->variables[i].value.data.string); // Free existing string memory
+            }
+            env->variables[i].value = var.value;
+
+            debug_print_int("Updated variable: `%s`\n", var.variable_name);
+            return;
+        }
+    }
+
+    // Add a new variable
+    if (env->variable_count == env->capacity)
+    {
+        // Resize the variables array if necessary
+        env->capacity = env->capacity ? env->capacity * 2 : 4;
+        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+        if (!env->variables)
+        {
+            fprintf(stderr, "Error: Memory allocation failed while adding variable `%s`.\n", var.variable_name);
+            exit(1);
+        }
+    }
+
+    // Copy variable name and value
+    env->variables[env->variable_count].variable_name = strdup(var.variable_name);
+    if (var.value.type == TYPE_STRING)
+    {
+        env->variables[env->variable_count].value.type = TYPE_STRING;
+        env->variables[env->variable_count].value.data.string = strdup(var.value.data.string);
+    }
+    else
+    {
+        env->variables[env->variable_count].value = var.value;
+    }
+
+    debug_print_int("Added variable: `%s`\n", var.variable_name);
+    env->variable_count++;
 }
 
 void interpret_print(ASTNode *node, Environment *env)
@@ -770,6 +826,92 @@ void interpret_switch(ASTNode *node, Environment *env)
     }
 
     debug_print_int("Switch statement interpretation complete\n");
+}
+
+void add_function(Environment *env, Function func)
+{
+    if (env->function_count == env->function_capacity)
+    {
+        env->function_capacity = env->function_capacity ? env->function_capacity * 2 : 4;
+        env->functions = realloc(env->functions, env->function_capacity * sizeof(Function));
+        if (!env->functions)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for functions.\n");
+            exit(1);
+        }
+    }
+    env->functions[env->function_count++] = func;
+}
+
+Function *get_function(Environment *env, const char *name)
+{
+    for (size_t i = 0; i < env->function_count; i++)
+    {
+        if (strcmp(env->functions[i].name, name) == 0)
+        {
+            return &env->functions[i];
+        }
+    }
+    return NULL;
+}
+
+void interpret_function_declaration(ASTNode *node, Environment *env)
+{
+    Function func;
+    func.name = strdup(node->function_call.name);
+    func.parameters = node->function_call.parameters;
+    func.body = node->function_call.body;
+
+    add_function(env, func);
+
+    debug_print_int("Function `%s` declared.\n", func.name);
+}
+
+LiteralValue interpret_function_call(ASTNode *node, Environment *env)
+{
+    // Lookup the function
+    Function *func = get_function(env, node->function_call.name);
+    if (!func)
+    {
+        fprintf(stderr, "Error: Undefined function `%s`.\n", node->function_call.name);
+        exit(1);
+    }
+
+    // Create a local environment for the function call
+    Environment local_env;
+    init_environment(&local_env);
+
+    // Bind parameters to arguments
+    ASTNode *param = func->parameters;
+    ASTNode *arg = node->function_call.parameters;
+    while (param && arg)
+    {
+        LiteralValue value = interpret(arg, env);
+        Variable var = {.variable_name = strdup(param->variable_name), .value = value};
+        add_variable(&local_env, var);
+
+        param = param->next;
+        arg = arg->next;
+    }
+
+    // Interpret the function body
+    ASTNode *body = func->body;
+    LiteralValue return_value = (LiteralValue){.type = TYPE_ERROR};
+    while (body)
+    {
+        if (body->type == AST_FUNCTION_RETURN)
+        {
+            return_value = interpret(body->function_call.return_value, &local_env);
+            break;
+        }
+        interpret(body, &local_env);
+        body = body->next;
+    }
+
+    // Free the local environment
+    free_environment(&local_env);
+
+    return return_value;
 }
 
 // Initialize the environment
