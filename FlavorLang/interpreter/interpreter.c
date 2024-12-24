@@ -591,15 +591,6 @@ void interpret_conditional(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_conditional` called\n");
 
-    // Debug: Print oven_temperature before conditional evaluation
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
-        {
-            debug_print_int("Before conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
-        }
-    }
-
     ASTNode *current_branch = node;
     int condition_met = 0; // Initialize to false
 
@@ -644,15 +635,6 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
 
         current_branch = current_branch->conditional.else_branch; // Move to the next branch
-    }
-
-    // Ensure oven_temperature is updated after conditional execution
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, "oven_temperature") == 0)
-        {
-            debug_print_int("After conditional, oven_temperature = %f\n", env->variables[i].value.data.number);
-        }
     }
 
     debug_print_int("`interpret_conditional` completed\n");
