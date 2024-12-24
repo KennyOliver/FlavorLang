@@ -337,7 +337,7 @@ ASTNode *parse_block(ParserState *state)
     while (get_current_token(state)->type != TOKEN_EOF)
     {
         Token *current = get_current_token(state);
-        debug_print("Parsing token in block: type=%d, lexeme=%s",
+        debug_print("Parsing token in block: type=`%d`, lexeme=`%s`\n",
                     current->type,
                     current->lexeme);
 

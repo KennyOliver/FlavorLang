@@ -29,11 +29,11 @@ int main(int argc, char **argv)
     // Tokenize
     Token *tokens = tokenize(source);
     debug_print_tokens(tokens);
-    debug_print("Tokenization complete.");
+    debug_print("Tokenization complete!\n");
 
     // Parse
     ASTNode *ast = parse_program(tokens);
-    debug_print("Parsing complete.");
+    debug_print("Parsing complete!\n");
 
     // Create environment
     Environment env;
@@ -41,6 +41,7 @@ int main(int argc, char **argv)
 
     // Interpret
     interpret_program(ast, &env);
+    debug_print("Execution complete!\n");
 
     // Clean up memory
     free(tokens);
