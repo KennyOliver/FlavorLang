@@ -589,7 +589,7 @@ Variable interpret_input(Environment *env)
 
 void interpret_conditional(ASTNode *node, Environment *env)
 {
-    debug_print_int("`interpret_conditional` called\n");
+    debug_print_int("`interpret_conditional()` called\n");
 
     ASTNode *current_branch = node;
     int condition_met = 0; // Initialize to false
@@ -615,7 +615,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
 
         // Handle if/elif branches
-        debug_print_int("Evaluating IF/ELIF branch\n");
+        debug_print_int("Evaluating `if`/`elif` branch\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
         debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.number);
 
@@ -637,12 +637,12 @@ void interpret_conditional(ASTNode *node, Environment *env)
         current_branch = current_branch->conditional.else_branch; // Move to the next branch
     }
 
-    debug_print_int("`interpret_conditional` completed\n");
+    debug_print_int("`interpret_conditional()` completed\n");
 }
 
 void interpret_while_loop(ASTNode *node, Environment *env)
 {
-    debug_print_int("`interpret_while_loop` called\n");
+    debug_print_int("`interpret_while_loop()` called\n");
 
     ASTNode *condition = node->loop.condition;
     ASTNode *body = node->loop.body;
@@ -685,7 +685,7 @@ void interpret_while_loop(ASTNode *node, Environment *env)
         }
     }
 
-    debug_print_int("`interpret_while_loop` completed\n");
+    debug_print_int("`interpret_while_loop()` completed\n");
 }
 
 void interpret_switch(ASTNode *node, Environment *env)
