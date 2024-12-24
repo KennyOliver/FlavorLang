@@ -50,6 +50,10 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_block(state);
         }
+        else if (strcmp(token->lexeme, "create") == 0)
+        {
+            new_node = parse_function(state);
+        }
         else
         {
             parser_error("Unexpected token at start of statement", token);
@@ -661,6 +665,51 @@ ASTNode *parse_switch_block(ParserState *state)
             break; // Exit on any other keyword
         }
     }
+
+    node->next = NULL;
+    return node;
+}
+
+ASTNode *parse_parameter_list(ParserState *state)
+{
+    ASTNode *head = NULL;
+    ASTNode *tail = NULL;
+
+    return head;
+}
+
+ASTNode *parse_function(ParserState *state)
+{
+    expect_token(state, TOKEN_KEYWORD, "Expected `create` keyword");
+
+    // Parse function name
+    Token *name = get_current_token(state);
+    excpet_token(state, TOKEN_IDENTIFIER, "Expected function name");
+
+    // Create function node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+    node->type = AST_FUNCTION_CALL;
+    node->function_call.name = strdup(name->lexeme);
+
+    // Parse parameters (if any)
+    node->function_call.parameters = NULL;
+    if (get_current_token(state)->type == TOKEN_DELIMITER &&
+        strcmp(get_current_token(state)->lexeme, "(") == 0)
+    {
+        advance_token(state); // consume `(`
+        node->function_call.parameters = parse_parameter_list(state);
+        expect_token(state, TOKEN_DELIMITER, "Expected `(` after parameter list");
+    }
+
+    // Expect colon
+    expect_token(state, TOKEN_DELIMITER, "Expected `:` after function signature declaration");
+
+    // Parse function body
+    node->function_call.body = parse_block(state);
 
     node->next = NULL;
     return node;
