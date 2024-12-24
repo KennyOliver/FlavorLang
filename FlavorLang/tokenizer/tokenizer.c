@@ -116,7 +116,7 @@ Token *tokenize(const char *source)
                 if (token_count > 0 && tokens[token_count - 1].type == TOKEN_IDENTIFIER)
                 {
                     // Retroactively convert identifier to function call
-                    tokens[token_count - 1].type = TOKEN_FUNCTION_CALL;
+                    tokens[token_count - 1].type = TOKEN_FUNCTION_DECLARATION;
                 }
                 append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN, strndup(&source[pos], 1), line);
             }

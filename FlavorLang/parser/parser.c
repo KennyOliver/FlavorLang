@@ -724,7 +724,7 @@ ASTNode *parse_function_declaration(ParserState *state)
 
     // Parse function name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_IDENTIFIER, "Expected function name");
+    expect_token(state, TOKEN_FUNCTION_DECLARATION, "Expected function name");
 
     // Create function node
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -737,12 +737,12 @@ ASTNode *parse_function_declaration(ParserState *state)
 
     // Parse parameters (if any)
     node->function_call.parameters = NULL;
-    if (get_current_token(state)->type == TOKEN_DELIMITER &&
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN &&
         strcmp(get_current_token(state)->lexeme, "(") == 0)
     {
         advance_token(state); // consume `(`
         node->function_call.parameters = parse_parameter_list(state);
-        expect_token(state, TOKEN_DELIMITER, "Expected `(` after parameter list");
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
     // Expect colon
