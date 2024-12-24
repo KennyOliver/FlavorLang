@@ -212,12 +212,12 @@ void debug_print_tokens(Token *tokens)
         {
             if (tokens[i].line != last_line)
             {
-                printf("[Line %d] Token Type: %d | Lexeme: %s\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
+                debug_print_tok("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line + 1000, tokens[i].type, tokens[i].lexeme);
                 last_line = tokens[i].line; // last_line++ would only work if there were no empty lines
             }
             else
             {
-                printf("\t Token Type: %d | Lexeme: %s\n", tokens[i].type, tokens[i].lexeme);
+                debug_print_tok("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type, tokens[i].lexeme);
             }
         }
     }
