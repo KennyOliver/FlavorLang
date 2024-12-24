@@ -760,6 +760,35 @@ ASTNode *parse_argument_list(ParserState *state)
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
+    while (1)
+    {
+        // Parse arguments as expressions
+        ASTNode *arg = parse_expression(state);
+
+        // Add argument to linked list
+        if (!head)
+        {
+            head = arg;
+            tail = arg;
+        }
+        else
+        {
+            tail->next = arg;
+            tail = arg;
+        }
+
+        // Check for comma (indicates another argument)
+        if (get_current_token(state)->type == TOKEN_DELIMITER &&
+            strcmp(get_current_token(state)->lexeme, ",") == 0)
+        {
+            advance_token(state); // consume `,`
+        }
+        else
+        {
+            break;
+        }
+    }
+
     return head;
 }
 
