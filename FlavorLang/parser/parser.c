@@ -341,18 +341,25 @@ ASTNode *parse_expression(ParserState *state)
 
 ASTNode *parse_function_return(ParserState *state)
 {
+    expect_token(state, TOKEN_KEYWORD, "Expected `deliver` keyword");
+
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
         parser_error("Memory allocation failed", get_current_token(state));
     }
+
     node->type = AST_FUNCTION_RETURN;
+    node->function_call.return_value = NULL; // Default: no return expression
 
-    advance_token(state); // consume `deliver` keyword
+    // Check if there's a return value
+    if (get_current_token(state)->type != TOKEN_DELIMITER &&
+        get_current_token(state)->type != TOKEN_EOF)
+    {
+        node->function_call.return_value = parse_expression(state);
+    }
 
-    // Parse return value (if any)
-    node->function_call.return_value = parse_expression(state);
-
+    node->next = NULL;
     return node;
 }
 
@@ -462,6 +469,48 @@ ASTNode *parse_block(ParserState *state)
         {
             tail->next = statement;
             tail = statement;
+        }
+    }
+
+    // Handle implicit return for function bodies
+    if (state->in_function_body)
+    {
+        if (!head)
+        {
+            // Block is empty, add implicit return
+            head = malloc(sizeof(ASTNode));
+            if (!head)
+            {
+                parser_error("Memory allocation failed for implicit return", NULL);
+            }
+            head->type = AST_FUNCTION_RETURN;
+            head->function_call.return_value = NULL;
+            head->next = NULL;
+        }
+        else
+        {
+            // Check the last statement
+            ASTNode *last_statement = head;
+            while (last_statement->next)
+            {
+                last_statement = last_statement->next;
+            }
+
+            if (last_statement->type != AST_FUNCTION_RETURN)
+            {
+                // Add implicit return
+                ASTNode *implicit_return = malloc(sizeof(ASTNode));
+                if (!implicit_return)
+                {
+                    parser_error("Memory allocation failed for implicit return", NULL);
+                }
+                implicit_return->type = AST_FUNCTION_RETURN;
+                implicit_return->function_call.return_value = NULL;
+                implicit_return->next = NULL;
+
+                last_statement->next = implicit_return;
+                debug_print_par("Implicit return added to block\n");
+            }
         }
     }
 
@@ -754,15 +803,43 @@ ASTNode *parse_function_body(ParserState *state)
 {
     ASTNode *body = parse_block(state);
 
-    // Check if the last statement in the body is a return statement
+    // If body is empty, add an implicit return node
+    if (!body)
+    {
+        body = malloc(sizeof(ASTNode));
+        if (!body)
+        {
+            parser_error("Memory allocation failed for implicit return", NULL);
+        }
+        body->type = AST_FUNCTION_RETURN;
+        body->function_call.return_value = NULL;
+        body->next = NULL;
+
+        debug_print_par("Implicit return added to empty function body\n");
+        return body;
+    }
+
+    // Traverse to the last statement in the block
     ASTNode *last_statement = body;
     while (last_statement->next)
     {
         last_statement = last_statement->next;
     }
+
+    // If the last statement isn't a return, add an implicit return
     if (last_statement->type != AST_FUNCTION_RETURN)
     {
-        parser_error("Function must end with a return statement", get_current_token(state));
+        ASTNode *implicit_return = malloc(sizeof(ASTNode));
+        if (!implicit_return)
+        {
+            parser_error("Memory allocation failed for implicit return", NULL);
+        }
+        implicit_return->type = AST_FUNCTION_RETURN;
+        implicit_return->function_call.return_value = NULL;
+        implicit_return->next = NULL;
+
+        last_statement->next = implicit_return;
+        debug_print_par("Implicit return added to function body\n");
     }
 
     return body;
@@ -770,20 +847,27 @@ ASTNode *parse_function_body(ParserState *state)
 
 ASTNode *parse_function_declaration(ParserState *state)
 {
+    // Expect and consume the `create` keyword
     expect_token(state, TOKEN_KEYWORD, "Expected `create` keyword");
 
     // Parse function name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
+    if (name->type != TOKEN_FUNCTION_NAME)
+    {
+        parser_error("Expected function name", name);
+    }
 
-    // Create function node
+    // Create function declaration node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
-        parser_error("Memory allocation failed", get_current_token(state));
+        parser_error("Memory allocation failed for function declaration node", name);
     }
     node->type = AST_FUNCTION_DECLARATION;
     node->function_call.name = strdup(name->lexeme);
+
+    // Advance after parsing function name
+    advance_token(state);
 
     // Parse parameters (if any)
     node->function_call.parameters = NULL;
@@ -791,16 +875,27 @@ ASTNode *parse_function_declaration(ParserState *state)
         strcmp(get_current_token(state)->lexeme, "(") == 0)
     {
         advance_token(state); // consume `(`
+
+        // Parse parameter list
         node->function_call.parameters = parse_parameter_list(state);
+
+        // Expect and consume closing parenthesis
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
-    // Expect colon
-    expect_token(state, TOKEN_DELIMITER, "Expected `:` after function signature declaration");
+    // Expect colon `:`
+    expect_token(state, TOKEN_DELIMITER, "Expected `:` after function signature");
 
     // Parse function body
-    node->function_call.body = parse_function_body(state);
+    // Set the `in_function_body` flag before parsing the body
+    state->in_function_body = 1;
 
+    node->function_call.body = parse_block(state);
+
+    // Reset the `in_function_body` flag after parsing the body
+    state->in_function_body = 0;
+
+    // Finalize function declaration node
     node->next = NULL;
     return node;
 }
