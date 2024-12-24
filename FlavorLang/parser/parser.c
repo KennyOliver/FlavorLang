@@ -332,6 +332,23 @@ ASTNode *parse_expression(ParserState *state)
     return node;
 }
 
+ASTNode *parse_function_return(ParserState *state)
+{
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node)
+    {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+    node->type = AST_FUNCTION_RETURN;
+
+    advance_token(state); // consume `deliver` keyword
+
+    // Parse return value (if any)
+    node->function_call.return_value = parse_expression(state);
+
+    return node;
+}
+
 ASTNode *parse_block(ParserState *state)
 {
     debug_print_par("Starting to parse block\n");
@@ -397,6 +414,10 @@ ASTNode *parse_block(ParserState *state)
             else if (strcmp(current->lexeme, "let") == 0)
             {
                 statement = parse_variable_declaration(state);
+            }
+            else if (strcmp(current->lexeme, "deliver") == 0)
+            {
+                statement = parse_function_return(state);
             }
             else if (state->in_switch_block && strcmp(current->lexeme, "is") == 0)
             {
@@ -718,6 +739,24 @@ ASTNode *parse_parameter_list(ParserState *state)
     return head;
 }
 
+ASTNode *parse_function_body(ParserState *state)
+{
+    ASTNode *body = parse_block(state);
+
+    // Check if the last statement in the body is a return statement
+    ASTNode *last_statement = body;
+    while (last_statement->next)
+    {
+        last_statement = last_statement->next;
+    }
+    if (last_statement->type != AST_FUNCTION_RETURN)
+    {
+        parser_error("Function must end with a return statement", get_current_token(state));
+    }
+
+    return body;
+}
+
 ASTNode *parse_function_declaration(ParserState *state)
 {
     expect_token(state, TOKEN_KEYWORD, "Expected `create` keyword");
@@ -749,7 +788,7 @@ ASTNode *parse_function_declaration(ParserState *state)
     expect_token(state, TOKEN_DELIMITER, "Expected `:` after function signature declaration");
 
     // Parse function body
-    node->function_call.body = parse_block(state);
+    node->function_call.body = parse_function_body(state);
 
     node->next = NULL;
     return node;

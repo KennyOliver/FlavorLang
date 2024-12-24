@@ -84,6 +84,7 @@ typedef struct
     char *name;
     struct ASTNode *parameters;
     struct ASTNode *body;
+    struct ASTNode *return_value;
 } ASTFunctionCall;
 
 // AST Node Structure
