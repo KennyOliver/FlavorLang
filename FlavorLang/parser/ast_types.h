@@ -80,7 +80,7 @@ typedef struct
 typedef struct
 {
     char *name;
-    ASTNode *parameters;
+    struct ASTNode *parameters;
     struct ASTNode *body;
 } ASTFunctionCall;
 
