@@ -49,7 +49,7 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
         }
         else
         {
-            printf("%s[DEBUG | %s]%s ", color, mode_name, "\033[0m");
+            printf("%s[DEBUG %s]%s ", color, mode_name, "\033[0m");
         }
 
         // Handle variable arguments
