@@ -103,7 +103,7 @@ ASTNode *parse_variable_declaration(ParserState *state)
 
     node->next = NULL;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after variable declaration");
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
 
     return node;
 }
@@ -298,6 +298,13 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         advance_token(state);
         return node;
     }
+    else if (current->type == TOKEN_FUNCTION_NAME)
+    {
+        printf("Parse function call\n");
+        ASTNode *node = parse_function_call(state);
+        printf("Test???\n");
+        return node;
+    }
 
     parser_error("Expected literal or identifier", current);
     return NULL; // unreachable due to parser_error, but keeps compiler happy
@@ -414,6 +421,10 @@ ASTNode *parse_block(ParserState *state)
             else if (strcmp(current->lexeme, "let") == 0)
             {
                 statement = parse_variable_declaration(state);
+            }
+            else if (strcmp(current->lexeme, "create") == 0)
+            {
+                statement = parse_function_declaration(state);
             }
             else if (strcmp(current->lexeme, "deliver") == 0)
             {
@@ -763,7 +774,7 @@ ASTNode *parse_function_declaration(ParserState *state)
 
     // Parse function name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_FUNCTION_DECLARATION, "Expected function name");
+    expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
 
     // Create function node
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -835,7 +846,7 @@ ASTNode *parse_function_call(ParserState *state)
 {
     // Parse function name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_IDENTIFIER, "Expected function name");
+    expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
 
     // Create function call node
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -848,12 +859,12 @@ ASTNode *parse_function_call(ParserState *state)
 
     // Parse arguments (if any)
     node->function_call.parameters = NULL;
-    if (get_current_token(state)->type == TOKEN_DELIMITER &&
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN &&
         strcmp(get_current_token(state)->lexeme, "(") == 0)
     {
         advance_token(state); // consume `(`
         node->function_call.parameters = parse_argument_list(state);
-        expect_token(state, TOKEN_DELIMITER, "Expected `(` after parameter list");
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
     node->next = NULL;
