@@ -110,7 +110,24 @@ Token *tokenize(const char *source)
 
         if (strchr(",:;()", c))
         {
-            append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER, strndup(&source[pos], 1), line);
+            if (c == '(')
+            {
+                // Peek previous token to check if it's an identifier
+                if (token_count > 0 && tokens[token_count - 1].type == TOKEN_IDENTIFIER)
+                {
+                    // Retroactively convert identifier to function call
+                    tokens[token_count - 1].type = TOKEN_FUNCTION_CALL;
+                }
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN, strndup(&source[pos], 1), line);
+            }
+            else if (c == ')')
+            {
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE, strndup(&source[pos], 1), line);
+            }
+            else
+            {
+                append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER, strndup(&source[pos], 1), line);
+            }
             pos++;
             continue;
         }
