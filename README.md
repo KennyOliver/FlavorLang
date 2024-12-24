@@ -51,9 +51,9 @@
 Clone the repository and build the project.
 
 ```bash
-git clone https://github.com/KennyOliver/FlavorLang.git
-cd FlavorLang
-make
+$ git clone https://github.com/KennyOliver/FlavorLang.git
+$ cd FlavorLang
+$ make
 ```
 
 ### 2. Write Your First Recipe
@@ -69,7 +69,7 @@ show "Welcome to FlavorLang!";
 Use the flavor command to execute your program.
 
 ```bash
-./flavor recipe.flv
+$ ./flavor recipe.flv
 ```
 
 You should see:
@@ -83,7 +83,7 @@ Welcome to FlavorLang!
 Enable debug mode to inspect tokens and execution flow.
 
 ```bash
-./flavor recipe.flv --debug
+$ ./flavor recipe.flv --debug
 ```
 
 This will print detailed information about the tokenization and parsing process.
@@ -93,8 +93,8 @@ This will print detailed information about the tokenization and parsing process.
 ## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
-flavor recipe.flv          # Default execution
-flavor recipe.flv --debug  # Debug mode
+$ ./flavor recipe.flv          # Default execution
+$ ./flavor recipe.flv --debug  # Debug mode
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
@@ -162,11 +162,11 @@ Use `if`, `elif`, and `else` to control program flow.
 let oven_temperature = 200;
 
 if oven_temperature > 180:
-    show "The oven is hot!";
+	show "The oven is hot!";
 elif oven_temperature == 180:
-    show "The oven is just right!";
+	show "The oven is just right!";
 else:
-    show "The oven is too cold!";
+	show "The oven is too cold!";
 ```
 
 ### 4. 🔁 For Loop <a id="for-loop"></a>
@@ -175,7 +175,7 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5:
-    show "Mixing... Step", i;
+	show "Mixing... Step", i;
 ```
 
 ### 5. 🔄 While Loop <a id="while-loop"></a>
@@ -186,8 +186,8 @@ Use `while` for condition-based repetition.
 let flour_added = 0;
 
 while flour_added < 3:
-    show "Adding flour...";
-    let flour_added = flour_added + 1;
+	show "Adding flour...";
+	let flour_added = flour_added + 1;
 
 show "All flour has been added!";
 ```
@@ -199,12 +199,12 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 
 ```py
 create bake_cake(temperature):
-    if temperature < 180:
-        show "Temperature is too low to bake!";
-        burn "Cake burned!";  # Stops function execution immediately
-    else:
-        show "Baking cake at", temperature, "degrees!";
-        deliver "Cake is ready!";
+	if temperature < 180:
+		show "Temperature is too low to bake!";
+		burn "Cake burned!";  # Stops function execution immediately
+	else:
+		show "Baking cake at", temperature, "degrees!";
+		deliver "Cake is ready!";
 
 let result = bake_cake(200);
 show result;
@@ -216,10 +216,10 @@ Use `try` and `rescue` to handle errors.
 
 ```py
 try:
-    burn "This recipe failed!";
-    show "This won't run!";
+	burn "This recipe failed!";
+	show "This won't run!";
 rescue:
-    show "Caught an error: Recipe needs improvement.";
+	show "Caught an error: Recipe needs improvement.";
 ```
 
 ### 8. 📄 File Operations <a id="file-operations"></a>
@@ -288,7 +288,7 @@ let time = 20;
 show "Before error.";
 
 if time > 15:
-    burn "Too late!", "The food got burnt!";
+	burn "Too late!", "The food got burnt!";
 
 show "After error?";
 ```
@@ -298,10 +298,11 @@ show "After error?";
 ## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
 
 ```ebnf
-program       ::= statement* ;
-statement     ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
+program              ::= statement* ;
+statement            ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-print_statement      ::= "show" expression ("," expression)* ";" ;
+print_statement      ::= "show" expression ("," expression)* ";" ;  // Multiple arguments require commas
+                        | "show" expression ;  // Single argument allows no brackets
 if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
 loop_statement       ::= "while" condition ":" block
                        | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
@@ -323,7 +324,7 @@ step                 ::= expression ;
 - **Unique & Fun**: Express your programs like recipes!
 - **Flexible Execution**: File extensions and flags allow customized program behavior.
 - **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
-- **Debug-Friendly**: Easily trace and test your code step-by-step with --chef mode.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
 
 ---
 
