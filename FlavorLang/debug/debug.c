@@ -30,7 +30,5 @@ void debug_print(const char *format, ...)
 
         // End variable argument processing
         va_end(args);
-
-        printf("\n");
     }
 }
