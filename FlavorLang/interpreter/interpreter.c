@@ -141,13 +141,13 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env)
 
     if (var->value.type == TYPE_NUMBER)
     {
-        debug_print_int("Retrieved variable `%s` with value `%f`",
+        debug_print_int("Retrieved variable `%s` with value `%f`\n",
                         node->variable_name,
                         var->value.data.number);
     }
     else if (var->value.type == TYPE_STRING)
     {
-        debug_print_int("Retrieved variable `%s` with value `%s...`",
+        debug_print_int("Retrieved variable `%s` with value `%s`\n",
                         node->variable_name,
                         var->value.data.string);
     }
@@ -391,13 +391,13 @@ Variable *get_variable(Environment *env, const char *variable_name)
         {
             if (env->variables[i].value.type == TYPE_NUMBER)
             {
-                debug_print_int("Variable found: `%s` with value `%f`",
+                debug_print_int("Variable found: `%s` with value `%f`\n",
                                 variable_name,
                                 env->variables[i].value.data.number);
             }
             else if (env->variables[i].value.type == TYPE_STRING)
             {
-                debug_print_int("Variable found: `%s` with value `%s`",
+                debug_print_int("Variable found: `%s` with value `%s`\n",
                                 variable_name,
                                 env->variables[i].value.data.string);
             }
