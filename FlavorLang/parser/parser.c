@@ -52,7 +52,7 @@ ASTNode *parse_program(Token *tokens)
         }
         else if (strcmp(token->lexeme, "create") == 0)
         {
-            new_node = parse_function(state);
+            new_node = parse_function_declaration(state);
         }
         else
         {
@@ -724,7 +724,7 @@ ASTNode *parse_function_declaration(ParserState *state)
 
     // Parse function name
     Token *name = get_current_token(state);
-    excpet_token(state, TOKEN_IDENTIFIER, "Expected function name");
+    expect_token(state, TOKEN_IDENTIFIER, "Expected function name");
 
     // Create function node
     ASTNode *node = malloc(sizeof(ASTNode));
@@ -796,7 +796,7 @@ ASTNode *parse_function_call(ParserState *state)
 {
     // Parse function name
     Token *name = get_current_token(state);
-    excpet_token(state, TOKEN_IDENTIFIER, "Expected function name");
+    expect_token(state, TOKEN_IDENTIFIER, "Expected function name");
 
     // Create function call node
     ASTNode *node = malloc(sizeof(ASTNode));
