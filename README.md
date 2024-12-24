@@ -298,10 +298,11 @@ show "After error?";
 ## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
 
 ```ebnf
-program       ::= statement* ;
-statement     ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
+program              ::= statement* ;
+statement            ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-print_statement      ::= "show" expression ("," expression)* ";" ;
+print_statement      ::= "show" expression ("," expression)* ";" ;  // Multiple arguments require commas
+                        | "show" expression ;  // Single argument allows no brackets
 if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
 loop_statement       ::= "while" condition ":" block
                        | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
