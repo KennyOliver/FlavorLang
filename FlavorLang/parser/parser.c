@@ -732,7 +732,7 @@ ASTNode *parse_function_declaration(ParserState *state)
     {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-    node->type = AST_FUNCTION_CALL;
+    node->type = AST_FUNCTION_DECLARATION;
     node->function_call.name = strdup(name->lexeme);
 
     // Parse parameters (if any)
