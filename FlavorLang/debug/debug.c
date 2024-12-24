@@ -1,7 +1,6 @@
 #include "debug.h"
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <stdarg.h>
 
 bool debug_flag = false;
@@ -17,21 +16,11 @@ void parse_cli_args(int argc, char *argv[])
     }
 }
 
-void get_timestamp(char *buffer, size_t size)
-{
-    time_t now = time(NULL);
-    struct tm *t = localtime(&now);
-    strftime(buffer, size, "%H:%M:%S", t);
-}
-
 void debug_print(const char *format, ...)
 {
     if (debug_flag)
     {
-        char timestamp[20];
-        get_timestamp(timestamp, sizeof(timestamp));
-
-        printf("[DEBUG %s] ", timestamp);
+        printf("[DEBUG %s] ", "???");
 
         // Handle variable arguments
         va_list args;
