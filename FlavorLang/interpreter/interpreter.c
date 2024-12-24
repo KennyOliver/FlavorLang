@@ -170,11 +170,11 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     // Debug print the value
     if (new_value.type == TYPE_STRING)
     {
-        debug_print_int("Assignment value is string: '%s'\n", new_value.data.string);
+        debug_print_int("Assignment value is string: `%s`\n", new_value.data.string);
     }
     else
     {
-        debug_print_int("Assignment value is number: %f\n", new_value.data.number);
+        debug_print_int("Assignment value is number: `%f`\n", new_value.data.number);
     }
 
     // Check if the variable already exists
@@ -564,7 +564,7 @@ Variable interpret_input(Environment *env)
     }
     input_buffer[input_length] = '\0';
 
-    debug_print_int("Read input: '%s'\n", input_buffer);
+    debug_print_int("Read input: `%s`\n", input_buffer);
 
     // Allocate variable
     Variable *var = allocate_variable(env, "input_value");
@@ -580,7 +580,7 @@ Variable interpret_input(Environment *env)
     var->value.type = TYPE_STRING;
     var->value.data.string = strdup(input_buffer);
 
-    debug_print_int("Stored value: '%s'\n", var->value.data.string);
+    debug_print_int("Stored value: `%s`\n", var->value.data.string);
 
     free(input_buffer);
 
@@ -626,7 +626,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
         // Handle if/elif branches
         debug_print_int("Evaluating IF/ELIF branch\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        debug_print_int("Condition evaluated to: %f\n", condition_value.data.number);
+        debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.number);
 
         if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
         {
@@ -691,7 +691,7 @@ void interpret_while_loop(ASTNode *node, Environment *env)
             debug_print_int("After body execution:\n");
             for (size_t i = 0; i < env->variable_count; i++)
             {
-                debug_print_int("Variable '%s': value = %f",
+                debug_print_int("Variable `%s`: value = `%f`",
                                 env->variables[i].variable_name,
                                 env->variables[i].value.data.number);
             }
