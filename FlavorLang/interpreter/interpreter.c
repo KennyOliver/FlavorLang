@@ -226,13 +226,13 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 
     if (new_value.type == TYPE_NUMBER)
     {
-        debug_print("Created new variable `%s` with value `%f`",
+        debug_print("Created new variable `%s` with value `%f`\n",
                     node->assignment.variable_name,
                     new_value.data.number);
     }
     else if (new_value.type == TYPE_STRING)
     {
-        debug_print("Created new variable `%s` with value `%s`",
+        debug_print("Created new variable `%s` with value `%s`\n",
                     node->assignment.variable_name,
                     new_value.data.string);
     }
