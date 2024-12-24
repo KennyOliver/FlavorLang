@@ -675,6 +675,46 @@ ASTNode *parse_parameter_list(ParserState *state)
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
+    while (1)
+    {
+        // Parse parameter name
+        Token *name = get_current_token(state);
+        expect_token(state, TOKEN_IDENTIFIER, "Expected parameter name");
+
+        // Create parameter node
+        ASTNode *param_node = malloc(sizeof(ASTNode));
+        if (!param_node)
+        {
+            parser_error("Memory allocation failed", get_current_token(state));
+        }
+        param_node->type = AST_VARIABLE;
+        param_node->variable_name = strdup(name->lexeme);
+        param_node->next = NULL;
+
+        // Add parameter to linked list
+        if (!head)
+        {
+            head = param_node;
+            tail = param_node;
+        }
+        else
+        {
+            tail->next = param_node;
+            tail = param_node;
+        }
+
+        // Check for comma (indicates another parameter)
+        if (get_current_token(state)->type == TOKEN_DELIMITER &&
+            strcmp(get_current_token(state)->lexeme, ",") == 0)
+        {
+            advance_token(state); // consume `,`
+        }
+        else
+        {
+            break;
+        }
+    }
+
     return head;
 }
 
