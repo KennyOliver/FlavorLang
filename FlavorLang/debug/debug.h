@@ -5,8 +5,18 @@
 
 extern bool debug_flag;
 
-void parse_cli_args(int argc, char *argv[]);
+typedef enum
+{
+    GENERAL,
+    TOKENIZER,
+    PARSER,
+    INTERPRETER
+} DebugMode;
 
-void debug_print(const char *message, ...);
+void parse_cli_args(int argc, char *argv[]);
+void debug_print_basic(const char *message, ...);
+void debug_print_tok(const char *message, ...);
+void debug_print_par(const char *message, ...);
+void debug_print_int(const char *message, ...);
 
 #endif

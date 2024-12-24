@@ -106,11 +106,11 @@ ASTNode *parse_variable_declaration(ParserState *state)
 
 ASTNode *parse_variable_assignment(ParserState *state)
 {
-    debug_print("Starting variable assignment parse\n");
+    debug_print_par("Starting variable assignment parse\n");
 
     // Parse variable name
     Token *name = get_current_token(state);
-    debug_print("Variable assignment name: `%s`\n", name->lexeme);
+    debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
 
     advance_token(state);
 
@@ -330,16 +330,16 @@ ASTNode *parse_expression(ParserState *state)
 
 ASTNode *parse_block(ParserState *state)
 {
-    debug_print("Starting to parse block\n");
+    debug_print_par("Starting to parse block\n");
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
     while (get_current_token(state)->type != TOKEN_EOF)
     {
         Token *current = get_current_token(state);
-        debug_print("Parsing token in block: type=`%d`, lexeme=`%s`\n",
-                    current->type,
-                    current->lexeme);
+        debug_print_par("Parsing token in block: type=`%d`, lexeme=`%s`\n",
+                        current->type,
+                        current->lexeme);
 
         // Check for block end conditions
         // Handle semicolons between statements without breaking the block
