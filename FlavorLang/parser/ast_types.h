@@ -76,6 +76,14 @@ typedef struct
     struct ASTNode *body;
 } ASTLoop;
 
+// AST Function Call
+typedef struct
+{
+    char *name;
+    ASTNode *parameters;
+    struct ASTNode *body;
+} ASTFunctionCall;
+
 // AST Node Structure
 typedef struct ASTNode
 {
@@ -110,6 +118,9 @@ typedef struct ASTNode
 
         // While loop
         ASTLoop loop;
+
+        // Function
+        ASTFunctionCall function_call;
 
         // Variable
         char *variable_name;
