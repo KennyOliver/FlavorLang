@@ -97,7 +97,6 @@ LiteralValue interpret(ASTNode *node, Environment *env)
 void interpret_program(ASTNode *program, Environment *env)
 {
     ASTNode *current = program;
-
     while (current)
     {
         debug_print_int("Executing top-level statement\n");
@@ -209,16 +208,6 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
             fprintf(stderr, "Error: Memory reallocation failed.\n");
             exit(1);
         }
-    }
-
-    debug_print_int("New variable `%s` with value ", node->assignment.variable_name);
-    if (env->variables[env->variable_count - 1].value.type == TYPE_STRING)
-    {
-        printf("`%s`\n", env->variables[env->variable_count - 1].value.data.string);
-    }
-    else
-    {
-        printf("`%f`\n", env->variables[env->variable_count - 1].value.data.number);
     }
 
     env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
