@@ -26,19 +26,19 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
         switch (debug_mode)
         {
         case TOKENIZER:
-            color = "\033[38;5;202m";
+            color = "\033[38;5;202m"; // orange
             mode_name = "TOK";
             break;
         case PARSER:
-            color = "\033[38;5;46m";
+            color = "\033[38;5;46m"; // green
             mode_name = "PRS";
             break;
         case INTERPRETER:
-            color = "\033[38;5;93m";
+            color = "\033[38;5;93m"; // purple
             mode_name = "INT";
             break;
         default:
-            color = "\033[38;5;255m"; // White for unknown
+            color = "\033[38;5;255m"; // white for unknown
             mode_name = "UNK";
         }
 
@@ -55,11 +55,11 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
         // Handle variable arguments
         va_list args;
         va_start(args, format);
-
         vprintf(format, args);
-
-        // End variable argument processing
         va_end(args);
+
+        // Ensure output is flushed
+        fflush(stdout);
     }
 }
 
@@ -70,9 +70,13 @@ void debug_print_basic(const char *format, ...)
         va_list args;
         va_start(args, format);
 
-        debug_print(GENERAL, format, args);
+        // Create the complete format string with the debug prefix
+        char new_format[1024];
+        vsnprintf(new_format, sizeof(new_format), format, args);
 
         va_end(args);
+
+        debug_print(GENERAL, "%s", new_format);
     }
 }
 
@@ -83,9 +87,13 @@ void debug_print_tok(const char *format, ...)
         va_list args;
         va_start(args, format);
 
-        debug_print(TOKENIZER, format, args);
+        // Create the complete format string with the debug prefix
+        char new_format[1024];
+        vsnprintf(new_format, sizeof(new_format), format, args);
 
         va_end(args);
+
+        debug_print(TOKENIZER, "%s", new_format);
     }
 }
 
@@ -96,9 +104,13 @@ void debug_print_par(const char *format, ...)
         va_list args;
         va_start(args, format);
 
-        debug_print(PARSER, format, args);
+        // Create the complete format string with the debug prefix
+        char new_format[1024];
+        vsnprintf(new_format, sizeof(new_format), format, args);
 
         va_end(args);
+
+        debug_print(PARSER, "%s", new_format);
     }
 }
 
@@ -109,8 +121,12 @@ void debug_print_int(const char *format, ...)
         va_list args;
         va_start(args, format);
 
-        debug_print(INTERPRETER, format, args);
+        // Create the complete format string with the debug prefix
+        char new_format[1024];
+        vsnprintf(new_format, sizeof(new_format), format, args);
 
         va_end(args);
+
+        debug_print(INTERPRETER, "%s", new_format);
     }
 }
