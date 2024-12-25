@@ -1,2 +1,7 @@
-show 1;
-show 3.14159;
+let a = 3.14159;
+let b = 1;
+let c = "FlavorLang";
+
+show a;
+show b;
+show c;
