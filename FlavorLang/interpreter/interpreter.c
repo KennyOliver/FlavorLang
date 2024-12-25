@@ -24,8 +24,8 @@ ASTNode *copy_ast_node(ASTNode *node);
 LiteralValue create_default_value()
 {
     LiteralValue value = {
-        .type = TYPE_NUMBER,
-        .data = {.number = 0}};
+        .type = TYPE_INTEGER,
+        .data = {.integer = 0}};
     return value;
 }
 
@@ -48,9 +48,13 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     case AST_ASSIGNMENT:
         debug_print_int("Matched: `AST_ASSIGNMENT`\n");
         debug_print_int("Interpreted node type: `%d`\n", (int)node->type);
-        if (node->type == TYPE_NUMBER)
+        if (node->type == TYPE_FLOAT)
         {
-            debug_print_int("Node is a number: `%f`\n", node->literal.value.number);
+            debug_print_int("Node is a number: `%f`\n", node->literal.value.floating_point);
+        }
+        else if (node->type == TYPE_INTEGER)
+        {
+            debug_print_int("Node is a number: `%d`\n", node->literal.value.integer);
         }
         else if (node->type == TYPE_STRING)
         {
@@ -124,14 +128,22 @@ LiteralValue interpret_literal(ASTNode *node)
     switch (node->literal.type)
     {
     case LITERAL_FLOAT:
-        debug_print_int("LITERAL_FLOAT, value: `%f`\n", node->literal.value.number);
-        value.type = TYPE_NUMBER;
-        value.data.number = node->literal.value.number;
+        debug_print_int("LITERAL_FLOAT, value: `%f`\n", node->literal.value.floating_point);
+        value.type = TYPE_FLOAT;
+        value.data.floating_point = node->literal.value.floating_point;
         break;
+
+    case LITERAL_INTEGER:
+        debug_print_int("LITERAL_INTEGER, value: `%d`\n", (int)node->literal.value.integer);
+        value.type = TYPE_INTEGER;
+        value.data.integer = node->literal.value.integer; // convert to double, as `LiteralValue` stores numbers as doubles
+        break;
+
     case LITERAL_STRING:
         value.type = TYPE_STRING;
         value.data.string = strdup(node->literal.value.string);
         break;
+
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
         exit(1);
@@ -150,11 +162,17 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    if (var->value.type == TYPE_NUMBER)
+    if (var->value.type == TYPE_FLOAT)
     {
         debug_print_int("Retrieved variable `%s` with value `%f`\n",
                         node->variable_name,
-                        var->value.data.number);
+                        var->value.data.floating_point);
+    }
+    else if (var->value.type == TYPE_INTEGER)
+    {
+        debug_print_int("Retrieved variable `%s` with value `%f`\n",
+                        node->variable_name,
+                        var->value.data.integer);
     }
     else if (var->value.type == TYPE_STRING)
     {
@@ -191,141 +209,168 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     return new_value;
 }
 
-LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
+// Function to handle string concatenation and addition
+LiteralValue handle_addition(LiteralValue left, LiteralValue right)
 {
-    LiteralValue left = interpret(node->binary_op.left, env);
-    LiteralValue right = interpret(node->binary_op.right, env);
-
-    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`\n",
-                    left.data.number,
-                    node->binary_op.operator,
-                    right.data.number);
-
     LiteralValue result;
-    result.type = TYPE_NUMBER;
-
-    char *operator= node->binary_op.operator;
-
-    switch (operator[0])
+    if (left.type == TYPE_STRING || right.type == TYPE_STRING)
     {
-    case '+':
-        // Check if at least one of the operands is a string
-        if (left.type == TYPE_STRING || right.type == TYPE_STRING)
-        {
-            result.type = TYPE_STRING;
+        result = handle_string_concatenation(left, right);
+    }
+    else
+    {
+        result.type = TYPE_FLOAT;
+        result.data.floating_point = left.data.floating_point + right.data.floating_point;
+    }
+    return result;
+}
 
-            // If either operand is a number, convert it to a string
-            char num_str1[50] = {0};
-            char num_str2[50] = {0};
-            if (left.type == TYPE_NUMBER)
-            {
-                snprintf(num_str1, sizeof(num_str1), "%f", left.data.number);
-            }
-            if (right.type == TYPE_NUMBER)
-            {
-                snprintf(num_str2, sizeof(num_str2), "%f", right.data.number);
-            }
+// Function to handle string concatenation
+LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
+{
+    LiteralValue result;
+    result.type = TYPE_STRING;
 
-            // Concatenate the strings
-            char *new_string = malloc(strlen(num_str1) + strlen(num_str2) +
-                                      strlen(left.type == TYPE_STRING ? left.data.string : "") +
-                                      strlen(right.type == TYPE_STRING ? right.data.string : "") + 1);
-            if (new_string == NULL)
-            {
-                fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
-                exit(1);
-            }
-            strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
-            strcat(new_string, right.type == TYPE_STRING ? right.data.string : num_str2);
-            result.data.string = new_string;
-        }
-        else
-        {
-            result.data.number = left.data.number + right.data.number;
-            debug_print_int("Addition result: `%f + %f = %f`",
-                            left.data.number,
-                            right.data.number,
-                            result.data.number);
-        }
-        break;
-    case '-':
-        result.data.number = left.data.number - right.data.number;
-        break;
-    case '*':
-        result.data.number = left.data.number * right.data.number;
-        break;
-    case '/':
-        if (right.data.number == 0)
-        {
-            fprintf(stderr, "Error: Division by zero.\n");
-            exit(1);
-        }
-        result.data.number = left.data.number / right.data.number;
-        break;
-    case '<':
-        if (operator[1] && operator[1] == '=')
-        {
-            result.data.number = (left.data.number <= right.data.number) ? 1.0 : 0.0;
-        }
-        else
-        {
-            result.data.number = (left.data.number < right.data.number) ? 1.0 : 0.0;
-        }
-        break;
-    case '>':
-        if (operator[1] && operator[1] == '=')
-        {
-            result.data.number = (left.data.number >= right.data.number) ? 1.0 : 0.0;
-        }
-        else
-        {
-            result.data.number = (left.data.number > right.data.number) ? 1.0 : 0.0;
-        }
-        break;
-    case '=':
-        if (operator[1] && operator[1] == '=')
-        {
-            result.data.number = (left.data.number == right.data.number) ? 1.0 : 0.0;
-        }
-        else
-        {
-            fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
-            exit(1);
-        }
-        break;
-    default:
-        fprintf(stderr, "Error: Unsupported operator `%s`.\n", operator);
+    // Convert numbers to strings
+    char num_str1[50] = {0};
+    char num_str2[50] = {0};
+
+    if (left.type == TYPE_FLOAT)
+    {
+        snprintf(num_str1, sizeof(num_str1), "%f", left.data.floating_point);
+    }
+    if (right.type == TYPE_FLOAT)
+    {
+        snprintf(num_str2, sizeof(num_str2), "%f", right.data.floating_point);
+    }
+
+    // Allocate memory for the concatenated string
+    size_t new_size = strlen(num_str1) + strlen(num_str2) +
+                      strlen(left.type == TYPE_STRING ? left.data.string : "") +
+                      strlen(right.type == TYPE_STRING ? right.data.string : "") + 1;
+
+    char *new_string = malloc(new_size);
+    if (!new_string)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for string concatenation.\n");
         exit(1);
     }
 
-    switch (result.type)
+    strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
+    strcat(new_string, right.type == TYPE_STRING ? right.data.string : num_str2);
+    result.data.string = new_string;
+
+    return result;
+}
+
+// Function to handle division and check for division by zero
+LiteralValue handle_division(LiteralValue left, LiteralValue right)
+{
+    LiteralValue result;
+    if (right.data.floating_point == 0)
     {
-    case TYPE_STRING:
-        if (left.type == TYPE_STRING && right.type == TYPE_STRING)
-        {
-            debug_print_int("Binary operation `\"%s\" %s %f`\n",
-                            left.data.string, node->binary_op.operator, right.data.string);
-        }
-        else if (left.type == TYPE_STRING && right.type == TYPE_NUMBER)
-        {
-            debug_print_int("Binary operation `\"%s\" %s %f`\n",
-                            left.data.string, node->binary_op.operator, right.data.number);
-        }
-        else if (left.type == TYPE_NUMBER && right.type == TYPE_STRING)
-        {
-            debug_print_int("Binary operation `%f %s \"%s\"`\n",
-                            left.data.number, node->binary_op.operator, right.data.string);
-        }
-        else
-        {
-            debug_print_int("Binary operation `%s %s %s`\n",
-                            left.data.string, node->binary_op.operator, right.data.string);
-        }
-        break;
-    default:
-        debug_print_int("Binary operation `%f %s %f`\n",
-                        left.data.number, node->binary_op.operator, right.data.number);
+        fprintf(stderr, "Error: Division by zero.\n");
+        exit(1);
     }
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = left.data.floating_point / right.data.floating_point;
+    return result;
+}
+
+// Function to handle comparison operators (<, <=, >, >=)
+LiteralValue handle_comparison(LiteralValue left, LiteralValue right, char *operator)
+{
+    LiteralValue result;
+    result.type = TYPE_FLOAT;
+
+    if (operator[1] == '=')
+    {
+        result.data.floating_point = (operator[0] == '<')
+                                         ? (left.data.floating_point <= right.data.floating_point) ? 1.0 : 0.0
+                                     : (left.data.floating_point >= right.data.floating_point) ? 1.0
+                                                                                               : 0.0;
+    }
+    else
+    {
+        result.data.floating_point = (operator[0] == '<')
+                                         ? (left.data.floating_point < right.data.floating_point) ? 1.0 : 0.0
+                                     : (left.data.floating_point > right.data.floating_point) ? 1.0
+                                                                                              : 0.0;
+    }
+    return result;
+}
+
+// Handle errors for unsupported operators
+void handle_binary_op_error(const char *msg, char *operator)
+{
+    fprintf(stderr, "Error: %s `%s`.\n", msg, operator);
+    exit(1);
+}
+
+// Function to print debug info for the result
+void debug_print_result(LiteralValue left, LiteralValue right, char *operator, LiteralValue result)
+{
+    if (result.type == TYPE_STRING)
+    {
+        debug_print_int("Binary operation `%s %s %s`\n",
+                        left.data.string, operator, right.data.string);
+    }
+    else
+    {
+        debug_print_int("Binary operation `%f %s %f`\n",
+                        left.data.floating_point, operator, right.data.floating_point);
+    }
+}
+
+LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
+{
+    // Step 1: Interpret left and right operands
+    LiteralValue left = interpret(node->binary_op.left, env);
+    LiteralValue right = interpret(node->binary_op.right, env);
+
+    // Debug print for binary operation
+    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`\n",
+                    left.data.floating_point, node->binary_op.operator, right.data.floating_point);
+
+    // Step 2: Handle the operation
+    LiteralValue result;
+    result.type = TYPE_FLOAT; // assume float by default for operations
+
+    // Determine the operator
+    char *operator= node->binary_op.operator;
+
+    // Step 3: Perform operation based on the operator
+    if (operator[0] == '+')
+    {
+        result = handle_addition(left, right);
+    }
+    else if (operator[0] == '-')
+    {
+        result.data.floating_point = left.data.floating_point - right.data.floating_point;
+    }
+    else if (operator[0] == '*')
+    {
+        result.data.floating_point = left.data.floating_point * right.data.floating_point;
+    }
+    else if (operator[0] == '/')
+    {
+        result = handle_division(left, right);
+    }
+    else if (operator[0] == '<' || operator[0] == '>')
+    {
+        result = handle_comparison(left, right, operator);
+    }
+    else if (operator[0] == '=' && operator[1] == '=')
+    {
+        result.data.floating_point = (left.data.floating_point == right.data.floating_point) ? 1.0 : 0.0;
+    }
+    else
+    {
+        handle_binary_op_error("Unsupported operator", operator);
+    }
+
+    // Step 4: Debug print based on result type
+    debug_print_result(left, right, operator, result);
 
     return result;
 }
@@ -337,11 +382,17 @@ Variable *get_variable(Environment *env, const char *variable_name)
     {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0)
         {
-            if (env->variables[i].value.type == TYPE_NUMBER)
+            if (env->variables[i].value.type == TYPE_FLOAT)
             {
                 debug_print_int("Variable found: `%s` with value `%f`\n",
                                 variable_name,
-                                env->variables[i].value.data.number);
+                                env->variables[i].value.data.floating_point);
+            }
+            else if (env->variables[i].value.type == TYPE_INTEGER)
+            {
+                debug_print_int("Variable found: `%s` with value `%d`\n",
+                                variable_name,
+                                env->variables[i].value.data.integer);
             }
             else if (env->variables[i].value.type == TYPE_STRING)
             {
@@ -404,65 +455,79 @@ void add_variable(Environment *env, Variable var)
     env->variable_count++;
 }
 
+// Helper function to print a LiteralValue
+void print_literal_value(LiteralValue value)
+{
+    switch (value.type)
+    {
+    case TYPE_FLOAT:
+        printf("%f", value.data.floating_point);
+        break;
+    case TYPE_INTEGER:
+        printf("%d", value.data.integer);
+        break;
+    case TYPE_STRING:
+        printf("%s", value.data.string);
+        break;
+    case TYPE_ERROR:
+        fprintf(stderr, "Error: Invalid literal type.\n");
+        break;
+    default:
+        fprintf(stderr, "Error: Unknown literal type.\n");
+        break;
+    }
+}
+
 void interpret_print(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_print()`\n");
+
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
+        LiteralValue value;
 
+        // Determine the value to print based on the node type
         if (arg->type == AST_LITERAL)
         {
-            // // Handle string literals directly
-            if (arg->literal.type == LITERAL_STRING)
+            value.type = arg->literal.type;
+
+            // Populate the union fields based on the type
+            switch (arg->literal.type)
             {
-                printf("%s ", arg->literal.value.string);
-            }
-            else if (arg->literal.type == LITERAL_FLOAT)
-            {
-                printf("%f ", arg->literal.value.number);
+            case LITERAL_FLOAT:
+                value.data.floating_point = arg->literal.value.floating_point;
+                break;
+            case LITERAL_INTEGER:
+                value.data.integer = arg->literal.value.integer;
+                break;
+            case LITERAL_STRING:
+                value.data.string = arg->literal.value.string;
+                break;
+            default:
+                fprintf(stderr, "Error: Unsupported literal type.\n");
+                value.type = TYPE_ERROR;
             }
         }
-        else if (arg->type == AST_ASSIGNMENT)
+        else if (arg->type == AST_ASSIGNMENT || arg->type == AST_VARIABLE)
         {
             Variable *var = get_variable(env, arg->variable_name);
             if (!var)
             {
                 fprintf(stderr, "Error: Undefined variable `%s`.\n", arg->variable_name);
+                continue;
             }
-
-            if (var->value.type == TYPE_STRING)
-            {
-                printf("%s ", var->value.data.string);
-            }
-            else if (var->value.type == TYPE_NUMBER)
-            {
-                printf("%f ", var->value.data.number);
-            }
-        }
-        else if (arg->type == AST_VARIABLE)
-        {
-            Variable *var = get_variable(env, arg->variable_name);
-            if (!var)
-            {
-                fprintf(stderr, "Error: Undefined variable `%s`.\n", arg->variable_name);
-            }
-
-            if (var->value.type == TYPE_STRING)
-            {
-                printf("%s ", var->value.data.string);
-            }
-            else if (var->value.type == TYPE_NUMBER)
-            {
-                printf("%f ", var->value.data.number);
-            }
+            value = var->value;
         }
         else
         {
-            // Evaluate and print numeric expressions
-            LiteralValue value = interpret(arg, env);
-            printf("%f ", value.data.number);
+            // Evaluate expressions for other node types
+            value = interpret(arg, env);
         }
+
+        // Print the value based on its type
+        print_literal_value(value);
+        printf(" "); // space for padding
     }
     printf("\n");
 }
@@ -624,9 +689,9 @@ void interpret_conditional(ASTNode *node, Environment *env)
         // Handle if/elif branches
         debug_print_int("Evaluating `if`/`elif` branch\n");
         LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.number);
+        debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.integer);
 
-        if (condition_value.type == TYPE_NUMBER && condition_value.data.number != 0)
+        if (condition_value.type == TYPE_INTEGER && condition_value.data.integer != 0)
         {
             debug_print_int("Condition is true, executing branch body\n");
             // Execute all statements in the body
@@ -660,12 +725,12 @@ void interpret_while_loop(ASTNode *node, Environment *env)
 
         LiteralValue condition_value = interpret(condition, env);
 
-        if (condition_value.type == TYPE_NUMBER)
+        if (condition_value.type == TYPE_INTEGER)
         {
-            debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.number);
+            debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.integer);
         }
 
-        if (condition_value.data.number != 0)
+        if (condition_value.data.integer != 0)
         {
             debug_print_int("`while` condition is true, executing body\n");
 
@@ -680,9 +745,9 @@ void interpret_while_loop(ASTNode *node, Environment *env)
             debug_print_int("After body execution:\n");
             for (size_t i = 0; i < env->variable_count; i++)
             {
-                debug_print_int("Variable `%s`: value = `%f`",
+                debug_print_int("Variable `%s`: value = `%s`",
                                 env->variables[i].variable_name,
-                                env->variables[i].value.data.number);
+                                env->variables[i].value.data.integer ? "true" : "false");
             }
         }
         else
@@ -739,9 +804,13 @@ void interpret_switch(ASTNode *node, Environment *env)
         {
             int values_match = 0;
 
-            if (switch_value.type == TYPE_NUMBER)
+            if (switch_value.type == TYPE_FLOAT)
             {
-                values_match = (switch_value.data.number == case_value.data.number);
+                values_match = (switch_value.data.floating_point == case_value.data.floating_point);
+            }
+            else if (switch_value.type == TYPE_INTEGER)
+            {
+                values_match = (switch_value.data.integer == case_value.data.integer);
             }
             else if (switch_value.type == TYPE_STRING)
             {
@@ -1123,14 +1192,19 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     if (result.is_error)
     {
         fprintf(stderr, "Function execution burned with message: ");
-        if (result.value.type == TYPE_STRING)
+        if (result.value.type == TYPE_FLOAT)
+        {
+            fprintf(stderr, "%f\n", result.value.data.floating_point);
+        }
+        else if (result.value.type == TYPE_STRING)
+        {
+            fprintf(stderr, "%d\n", result.value.data.integer);
+        }
+        else if (result.value.type == TYPE_STRING)
         {
             fprintf(stderr, "%s\n", result.value.data.string);
         }
-        else
-        {
-            fprintf(stderr, "%f\n", result.value.data.number);
-        }
+
         exit(1);
     }
 
