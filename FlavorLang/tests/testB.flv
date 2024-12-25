@@ -8,8 +8,9 @@ create func1(temperature) {
 }
 
 create func2(x, y) {
-    let a = x + y;
-    deliver a;
+    let a = x + y + 1;
+    let b = a + 3;
+    deliver b;
 }
 
 create func3(x) {
@@ -24,7 +25,7 @@ create func4() {
 let result1 = func1(200);
 show "Result 1:", result1;
 
-let result2 = func2(2, 3);
+let result2 = func2(2, 8);
 show "Result 2:", result2;
 
 # let result3 = func3(2, 3);
