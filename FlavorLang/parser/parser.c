@@ -964,14 +964,20 @@ ASTNode *parse_function_call(ParserState *state)
     node->type = AST_FUNCTION_CALL;
     node->function_call.name = strdup(name->lexeme);
 
-    // Parse arguments (if any)
+    // Initialize both parameters and arguments to NULL
     node->function_call.parameters = NULL;
+    node->function_call.arguments = NULL; // Note to self: make sure to initialize this!
+
+    // Parse arguments (if any)
     if (get_current_token(state)->type == TOKEN_PAREN_OPEN &&
         strcmp(get_current_token(state)->lexeme, "(") == 0)
     {
         advance_token(state); // consume `(`
-        node->function_call.parameters = (ASTFunctionParameter *)parse_argument_list(state);
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
+
+        // Store in arguments instead of parameters for function calls
+        node->function_call.arguments = parse_argument_list(state);
+
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
     }
 
     node->next = NULL;

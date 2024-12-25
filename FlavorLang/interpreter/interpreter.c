@@ -951,54 +951,20 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_function_declaration()` called\n");
 
-    if (!node)
+    if (!node || !node->function_call.name)
     {
-        fprintf(stderr, "Error: Null `ASTNode` passed to interpret_function_declaration\n");
+        fprintf(stderr, "Error: Invalid function declaration\n");
         exit(1);
     }
 
-    if (!node->function_call.name)
-    {
-        fprintf(stderr, "Error: Function declaration missing name\n");
-        exit(1);
-    }
-    debug_print_int("Function name validated\n");
+    // Initialize param_list as NULL
+    ASTFunctionParameter *param_list = NULL;
+    ASTFunctionParameter *param_tail = NULL; // keep track of the last parameter
 
-    if (!node->function_call.parameters)
-    {
-        fprintf(stderr, "Error: Null parameters in function declaration\n");
-        exit(1);
-    }
-    debug_print_int("Parameters validated\n");
-
-    // Create a deep copy of the parameter list
-    ASTFunctionParameter *param_list = malloc(sizeof(ASTFunctionParameter));
-    if (!param_list)
-    {
-        fprintf(stderr, "Error: Memory allocation failed for `ASTFunctionParameter`.\n");
-        exit(1);
-    }
-    debug_print_int("Parameter list created successfully\n");
-
+    // Copy parameters
     ASTFunctionParameter *param = node->function_call.parameters;
-    if (!param)
-    {
-        fprintf(stderr, "Error: Function declaration has no parameters\n");
-        exit(1);
-    }
-
     while (param)
     {
-        debug_print_int("1: Current param address: %p\n", (void *)param);
-
-        if (!param->parameter_name)
-        {
-            fprintf(stderr, "Error: Encountered NULL parameter name in function declaration\n");
-            exit(1);
-        }
-
-        debug_print_int("2: Current param name: %s\n", param->parameter_name);
-
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param)
         {
@@ -1014,116 +980,91 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
             exit(1);
         }
 
-        debug_print_int("3: Copied parameter name: %s\n", new_param->parameter_name);
-
         new_param->next = NULL;
 
+        // Add to list
         if (!param_list)
         {
             param_list = new_param;
+            param_tail = new_param;
         }
         else
         {
-            ASTFunctionParameter *tmp = param_list;
-            while (tmp->next)
-            {
-                tmp = tmp->next;
-            }
-            tmp->next = new_param;
+            param_tail->next = new_param;
+            param_tail = new_param;
         }
 
         param = param->next;
-        debug_print_int("4: Moved to next parameter\n");
     }
-
-    if (!node->function_call.body)
-    {
-        fprintf(stderr, "Error: Null body in function declaration\n");
-        exit(1);
-    }
-    debug_print_int("Function body validated\n");
 
     Function func = {
         .name = strdup(node->function_call.name),
         .parameters = param_list,
         .body = node->function_call.body};
 
-    if (!func.name)
-    {
-        fprintf(stderr, "Error: `strdup` failed for function name\n");
-        exit(1);
-    }
-
-    if (!func.body)
-    {
-        fprintf(stderr, "Error: Null body in function declaration\n");
-        exit(1);
-    }
-
     add_function(env, func);
-
-    debug_print_int("Function added to environment successfully\n");
 }
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
-    if (!node)
+    if (!node || !node->function_call.name)
     {
-        fprintf(stderr, "Error: Null ASTNode passed to interpret_function_call()\n");
+        fprintf(stderr, "Error: Invalid function call\n");
         exit(1);
     }
 
-    if (!node->function_call.name)
-    {
-        fprintf(stderr, "Error: Function name is missing in ASTNode\n");
-        exit(1);
-    }
+    debug_print_int("Processing function call for: `%s`\n", node->function_call.name);
 
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
-        fprintf(stderr, "Error: Undefined function '%s'\n", node->function_call.name);
+        fprintf(stderr, "Error: Undefined function `%s`\n", node->function_call.name);
         exit(1);
     }
 
-    if (!func->body)
+    debug_print_int("Function parameters:\n");
+    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
     {
-        fprintf(stderr, "Error: Function '%s' has no body\n", node->function_call.name);
-        exit(1);
+        debug_print_int("  Parameter: %s\n", p->parameter_name);
     }
 
-    // Create local environment for function execution
+    debug_print_int("Function arguments:\n");
+    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
+    {
+        debug_print_int("  Argument found of type: `%d`\n", a->type);
+    }
+
+    // Create local environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Handle parameters
-    ASTFunctionParameter *param = func->parameters;
-    ASTNode *arg = node->function_call.arguments;
-
-    // First validate we have the correct number of arguments
-    int param_count = 0, arg_count = 0;
-    ASTFunctionParameter *p = param;
-    ASTNode *a = arg;
-
-    while (p)
+    // Count and validate parameters
+    int param_count = 0;
+    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
     {
         param_count++;
-        p = p->next;
     }
-    while (a)
+
+    int arg_count = 0;
+    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
     {
         arg_count++;
-        a = a->next;
     }
 
     if (param_count != arg_count)
     {
-        fprintf(stderr, "Error: Function '%s' expects %d arguments but got %d\n",
-                node->function_call.name, param_count, arg_count);
+        fprintf(stderr, "Error: Function '%s' expects %d argument%s but got %d\n",
+                node->function_call.name,
+                param_count,
+                param_count == 1 ? "" : "s",
+                arg_count);
         exit(1);
     }
 
-    // Now process parameters and arguments
+    // Process parameters and arguments
+    ASTFunctionParameter *param = func->parameters;
+    ASTNode *arg = node->function_call.arguments;
+
     while (param && arg)
     {
         LiteralValue value = interpret(arg, env);
@@ -1131,23 +1072,55 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
             .variable_name = strdup(param->parameter_name),
             .value = value};
         add_variable(&local_env, var);
-
         param = param->next;
         arg = arg->next;
     }
 
-    // Execute function body
-    LiteralValue return_value = {.type = TYPE_STRING, .data.string = strdup("")};
-    ASTNode *stmt = func->body;
+    // Execute function body with support for burn and deliver
+    FunctionResult result = {
+        .value = {.type = TYPE_STRING, .data.string = strdup("")},
+        .should_return = 0,
+        .is_error = 0};
 
-    while (stmt)
+    ASTNode *stmt = func->body;
+    while (stmt && !result.should_return)
     {
-        return_value = interpret(stmt, &local_env);
+        switch (stmt->type)
+        {
+        case AST_ERROR:
+            result.value = interpret(stmt->to_print.arguments[0], &local_env);
+            result.should_return = false;
+            result.is_error = true;
+            break;
+
+        case AST_FUNCTION_RETURN:
+            result.value = interpret(stmt->to_print.arguments[0], &local_env);
+            result.should_return = true;
+            break;
+
+        default:
+            result.value = interpret(stmt, &local_env);
+        }
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
-    return return_value;
+
+    if (result.is_error)
+    {
+        fprintf(stderr, "Function execution burned with message: ");
+        if (result.value.type == TYPE_STRING)
+        {
+            fprintf(stderr, "%s\n", result.value.data.string);
+        }
+        else
+        {
+            fprintf(stderr, "%f\n", result.value.data.number);
+        }
+        exit(1);
+    }
+
+    return result.value;
 }
 
 // Initialize the environment

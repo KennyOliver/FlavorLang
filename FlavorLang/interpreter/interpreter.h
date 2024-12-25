@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include "../shared/ast_types.h"
+#include <stdbool.h>
 
 typedef enum
 {
@@ -29,9 +30,10 @@ typedef struct
 
 typedef struct
 {
-    ReturnType type;
     LiteralValue value;
-} FunctionReturn;
+    bool should_return; // Flag to indicate if function should return early
+    bool is_error;      // Flag to indicate if this is an error return (burn)
+} FunctionResult;
 
 typedef struct
 {
@@ -44,7 +46,7 @@ typedef struct
     char *name;
     ASTFunctionParameter *parameters; // Linked list of parameters
     ASTNode *body;                    // Function body
-    FunctionReturn return_value;
+    FunctionResult return_value;
 } Function;
 
 typedef struct
