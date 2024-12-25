@@ -186,8 +186,19 @@ static void handle_identifier_or_keyword(const char *source, size_t *pos, size_t
     {
         (*pos)++;
     }
+
     char *lexeme = strndup(&source[start], *pos - start);
-    if (is_keyword(lexeme))
+
+    // Skip whitespace to check for function call
+    size_t temp_pos = *pos;
+    while (temp_pos < length && isspace(source[temp_pos]))
+        temp_pos++;
+
+    if (temp_pos < length && source[temp_pos] == '(' && !is_keyword(lexeme))
+    {
+        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme, line);
+    }
+    else if (is_keyword(lexeme))
     {
         append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme, line);
     }
