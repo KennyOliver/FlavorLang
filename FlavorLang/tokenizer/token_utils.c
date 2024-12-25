@@ -133,8 +133,11 @@ void print_token(const Token *token)
     case TOKEN_STRING:
         type_str = "STRING";
         break;
-    case TOKEN_NUMBER:
-        type_str = "NUMBER";
+    case TOKEN_FLOAT:
+        type_str = "FLOAT";
+        break;
+    case TOKEN_INTEGER:
+        type_str = "INTEGER";
         break;
     case TOKEN_OPERATOR:
         type_str = "OPERATOR";

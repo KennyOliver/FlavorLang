@@ -270,12 +270,12 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         if (current->type == TOKEN_FLOAT)
         {
             node->literal.type = LITERAL_FLOAT;
-            node->literal.value.number = atof(current->lexeme); // convert to float
+            node->literal.value.floating_point = atof(current->lexeme); // convert to float
         }
         else if (current->type == TOKEN_INTEGER)
         {
             node->literal.type = LITERAL_INTEGER;
-            node->literal.value.number = atoi(current->lexeme); // convert to integer
+            node->literal.value.integer = atoi(current->lexeme); // convert to integer
         }
         else // If it's a string
         {

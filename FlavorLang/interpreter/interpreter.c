@@ -209,22 +209,6 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
     return new_value;
 }
 
-// Function to handle string concatenation and addition
-LiteralValue handle_addition(LiteralValue left, LiteralValue right)
-{
-    LiteralValue result;
-    if (left.type == TYPE_STRING || right.type == TYPE_STRING)
-    {
-        result = handle_string_concatenation(left, right);
-    }
-    else
-    {
-        result.type = TYPE_FLOAT;
-        result.data.floating_point = left.data.floating_point + right.data.floating_point;
-    }
-    return result;
-}
-
 // Function to handle string concatenation
 LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
 {
@@ -259,6 +243,37 @@ LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
     strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
     strcat(new_string, right.type == TYPE_STRING ? right.data.string : num_str2);
     result.data.string = new_string;
+
+    return result;
+}
+
+// Function to handle string concatenation and addition
+LiteralValue handle_addition(LiteralValue left, LiteralValue right)
+{
+    LiteralValue result;
+
+    if (left.type == TYPE_STRING || right.type == TYPE_STRING)
+    {
+        // Handle string concatenation if either operand is a string
+        result = handle_string_concatenation(left, right);
+    }
+    else if (left.type == TYPE_INTEGER && right.type == TYPE_INTEGER)
+    {
+        // Both are integers
+        result.type = TYPE_INTEGER;
+        result.data.integer = left.data.integer + right.data.integer;
+    }
+    else
+    {
+        // Handle floating-point addition or mixed type addition
+        result.type = TYPE_FLOAT;
+
+        // Convert to floating-point for both operands
+        double left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point : (double)left.data.integer;
+        double right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point : (double)right.data.integer;
+
+        result.data.floating_point = left_value + right_value;
+    }
 
     return result;
 }
