@@ -12,6 +12,8 @@ typedef enum
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,
+    AST_FUNCTION_PARAMETER,
+    // AST_FUNCTION_ARGUMENT,
     AST_PRINT,
     AST_INPUT,
     AST_LITERAL,
@@ -78,14 +80,22 @@ typedef struct
     struct ASTNode *body;
 } ASTLoop;
 
+// AST Function Parameter
+typedef struct ASTFunctionParameter
+{
+    char *parameter_name; // Parameter name
+    // LiteralNode *type;                 // Optional: parameter type (e.g., int, string, etc.)
+    struct ASTFunctionParameter *next; // Linked list for multiple parameters
+} ASTFunctionParameter;
+
 // AST Function Call
 typedef struct
 {
     char *name;
-    struct ASTNode *parameters; // For function declarations, parameter names
-    struct ASTNode *arguments;  // For function calls, argument values
+    ASTFunctionParameter *parameters; // For function declarations, parameter names
+    struct ASTNode *arguments;        // For function calls, argument values
     struct ASTNode *body;
-    struct ASTNode *return_value;
+    LiteralNode *return_value;
 } ASTFunctionCall;
 
 // AST Node Structure

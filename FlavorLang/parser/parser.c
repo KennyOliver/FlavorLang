@@ -78,6 +78,7 @@ ASTNode *parse_program(Token *tokens)
 
 ASTNode *parse_variable_declaration(ParserState *state)
 {
+    debug_print_par("Starting variable declaration parse\n");
     expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
 
     // Parse variable name
@@ -195,8 +196,8 @@ ASTNode *helper_print(ParserState *state)
 
 ASTNode *parse_print_statement(ParserState *state)
 {
+    debug_print_par("Starting print statement parse\n");
     expect_token(state, TOKEN_KEYWORD, "Expected 'show' keyword");
-
     return helper_print(state);
 }
 
@@ -360,7 +361,7 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_value = parse_expression(state);
+    node->function_call.return_value = &parse_expression(state)->literal;
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
@@ -792,7 +793,7 @@ ASTNode *parse_parameter_list(ParserState *state)
         {
             parser_error("Memory allocation failed", get_current_token(state));
         }
-        param_node->type = AST_VARIABLE;
+        param_node->type = AST_FUNCTION_PARAMETER;
         param_node->variable_name = strdup(name->lexeme);
         param_node->next = NULL;
 
@@ -898,7 +899,7 @@ ASTNode *parse_function_declaration(ParserState *state)
     if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
     {
         advance_token(state); // consume `(`
-        node->function_call.parameters = parse_parameter_list(state);
+        node->function_call.parameters = (ASTFunctionParameter *)parse_parameter_list(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
@@ -970,7 +971,7 @@ ASTNode *parse_function_call(ParserState *state)
         strcmp(get_current_token(state)->lexeme, "(") == 0)
     {
         advance_token(state); // consume `(`
-        node->function_call.parameters = parse_argument_list(state);
+        node->function_call.parameters = (ASTFunctionParameter *)parse_argument_list(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
@@ -1033,7 +1034,11 @@ void free_ast(ASTNode *node)
             break;
 
         case AST_FUNCTION_CALL:
-            // Handle function call cleanup if needed
+            printf("TEST\n");
+            free(node->function_call.parameters);
+            free(node->function_call.arguments);
+            free(node->function_call.body);
+            free(node->function_call.return_value);
             break;
 
         case AST_BREAK:

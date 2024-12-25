@@ -42,8 +42,9 @@ typedef struct
 typedef struct
 {
     char *name;
-    ASTNode *parameters; // Linked list of parameters
-    ASTNode *body;       // Function body
+    ASTFunctionParameter *parameters; // Linked list of parameters
+    ASTNode *body;                    // Function body
+    FunctionReturn return_value;
 } Function;
 
 typedef struct
