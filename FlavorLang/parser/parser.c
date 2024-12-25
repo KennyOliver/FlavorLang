@@ -776,10 +776,10 @@ ASTNode *parse_switch_block(ParserState *state)
     return node;
 }
 
-ASTNode *parse_parameter_list(ParserState *state)
+ASTFunctionParameter *parse_parameter_list(ParserState *state)
 {
-    ASTNode *head = NULL;
-    ASTNode *tail = NULL;
+    ASTFunctionParameter *head = NULL;
+    ASTFunctionParameter *tail = NULL;
 
     while (1)
     {
@@ -788,13 +788,12 @@ ASTNode *parse_parameter_list(ParserState *state)
         expect_token(state, TOKEN_IDENTIFIER, "Expected parameter name");
 
         // Create parameter node
-        ASTNode *param_node = malloc(sizeof(ASTNode));
+        ASTFunctionParameter *param_node = malloc(sizeof(ASTFunctionParameter));
         if (!param_node)
         {
             parser_error("Memory allocation failed", get_current_token(state));
         }
-        param_node->type = AST_FUNCTION_PARAMETER;
-        param_node->variable_name = strdup(name->lexeme);
+        param_node->parameter_name = strdup(name->lexeme);
         param_node->next = NULL;
 
         // Add parameter to linked list
@@ -899,7 +898,7 @@ ASTNode *parse_function_declaration(ParserState *state)
     if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
     {
         advance_token(state); // consume `(`
-        node->function_call.parameters = (ASTFunctionParameter *)parse_parameter_list(state);
+        node->function_call.parameters = parse_parameter_list(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
     }
 
