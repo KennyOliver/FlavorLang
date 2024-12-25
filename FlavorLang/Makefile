@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -g
 
 # Directories
-SRC_DIRS = . tokenizer parser interpreter debug
+SRC_DIRS = . shared tokenizer parser interpreter debug
 OBJ_DIR = obj
 BIN = flavor
 

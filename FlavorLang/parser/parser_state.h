@@ -1,7 +1,7 @@
 #ifndef PARSER_STATE_H
 #define PARSER_STATE_H
 
-#include "../common.h"
+#include "../shared/common.h"
 #include <stdio.h>
 #include <stdbool.h>
 
@@ -10,6 +10,7 @@ typedef struct
     Token *tokens;
     size_t current_token;
     bool in_switch_block;
+    bool in_function_body;
 } ParserState;
 
 // Create and destroy parser state

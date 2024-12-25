@@ -1,5 +1,4 @@
 #include "interpreter.h"
-#include "../parser/ast_types.h"
 #include <stdio.h>
 #include <string.h>
 #include "../debug/debug.h"
@@ -10,12 +9,16 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env);
 LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
+void add_variable(Environment *env, Variable var);
 void interpret_print(ASTNode *node, Environment *env);
 void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
 void interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
+void interpret_function_declaration(ASTNode *node, Environment *env);
+LiteralValue interpret_function_call(ASTNode *node, Environment *env);
+ASTNode *copy_ast_node(ASTNode *node);
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
@@ -30,7 +33,9 @@ LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        return create_default_value();
+        return (LiteralValue){
+            .type = TYPE_ERROR,
+        };
     }
 
     debug_print_int("`interpret()` called\n");
@@ -71,8 +76,14 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     case AST_FUNCTION_CALL:
         debug_print_int("Matched: `AST_FUNCTION_CALL`\n");
-        fprintf(stderr, "Error: Function calls not implemented yet.\n");
-        exit(1);
+        return interpret_function_call(node, env);
+    case AST_FUNCTION_DECLARATION:
+        debug_print_int("Matched: `AST_FUNCTION_DECLARATION`\n");
+        interpret_function_declaration(node, env);
+        return create_default_value();
+    case AST_FUNCTION_RETURN:
+        debug_print_int("Matched: `AST_FUNCTION_RETURN`\n");
+        return create_default_value();
     case AST_LOOP:
         debug_print_int("Matched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
@@ -131,6 +142,7 @@ LiteralValue interpret_literal(ASTNode *node)
 
 LiteralValue interpret_variable(ASTNode *node, Environment *env)
 {
+    // printf("Env var 0: `%s`\n", env->variables[0].variable_name);
     Variable *var = get_variable(env, node->variable_name);
     if (!var)
     {
@@ -158,76 +170,24 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
     if (!node->assignment.variable_name)
     {
-        fprintf(stderr, "Error: Variable name for assignment is NULL.\n");
-        exit(1);
+        debug_print_int("Assignment variable name missing for node type: %d\n", node->type);
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    debug_print_int("Interpreting assignment for variable: `%s`\n", node->assignment.variable_name);
-
-    // Get the new value first
-    LiteralValue new_value = interpret(node->assignment.value, env);
-
-    // Debug print the value
-    if (new_value.type == TYPE_STRING)
+    LiteralValue new_value;
+    if (node->assignment.value->type == AST_FUNCTION_CALL)
     {
-        debug_print_int("Assignment value is string: `%s`\n", new_value.data.string);
+        new_value = interpret_function_call(node->assignment.value, env);
     }
     else
     {
-        debug_print_int("Assignment value is number: `%f`\n", new_value.data.number);
+        new_value = interpret(node->assignment.value, env);
     }
 
-    // Check if the variable already exists
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
-        {
-            debug_print_int("Updating existing variable `%s` from `%f` to `%f`",
-                            node->assignment.variable_name,
-                            env->variables[i].value.data.number,
-                            new_value.data.number);
-
-            // Update existing variable
-            env->variables[i].value = new_value;
-
-            debug_print_int("Variable `%s` is now `%f`",
-                            node->assignment.variable_name,
-                            env->variables[i].value.data.number);
-
-            return env->variables[i].value;
-        }
-    }
-
-    // Add new variable if it doesn't exist
-    if (env->variable_count == env->capacity)
-    {
-        env->capacity *= 2;
-        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables)
-        {
-            fprintf(stderr, "Error: Memory reallocation failed.\n");
-            exit(1);
-        }
-    }
-
-    env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
-    env->variables[env->variable_count].value = new_value;
-
-    if (new_value.type == TYPE_NUMBER)
-    {
-        debug_print_int("Created new variable `%s` with value `%f`\n",
-                        node->assignment.variable_name,
-                        new_value.data.number);
-    }
-    else if (new_value.type == TYPE_STRING)
-    {
-        debug_print_int("Created new variable `%s` with value `%s`\n",
-                        node->assignment.variable_name,
-                        new_value.data.string);
-    }
-
-    env->variable_count++;
-
+    Variable new_var = {
+        .variable_name = strdup(node->assignment.variable_name),
+        .value = new_value};
+    add_variable(env, new_var);
     return new_value;
 }
 
@@ -236,7 +196,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
 
-    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`",
+    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`\n",
                     left.data.number,
                     node->binary_op.operator,
                     right.data.number);
@@ -287,7 +247,6 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
                             right.data.number,
                             result.data.number);
         }
-        break;
         break;
     case '-':
         result.data.number = left.data.number - right.data.number;
@@ -395,6 +354,54 @@ Variable *get_variable(Environment *env, const char *variable_name)
     }
     debug_print_int("Variable not found: `%s`\n", variable_name);
     return NULL;
+}
+
+void add_variable(Environment *env, Variable var)
+{
+    // Check if the variable already exists
+    for (size_t i = 0; i < env->variable_count; i++)
+    {
+        if (strcmp(env->variables[i].variable_name, var.variable_name) == 0)
+        {
+            // Update the value of the existing variable
+            if (env->variables[i].value.type == TYPE_STRING && env->variables[i].value.data.string)
+            {
+                free(env->variables[i].value.data.string); // Free existing string memory
+            }
+            env->variables[i].value = var.value;
+
+            debug_print_int("Updated variable: `%s`\n", var.variable_name);
+            return;
+        }
+    }
+
+    // Add a new variable
+    if (env->variable_count == env->capacity)
+    {
+        // Resize the variables array if necessary
+        env->capacity = env->capacity ? env->capacity * 2 : 4;
+        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
+        if (!env->variables)
+        {
+            fprintf(stderr, "Error: Memory allocation failed while adding variable `%s`.\n", var.variable_name);
+            exit(1);
+        }
+    }
+
+    // Copy variable name and value
+    env->variables[env->variable_count].variable_name = strdup(var.variable_name);
+    if (var.value.type == TYPE_STRING)
+    {
+        env->variables[env->variable_count].value.type = TYPE_STRING;
+        env->variables[env->variable_count].value.data.string = strdup(var.value.data.string);
+    }
+    else
+    {
+        env->variables[env->variable_count].value = var.value;
+    }
+
+    debug_print_int("Added variable: `%s`\n", var.variable_name);
+    env->variable_count++;
 }
 
 void interpret_print(ASTNode *node, Environment *env)
@@ -772,21 +779,392 @@ void interpret_switch(ASTNode *node, Environment *env)
     debug_print_int("Switch statement interpretation complete\n");
 }
 
+// Helper function to free a linked list of ASTFunctionParameter nodes
+void free_parameter_list(ASTFunctionParameter *head)
+{
+    ASTFunctionParameter *current = head;
+    while (current != NULL)
+    {
+        ASTFunctionParameter *next = current->next;
+        free(current->parameter_name);
+        free(current);
+        current = next;
+    }
+}
+
+ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *param_list)
+{
+    if (param_list == NULL)
+    {
+        // No parameters to copy
+        return NULL;
+    }
+
+    ASTFunctionParameter *new_head = NULL;
+    ASTFunctionParameter *new_tail = NULL;
+
+    while (param_list != NULL)
+    {
+        // Allocate memory for the new parameter
+        ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
+        if (new_param == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed for new parameter\n");
+            free_parameter_list(new_head); // Clean up all previously allocated nodes
+            exit(1);
+        }
+
+        // Duplicate parameter name, ensuring it is not NULL
+        if (param_list->parameter_name)
+        {
+            new_param->parameter_name = strdup(param_list->parameter_name);
+            if (new_param->parameter_name == NULL)
+            {
+                fprintf(stderr, "Memory allocation failed for parameter name\n");
+                free(new_param);               // Free the current node
+                free_parameter_list(new_head); // Clean up previously allocated nodes
+                exit(1);
+            }
+        }
+        else
+        {
+            new_param->parameter_name = NULL;
+        }
+
+        // Initialize the `next` pointer to NULL
+        new_param->next = NULL;
+
+        // Add the new parameter to the linked list
+        if (new_head == NULL)
+        {
+            new_head = new_param; // Set as head if it's the first node
+        }
+        else
+        {
+            new_tail->next = new_param; // Attach to the end of the list
+        }
+        new_tail = new_param; // Update the tail pointer
+
+        // Move to the next parameter in the source list
+        param_list = param_list->next;
+    }
+
+    return new_head;
+}
+
+ASTNode *copy_ast_node(ASTNode *node)
+{
+    if (!node)
+        return NULL;
+
+    ASTNode *new_node = malloc(sizeof(ASTNode));
+    if (!new_node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed in `copy_ast_node`\n");
+        exit(1);
+    }
+
+    memcpy(new_node, node, sizeof(ASTNode));
+
+    // Deep copy for fields like `function_call`, `body`, or `arguments`
+    if (node->function_call.arguments)
+    {
+        new_node->function_call.arguments = copy_ast_node(node->function_call.arguments);
+    }
+    if (node->function_call.body)
+    {
+        new_node->function_call.body = copy_ast_node(node->function_call.body);
+    }
+
+    // Handle other types like linked lists or child nodes as needed
+    return new_node;
+}
+
+void add_function(Environment *env, Function func)
+{
+    // Step 1: Ensure `functions` is initialized if not already done
+    if (!env->functions && env->function_capacity == 0)
+    {
+        env->functions = calloc(4, sizeof(Function)); // initialize with capacity
+        if (!env->functions)
+        {
+            fprintf(stderr, "Error: Initial allocation for functions failed.\n");
+            exit(1);
+        }
+        env->function_capacity = 4;
+    }
+
+    // Step 2: Resize `functions` array if necessary
+    if (env->function_count == env->function_capacity)
+    {
+        size_t new_capacity = env->function_capacity * 2;
+        Function *new_functions = realloc(env->functions, new_capacity * sizeof(Function));
+        if (!new_functions)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for functions.\n");
+            exit(1);
+        }
+        env->functions = new_functions;
+        env->function_capacity = new_capacity;
+    }
+
+    // Step 3: Verify `func.name` is valid
+    if (!func.name)
+    {
+        fprintf(stderr, "Error: Function name is `NULL` or invalid.\n");
+        exit(1);
+    }
+    debug_print_int("Function name before `strdup`: `%s`\n", func.name);
+
+    // Step 4: Create a deep copy of the function being added
+    Function *stored_func = &env->functions[env->function_count++];
+    stored_func->parameters = copy_function_parameters(func.parameters); // Create a copy of parameters
+    stored_func->body = copy_ast_node(func.body);                        // Still assuming shared ownership of the body (might need a copy if modified)
+
+    // Step 5: Safely duplicate the function name
+    stored_func->name = strdup(func.name); // allocate memory for name
+    if (!stored_func->name)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for function name.\n");
+        free(stored_func); // Free partially allocated function on error
+        exit(1);
+    }
+    debug_print_int("Function name after `strdup`: `%s`\n", stored_func->name);
+
+    // Step 6: Assign parameters and body (assume shared ownership)
+    // stored_func->parameters = func.parameters;
+    // stored_func->body = func.body;
+
+    debug_print_int("Function `%s` added successfully.\n", stored_func->name);
+}
+
+Function *get_function(Environment *env, const char *name)
+{
+    for (size_t i = 0; i < env->function_count; i++)
+    {
+        if (strcmp(env->functions[i].name, name) == 0)
+        {
+            return &env->functions[i];
+        }
+    }
+    return NULL;
+}
+
+void interpret_function_declaration(ASTNode *node, Environment *env)
+{
+    debug_print_int("`interpret_function_declaration()` called\n");
+
+    if (!node || !node->function_call.name)
+    {
+        fprintf(stderr, "Error: Invalid function declaration\n");
+        exit(1);
+    }
+
+    // Initialize param_list as NULL
+    ASTFunctionParameter *param_list = NULL;
+    ASTFunctionParameter *param_tail = NULL; // keep track of the last parameter
+
+    // Copy parameters
+    ASTFunctionParameter *param = node->function_call.parameters;
+    while (param)
+    {
+        ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
+        if (!new_param)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for function parameter\n");
+            exit(1);
+        }
+
+        new_param->parameter_name = strdup(param->parameter_name);
+        if (!new_param->parameter_name)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for parameter name\n");
+            free(new_param);
+            exit(1);
+        }
+
+        new_param->next = NULL;
+
+        // Add to list
+        if (!param_list)
+        {
+            param_list = new_param;
+            param_tail = new_param;
+        }
+        else
+        {
+            param_tail->next = new_param;
+            param_tail = new_param;
+        }
+
+        param = param->next;
+    }
+
+    Function func = {
+        .name = strdup(node->function_call.name),
+        .parameters = param_list,
+        .body = node->function_call.body};
+
+    add_function(env, func);
+}
+
+LiteralValue interpret_function_call(ASTNode *node, Environment *env)
+{
+    if (!node || !node->function_call.name)
+    {
+        fprintf(stderr, "Error: Invalid function call\n");
+        exit(1);
+    }
+
+    debug_print_int("Processing function call for: `%s`\n", node->function_call.name);
+
+    Function *func = get_function(env, node->function_call.name);
+    if (!func)
+    {
+        fprintf(stderr, "Error: Undefined function `%s`\n", node->function_call.name);
+        exit(1);
+    }
+
+    debug_print_int("Function parameters:\n");
+    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
+    {
+        debug_print_int("  Parameter: %s\n", p->parameter_name);
+    }
+
+    debug_print_int("Function arguments:\n");
+    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
+    {
+        debug_print_int("  Argument found of type: `%d`\n", a->type);
+    }
+
+    // Create local environment
+    Environment local_env;
+    init_environment(&local_env);
+
+    // Count and validate parameters
+    int param_count = 0;
+    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
+    {
+        param_count++;
+    }
+
+    int arg_count = 0;
+    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
+    {
+        arg_count++;
+    }
+
+    if (param_count != arg_count)
+    {
+        fprintf(stderr, "Error: Function '%s' expects %d argument%s but got %d\n",
+                node->function_call.name,
+                param_count,
+                param_count == 1 ? "" : "s",
+                arg_count);
+        exit(1);
+    }
+
+    // Process parameters and arguments
+    ASTFunctionParameter *param = func->parameters;
+    ASTNode *arg = node->function_call.arguments;
+
+    while (param && arg)
+    {
+        LiteralValue value = interpret(arg, env);
+        Variable var = {
+            .variable_name = strdup(param->parameter_name),
+            .value = value};
+        add_variable(&local_env, var);
+        param = param->next;
+        arg = arg->next;
+    }
+
+    // Execute function body with support for burn and deliver
+    FunctionResult result = {
+        .value = {.type = TYPE_STRING, .data.string = strdup("")},
+        .should_return = false,
+        .is_error = false};
+
+    ASTNode *stmt = func->body;
+    while (stmt && !result.should_return)
+    {
+        if (!stmt)
+        {
+            debug_print_int("`stmt` is `NULL`\n");
+            break;
+        }
+        if (!stmt->next)
+        {
+            debug_print_int("`stmt->next` is `NULL`\n");
+            break;
+        }
+
+        switch (stmt->type)
+        {
+        case AST_ERROR:
+            result.value = interpret(stmt->to_print.arguments[0], &local_env);
+            result.should_return = false;
+            result.is_error = true;
+            break;
+
+        case AST_FUNCTION_RETURN:
+            result.value = interpret(stmt->to_print.arguments[0], &local_env);
+            result.should_return = true;
+            break;
+
+        default:
+            result.value = interpret(stmt, &local_env);
+        }
+        stmt = stmt->next;
+    }
+
+    free_environment(&local_env);
+
+    if (result.is_error)
+    {
+        fprintf(stderr, "Function execution burned with message: ");
+        if (result.value.type == TYPE_STRING)
+        {
+            fprintf(stderr, "%s\n", result.value.data.string);
+        }
+        else
+        {
+            fprintf(stderr, "%f\n", result.value.data.number);
+        }
+        exit(1);
+    }
+
+    return result.value;
+}
+
 // Initialize the environment
 void init_environment(Environment *env)
 {
+    // Existing variable initialization
     env->variable_count = 0;
     env->capacity = 10;
     env->variables = malloc(env->capacity * sizeof(Variable));
+
+    // Add function initialization
+    env->function_count = 0;
+    env->function_capacity = 10;
+    env->functions = malloc(env->function_capacity * sizeof(Function));
 }
 
 // Free the environment
 void free_environment(Environment *env)
 {
+    // Free variables
     for (size_t i = 0; i < env->variable_count; i++)
     {
         free(env->variables[i].variable_name);
     }
-
     free(env->variables);
+
+    // Free functions
+    for (size_t i = 0; i < env->function_count; i++)
+    {
+        free(env->functions[i].name);
+    }
+    free(env->functions);
 }

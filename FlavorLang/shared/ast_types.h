@@ -9,7 +9,11 @@
 typedef enum
 {
     AST_ASSIGNMENT,
+    AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
+    AST_FUNCTION_RETURN,
+    AST_FUNCTION_PARAMETER,
+    // AST_FUNCTION_ARGUMENT,
     AST_PRINT,
     AST_INPUT,
     AST_LITERAL,
@@ -76,6 +80,24 @@ typedef struct
     struct ASTNode *body;
 } ASTLoop;
 
+// AST Function Parameter
+typedef struct ASTFunctionParameter
+{
+    char *parameter_name; // Parameter name
+    // LiteralNode *type;                 // Optional: parameter type (e.g., int, string, etc.)
+    struct ASTFunctionParameter *next; // Linked list for multiple parameters
+} ASTFunctionParameter;
+
+// AST Function Call
+typedef struct
+{
+    char *name;
+    ASTFunctionParameter *parameters; // For function declarations, parameter names
+    struct ASTNode *arguments;        // For function calls, argument values
+    struct ASTNode *body;
+    LiteralNode *return_value;
+} ASTFunctionCall;
+
 // AST Node Structure
 typedef struct ASTNode
 {
@@ -110,6 +132,9 @@ typedef struct ASTNode
 
         // While loop
         ASTLoop loop;
+
+        // Function
+        ASTFunctionCall function_call;
 
         // Variable
         char *variable_name;

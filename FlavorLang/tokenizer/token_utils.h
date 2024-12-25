@@ -1,7 +1,7 @@
 #ifndef TOKEN_UTILS_H
 #define TOKEN_UTILS_H
 
-#include "../common.h"
+#include "../shared/common.h"
 
 #define INITIAL_TOKEN_CAPACITY 1024
 

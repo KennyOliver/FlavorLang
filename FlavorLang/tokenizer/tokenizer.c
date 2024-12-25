@@ -108,9 +108,26 @@ Token *tokenize(const char *source)
             continue;
         }
 
-        if (strchr(",:;()", c))
+        if (strchr(",:;(){}", c))
         {
-            append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER, strndup(&source[pos], 1), line);
+            if (c == '(' || c == '{')
+            {
+                // Peek previous token to check if it's an identifier
+                if (token_count > 0 && tokens[token_count - 1].type == TOKEN_IDENTIFIER)
+                {
+                    // Retroactively convert identifier to function call
+                    tokens[token_count - 1].type = TOKEN_FUNCTION_NAME;
+                }
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN, strndup(&source[pos], 1), line);
+            }
+            else if (c == ')' || c == '}')
+            {
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE, strndup(&source[pos], 1), line);
+            }
+            else
+            {
+                append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER, strndup(&source[pos], 1), line);
+            }
             pos++;
             continue;
         }
@@ -169,8 +186,19 @@ static void handle_identifier_or_keyword(const char *source, size_t *pos, size_t
     {
         (*pos)++;
     }
+
     char *lexeme = strndup(&source[start], *pos - start);
-    if (is_keyword(lexeme))
+
+    // Skip whitespace to check for function call
+    size_t temp_pos = *pos;
+    while (temp_pos < length && isspace(source[temp_pos]))
+        temp_pos++;
+
+    if (temp_pos < length && source[temp_pos] == '(' && !is_keyword(lexeme))
+    {
+        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme, line);
+    }
+    else if (is_keyword(lexeme))
     {
         append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme, line);
     }

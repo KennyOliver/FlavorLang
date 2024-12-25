@@ -1,0 +1,36 @@
+create func1(temperature) {
+	if temperature < 180:
+		show "Temperature is too low to bake!";
+		burn "Cake burned!";  # Stops function execution immediately
+	else:
+		show "Baking cake at", temperature, "degrees!";
+		deliver "Cake is ready!";
+}
+
+create func2(x, y) {
+    let a = x + y + 1;
+    let b = a + 3;
+    deliver b;
+}
+
+create func3(x) {
+    show "X:", x;
+}
+
+create func4() {
+    return -5;
+}
+
+
+let result1 = func1(200);
+show "Result 1:", result1;
+
+let result2 = func2(2, 8);
+show "Result 2:", result2;
+
+# let result3 = func3(2, 3);
+# func3();
+# show "Result 3:", result3;
+
+# let result4 = func4(2, 3);
+# show "Result 4:", result4;
