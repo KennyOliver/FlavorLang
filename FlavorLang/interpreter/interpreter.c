@@ -1090,12 +1090,12 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     {
         if (!stmt)
         {
-            debug_print_int("Debug: stmt is NULL\n");
+            debug_print_int("`stmt` is `NULL`\n");
             break;
         }
         if (!stmt->next)
         {
-            debug_print_int("Debug: stmt->next is NULL\n");
+            debug_print_int("`stmt->next` is `NULL`\n");
             break;
         }
 
