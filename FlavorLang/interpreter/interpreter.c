@@ -847,7 +847,7 @@ Function *get_function(Environment *env, const char *name)
 
 void interpret_function_declaration(ASTNode *node, Environment *env)
 {
-    debug_print_int("`interpret_function_declaration()\n` called");
+    debug_print_int("`interpret_function_declaration()` called\n");
 
     if (!node)
     {
@@ -860,13 +860,15 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
         fprintf(stderr, "Error: Function declaration missing name\n");
         exit(1);
     }
+    debug_print_int("Function name validated\n");
 
     if (!node->function_call.parameters)
     {
         fprintf(stderr, "Error: Null parameters in function declaration\n");
         exit(1);
     }
-    // Validate function parameters
+    debug_print_int("Parameters validated\n");
+
     ASTFunctionParameter *param = node->function_call.parameters;
     while (param)
     {
@@ -875,11 +877,16 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
             fprintf(stderr, "Error: Function parameter missing name\n");
             exit(1);
         }
-        // Add type validation here in the future if desired
-        param = param->next; // traverse the linked list of parameters
+        param = param->next;
     }
 
-    // Create a Function object
+    if (!node->function_call.body)
+    {
+        fprintf(stderr, "Error: Null body in function declaration\n");
+        exit(1);
+    }
+    debug_print_int("Function body validated\n");
+
     Function func = {
         .name = strdup(node->function_call.name),
         .parameters = node->function_call.parameters,
@@ -897,33 +904,33 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    // Verify function components
-    if (!func.name || !func.body)
-    {
-        fprintf(stderr, "Error: Invalid function declaration\n");
-        exit(1);
-    }
-
     add_function(env, func);
+
+    debug_print_int("Function added to environment successfully\n");
 }
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        fprintf(stderr, "Error: Null `ASTNode` passed to interpret_function_declaration\n");
+        fprintf(stderr, "Error: Null `ASTNode` passed to `interpret_function_call()`\n");
         exit(1);
     }
 
     if (!node->function_call.name)
     {
-        fprintf(stderr, "Error: Function declaration missing name\n");
+        fprintf(stderr, "Error: Function name is missing in `ASTNode`\n");
+        exit(1);
+    }
+    if (!node->function_call.body)
+    {
+        fprintf(stderr, "Error: Function body is missing in `ASTNode`\n");
         exit(1);
     }
 
-    if (!node->function_call.parameters)
+    if (!node->function_call.arguments)
     {
-        fprintf(stderr, "Error: Null parameters in function declaration\n");
+        fprintf(stderr, "Error: Null arguments in function call\n");
         exit(1);
     }
 
@@ -934,19 +941,22 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    // Create local environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Evaluate and bind arguments to parameters
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
 
-    while (param && arg)
+    while (param || arg)
     {
+        if (!param)
+        {
+            fprintf(stderr, "Error: Too many arguments provided to function `%s`\n", node->function_call.name);
+            exit(1);
+        }
         if (!arg)
         {
-            fprintf(stderr, "Error: Null argument passed to function call\n");
+            fprintf(stderr, "Error: Missing argument for parameter `%s`\n", param->parameter_name);
             exit(1);
         }
 
@@ -963,7 +973,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         }
 
         Variable var = {
-            .variable_name = strdup(param->parameter_name), // Ensure variable_name is valid
+            .variable_name = strdup(param->parameter_name),
             .value = value};
         add_variable(&local_env, var);
 
@@ -971,7 +981,6 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    // Execute function body
     LiteralValue return_value = {.type = TYPE_STRING, .data.string = strdup("")};
 
     ASTNode *stmt = func->body;
