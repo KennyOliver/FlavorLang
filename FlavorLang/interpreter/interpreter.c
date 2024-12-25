@@ -139,7 +139,7 @@ LiteralValue interpret_literal(ASTNode *node)
 
 LiteralValue interpret_variable(ASTNode *node, Environment *env)
 {
-    printf("Env var 0: `%s`", env->variables[0].variable_name);
+    // printf("Env var 0: `%s`\n", env->variables[0].variable_name);
     Variable *var = get_variable(env, node->variable_name);
     if (!var)
     {
@@ -193,7 +193,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
 
-    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`",
+    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`\n",
                     left.data.number,
                     node->binary_op.operator,
                     right.data.number);
