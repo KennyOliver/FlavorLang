@@ -422,7 +422,7 @@ ASTNode *parse_block(ParserState *state)
                 }
                 break; // exit block after deliver
             }
-            if (strcmp(current->lexeme, "show") == 0)
+            else if (strcmp(current->lexeme, "show") == 0)
             {
                 statement = parse_print_statement(state);
             }
@@ -876,7 +876,7 @@ ASTNode *parse_function_declaration(ParserState *state)
         parser_error("Expected function name after `create`", name);
     }
 
-    // Create function declaration node
+    // Create the function declaration node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node)
     {
@@ -890,22 +890,44 @@ ASTNode *parse_function_declaration(ParserState *state)
     node->function_call.return_value = NULL;
     node->next = NULL;
 
-    advance_token(state); // Move past function name
+    advance_token(state); // Move past the function name
 
     // Parse parameters
     if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
     {
-        advance_token(state); // consume `(`
-        node->function_call.parameters = parse_parameter_list(state);
+        advance_token(state); // Consume `(`
+
+        // Check if the parameter list is empty
+        if (get_current_token(state)->type == TOKEN_PAREN_CLOSE)
+        {
+            node->function_call.parameters = NULL; // No parameters
+        }
+        else
+        {
+            node->function_call.parameters = parse_parameter_list(state);
+        }
+
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
+    }
+    else
+    {
+        parser_error("Expected `(` for parameter list", get_current_token(state));
     }
 
     // Parse function body
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` to start function body");
-    state->in_function_body = true;
-    node->function_call.body = parse_function_body(state);
-    state->in_function_body = false;
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` to end function body");
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
+    {
+        advance_token(state); // Consume `(`
+        state->in_function_body = true;
+        node->function_call.body = parse_function_body(state); // Parse function body
+        state->in_function_body = false;
+
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` to close function body");
+    }
+    else
+    {
+        parser_error("Expected `{` to start function body", get_current_token(state));
+    }
 
     return node;
 }
