@@ -203,13 +203,14 @@ Use `create` to define functions and `deliver` to return values.
 Note that `burn` **takes precedence** over `deliver`, stopping execution immediately.
 
 ```py
-create bake_cake(temperature):
+create bake_cake(temperature) {
 	if temperature < 180:
 		show "Temperature is too low to bake!";
 		burn "Cake burned!";  # Stops function execution immediately
 	else:
 		show "Baking cake at", temperature, "degrees!";
 		deliver "Cake is ready!";
+}
 
 let result = bake_cake(200);
 show result;
