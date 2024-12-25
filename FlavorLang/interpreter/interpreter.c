@@ -899,18 +899,12 @@ Function *get_function(Environment *env, const char *name)
 void interpret_function_declaration(ASTNode *node, Environment *env)
 {
     Function func;
-    func.name = strdup(node->function_call.name);
+    func.name = node->function_call.name; // just use the pointer directly
     func.parameters = node->function_call.parameters;
     func.body = node->function_call.body;
 
     add_function(env, func);
-
-    debug_print_int("Function `%s` declared.\n", func.name);
-
-    // Free the memory allocated by strdup for the function name
-    free(func.name);
 }
-
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
     if (!node->function_call.name)
@@ -976,18 +970,31 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 // Initialize the environment
 void init_environment(Environment *env)
 {
+    // Existing variable initialization
     env->variable_count = 0;
     env->capacity = 10;
     env->variables = malloc(env->capacity * sizeof(Variable));
+
+    // Add function initialization
+    env->function_count = 0;
+    env->function_capacity = 10;
+    env->functions = malloc(env->function_capacity * sizeof(Function));
 }
 
 // Free the environment
 void free_environment(Environment *env)
 {
+    // Free variables
     for (size_t i = 0; i < env->variable_count; i++)
     {
         free(env->variables[i].variable_name);
     }
-
     free(env->variables);
+
+    // Free functions
+    for (size_t i = 0; i < env->function_count; i++)
+    {
+        free(env->functions[i].name);
+    }
+    free(env->functions);
 }
