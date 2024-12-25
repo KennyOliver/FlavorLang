@@ -505,26 +505,23 @@ void interpret_print(ASTNode *node, Environment *env)
         // Determine the value to print based on the node type
         if (arg->type == AST_LITERAL)
         {
-            value.type = arg->literal.type;
-
-            // Populate the union fields based on the type
             switch (arg->literal.type)
             {
             case LITERAL_FLOAT:
+                value.type = TYPE_FLOAT;
                 value.data.floating_point = arg->literal.value.floating_point;
                 break;
             case LITERAL_INTEGER:
+                value.type = TYPE_INTEGER;
                 value.data.integer = arg->literal.value.integer;
                 break;
             case LITERAL_STRING:
+                value.type = TYPE_STRING;
                 value.data.string = arg->literal.value.string;
                 break;
-            default:
-                fprintf(stderr, "Error: Unsupported literal type.\n");
-                value.type = TYPE_ERROR;
             }
         }
-        else if (arg->type == AST_ASSIGNMENT || arg->type == AST_VARIABLE)
+        else if (arg->type == AST_VARIABLE)
         {
             Variable *var = get_variable(env, arg->variable_name);
             if (!var)
@@ -541,8 +538,27 @@ void interpret_print(ASTNode *node, Environment *env)
         }
 
         // Print the value based on its type
-        print_literal_value(value);
-        printf(" "); // space for padding
+        switch (value.type)
+        {
+        case TYPE_FLOAT:
+            printf("%g", value.data.floating_point);
+            break;
+        case TYPE_INTEGER:
+            printf("%d", value.data.integer);
+            break;
+        case TYPE_STRING:
+            printf("%s", value.data.string);
+            break;
+        case TYPE_ERROR:
+            fprintf(stderr, "Error: Invalid literal type.\n");
+            break;
+        }
+
+        // Add space between values, but not after the last one
+        if (i < node->to_print.arg_count - 1)
+        {
+            printf(" ");
+        }
     }
     printf("\n");
 }
