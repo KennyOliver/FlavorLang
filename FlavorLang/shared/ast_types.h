@@ -13,7 +13,6 @@ typedef enum
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,
     AST_FUNCTION_PARAMETER,
-    // AST_FUNCTION_ARGUMENT,
     AST_PRINT,
     AST_INPUT,
     AST_LITERAL,
@@ -32,12 +31,14 @@ typedef struct
     enum
     {
         LITERAL_STRING,
-        LITERAL_FLOAT
+        LITERAL_FLOAT,
+        LITERAL_INTEGER
     } type;
     union
     {
         char *string;
-        double number;
+        double floating_point;
+        int integer;
     } value;
 } LiteralNode;
 
