@@ -81,6 +81,9 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         debug_print_int("Matched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
         return create_default_value();
+    case AST_FUNCTION_RETURN:
+        debug_print_int("Matched: `AST_FUNCTION_RETURN`\n");
+        return create_default_value();
     case AST_LOOP:
         debug_print_int("Matched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
