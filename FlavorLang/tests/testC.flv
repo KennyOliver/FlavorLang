@@ -2,6 +2,6 @@ let a = 3.14159;
 let b = 1;
 let c = "FlavorLang";
 
-show a;
-show b;
-show c;
+show "A:", a;
+show "B:", b;
+show "C:", c;
