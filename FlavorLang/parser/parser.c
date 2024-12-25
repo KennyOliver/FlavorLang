@@ -93,18 +93,28 @@ ASTNode *parse_variable_declaration(ParserState *state)
     {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
     node->type = AST_ASSIGNMENT;
-    node->assignment.variable_name = strdup(name->lexeme);
+
+    // Create a deep copy of the variable name
+    if (name && name->lexeme)
+    {
+        node->assignment.variable_name = strdup(name->lexeme);
+        if (!node->assignment.variable_name)
+        {
+            parser_error("Memory allocation failed for variable name", name);
+        }
+    }
+    else
+    {
+        parser_error("Invalid variable name token", name);
+    }
 
     // Parse the value as an expression (which can handle both simple literals
     // and complex expressions with operators)
     node->assignment.value = parse_expression(state);
-
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
-
     return node;
 }
 
@@ -115,7 +125,6 @@ ASTNode *parse_variable_assignment(ParserState *state)
     // Parse variable name
     Token *name = get_current_token(state);
     debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
-
     advance_token(state);
 
     // Expect `=` operator
@@ -126,15 +135,26 @@ ASTNode *parse_variable_assignment(ParserState *state)
     {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
     node->type = AST_ASSIGNMENT;
-    // node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.variable_name = name->lexeme;
+
+    // Create a deep copy of the variable name
+    if (name && name->lexeme)
+    {
+        node->assignment.variable_name = strdup(name->lexeme);
+        if (!node->assignment.variable_name)
+        {
+            parser_error("Memory allocation failed for variable name", name);
+        }
+    }
+    else
+    {
+        parser_error("Invalid variable name token", name);
+    }
+
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
-
     return node;
 }
 
