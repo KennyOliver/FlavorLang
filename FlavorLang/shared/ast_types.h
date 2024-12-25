@@ -32,7 +32,7 @@ typedef struct
     enum
     {
         LITERAL_STRING,
-        LITERAL_NUMBER
+        LITERAL_FLOAT
     } type;
     union
     {

@@ -264,9 +264,9 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         }
 
         node->type = AST_LITERAL;
-        node->literal.type = (current->type == TOKEN_NUMBER) ? LITERAL_NUMBER : LITERAL_STRING;
+        node->literal.type = (current->type == TOKEN_NUMBER) ? LITERAL_FLOAT : LITERAL_STRING;
 
-        if (node->literal.type == LITERAL_NUMBER)
+        if (node->literal.type == LITERAL_FLOAT)
         {
             node->literal.value.number = atof(current->lexeme);
         }

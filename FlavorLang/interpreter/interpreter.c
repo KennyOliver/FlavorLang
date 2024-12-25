@@ -123,8 +123,8 @@ LiteralValue interpret_literal(ASTNode *node)
 
     switch (node->literal.type)
     {
-    case LITERAL_NUMBER:
-        debug_print_int("LITERAL_NUMBER, value: `%f`\n", node->literal.value.number);
+    case LITERAL_FLOAT:
+        debug_print_int("LITERAL_FLOAT, value: `%f`\n", node->literal.value.number);
         value.type = TYPE_NUMBER;
         value.data.number = node->literal.value.number;
         break;
@@ -418,7 +418,7 @@ void interpret_print(ASTNode *node, Environment *env)
             {
                 printf("%s ", arg->literal.value.string);
             }
-            else if (arg->literal.type == LITERAL_NUMBER)
+            else if (arg->literal.type == LITERAL_FLOAT)
             {
                 printf("%f ", arg->literal.value.number);
             }
