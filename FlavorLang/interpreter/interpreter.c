@@ -1,5 +1,4 @@
 #include "interpreter.h"
-#include "../parser/ast_types.h"
 #include <stdio.h>
 #include <string.h>
 #include "../debug/debug.h"
@@ -244,7 +243,6 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
                             right.data.number,
                             result.data.number);
         }
-        break;
         break;
     case '-':
         result.data.number = left.data.number - right.data.number;

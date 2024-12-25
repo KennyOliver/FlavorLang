@@ -2,7 +2,7 @@
 #define INTERPRETER_H
 
 #include <stdlib.h>
-#include "../parser/ast_types.h"
+#include "../shared/ast_types.h"
 
 typedef enum
 {

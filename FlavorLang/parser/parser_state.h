@@ -1,7 +1,7 @@
 #ifndef PARSER_STATE_H
 #define PARSER_STATE_H
 
-#include "../common.h"
+#include "../shared/common.h"
 #include <stdio.h>
 #include <stdbool.h>
 
