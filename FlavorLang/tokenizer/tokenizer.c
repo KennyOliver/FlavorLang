@@ -108,9 +108,9 @@ Token *tokenize(const char *source)
             continue;
         }
 
-        if (strchr(",:;()", c))
+        if (strchr(",:;(){}", c))
         {
-            if (c == '(')
+            if (c == '(' || c == '{')
             {
                 // Peek previous token to check if it's an identifier
                 if (token_count > 0 && tokens[token_count - 1].type == TOKEN_IDENTIFIER)
@@ -120,7 +120,7 @@ Token *tokenize(const char *source)
                 }
                 append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN, strndup(&source[pos], 1), line);
             }
-            else if (c == ')')
+            else if (c == ')' || c == '}')
             {
                 append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE, strndup(&source[pos], 1), line);
             }
