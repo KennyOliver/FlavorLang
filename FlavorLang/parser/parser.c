@@ -360,16 +360,10 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_value = NULL; // Default: no return expression
-
-    // Check if there's a return value
-    if (get_current_token(state)->type != TOKEN_DELIMITER &&
-        get_current_token(state)->type != TOKEN_EOF)
-    {
-        node->function_call.return_value = parse_expression(state);
-    }
-
+    node->function_call.return_value = parse_expression(state);
     node->next = NULL;
+
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
     return node;
 }
 
@@ -874,14 +868,18 @@ ASTNode *parse_function_declaration(ParserState *state)
     {
         parser_error("Memory allocation failed for function declaration node", name);
     }
+
     node->type = AST_FUNCTION_DECLARATION;
     node->function_call.name = strdup(name->lexeme);
+    node->function_call.parameters = NULL;
+    node->function_call.body = NULL;
+    node->function_call.return_value = NULL;
+    node->next = NULL;
 
-    advance_token(state); // Move past the function name
+    advance_token(state); // Move past function name
 
-    // Parse parameters (if any)
-    if (get_current_token(state)->type == TOKEN_PAREN_OPEN &&
-        strcmp(get_current_token(state)->lexeme, "(") == 0)
+    // Parse parameters
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
     {
         advance_token(state); // consume `(`
         node->function_call.parameters = parse_parameter_list(state);
