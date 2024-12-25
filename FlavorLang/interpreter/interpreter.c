@@ -166,14 +166,22 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
     if (!node->assignment.variable_name)
     {
-        fprintf(stderr, "Error: Variable name for assignment is NULL.\n");
+        fprintf(stderr, "Error: Assignment node missing variable name.\n");
+        fprintf(stderr, "Node type: %d\n", node->type);
+        // Add more debug info
         exit(1);
     }
 
-    debug_print_int("Interpreting assignment for variable: `%s`\n", node->assignment.variable_name);
-
-    // Get the new value first
-    LiteralValue new_value = interpret(node->assignment.value, env);
+    // Get the value to assign
+    LiteralValue new_value;
+    if (node->assignment.value->type == AST_FUNCTION_CALL)
+    {
+        new_value = interpret_function_call(node->assignment.value, env);
+    }
+    else
+    {
+        new_value = interpret(node->assignment.value, env);
+    }
 
     // Debug print the value
     if (new_value.type == TYPE_STRING)
@@ -905,6 +913,7 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
 
     add_function(env, func);
 }
+
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
     if (!node->function_call.name)
@@ -915,18 +924,29 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 
     debug_print_int("Interpreting function call: `%s`\n", node->function_call.name);
 
+    // Handle built-in functions
+    if (strcmp(node->function_call.name, "burn") == 0)
+    {
+        // Handle burn statement - immediately exit with error
+        interpret_raise_error(node->function_call.parameters, env);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    if (strcmp(node->function_call.name, "deliver") == 0)
+    {
+        // Handle deliver statement - return the parameter value
+        if (node->function_call.parameters)
+        {
+            return interpret(node->function_call.parameters, env);
+        }
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
     // Lookup function
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
         fprintf(stderr, "Error: Undefined function `%s`.\n", node->function_call.name);
-        exit(1);
-    }
-
-    // Ensure parameters and body are non-NULL
-    if (!func->parameters || !func->body)
-    {
-        fprintf(stderr, "Error: Function `%s` has incomplete parameters or body.\n", func->name);
         exit(1);
     }
 
@@ -949,13 +969,24 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 
     // Interpret the function body
     ASTNode *body = func->body;
-    LiteralValue return_value = (LiteralValue){.type = TYPE_ERROR};
+    LiteralValue return_value = {.type = TYPE_STRING, .data.string = ""}; // Default return value
+
     while (body)
     {
-        if (body->type == AST_FUNCTION_RETURN)
+        if (body->type == AST_FUNCTION_CALL)
         {
-            return_value = interpret(body->function_call.return_value, &local_env);
-            break;
+            if (strcmp(body->function_call.name, "deliver") == 0)
+            {
+                // Handle deliver statement
+                return_value = interpret(body->function_call.parameters, &local_env);
+                break;
+            }
+            else if (strcmp(body->function_call.name, "burn") == 0)
+            {
+                // Handle burn statement
+                interpret_raise_error(body->function_call.parameters, &local_env);
+                return (LiteralValue){.type = TYPE_ERROR};
+            }
         }
         interpret(body, &local_env);
         body = body->next;

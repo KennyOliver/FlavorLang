@@ -11,6 +11,12 @@ typedef enum
     TYPE_ERROR
 } LiteralType;
 
+typedef enum
+{
+    RETURN_NORMAL,
+    RETURN_ERROR
+} ReturnType;
+
 typedef struct
 {
     LiteralType type;
@@ -20,6 +26,12 @@ typedef struct
         char *string;
     } data;
 } LiteralValue;
+
+typedef struct
+{
+    ReturnType type;
+    LiteralValue value;
+} FunctionReturn;
 
 typedef struct
 {
