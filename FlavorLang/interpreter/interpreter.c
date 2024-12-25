@@ -1082,12 +1082,23 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     // Execute function body with support for burn and deliver
     FunctionResult result = {
         .value = {.type = TYPE_STRING, .data.string = strdup("")},
-        .should_return = 0,
-        .is_error = 0};
+        .should_return = false,
+        .is_error = false};
 
     ASTNode *stmt = func->body;
     while (stmt && !result.should_return)
     {
+        if (!stmt)
+        {
+            printf("Debug: stmt is NULL\n");
+            break;
+        }
+        if (!stmt->next)
+        {
+            printf("Debug: stmt->next is NULL\n");
+            break;
+        }
+
         switch (stmt->type)
         {
         case AST_ERROR:
@@ -1105,7 +1116,9 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
             result.value = interpret(stmt, &local_env);
         }
         stmt = stmt->next;
+        printf("1\n");
     }
+    printf("2\n");
 
     free_environment(&local_env);
 
