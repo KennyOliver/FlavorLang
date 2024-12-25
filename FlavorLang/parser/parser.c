@@ -380,6 +380,12 @@ ASTNode *parse_block(ParserState *state)
                         current->type,
                         current->lexeme);
 
+        // Break if we hit end of block
+        if (current->type == TOKEN_PAREN_CLOSE && strcmp(current->lexeme, "}") == 0)
+        {
+            break;
+        }
+
         // Check for block end conditions
         // Handle semicolons between statements without breaking the block
         if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
@@ -403,6 +409,20 @@ ASTNode *parse_block(ParserState *state)
         ASTNode *statement = NULL;
         if (current->type == TOKEN_KEYWORD)
         {
+            if (strcmp(current->lexeme, "deliver") == 0)
+            {
+                statement = parse_function_return(state);
+                if (head)
+                {
+                    tail->next = statement;
+                    tail = statement;
+                }
+                else
+                {
+                    head = tail = statement;
+                }
+                break; // exit block after deliver
+            }
             if (strcmp(current->lexeme, "show") == 0)
             {
                 statement = parse_print_statement(state);
@@ -436,10 +456,6 @@ ASTNode *parse_block(ParserState *state)
             else if (strcmp(current->lexeme, "create") == 0)
             {
                 statement = parse_function_declaration(state);
-            }
-            else if (strcmp(current->lexeme, "deliver") == 0)
-            {
-                statement = parse_function_return(state);
             }
             else if (state->in_switch_block && strcmp(current->lexeme, "is") == 0)
             {
