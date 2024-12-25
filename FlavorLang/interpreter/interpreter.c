@@ -775,6 +775,79 @@ void interpret_switch(ASTNode *node, Environment *env)
     debug_print_int("Switch statement interpretation complete\n");
 }
 
+// Helper function to free a linked list of ASTFunctionParameter nodes
+void free_parameter_list(ASTFunctionParameter *head)
+{
+    ASTFunctionParameter *current = head;
+    while (current != NULL)
+    {
+        ASTFunctionParameter *next = current->next;
+        free(current->parameter_name);
+        free(current);
+        current = next;
+    }
+}
+
+ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *param_list)
+{
+    if (param_list == NULL)
+    {
+        // No parameters to copy
+        return NULL;
+    }
+
+    ASTFunctionParameter *new_head = NULL;
+    ASTFunctionParameter *new_tail = NULL;
+
+    while (param_list != NULL)
+    {
+        // Allocate memory for the new parameter
+        ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
+        if (new_param == NULL)
+        {
+            fprintf(stderr, "Memory allocation failed for new parameter\n");
+            free_parameter_list(new_head); // Clean up all previously allocated nodes
+            exit(1);
+        }
+
+        // Duplicate parameter name, ensuring it is not NULL
+        if (param_list->parameter_name)
+        {
+            new_param->parameter_name = strdup(param_list->parameter_name);
+            if (new_param->parameter_name == NULL)
+            {
+                fprintf(stderr, "Memory allocation failed for parameter name\n");
+                free(new_param);               // Free the current node
+                free_parameter_list(new_head); // Clean up previously allocated nodes
+                exit(1);
+            }
+        }
+        else
+        {
+            new_param->parameter_name = NULL;
+        }
+
+        // Initialize the `next` pointer to NULL
+        new_param->next = NULL;
+
+        // Add the new parameter to the linked list
+        if (new_head == NULL)
+        {
+            new_head = new_param; // Set as head if it's the first node
+        }
+        else
+        {
+            new_tail->next = new_param; // Attach to the end of the list
+        }
+        new_tail = new_param; // Update the tail pointer
+
+        // Move to the next parameter in the source list
+        param_list = param_list->next;
+    }
+
+    return new_head;
+}
+
 void add_function(Environment *env, Function func)
 {
     // Step 1: Ensure `functions` is initialized if not already done
@@ -813,6 +886,8 @@ void add_function(Environment *env, Function func)
 
     // Step 4: Create a deep copy of the function being added
     Function *stored_func = &env->functions[env->function_count++];
+    stored_func->parameters = copy_function_parameters(func.parameters); // Create a copy of parameters
+    stored_func->body = func.body;                                       // Still assuming shared ownership of the body (might need a copy if modified)
 
     // Step 5: Safely duplicate the function name
     stored_func->name = strdup(func.name); // allocate memory for name
@@ -825,8 +900,8 @@ void add_function(Environment *env, Function func)
     debug_print_int("Function name after `strdup`: `%s`\n", stored_func->name);
 
     // Step 6: Assign parameters and body (assume shared ownership)
-    stored_func->parameters = func.parameters;
-    stored_func->body = func.body;
+    // stored_func->parameters = func.parameters;
+    // stored_func->body = func.body;
 
     debug_print_int("Function `%s` added successfully.\n", stored_func->name);
 }
@@ -867,15 +942,69 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
     }
     debug_print_int("Parameters validated\n");
 
+    // Create a deep copy of the parameter list
+    ASTFunctionParameter *param_list = malloc(sizeof(ASTFunctionParameter));
+    if (!param_list)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for `ASTFunctionParameter`.\n");
+        exit(1);
+    }
+    debug_print_int("Parameter list created successfully\n");
+
     ASTFunctionParameter *param = node->function_call.parameters;
+    if (!param)
+    {
+        fprintf(stderr, "Error: Function declaration has no parameters\n");
+        exit(1);
+    }
+
     while (param)
     {
+        debug_print_int("1: Current param address: %p\n", (void *)param);
+
         if (!param->parameter_name)
         {
-            fprintf(stderr, "Error: Function parameter missing name\n");
+            fprintf(stderr, "Error: Encountered NULL parameter name in function declaration\n");
             exit(1);
         }
+
+        debug_print_int("2: Current param name: %s\n", param->parameter_name);
+
+        ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
+        if (!new_param)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for function parameter\n");
+            exit(1);
+        }
+
+        new_param->parameter_name = strdup(param->parameter_name);
+        if (!new_param->parameter_name)
+        {
+            fprintf(stderr, "Error: Memory allocation failed for parameter name\n");
+            free(new_param);
+            exit(1);
+        }
+
+        debug_print_int("3: Copied parameter name: %s\n", new_param->parameter_name);
+
+        new_param->next = NULL;
+
+        if (!param_list)
+        {
+            param_list = new_param;
+        }
+        else
+        {
+            ASTFunctionParameter *tmp = param_list;
+            while (tmp->next)
+            {
+                tmp = tmp->next;
+            }
+            tmp->next = new_param;
+        }
+
         param = param->next;
+        debug_print_int("4: Moved to next parameter\n");
     }
 
     if (!node->function_call.body)
@@ -887,7 +1016,7 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
 
     Function func = {
         .name = strdup(node->function_call.name),
-        .parameters = node->function_call.parameters,
+        .parameters = param_list,
         .body = node->function_call.body};
 
     if (!func.name)
