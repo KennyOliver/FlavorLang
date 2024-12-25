@@ -311,9 +311,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
     }
     else if (current->type == TOKEN_FUNCTION_NAME)
     {
-        printf("Parse function call\n");
         ASTNode *node = parse_function_call(state);
-        printf("Test???\n");
         return node;
     }
 
