@@ -1090,12 +1090,12 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     {
         if (!stmt)
         {
-            printf("Debug: stmt is NULL\n");
+            debug_print_int("Debug: stmt is NULL\n");
             break;
         }
         if (!stmt->next)
         {
-            printf("Debug: stmt->next is NULL\n");
+            debug_print_int("Debug: stmt->next is NULL\n");
             break;
         }
 
@@ -1116,9 +1116,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
             result.value = interpret(stmt, &local_env);
         }
         stmt = stmt->next;
-        printf("1\n");
     }
-    printf("2\n");
 
     free_environment(&local_env);
 
