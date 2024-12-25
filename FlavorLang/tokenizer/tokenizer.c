@@ -154,7 +154,7 @@ static void handle_number(const char *source, size_t *pos, size_t length,
     bool has_decimal_point = false;
 
     // Handle digits before & after a potential decimal point
-    while (*pos < length && isdigit(source[*pos]) || (source[*pos] == '.' && !has_decimal_point))
+    while (*pos < length && (isdigit(source[*pos]) || (source[*pos] == '.' && !has_decimal_point)))
     {
         if (source[*pos] == '.')
         {
