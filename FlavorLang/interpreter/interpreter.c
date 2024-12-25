@@ -18,6 +18,7 @@ void interpret_while_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
+ASTNode *copy_ast_node(ASTNode *node);
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
@@ -848,6 +849,34 @@ ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *param_list)
     return new_head;
 }
 
+ASTNode *copy_ast_node(ASTNode *node)
+{
+    if (!node)
+        return NULL;
+
+    ASTNode *new_node = malloc(sizeof(ASTNode));
+    if (!new_node)
+    {
+        fprintf(stderr, "Error: Memory allocation failed in `copy_ast_node`\n");
+        exit(1);
+    }
+
+    memcpy(new_node, node, sizeof(ASTNode));
+
+    // Deep copy for fields like `function_call`, `body`, or `arguments`
+    if (node->function_call.arguments)
+    {
+        new_node->function_call.arguments = copy_ast_node(node->function_call.arguments);
+    }
+    if (node->function_call.body)
+    {
+        new_node->function_call.body = copy_ast_node(node->function_call.body);
+    }
+
+    // Handle other types like linked lists or child nodes as needed
+    return new_node;
+}
+
 void add_function(Environment *env, Function func)
 {
     // Step 1: Ensure `functions` is initialized if not already done
@@ -887,7 +916,7 @@ void add_function(Environment *env, Function func)
     // Step 4: Create a deep copy of the function being added
     Function *stored_func = &env->functions[env->function_count++];
     stored_func->parameters = copy_function_parameters(func.parameters); // Create a copy of parameters
-    stored_func->body = func.body;                                       // Still assuming shared ownership of the body (might need a copy if modified)
+    stored_func->body = copy_ast_node(func.body);                        // Still assuming shared ownership of the body (might need a copy if modified)
 
     // Step 5: Safely duplicate the function name
     stored_func->name = strdup(func.name); // allocate memory for name
@@ -1040,65 +1069,64 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
     if (!node)
     {
-        fprintf(stderr, "Error: Null `ASTNode` passed to `interpret_function_call()`\n");
+        fprintf(stderr, "Error: Null ASTNode passed to interpret_function_call()\n");
         exit(1);
     }
 
     if (!node->function_call.name)
     {
-        fprintf(stderr, "Error: Function name is missing in `ASTNode`\n");
-        exit(1);
-    }
-    if (!node->function_call.body)
-    {
-        fprintf(stderr, "Error: Function body is missing in `ASTNode`\n");
-        exit(1);
-    }
-
-    if (!node->function_call.arguments)
-    {
-        fprintf(stderr, "Error: Null arguments in function call\n");
+        fprintf(stderr, "Error: Function name is missing in ASTNode\n");
         exit(1);
     }
 
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
-        fprintf(stderr, "Error: Undefined function `%s`\n", node->function_call.name);
+        fprintf(stderr, "Error: Undefined function '%s'\n", node->function_call.name);
         exit(1);
     }
 
+    if (!func->body)
+    {
+        fprintf(stderr, "Error: Function '%s' has no body\n", node->function_call.name);
+        exit(1);
+    }
+
+    // Create local environment for function execution
     Environment local_env;
     init_environment(&local_env);
 
+    // Handle parameters
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
 
-    while (param || arg)
+    // First validate we have the correct number of arguments
+    int param_count = 0, arg_count = 0;
+    ASTFunctionParameter *p = param;
+    ASTNode *a = arg;
+
+    while (p)
     {
-        if (!param)
-        {
-            fprintf(stderr, "Error: Too many arguments provided to function `%s`\n", node->function_call.name);
-            exit(1);
-        }
-        if (!arg)
-        {
-            fprintf(stderr, "Error: Missing argument for parameter `%s`\n", param->parameter_name);
-            exit(1);
-        }
+        param_count++;
+        p = p->next;
+    }
+    while (a)
+    {
+        arg_count++;
+        a = a->next;
+    }
 
+    if (param_count != arg_count)
+    {
+        fprintf(stderr, "Error: Function '%s' expects %d arguments but got %d\n",
+                node->function_call.name, param_count, arg_count);
+        exit(1);
+    }
+
+    // Now process parameters and arguments
+    while (param && arg)
+    {
         LiteralValue value = interpret(arg, env);
-        if (value.type == TYPE_STRING && !value.data.string)
-        {
-            fprintf(stderr, "Error: Null string value returned by interpret\n");
-            exit(1);
-        }
-        else if (value.type == TYPE_NUMBER && value.data.number == 0)
-        {
-            fprintf(stderr, "Error: Invalid number value returned by interpret\n");
-            exit(1);
-        }
-
         Variable var = {
             .variable_name = strdup(param->parameter_name),
             .value = value};
@@ -1108,29 +1136,13 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
+    // Execute function body
     LiteralValue return_value = {.type = TYPE_STRING, .data.string = strdup("")};
-
     ASTNode *stmt = func->body;
+
     while (stmt)
     {
-        if (stmt->type == AST_FUNCTION_CALL)
-        {
-            if (strcmp(stmt->function_call.name, "deliver") == 0)
-            {
-                LiteralValue delivered = interpret(stmt->function_call.arguments, &local_env);
-                free(return_value.data.string);
-                return_value = delivered;
-                free_environment(&local_env);
-                return return_value;
-            }
-            if (strcmp(stmt->function_call.name, "burn") == 0)
-            {
-                interpret_raise_error(stmt->function_call.arguments, &local_env);
-                free_environment(&local_env);
-                exit(1);
-            }
-        }
-        interpret(stmt, &local_env);
+        return_value = interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
