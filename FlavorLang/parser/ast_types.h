@@ -82,7 +82,8 @@ typedef struct
 typedef struct
 {
     char *name;
-    struct ASTNode *parameters;
+    struct ASTNode *parameters; // For function declarations, parameter names
+    struct ASTNode *arguments;  // For function calls, argument values
     struct ASTNode *body;
     struct ASTNode *return_value;
 } ASTFunctionCall;

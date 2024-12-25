@@ -166,13 +166,10 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
 {
     if (!node->assignment.variable_name)
     {
-        fprintf(stderr, "Error: Assignment node missing variable name.\n");
-        fprintf(stderr, "Node type: %d\n", node->type);
-        // Add more debug info
-        exit(1);
+        debug_print_int("Assignment variable name missing for node type: %d\n", node->type);
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Get the value to assign
     LiteralValue new_value;
     if (node->assignment.value->type == AST_FUNCTION_CALL)
     {
@@ -183,67 +180,10 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         new_value = interpret(node->assignment.value, env);
     }
 
-    // Debug print the value
-    if (new_value.type == TYPE_STRING)
-    {
-        debug_print_int("Assignment value is string: `%s`\n", new_value.data.string);
-    }
-    else
-    {
-        debug_print_int("Assignment value is number: `%f`\n", new_value.data.number);
-    }
-
-    // Check if the variable already exists
-    for (size_t i = 0; i < env->variable_count; i++)
-    {
-        if (strcmp(env->variables[i].variable_name, node->assignment.variable_name) == 0)
-        {
-            debug_print_int("Updating existing variable `%s` from `%f` to `%f`",
-                            node->assignment.variable_name,
-                            env->variables[i].value.data.number,
-                            new_value.data.number);
-
-            // Update existing variable
-            env->variables[i].value = new_value;
-
-            debug_print_int("Variable `%s` is now `%f`",
-                            node->assignment.variable_name,
-                            env->variables[i].value.data.number);
-
-            return env->variables[i].value;
-        }
-    }
-
-    // Add new variable if it doesn't exist
-    if (env->variable_count == env->capacity)
-    {
-        env->capacity *= 2;
-        env->variables = realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables)
-        {
-            fprintf(stderr, "Error: Memory reallocation failed.\n");
-            exit(1);
-        }
-    }
-
-    env->variables[env->variable_count].variable_name = strdup(node->assignment.variable_name);
-    env->variables[env->variable_count].value = new_value;
-
-    if (new_value.type == TYPE_NUMBER)
-    {
-        debug_print_int("Created new variable `%s` with value `%f`\n",
-                        node->assignment.variable_name,
-                        new_value.data.number);
-    }
-    else if (new_value.type == TYPE_STRING)
-    {
-        debug_print_int("Created new variable `%s` with value `%s`\n",
-                        node->assignment.variable_name,
-                        new_value.data.string);
-    }
-
-    env->variable_count++;
-
+    Variable new_var = {
+        .variable_name = strdup(node->assignment.variable_name),
+        .value = new_value};
+    add_variable(env, new_var);
     return new_value;
 }
 
@@ -916,86 +856,54 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
-    if (!node->function_call.name)
-    {
-        fprintf(stderr, "Error: Function call name is NULL.\n");
-        exit(1);
-    }
-
-    debug_print_int("Interpreting function call: `%s`\n", node->function_call.name);
-
-    // Handle built-in functions
-    if (strcmp(node->function_call.name, "burn") == 0)
-    {
-        // Handle burn statement - immediately exit with error
-        interpret_raise_error(node->function_call.parameters, env);
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    if (strcmp(node->function_call.name, "deliver") == 0)
-    {
-        // Handle deliver statement - return the parameter value
-        if (node->function_call.parameters)
-        {
-            return interpret(node->function_call.parameters, env);
-        }
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    // Lookup function
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
-        fprintf(stderr, "Error: Undefined function `%s`.\n", node->function_call.name);
+        fprintf(stderr, "Error: Undefined function '%s'\n", node->function_call.name);
         exit(1);
     }
 
-    // Create a local environment for the function call
     Environment local_env;
     init_environment(&local_env);
 
-    // Bind parameters to arguments
+    // Bind arguments to parameters
     ASTNode *param = func->parameters;
-    ASTNode *arg = node->function_call.parameters;
+    ASTNode *arg = node->function_call.arguments;
     while (param && arg)
     {
         LiteralValue value = interpret(arg, env);
-        Variable var = {.variable_name = strdup(param->variable_name), .value = value};
+        Variable var = {
+            .variable_name = strdup(param->variable_name),
+            .value = value};
         add_variable(&local_env, var);
-
         param = param->next;
         arg = arg->next;
     }
 
-    // Interpret the function body
-    ASTNode *body = func->body;
-    LiteralValue return_value = {.type = TYPE_STRING, .data.string = ""}; // Default return value
-
-    while (body)
+    // Execute function body
+    LiteralValue result = {.type = TYPE_STRING, .data.string = ""};
+    ASTNode *stmt = func->body;
+    while (stmt)
     {
-        if (body->type == AST_FUNCTION_CALL)
+        if (stmt->type == AST_FUNCTION_CALL)
         {
-            if (strcmp(body->function_call.name, "deliver") == 0)
+            if (strcmp(stmt->function_call.name, "deliver") == 0)
             {
-                // Handle deliver statement
-                return_value = interpret(body->function_call.parameters, &local_env);
+                result = interpret(stmt->function_call.arguments, &local_env);
                 break;
             }
-            else if (strcmp(body->function_call.name, "burn") == 0)
+            if (strcmp(stmt->function_call.name, "burn") == 0)
             {
-                // Handle burn statement
-                interpret_raise_error(body->function_call.parameters, &local_env);
-                return (LiteralValue){.type = TYPE_ERROR};
+                interpret_raise_error(stmt->function_call.arguments, &local_env);
+                break;
             }
         }
-        interpret(body, &local_env);
-        body = body->next;
+        interpret(stmt, &local_env);
+        stmt = stmt->next;
     }
 
-    // Free the local environment
     free_environment(&local_env);
-
-    return return_value;
+    return result;
 }
 
 // Initialize the environment
