@@ -830,17 +830,58 @@ void interpret_switch(ASTNode *node, Environment *env)
 
 void add_function(Environment *env, Function func)
 {
+    // Step 1: Ensure `functions` is initialized if not already done
+    if (!env->functions && env->function_capacity == 0)
+    {
+        env->functions = calloc(4, sizeof(Function)); // initialize with capacity
+        if (!env->functions)
+        {
+            fprintf(stderr, "Error: Initial allocation for functions failed.\n");
+            exit(1);
+        }
+        env->function_capacity = 4;
+    }
+
+    // Step 2: Resize `functions` array if necessary
     if (env->function_count == env->function_capacity)
     {
-        env->function_capacity = env->function_capacity ? env->function_capacity * 2 : 4;
-        env->functions = realloc(env->functions, env->function_capacity * sizeof(Function));
-        if (!env->functions)
+        size_t new_capacity = env->function_capacity * 2;
+        Function *new_functions = realloc(env->functions, new_capacity * sizeof(Function));
+        if (!new_functions)
         {
             fprintf(stderr, "Error: Memory allocation failed for functions.\n");
             exit(1);
         }
+        env->functions = new_functions;
+        env->function_capacity = new_capacity;
     }
-    env->functions[env->function_count++] = func;
+
+    // Step 3: Verify `func.name` is valid
+    if (!func.name)
+    {
+        fprintf(stderr, "Error: Function name is `NULL` or invalid.\n");
+        exit(1);
+    }
+    debug_print_int("Function name before `strdup`: `%s`\n", func.name);
+
+    // Step 4: Create a deep copy of the function being added
+    Function *stored_func = &env->functions[env->function_count++];
+
+    // Step 5: Safely duplicate the function name
+    stored_func->name = strdup(func.name); // allocate memory for name
+    if (!stored_func->name)
+    {
+        fprintf(stderr, "Error: Memory allocation failed for function name.\n");
+        free(stored_func); // Free partially allocated function on error
+        exit(1);
+    }
+    debug_print_int("Function name after `strdup`: `%s`\n", stored_func->name);
+
+    // Step 6: Assign parameters and body (assume shared ownership)
+    stored_func->parameters = func.parameters;
+    stored_func->body = func.body;
+
+    debug_print_int("Function `%s` added successfully.\n", stored_func->name);
 }
 
 Function *get_function(Environment *env, const char *name)
@@ -865,15 +906,33 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
     add_function(env, func);
 
     debug_print_int("Function `%s` declared.\n", func.name);
+
+    // Free the memory allocated by strdup for the function name
+    free(func.name);
 }
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
-    // Lookup the function
+    if (!node->function_call.name)
+    {
+        fprintf(stderr, "Error: Function call name is NULL.\n");
+        exit(1);
+    }
+
+    debug_print_int("Interpreting function call: `%s`\n", node->function_call.name);
+
+    // Lookup function
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
         fprintf(stderr, "Error: Undefined function `%s`.\n", node->function_call.name);
+        exit(1);
+    }
+
+    // Ensure parameters and body are non-NULL
+    if (!func->parameters || !func->body)
+    {
+        fprintf(stderr, "Error: Function `%s` has incomplete parameters or body.\n", func->name);
         exit(1);
     }
 
