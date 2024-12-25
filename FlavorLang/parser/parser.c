@@ -1036,6 +1036,7 @@ void free_ast(ASTNode *node)
             free(node->variable_name);
             break;
 
+        case AST_FUNCTION_DECLARATION:
         case AST_FUNCTION_CALL:
             printf("TEST\n");
             free(node->function_call.parameters);
