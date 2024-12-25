@@ -151,12 +151,20 @@ static void handle_number(const char *source, size_t *pos, size_t length,
                           Token **tokens, size_t *token_count, size_t *capacity, int line)
 {
     size_t start = *pos;
-    while (*pos < length && isdigit(source[*pos]))
+    bool has_decimal_point = false;
+
+    // Handle digits before & after a potential decimal point
+    while (*pos < length && isdigit(source[*pos]) || (source[*pos] == '.' && !has_decimal_point))
     {
+        if (source[*pos] == '.')
+        {
+            has_decimal_point = true;
+        }
         (*pos)++;
     }
     char *lexeme = strndup(&source[start], *pos - start);
-    append_token(tokens, token_count, capacity, TOKEN_NUMBER, lexeme, line);
+    TokenType type = has_decimal_point ? TOKEN_FLOAT : TOKEN_INTEGER;
+    append_token(tokens, token_count, capacity, type, lexeme, line);
     free(lexeme);
 }
 
