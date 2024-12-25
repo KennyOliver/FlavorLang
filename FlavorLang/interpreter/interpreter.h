@@ -7,7 +7,8 @@
 
 typedef enum
 {
-    TYPE_NUMBER,
+    TYPE_FLOAT,
+    TYPE_INTEGER,
     TYPE_STRING,
     TYPE_ERROR
 } LiteralType;
@@ -23,7 +24,8 @@ typedef struct
     LiteralType type;
     union
     {
-        double number;
+        double floating_point;
+        int integer;
         char *string;
     } data;
 } LiteralValue;
