@@ -368,7 +368,7 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_data = &parse_expression(state)->literal;
+    node->function_call.return_data = parse_expression(state);
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");

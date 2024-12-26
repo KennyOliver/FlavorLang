@@ -1137,12 +1137,13 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         if (stmt->type == AST_FUNCTION_RETURN)
         {
             debug_print_int("Found return statement\n");
-            if (stmt->to_print.arg_count > 0)
-            { // Changed from function_call.return_data
+            // Handle return value directly from the `function_call` structure
+            if (stmt->function_call.return_data)
+            {
                 debug_print_int("Interpreting return value\n");
-                result = interpret(stmt->to_print.arguments[0], &local_env);
-                break; // Exit after return
+                result = interpret(stmt->function_call.return_data, &local_env);
             }
+            break; // exit after return
         }
         else
         {
