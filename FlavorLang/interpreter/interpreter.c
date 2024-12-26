@@ -25,7 +25,11 @@ LiteralValue create_default_value()
 {
     LiteralValue value = {
         .type = TYPE_INTEGER,
-        .data = {.integer = 0}};
+        .data = {
+            // .floating_point = 0.0,
+            .integer = 0, // main value used for comparisons, etc
+            // .string = "",
+        }};
     return value;
 }
 
@@ -251,30 +255,15 @@ LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
 LiteralValue handle_addition(LiteralValue left, LiteralValue right)
 {
     LiteralValue result;
-
     if (left.type == TYPE_STRING || right.type == TYPE_STRING)
     {
-        // Handle string concatenation if either operand is a string
         result = handle_string_concatenation(left, right);
-    }
-    else if (left.type == TYPE_INTEGER && right.type == TYPE_INTEGER)
-    {
-        // Both are integers
-        result.type = TYPE_INTEGER;
-        result.data.integer = left.data.integer + right.data.integer;
     }
     else
     {
-        // Handle floating-point addition or mixed type addition
         result.type = TYPE_FLOAT;
-
-        // Convert to floating-point for both operands
-        double left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point : (double)left.data.integer;
-        double right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point : (double)right.data.integer;
-
-        result.data.floating_point = left_value + right_value;
+        result.data.floating_point = left.data.floating_point + right.data.floating_point;
     }
-
     return result;
 }
 
@@ -342,50 +331,95 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     // Step 1: Interpret left and right operands
     LiteralValue left = interpret(node->binary_op.left, env);
     LiteralValue right = interpret(node->binary_op.right, env);
-
-    // Debug print for binary operation
-    debug_print_int("Binary operation: left=`%f`, operator=`%s`, right=`%f`\n",
-                    left.data.floating_point, node->binary_op.operator, right.data.floating_point);
-
-    // Step 2: Handle the operation
-    LiteralValue result;
-    result.type = TYPE_FLOAT; // assume float by default for operations
-
-    // Determine the operator
     char *operator= node->binary_op.operator;
 
-    // Step 3: Perform operation based on the operator
-    if (operator[0] == '+')
+    // Handle string concatenation with "+" operator
+    if (operator[0] == '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING))
     {
-        result = handle_addition(left, right);
-    }
-    else if (operator[0] == '-')
-    {
-        result.data.floating_point = left.data.floating_point - right.data.floating_point;
-    }
-    else if (operator[0] == '*')
-    {
-        result.data.floating_point = left.data.floating_point * right.data.floating_point;
-    }
-    else if (operator[0] == '/')
-    {
-        result = handle_division(left, right);
-    }
-    else if (operator[0] == '<' || operator[0] == '>')
-    {
-        result = handle_comparison(left, right, operator);
-    }
-    else if (operator[0] == '=' && operator[1] == '=')
-    {
-        result.data.floating_point = (left.data.floating_point == right.data.floating_point) ? 1.0 : 0.0;
-    }
-    else
-    {
-        handle_binary_op_error("Unsupported operator", operator);
+        return handle_string_concatenation(left, right);
     }
 
-    // Step 4: Debug print based on result type
-    debug_print_result(left, right, operator, result);
+    // Convert numeric values for arithmetic operations
+    double left_value = 0;
+    double right_value = 0;
+
+    // Safe numeric conversion
+    if (left.type == TYPE_INTEGER)
+    {
+        left_value = (double)left.data.integer;
+    }
+    else if (left.type == TYPE_FLOAT)
+    {
+        left_value = left.data.floating_point;
+    }
+    else if (left.type != TYPE_STRING)
+    {
+        fprintf(stderr, "Error: Invalid left operand type for arithmetic operation\n");
+        exit(1);
+    }
+
+    if (right.type == TYPE_INTEGER)
+    {
+        right_value = (double)right.data.integer;
+    }
+    else if (right.type == TYPE_FLOAT)
+    {
+        right_value = right.data.floating_point;
+    }
+    else if (right.type != TYPE_STRING)
+    {
+        fprintf(stderr, "Error: Invalid right operand type for arithmetic operation\n");
+        exit(1);
+    }
+
+    LiteralValue result;
+    result.type = TYPE_INTEGER; // Default type for comparison results
+
+    // Perform operation based on operator
+    switch (operator[0])
+    {
+    case '+':
+        result.type = TYPE_INTEGER;
+        result.data.integer = (int)(left_value + right_value);
+        break;
+    case '-':
+        result.type = TYPE_INTEGER;
+        result.data.integer = (int)(left_value - right_value);
+        break;
+    case '*':
+        result.type = TYPE_INTEGER;
+        result.data.integer = (int)(left_value * right_value);
+        break;
+    case '/':
+        if (right_value == 0)
+        {
+            fprintf(stderr, "Error: Division by zero\n");
+            exit(1);
+        }
+        result.type = TYPE_INTEGER;
+        result.data.integer = (int)(left_value / right_value);
+        break;
+    case '<':
+        result.data.integer = (operator[1] == '=') ? (left_value <= right_value) : (left_value < right_value);
+        break;
+    case '>':
+        result.data.integer = (operator[1] == '=') ? (left_value >= right_value) : (left_value > right_value);
+        break;
+    case '=':
+        if (operator[1] == '=')
+        {
+            result.data.integer = (left_value == right_value);
+        }
+        else
+        {
+            fprintf(stderr, "Error: Invalid operator '%s'\n", operator);
+            exit(1);
+        }
+        break;
+    default:
+        fprintf(stderr, "Error: Unknown operator '%s'\n", operator);
+        exit(1);
+    }
 
     return result;
 }
@@ -505,23 +539,26 @@ void interpret_print(ASTNode *node, Environment *env)
         // Determine the value to print based on the node type
         if (arg->type == AST_LITERAL)
         {
+            value.type = arg->literal.type; // Set the type of the LiteralValue
+
+            // Populate the union fields based on the type
             switch (arg->literal.type)
             {
             case LITERAL_FLOAT:
-                value.type = TYPE_FLOAT;
                 value.data.floating_point = arg->literal.value.floating_point;
                 break;
             case LITERAL_INTEGER:
-                value.type = TYPE_INTEGER;
                 value.data.integer = arg->literal.value.integer;
                 break;
             case LITERAL_STRING:
-                value.type = TYPE_STRING;
                 value.data.string = arg->literal.value.string;
                 break;
+            default:
+                fprintf(stderr, "Error: Unsupported literal type.\n");
+                value.type = TYPE_ERROR;
             }
         }
-        else if (arg->type == AST_VARIABLE)
+        else if (arg->type == AST_ASSIGNMENT || arg->type == AST_VARIABLE)
         {
             Variable *var = get_variable(env, arg->variable_name);
             if (!var)
@@ -538,27 +575,8 @@ void interpret_print(ASTNode *node, Environment *env)
         }
 
         // Print the value based on its type
-        switch (value.type)
-        {
-        case TYPE_FLOAT:
-            printf("%g", value.data.floating_point);
-            break;
-        case TYPE_INTEGER:
-            printf("%d", value.data.integer);
-            break;
-        case TYPE_STRING:
-            printf("%s", value.data.string);
-            break;
-        case TYPE_ERROR:
-            fprintf(stderr, "Error: Invalid literal type.\n");
-            break;
-        }
-
-        // Add space between values, but not after the last one
-        if (i < node->to_print.arg_count - 1)
-        {
-            printf(" ");
-        }
+        print_literal_value(value);
+        printf(" "); // space for padding
     }
     printf("\n");
 }
@@ -694,50 +712,69 @@ void interpret_conditional(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_conditional()` called\n");
 
+    if (!node)
+    {
+        fprintf(stderr, "Error: Null node passed to `interpret_conditional()`.\n");
+        return;
+    }
+
+    debug_print_int("Entering conditional with condition type: `%d`\n",
+                    node->conditional.condition->type);
+
     ASTNode *current_branch = node;
     int condition_met = 0; // Initialize to false
 
     while (current_branch) // Continue as long as we have a branch
     {
-        // Handle else branch
-        if (!current_branch->conditional.condition) // This is an else branch
+        // Check if this branch has a condition (not an else branch)
+        if (current_branch->conditional.condition)
         {
-            debug_print_int("Executing ELSE branch\n");
-            if (!condition_met)
+            // Evaluate the condition
+            LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
+            debug_print_int("Condition evaluated to: `%d`\n", condition_value.data.integer);
+
+            // Check for valid condition type (must be integer or boolean-like)
+            if (condition_value.type != TYPE_INTEGER)
             {
+                fprintf(stderr, "Error: Condition must evaluate to an integer.\n");
+                return;
+            }
+
+            debug_print_int("Condition evaluated to: `%d`\n", condition_value.data.integer);
+
+            if (condition_value.data.integer != 0) // if condition is true
+            {
+                debug_print_int("Condition is true, executing branch body\n");
+
                 // Execute all statements in the body
                 ASTNode *current_statement = current_branch->conditional.body;
                 while (current_statement)
                 {
-                    debug_print_int("Executing statement in else branch\n");
+                    interpret(current_statement, env);
+                    current_statement = current_statement->next;
+                }
+
+                condition_met = 1;
+                break; // Exit the loop, as one condition has been met
+            }
+        }
+        else // Handle the else branch
+        {
+            debug_print_int("Executing ELSE branch\n");
+            if (!condition_met) // Only execute if no prior condition was met
+            {
+                ASTNode *current_statement = current_branch->conditional.body;
+                while (current_statement)
+                {
                     interpret(current_statement, env);
                     current_statement = current_statement->next;
                 }
             }
-            break;
+            break; // Exit after executing the else branch
         }
 
-        // Handle if/elif branches
-        debug_print_int("Evaluating `if`/`elif` branch\n");
-        LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-        debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.integer);
-
-        if (condition_value.type == TYPE_INTEGER && condition_value.data.integer != 0)
-        {
-            debug_print_int("Condition is true, executing branch body\n");
-            // Execute all statements in the body
-            ASTNode *current_statement = current_branch->conditional.body;
-            while (current_statement)
-            {
-                debug_print_int("Executing statement in true branch\n");
-                interpret(current_statement, env);
-                current_statement = current_statement->next;
-            }
-            condition_met = 1;
-            break;
-        }
-
-        current_branch = current_branch->conditional.else_branch; // Move to the next branch
+        // Move to the next branch (elif or else)
+        current_branch = current_branch->conditional.else_branch;
     }
 
     debug_print_int("`interpret_conditional()` completed\n");
