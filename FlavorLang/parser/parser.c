@@ -368,7 +368,7 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_value = &parse_expression(state)->literal;
+    node->function_call.return_data = &parse_expression(state)->literal;
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
@@ -516,7 +516,7 @@ ASTNode *parse_block(ParserState *state)
                 parser_error("Memory allocation failed for implicit return", NULL);
             }
             head->type = AST_FUNCTION_RETURN;
-            head->function_call.return_value = NULL;
+            head->function_call.return_data = NULL;
             head->next = NULL;
         }
         else
@@ -537,7 +537,7 @@ ASTNode *parse_block(ParserState *state)
                     parser_error("Memory allocation failed for implicit return", NULL);
                 }
                 implicit_return->type = AST_FUNCTION_RETURN;
-                implicit_return->function_call.return_value = NULL;
+                implicit_return->function_call.return_data = NULL;
                 implicit_return->next = NULL;
 
                 last_statement->next = implicit_return;
@@ -843,7 +843,7 @@ ASTNode *parse_function_body(ParserState *state)
             parser_error("Memory allocation failed for implicit return", NULL);
         }
         body->type = AST_FUNCTION_RETURN;
-        body->function_call.return_value = NULL;
+        body->function_call.return_data = NULL;
         body->next = NULL;
         debug_print_par("Implicit return added to empty function body\n");
     }
@@ -863,7 +863,7 @@ ASTNode *parse_function_body(ParserState *state)
                 parser_error("Memory allocation failed for implicit return", NULL);
             }
             implicit_return->type = AST_FUNCTION_RETURN;
-            implicit_return->function_call.return_value = NULL;
+            implicit_return->function_call.return_data = NULL;
             implicit_return->next = NULL;
             last_statement->next = implicit_return;
             debug_print_par("Implicit return added to function body\n");
@@ -896,7 +896,7 @@ ASTNode *parse_function_declaration(ParserState *state)
     node->function_call.name = strdup(name->lexeme);
     node->function_call.parameters = NULL;
     node->function_call.body = NULL;
-    node->function_call.return_value = NULL;
+    node->function_call.return_data = NULL;
     node->next = NULL;
 
     advance_token(state); // Move past the function name
@@ -1072,7 +1072,7 @@ void free_ast(ASTNode *node)
             free(node->function_call.parameters);
             free(node->function_call.arguments);
             free(node->function_call.body);
-            free(node->function_call.return_value);
+            free(node->function_call.return_data);
             break;
 
         case AST_BREAK:
