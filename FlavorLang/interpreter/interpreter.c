@@ -135,28 +135,22 @@ LiteralValue interpret_literal(ASTNode *node)
 
     switch (node->literal.type)
     {
-    case LITERAL_FLOAT:
-        debug_print_int("LITERAL_FLOAT, value: `%f`\n", node->literal.value.floating_point);
-        value.type = TYPE_FLOAT;
-        value.data.floating_point = node->literal.value.floating_point;
-        break;
-
-    case LITERAL_INTEGER:
-        debug_print_int("LITERAL_INTEGER, value: `%d`\n", (int)node->literal.value.integer);
-        value.type = TYPE_INTEGER;
-        value.data.integer = node->literal.value.integer; // convert to double, as `LiteralValue` stores numbers as doubles
-        break;
-
     case LITERAL_STRING:
         value.type = TYPE_STRING;
         value.data.string = strdup(node->literal.value.string);
         break;
-
+    case LITERAL_FLOAT:
+        value.type = TYPE_FLOAT;
+        value.data.floating_point = node->literal.value.floating_point;
+        break;
+    case LITERAL_INTEGER:
+        value.type = TYPE_INTEGER;
+        value.data.integer = node->literal.value.integer;
+        break;
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
         exit(1);
     }
-
     return value;
 }
 
@@ -1112,8 +1106,6 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    debug_print_int("Processing function call for: `%s`\n", node->function_call.name);
-
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
@@ -1121,49 +1113,12 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    debug_print_int("Function parameters:\n");
-    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
-    {
-        debug_print_int("  Parameter: %s\n", p->parameter_name);
-    }
-
-    debug_print_int("Function arguments:\n");
-    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
-    {
-        debug_print_int("  Argument found of type: `%d`\n", a->type);
-    }
-
-    // Create local environment
     Environment local_env;
     init_environment(&local_env);
-
-    // Count and validate parameters
-    int param_count = 0;
-    for (ASTFunctionParameter *p = func->parameters; p != NULL; p = p->next)
-    {
-        param_count++;
-    }
-
-    int arg_count = 0;
-    for (ASTNode *a = node->function_call.arguments; a != NULL; a = a->next)
-    {
-        arg_count++;
-    }
-
-    if (param_count != arg_count)
-    {
-        fprintf(stderr, "Error: Function '%s' expects %d argument%s but got %d\n",
-                node->function_call.name,
-                param_count,
-                param_count == 1 ? "" : "s",
-                arg_count);
-        exit(1);
-    }
 
     // Process parameters and arguments
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
-
     while (param && arg)
     {
         LiteralValue value = interpret(arg, env);
@@ -1175,24 +1130,53 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    LiteralValue result = {
-        .type = TYPE_STRING,
-        .data.string = strdup("")};
+    LiteralValue result;      // Allocate on stack, no need for malloc
+    result.type = TYPE_ERROR; // Initialize with an error type
 
     ASTNode *stmt = func->body;
     while (stmt)
     {
-        result = interpret(stmt, &local_env);
-
-        // If this was a deliver statement, return immediately
         if (stmt->type == AST_FUNCTION_RETURN)
         {
+            if (stmt->to_print.arg_count > 0)
+            {
+                LiteralValue interpreted_result = interpret(stmt->to_print.arguments[0], &local_env);
+
+                switch (interpreted_result.type)
+                {
+                case LITERAL_FLOAT:
+                    result.type = LITERAL_FLOAT;
+                    result.data.floating_point = interpreted_result.data.floating_point;
+                    break;
+                case LITERAL_INTEGER:
+                    result.type = LITERAL_INTEGER;
+                    result.data.integer = interpreted_result.data.integer;
+                    break;
+                case LITERAL_STRING:
+                    result.type = LITERAL_STRING;
+                    result.data.string = interpreted_result.data.string; // Remember to handle memory management for the string
+                    break;
+                default:
+                    fprintf(stderr, "Error: Unknown literal type.\n");
+                    exit(1);
+                    break;
+                }
+            }
             break;
         }
+        interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
+
+    // Handle string case for memory management
+    if (result.type == LITERAL_STRING && result.data.string != NULL)
+    {
+        // Assuming the string data is also dynamically allocated (e.g., from interpret)
+        free(result.data.string);
+    }
+
     return result;
 }
 
