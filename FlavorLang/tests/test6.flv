@@ -4,3 +4,5 @@ create bake_cake(temperature) {
 
 let result = bake_cake(200);
 show result;
+show 10;
+show "test";

@@ -96,7 +96,7 @@ typedef struct
     ASTFunctionParameter *parameters; // For function declarations, parameter names
     struct ASTNode *arguments;        // For function calls, argument values
     struct ASTNode *body;
-    LiteralNode *return_value;
+    struct ASTNode *return_data;
 } ASTFunctionCall;
 
 // AST Node Structure

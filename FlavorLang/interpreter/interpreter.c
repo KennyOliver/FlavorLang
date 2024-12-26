@@ -1101,11 +1101,15 @@ void interpret_function_declaration(ASTNode *node, Environment *env)
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 {
+    debug_print_int("Starting function call interpretation\n");
+
     if (!node || !node->function_call.name)
     {
         fprintf(stderr, "Error: Invalid function call\n");
         exit(1);
     }
+
+    debug_print_int("Looking up function: `%s`\n", node->function_call.name);
 
     Function *func = get_function(env, node->function_call.name);
     if (!func)
@@ -1114,43 +1118,40 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
+    debug_print_int("Found function `%s`, creating local environment\n", func->name);
+
     Environment local_env;
     init_environment(&local_env);
 
-    // Process parameters and arguments
-    ASTFunctionParameter *param = func->parameters;
-    ASTNode *arg = node->function_call.arguments;
-    while (param && arg)
-    {
-        LiteralValue value = interpret(arg, env);
-        Variable var = {
-            .variable_name = strdup(param->parameter_name),
-            .value = value};
-        add_variable(&local_env, var);
-        param = param->next;
-        arg = arg->next;
-    }
+    debug_print_int("Processing function body\n");
 
-    LiteralValue result = create_default_value(); // Initialize with default value
-    bool return_found = false;
-
-    // Process function body
+    LiteralValue result = create_default_value();
     ASTNode *stmt = func->body;
-    while (stmt && !return_found)
+
+    debug_print_int("Function body pointer: `%p`\n", (void *)stmt);
+
+    while (stmt)
     {
+        debug_print_int("Processing statement of type: `%d`\n", stmt->type);
+
         if (stmt->type == AST_FUNCTION_RETURN)
         {
+            debug_print_int("Found return statement\n");
             if (stmt->to_print.arg_count > 0)
-            {
+            { // Changed from function_call.return_data
+                debug_print_int("Interpreting return value\n");
                 result = interpret(stmt->to_print.arguments[0], &local_env);
+                break; // Exit after return
             }
-            return_found = true;
-            break;
         }
-        result = interpret(stmt, &local_env);
+        else
+        {
+            interpret(stmt, &local_env);
+        }
         stmt = stmt->next;
     }
 
+    debug_print_int("Function execution complete\n");
     free_environment(&local_env);
     return result;
 }
