@@ -91,6 +91,10 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     case AST_FUNCTION_RETURN:
         debug_print_int("Matched: `AST_FUNCTION_RETURN`\n");
+        if (node->to_print.arg_count > 0)
+        {
+            return interpret(node->to_print.arguments[0], env);
+        }
         return create_default_value();
     case AST_LOOP:
         debug_print_int("Matched: `AST_LOOP`\n");
@@ -1216,67 +1220,25 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    // Execute function body with support for burn and deliver
-    FunctionResult result = {
-        .value = {.type = TYPE_STRING, .data.string = strdup("")},
-        .should_return = false,
-        .is_error = false};
+    LiteralValue result = {
+        .type = TYPE_STRING,
+        .data.string = strdup("")};
 
     ASTNode *stmt = func->body;
-    while (stmt && !result.should_return)
+    while (stmt)
     {
-        if (!stmt)
-        {
-            debug_print_int("`stmt` is `NULL`\n");
-            break;
-        }
-        if (!stmt->next)
-        {
-            debug_print_int("`stmt->next` is `NULL`\n");
-            break;
-        }
+        result = interpret(stmt, &local_env);
 
-        switch (stmt->type)
+        // If this was a deliver statement, return immediately
+        if (stmt->type == AST_FUNCTION_RETURN)
         {
-        case AST_ERROR:
-            result.value = interpret(stmt->to_print.arguments[0], &local_env);
-            result.should_return = false;
-            result.is_error = true;
             break;
-
-        case AST_FUNCTION_RETURN:
-            result.value = interpret(stmt->to_print.arguments[0], &local_env);
-            result.should_return = true;
-            break;
-
-        default:
-            result.value = interpret(stmt, &local_env);
         }
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
-
-    if (result.is_error)
-    {
-        fprintf(stderr, "Function execution burned with message: ");
-        if (result.value.type == TYPE_FLOAT)
-        {
-            fprintf(stderr, "%f\n", result.value.data.floating_point);
-        }
-        else if (result.value.type == TYPE_STRING)
-        {
-            fprintf(stderr, "%d\n", result.value.data.integer);
-        }
-        else if (result.value.type == TYPE_STRING)
-        {
-            fprintf(stderr, "%s\n", result.value.data.string);
-        }
-
-        exit(1);
-    }
-
-    return result.value;
+    return result;
 }
 
 // Initialize the environment
