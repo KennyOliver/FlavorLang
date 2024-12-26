@@ -1123,6 +1123,27 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     Environment local_env;
     init_environment(&local_env);
 
+    // Handle parameters
+    ASTFunctionParameter *param = func->parameters;
+    ASTNode *arg = node->function_call.arguments;
+
+    // Loop through parameters and arguments together
+    while (param && arg)
+    {
+        // Evaluate the argument
+        LiteralValue arg_value = interpret(arg, env);
+
+        // Create a variable in local environment for the parameter
+        Variable param_var = {
+            .variable_name = strdup(param->parameter_name),
+            .value = arg_value};
+        add_variable(&local_env, param_var);
+
+        // Move to next parameter and argument
+        param = param->next;
+        arg = arg->next;
+    }
+
     debug_print_int("Processing function body\n");
 
     LiteralValue result = create_default_value();
