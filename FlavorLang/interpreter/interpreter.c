@@ -47,10 +47,10 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     switch (node->type)
     {
     case AST_LITERAL:
-        debug_print_int("Matched: `AST_LITERAL`\n");
+        debug_print_int("\tMatched: `AST_LITERAL`\n");
         return interpret_literal(node);
     case AST_ASSIGNMENT:
-        debug_print_int("Matched: `AST_ASSIGNMENT`\n");
+        debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
         debug_print_int("Interpreted node type: `%d`\n", (int)node->type);
         if (node->type == TYPE_FLOAT)
         {
@@ -66,49 +66,49 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
-        debug_print_int("Matched: `AST_BINARY_OP`\n");
+        debug_print_int("\tMatched: `AST_BINARY_OP`\n");
         return interpret_binary_op(node, env);
     case AST_PRINT:
-        debug_print_int("Matched: `AST_PRINT`\n");
+        debug_print_int("\tMatched: `AST_PRINT`\n");
         interpret_print(node, env);
         return create_default_value();
     case AST_INPUT:
     {
-        debug_print_int("Matched: `AST_INPUT`\n");
+        debug_print_int("\tMatched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
         return v.value;
     }
     case AST_CONDITIONAL:
-        debug_print_int("Matched: `AST_CONDITIONAL`\n");
+        debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
         interpret_conditional(node, env);
         return create_default_value();
     case AST_FUNCTION_CALL:
-        debug_print_int("Matched: `AST_FUNCTION_CALL`\n");
+        debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
         return interpret_function_call(node, env);
     case AST_FUNCTION_DECLARATION:
-        debug_print_int("Matched: `AST_FUNCTION_DECLARATION`\n");
+        debug_print_int("\tMatched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
         return create_default_value();
     case AST_FUNCTION_RETURN:
-        debug_print_int("Matched: `AST_FUNCTION_RETURN`\n");
+        debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
         if (node->to_print.arg_count > 0)
         {
             return interpret(node->to_print.arguments[0], env);
         }
         return create_default_value();
     case AST_LOOP:
-        debug_print_int("Matched: `AST_LOOP`\n");
+        debug_print_int("\tMatched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
         return create_default_value();
     case AST_VARIABLE:
-        debug_print_int("Matched: `AST_VARIABLE`\n");
+        debug_print_int("\tMatched: `AST_VARIABLE`\n");
         return interpret_variable(node, env);
     case AST_SWITCH:
-        debug_print_int("Matched: `AST_SWITCH`\n");
+        debug_print_int("\tMatched: `AST_SWITCH`\n");
         interpret_switch(node, env);
         return create_default_value();
     case AST_ERROR:
-        debug_print_int("Matched: `AST_ERROR`\n");
+        debug_print_int("\tMatched: `AST_ERROR`\n");
         interpret_raise_error(node, env);
         return create_default_value();
     default:
@@ -1131,50 +1131,23 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    LiteralValue result = {.type = TYPE_STRING, .data.string = strdup("")};
-    bool should_return = false;
+    LiteralValue result = create_default_value(); // Initialize with default value
+    bool return_found = false;
 
+    // Process function body
     ASTNode *stmt = func->body;
-    while (stmt && !should_return)
+    while (stmt && !return_found)
     {
-        if (stmt->type == AST_ERROR)
+        if (stmt->type == AST_FUNCTION_RETURN)
         {
-            // Handle error ("burn") statement
-            LiteralValue error_msg = interpret(stmt->to_print.arguments[0], &local_env);
-            fprintf(stderr, "Error: ");
-            if (error_msg.type == TYPE_STRING)
-            {
-                fprintf(stderr, "%s\n", error_msg.data.string);
-            }
-            else if (error_msg.type == TYPE_INTEGER)
-            {
-                fprintf(stderr, "%d\n", error_msg.data.integer);
-            }
-            else if (error_msg.type == TYPE_FLOAT)
-            {
-                fprintf(stderr, "%f\n", error_msg.data.floating_point);
-            }
-            free_environment(&local_env);
-            exit(1);
-        }
-        else if (stmt->type == AST_FUNCTION_RETURN)
-        {
-            // Handle return ("deliver") statement
             if (stmt->to_print.arg_count > 0)
             {
                 result = interpret(stmt->to_print.arguments[0], &local_env);
-                // For strings, ensure we make a copy
-                if (result.type == TYPE_STRING && result.data.string)
-                {
-                    result.data.string = strdup(result.data.string);
-                }
             }
-            should_return = true;
+            return_found = true;
+            break;
         }
-        else
-        {
-            interpret(stmt, &local_env);
-        }
+        result = interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
