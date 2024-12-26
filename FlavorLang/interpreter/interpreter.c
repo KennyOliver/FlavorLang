@@ -138,6 +138,7 @@ LiteralValue interpret_literal(ASTNode *node)
     case LITERAL_STRING:
         value.type = TYPE_STRING;
         value.data.string = strdup(node->literal.value.string);
+        debug_print_int("Created string literal: `%s`\n", value.data.string);
         break;
     case LITERAL_FLOAT:
         value.type = TYPE_FLOAT;
@@ -1130,53 +1131,54 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    LiteralValue result;      // Allocate on stack, no need for malloc
-    result.type = TYPE_ERROR; // Initialize with an error type
+    LiteralValue result = {.type = TYPE_STRING, .data.string = strdup("")};
+    bool should_return = false;
 
     ASTNode *stmt = func->body;
-    while (stmt)
+    while (stmt && !should_return)
     {
-        if (stmt->type == AST_FUNCTION_RETURN)
+        if (stmt->type == AST_ERROR)
         {
+            // Handle error ("burn") statement
+            LiteralValue error_msg = interpret(stmt->to_print.arguments[0], &local_env);
+            fprintf(stderr, "Error: ");
+            if (error_msg.type == TYPE_STRING)
+            {
+                fprintf(stderr, "%s\n", error_msg.data.string);
+            }
+            else if (error_msg.type == TYPE_INTEGER)
+            {
+                fprintf(stderr, "%d\n", error_msg.data.integer);
+            }
+            else if (error_msg.type == TYPE_FLOAT)
+            {
+                fprintf(stderr, "%f\n", error_msg.data.floating_point);
+            }
+            free_environment(&local_env);
+            exit(1);
+        }
+        else if (stmt->type == AST_FUNCTION_RETURN)
+        {
+            // Handle return ("deliver") statement
             if (stmt->to_print.arg_count > 0)
             {
-                LiteralValue interpreted_result = interpret(stmt->to_print.arguments[0], &local_env);
-
-                switch (interpreted_result.type)
+                result = interpret(stmt->to_print.arguments[0], &local_env);
+                // For strings, ensure we make a copy
+                if (result.type == TYPE_STRING && result.data.string)
                 {
-                case LITERAL_FLOAT:
-                    result.type = LITERAL_FLOAT;
-                    result.data.floating_point = interpreted_result.data.floating_point;
-                    break;
-                case LITERAL_INTEGER:
-                    result.type = LITERAL_INTEGER;
-                    result.data.integer = interpreted_result.data.integer;
-                    break;
-                case LITERAL_STRING:
-                    result.type = LITERAL_STRING;
-                    result.data.string = interpreted_result.data.string; // Remember to handle memory management for the string
-                    break;
-                default:
-                    fprintf(stderr, "Error: Unknown literal type.\n");
-                    exit(1);
-                    break;
+                    result.data.string = strdup(result.data.string);
                 }
             }
-            break;
+            should_return = true;
         }
-        interpret(stmt, &local_env);
+        else
+        {
+            interpret(stmt, &local_env);
+        }
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
-
-    // Handle string case for memory management
-    if (result.type == LITERAL_STRING && result.data.string != NULL)
-    {
-        // Assuming the string data is also dynamically allocated (e.g., from interpret)
-        free(result.data.string);
-    }
-
     return result;
 }
 
