@@ -508,29 +508,6 @@ void add_variable(Environment *env, Variable var)
     env->variable_count++;
 }
 
-// Helper function to print a LiteralValue
-void print_literal_value(LiteralValue value)
-{
-    switch (value.type)
-    {
-    case TYPE_FLOAT:
-        printf("%f", value.data.floating_point);
-        break;
-    case TYPE_INTEGER:
-        printf("%d", value.data.integer);
-        break;
-    case TYPE_STRING:
-        printf("%s", value.data.string);
-        break;
-    case TYPE_ERROR:
-        fprintf(stderr, "Error: Invalid literal type.\n");
-        break;
-    default:
-        fprintf(stderr, "Error: Unknown literal type.\n");
-        break;
-    }
-}
-
 void interpret_print(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_print()`\n");
@@ -538,48 +515,26 @@ void interpret_print(ASTNode *node, Environment *env)
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
-        LiteralValue value;
+        LiteralValue value = interpret(arg, env);
 
-        // Determine the value to print based on the node type
-        if (arg->type == AST_LITERAL)
+        switch (value.type)
         {
-            value.type = arg->literal.type; // Set the type of the LiteralValue
-
-            // Populate the union fields based on the type
-            switch (arg->literal.type)
-            {
-            case LITERAL_FLOAT:
-                value.data.floating_point = arg->literal.value.floating_point;
-                break;
-            case LITERAL_INTEGER:
-                value.data.integer = arg->literal.value.integer;
-                break;
-            case LITERAL_STRING:
-                value.data.string = arg->literal.value.string;
-                break;
-            default:
-                fprintf(stderr, "Error: Unsupported literal type.\n");
-                value.type = TYPE_ERROR;
-            }
+        case TYPE_FLOAT:
+            printf("%f", value.data.floating_point);
+            break;
+        case TYPE_INTEGER:
+            printf("%d", value.data.integer);
+            break;
+        case TYPE_STRING:
+            printf("%s", value.data.string);
+            break;
+        case TYPE_ERROR:
+            fprintf(stderr, "Error: Invalid literal type.\n");
+            break;
+        default:
+            fprintf(stderr, "Error: Unknown literal type.\n");
+            break;
         }
-        else if (arg->type == AST_ASSIGNMENT || arg->type == AST_VARIABLE)
-        {
-            Variable *var = get_variable(env, arg->variable_name);
-            if (!var)
-            {
-                fprintf(stderr, "Error: Undefined variable `%s`.\n", arg->variable_name);
-                continue;
-            }
-            value = var->value;
-        }
-        else
-        {
-            // Evaluate expressions for other node types
-            value = interpret(arg, env);
-        }
-
-        // Print the value based on its type
-        print_literal_value(value);
         printf(" "); // space for padding
     }
     printf("\n");
