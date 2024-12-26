@@ -1,8 +1,8 @@
 create bake_cake(temperature) {
-	deliver 10;
+	deliver 10 + 1;
 }
 
 let result = bake_cake(200);
 show result;
-show 10;
+show 8.0;
 show "test";
