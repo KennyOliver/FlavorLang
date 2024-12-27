@@ -90,8 +90,14 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         interpret_function_declaration(node, env);
         return create_default_value();
     case AST_FUNCTION_RETURN:
+    {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
-        return interpret(node->assignment.value, env);
+        LiteralValue return_value = interpret(node->assignment.value, env);
+        debug_print_int("Return value before returning: type=%d, value=%d\n",
+                        return_value.type,
+                        return_value.type == TYPE_INTEGER ? return_value.data.integer : 0);
+        return return_value;
+    }
     case AST_LOOP:
         debug_print_int("\tMatched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
@@ -128,6 +134,12 @@ LiteralValue interpret_literal(ASTNode *node)
 {
     LiteralValue value;
     debug_print_int("Interpreting literal value...\n");
+    debug_print_int("Literal type: %d\n", node->literal.type);
+
+    if (node->literal.type == LITERAL_INTEGER)
+    {
+        debug_print_int("Integer value: %d\n", node->literal.value.integer);
+    }
 
     switch (node->literal.type)
     {
@@ -230,6 +242,9 @@ LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     debug_print_int("Interpreting binary operation\n");
+
+    debug_print_int("Binary operation check - left node type: %d\n", node->binary_op.left->type);
+    debug_print_int("Binary operation check - right node type: %d\n", node->binary_op.right->type);
 
     // Step 1: Interpret left and right operands
     // First, check if either operand is a function call
@@ -1075,7 +1090,8 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         Function func_copy = {
             .name = strdup(env->functions[i].name),
             .parameters = copy_function_parameters(env->functions[i].parameters),
-            .body = copy_ast_node(env->functions[i].body)};
+            .body = copy_ast_node(env->functions[i].body),
+        };
         add_function(&local_env, func_copy);
     }
 
@@ -1095,39 +1111,53 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    // Execute function body
-    LiteralValue result = {0};  // Initialize to zero
-    result.type = TYPE_INTEGER; // Set default type
-    ASTNode *stmt = func->body;
+    // Execute function body with proper return value handling
+    LiteralValue result = {
+        .type = TYPE_INTEGER,
+        .data.integer = 0};
 
+    ASTNode *stmt = func->body;
     while (stmt)
     {
         if (stmt->type == AST_FUNCTION_RETURN)
         {
-            debug_print_int("Found return statement\n");
-            // Evaluate the return value in the local environment
+            // Get the return value
             result = interpret(stmt->assignment.value, &local_env);
 
-            // Deep copy string if returning a string
-            if (result.type == TYPE_STRING && result.data.string)
+            // Validate and ensure proper type conversion
+            if (result.type == TYPE_ERROR)
             {
-                char *str_copy = strdup(result.data.string);
-                if (!str_copy)
-                {
-                    fprintf(stderr, "Error: Memory allocation failed for return string\n");
-                    exit(1);
-                }
-                result.data.string = str_copy;
+                fprintf(stderr, "Error: Invalid return value from function\n");
+                exit(1);
             }
 
-            debug_print_int("Return value type: %d\n", result.type);
+            // If it's a float, convert to int for consistency
+            if (result.type == TYPE_FLOAT)
+            {
+                result.type = TYPE_INTEGER;
+                result.data.integer = (int)result.data.floating_point;
+            }
+
+            debug_print_int("Function returning value: type=`%d`, value=`%d`\n",
+                            result.type,
+                            result.type == TYPE_INTEGER ? result.data.integer : 0);
+
             break;
         }
         interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
+    // Clean up
     free_environment(&local_env);
+
+    // Ensure we're returning a valid type
+    if (result.type != TYPE_INTEGER && result.type != TYPE_FLOAT && result.type != TYPE_STRING)
+    {
+        result.type = TYPE_INTEGER;
+        result.data.integer = 0;
+    }
+
     return result;
 }
 
