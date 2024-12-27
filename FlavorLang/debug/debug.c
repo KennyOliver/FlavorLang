@@ -25,7 +25,7 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
 
         switch (debug_mode)
         {
-        case TOKENIZER:
+        case LEXER:
             color = "\033[38;5;202m"; // orange
             mode_name = "TOK";
             break;
@@ -80,7 +80,7 @@ void debug_print_basic(const char *format, ...)
     }
 }
 
-void debug_print_tok(const char *format, ...)
+void debug_print_lex(const char *format, ...)
 {
     if (debug_flag)
     {
@@ -93,7 +93,7 @@ void debug_print_tok(const char *format, ...)
 
         va_end(args);
 
-        debug_print(TOKENIZER, "%s", new_format);
+        debug_print(LEXER, "%s", new_format);
     }
 }
 

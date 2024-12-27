@@ -1,4 +1,4 @@
-#include "tokenizer/tokenizer.h"
+#include "lexer/lexer.h"
 #include "parser/parser.h"
 #include "interpreter/interpreter.h"
 #include "debug/debug.h"
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     // Tokenize
     Token *tokens = tokenize(source);
     debug_print_tokens(tokens);
-    debug_print_basic("Tokenization complete!\n\n");
+    debug_print_basic("Lexing complete!\n\n");
 
     // Parse
     ASTNode *ast = parse_program(tokens);

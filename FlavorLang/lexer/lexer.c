@@ -1,6 +1,6 @@
-#include "tokenizer.h"
+#include "lexer.h"
 #include "keywords.h"
-#include "token_utils.h"
+#include "lexer_utils.h"
 #include "../debug/debug.h"
 #include <string.h>
 #include <ctype.h>
@@ -248,12 +248,12 @@ void debug_print_tokens(Token *tokens)
         {
             if (tokens[i].line != last_line)
             {
-                debug_print_tok("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
+                debug_print_lex("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
                 last_line = tokens[i].line; // last_line++ would only work if there were no empty lines
             }
             else
             {
-                debug_print_tok("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type, tokens[i].lexeme);
+                debug_print_lex("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type, tokens[i].lexeme);
             }
         }
     }
