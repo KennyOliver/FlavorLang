@@ -28,11 +28,11 @@
    - [Example Script](#debugging-example-script)
    - [Debug Output Breakdown](#debugging-debug-output-breakdown)
    - [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
-8. [Tokenizer](#tokenizer)
-   - [Overview](#tokenizer-overview)
-   - [How the Tokenizer Works](#how-the-tokenizer-works)
+8. [Lexer](#lexer)
+   - [Overview](#lexer-overview)
+   - [How the Lexer Works](#how-the-lexer-works)
    - [Debugging Tokens](#debugging-tokens)
-   - [Error Handling](#tokenizer-error-handling)
+   - [Error Handling](#lexer-error-handling)
    - [Future Enhancements](#future-enhancements)
 9. [Parser](#parser)
    - [Key Structures](#key-structures)
@@ -367,7 +367,7 @@ This detailed output helps track variable values, condition evaluations, and the
 
 #### 1. Tokenization
 
-The tokenizer splits the script into tokens. Each line in the script generates tokens for variable declarations, conditions, and outputs.
+The lexer splits the script into tokens. Each line in the script generates tokens for variable declarations, conditions, and outputs.
 
 Example:
 
@@ -479,11 +479,11 @@ $ ./flavor tests/test3.flv --debug
 
 ---
 
-## Tokenizer <a id="tokenizer"></a>
+## Lexer <a id="lexer"></a>
 
-The FlavorLang tokenizer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens deliver as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
+The FlavorLang lexer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens deliver as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
 
-### Overview <a id="tokenizer-overview"></a>
+### Overview <a id="lexer-overview"></a>
 
 | Token Type | Examples                          | Description                                         |
 | ---------- | --------------------------------- | --------------------------------------------------- |
@@ -497,11 +497,11 @@ The FlavorLang tokenizer is responsible for breaking down source code into its f
 | COMMENT    | `#`                               | This is a comment Lines starting with # (optional). |
 | EOF        | End of input                      | Signals the end of the program.                     |
 
-### How the Tokenizer Works
+### How the Lexer Works
 
 #### 1. Input and Initialization
 
-    - The tokenizer reads the entire source code from a file or string input.
+    - The lexer reads the entire source code from a file or string input.
     - It initializes a token buffer to store the tokens and processes the input character by character.
 
 #### 2. Character Classification
@@ -534,7 +534,7 @@ Each character in the source is categorized into one of the following types:
 #### 1. Comments
 
 - Begin with `#` and continue until the end of the line.
-- Ignored entirely by the tokenizer.
+- Ignored entirely by the lexer.
 
 #### 2. Numbers
 
@@ -551,7 +551,7 @@ Each character in the source is categorized into one of the following types:
 
 - **Identifiers**: Alphanumeric sequences used for variables and function names.
 - **Keywords**: Reserved words like `for`, `if`, and `let`.
-- The tokenizer determines if a sequence matches a keyword using the is_keyword function.
+- The lexer determines if a sequence matches a keyword using the is_keyword function.
 - **Example**: `for` → `TOKEN_KEYWORD`, `myVar` → `TOKEN_IDENTIFIER`
 
 #### 5. Operators
@@ -567,7 +567,7 @@ Each character in the source is categorized into one of the following types:
 
 ### Debugging Tokens <a id="debugging-tokens"></a>
 
-- The tokenizer includes a debugging flag `--debug` to print all generated tokens.
+- The lexer includes a debugging flag `--debug` to print all generated tokens.
 - Each token’s type, lexeme, and line number are displayed for easier inspection of the tokenization process.
 
 #### Example Output:
@@ -579,9 +579,9 @@ Each character in the source is categorized into one of the following types:
 ...
 ```
 
-### Error Handling <a id="tokenizer-error-handling"></a>
+### Error Handling <a id="lexer-error-handling"></a>
 
-- The tokenizer raises errors for:
+- The lexer raises errors for:
 - Unexpected characters.
 - Unterminated string literals.
 - Memory allocation failures.
