@@ -1,0 +1,50 @@
+let x = -10;
+let y = -3.14;
+show x, y;
+
+create func1(temperature) { 
+    if temperature < 180: 
+        show "Temperature is too low to bake!";
+        burn "Cake burned!"; 
+    else: 
+        show "Baking cake at", temperature, "degrees!";
+        deliver "Cake is ready!";
+}
+
+create func2(x, y) { 
+    let a = x + y + 1;
+    let b = a + 3;
+    deliver a;
+}
+
+create func3(x) { 
+    show "X:", x;
+}
+
+create func4() { 
+    deliver -5;
+}
+
+let result1 = func1(200);
+show "Result 1:", result1;
+
+let result2 = func2(2, 8);
+show "Result 2:", result2;
+
+let result3 = func3(2);
+func3(5);
+show "Result 3:", result3;
+
+# all functions return 0 by default
+let result4 = func4();
+show "Result 4:", result4;
+
+-10 -3.14
+Baking cake at 200 degrees!
+Cake is ready!
+Result 1: 0
+Result 2: 12
+X: 2
+X: 5
+Result 3: 0
+Result 4: -5
