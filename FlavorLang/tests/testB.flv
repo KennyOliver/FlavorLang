@@ -18,7 +18,7 @@ create func3(x) {
 }
 
 create func4() {
-    deliver 8;
+    deliver -5;
 }
 
 

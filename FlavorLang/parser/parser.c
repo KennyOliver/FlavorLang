@@ -257,7 +257,48 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 {
     Token *current = get_current_token(state);
 
-    // Check if the current token is a literal (either float, integer, or string)
+    // Check for negative numbers
+    if (current->type == TOKEN_OPERATOR && strcmp(current->lexeme, "-") == 0)
+    {
+        // Look ahead to next token
+        advance_token(state);
+        Token *next = get_current_token(state);
+
+        // Check if it's a number
+        if (next->type == TOKEN_INTEGER || next->type == TOKEN_FLOAT)
+        {
+            ASTNode *node = malloc(sizeof(ASTNode));
+            if (!node)
+            {
+                parser_error("Memory allocation failed", current);
+            }
+
+            node->type = AST_LITERAL;
+
+            if (next->type == TOKEN_FLOAT)
+            {
+                node->literal.type = LITERAL_FLOAT;
+                node->literal.value.floating_point = -atof(next->lexeme);
+            }
+            else
+            {
+                node->literal.type = LITERAL_INTEGER;
+                node->literal.value.integer = -atoi(next->lexeme);
+            }
+
+            node->next = NULL;
+            advance_token(state);
+            return node;
+        }
+        else
+        {
+            // If it's not followed by a number, rewind and treat as operator
+            state->current_token--;
+            current = get_current_token(state);
+        }
+    }
+
+    // Original literal/identifier handling
     if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER || current->type == TOKEN_STRING)
     {
         ASTNode *node = malloc(sizeof(ASTNode));
@@ -268,25 +309,23 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 
         node->type = AST_LITERAL;
 
-        // Set the literal type correctly based on the token type
         if (current->type == TOKEN_FLOAT)
         {
             node->literal.type = LITERAL_FLOAT;
-            node->literal.value.floating_point = atof(current->lexeme); // convert to float
+            node->literal.value.floating_point = atof(current->lexeme);
         }
         else if (current->type == TOKEN_INTEGER)
         {
             node->literal.type = LITERAL_INTEGER;
-            node->literal.value.integer = atoi(current->lexeme); // convert to integer
+            node->literal.value.integer = atoi(current->lexeme);
         }
-        else // If it's a string
+        else
         {
             node->literal.type = LITERAL_STRING;
             node->literal.value.string = strdup(current->lexeme);
         }
 
         node->next = NULL;
-
         advance_token(state);
         return node;
     }
@@ -325,9 +364,8 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         return node;
     }
 
-    // If none of the above conditions match, raise an error
     parser_error("Expected literal or identifier", current);
-    return NULL; // unreachable due to parser_error, but keeps compiler happy
+    return NULL;
 }
 
 ASTNode *parse_term(ParserState *state)
