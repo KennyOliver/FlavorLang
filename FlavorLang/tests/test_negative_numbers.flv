@@ -38,13 +38,3 @@ show "Result 3:", result3;
 # all functions return 0 by default
 let result4 = func4();
 show "Result 4:", result4;
-
--10 -3.14
-Baking cake at 200 degrees!
-Cake is ready!
-Result 1: 0
-Result 2: 12
-X: 2
-X: 5
-Result 3: 0
-Result 4: -5
