@@ -91,11 +91,7 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         return create_default_value();
     case AST_FUNCTION_RETURN:
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
-        if (node->to_print.arg_count > 0)
-        {
-            return interpret(node->to_print.arguments[0], env);
-        }
-        return create_default_value();
+        return interpret(node->assignment.value, env);
     case AST_LOOP:
         debug_print_int("\tMatched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
@@ -233,10 +229,36 @@ LiteralValue handle_string_concatenation(LiteralValue left, LiteralValue right)
 
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
+    debug_print_int("Interpreting binary operation\n");
+
     // Step 1: Interpret left and right operands
-    LiteralValue left = interpret(node->binary_op.left, env);
-    LiteralValue right = interpret(node->binary_op.right, env);
+    // First, check if either operand is a function call
+    LiteralValue left, right;
+
+    if (node->binary_op.left->type == AST_FUNCTION_CALL)
+    {
+        debug_print_int("Left operand is a function call\n");
+        left = interpret_function_call(node->binary_op.left, env);
+    }
+    else
+    {
+        debug_print_int("Left operand is a regular expression\n");
+        left = interpret(node->binary_op.left, env);
+    }
+
+    if (node->binary_op.right->type == AST_FUNCTION_CALL)
+    {
+        debug_print_int("Right operand is a function call\n");
+        right = interpret_function_call(node->binary_op.right, env);
+    }
+    else
+    {
+        debug_print_int("Right operand is a regular expression\n");
+        right = interpret(node->binary_op.right, env);
+    }
+
     char *operator= node->binary_op.operator;
+    debug_print_int("Operator: %s\n", operator);
 
     // Handle string concatenation with "+" operator
     if (operator[0] == '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING))
@@ -244,56 +266,70 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         return handle_string_concatenation(left, right);
     }
 
-    // Convert numeric values for arithmetic operations
+    // Get numeric values, preserving types
     double left_value = 0;
     double right_value = 0;
 
-    // Safe numeric conversion
     if (left.type == TYPE_INTEGER)
     {
         left_value = (double)left.data.integer;
+        debug_print_int("Left value (integer): %d\n", left.data.integer);
     }
     else if (left.type == TYPE_FLOAT)
     {
         left_value = left.data.floating_point;
-    }
-    else if (left.type != TYPE_STRING)
-    {
-        fprintf(stderr, "Error: Invalid left operand type for arithmetic operation\n");
-        exit(1);
+        debug_print_int("Left value (float): %f\n", left.data.floating_point);
     }
 
     if (right.type == TYPE_INTEGER)
     {
         right_value = (double)right.data.integer;
+        debug_print_int("Right value (integer): %d\n", right.data.integer);
     }
     else if (right.type == TYPE_FLOAT)
     {
         right_value = right.data.floating_point;
-    }
-    else if (right.type != TYPE_STRING)
-    {
-        fprintf(stderr, "Error: Invalid right operand type for arithmetic operation\n");
-        exit(1);
+        debug_print_int("Right value (float): %f\n", right.data.floating_point);
     }
 
     LiteralValue result;
-    result.type = TYPE_INTEGER; // Default type for comparison results
+    result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) ? TYPE_FLOAT : TYPE_INTEGER;
 
-    // Perform operation based on operator
+    // In interpret_binary_op() function, replace the switch statement with:
     switch (operator[0])
     {
+    case '*':
+        debug_print_int("Performing multiplication: %f * %f\n", left_value, right_value);
+        if (result.type == TYPE_FLOAT)
+        {
+            result.data.floating_point = left_value * right_value;
+            debug_print_int("Result (float): %f\n", result.data.floating_point);
+        }
+        else
+        {
+            result.data.integer = (int)(left_value * right_value);
+            debug_print_int("Result (integer): %d\n", result.data.integer);
+        }
+        break;
     case '+':
-        result.type = TYPE_INTEGER;
-        result.data.integer = (int)(left_value + right_value);
+        if (result.type == TYPE_FLOAT)
+        {
+            result.data.floating_point = left_value + right_value;
+        }
+        else
+        {
+            result.data.integer = (int)(left_value + right_value);
+        }
         break;
     case '-':
-        result.type = TYPE_INTEGER;
-        result.data.integer = (int)(left_value - right_value);
-        break;
-    case '*':
-        result.type = TYPE_INTEGER;
-        result.data.integer = (int)(left_value * right_value);
+        if (result.type == TYPE_FLOAT)
+        {
+            result.data.floating_point = left_value - right_value;
+        }
+        else
+        {
+            result.data.integer = (int)(left_value - right_value);
+        }
         break;
     case '/':
         if (right_value == 0)
@@ -301,29 +337,46 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
             fprintf(stderr, "Error: Division by zero\n");
             exit(1);
         }
-        result.type = TYPE_INTEGER;
-        result.data.integer = (int)(left_value / right_value);
-        break;
-    case '<':
-        result.data.integer = (operator[1] == '=') ? (left_value <= right_value) : (left_value < right_value);
-        break;
-    case '>':
-        result.data.integer = (operator[1] == '=') ? (left_value >= right_value) : (left_value > right_value);
-        break;
-    case '=':
-        if (operator[1] == '=')
+        if (result.type == TYPE_FLOAT)
         {
-            result.data.integer = (left_value == right_value);
+            result.data.floating_point = left_value / right_value;
         }
         else
         {
-            fprintf(stderr, "Error: Invalid operator '%s'\n", operator);
-            exit(1);
+            result.data.integer = (int)(left_value / right_value);
+        }
+        break;
+    case '<':
+        result.type = TYPE_INTEGER;
+        result.data.integer = left_value < right_value;
+        break;
+    case '>':
+        result.type = TYPE_INTEGER;
+        result.data.integer = left_value > right_value;
+        break;
+    case '=':
+        if (operator[1] == '=')
+        { // handle ==
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value == right_value;
         }
         break;
     default:
-        fprintf(stderr, "Error: Unknown operator '%s'\n", operator);
-        exit(1);
+        if (strcmp(operator, "<=") == 0)
+        {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value <= right_value;
+        }
+        else if (strcmp(operator, ">=") == 0)
+        {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value >= right_value;
+        }
+        else
+        {
+            fprintf(stderr, "Error: Unknown operator '%s'\n", operator);
+            exit(1);
+        }
     }
 
     return result;
@@ -1038,33 +1091,40 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     Environment local_env;
     init_environment(&local_env);
 
-    // Handle parameters
+    // Copy all functions from parent environment to local environment
+    for (size_t i = 0; i < env->function_count; i++)
+    {
+        Function func_copy = {
+            .name = strdup(env->functions[i].name),
+            .parameters = copy_function_parameters(env->functions[i].parameters),
+            .body = copy_ast_node(env->functions[i].body)};
+        add_function(&local_env, func_copy);
+    }
+
+    // Set up parameters
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
 
-    // Loop through parameters and arguments together
+    // Evaluate and store arguments
     while (param && arg)
     {
-        // Evaluate the argument
+        debug_print_int("Evaluating argument for parameter: `%s`\n", param->parameter_name);
         LiteralValue arg_value = interpret(arg, env);
 
-        // Create a variable in local environment for the parameter
         Variable param_var = {
             .variable_name = strdup(param->parameter_name),
             .value = arg_value};
         add_variable(&local_env, param_var);
 
-        // Move to next parameter and argument
         param = param->next;
         arg = arg->next;
     }
 
     debug_print_int("Processing function body\n");
 
+    // Execute function body
     LiteralValue result = create_default_value();
     ASTNode *stmt = func->body;
-
-    debug_print_int("Function body pointer: `%p`\n", (void *)stmt);
 
     while (stmt)
     {
@@ -1073,23 +1133,22 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         if (stmt->type == AST_FUNCTION_RETURN)
         {
             debug_print_int("Found return statement\n");
-            // Handle return value directly from the `function_call` structure
-            if (stmt->function_call.return_data)
+            if (stmt->to_print.arg_count > 0 && stmt->to_print.arguments[0])
             {
-                debug_print_int("Interpreting return value\n");
-                result = interpret(stmt->function_call.return_data, &local_env);
+                debug_print_int("Evaluating return expression\n");
+                result = interpret(stmt->to_print.arguments[0], &local_env);
+                debug_print_int("Return value calculated\n");
             }
-            break; // exit after return
+            break;
         }
-        else
-        {
-            interpret(stmt, &local_env);
-        }
+
+        interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
-    debug_print_int("Function execution complete\n");
+    debug_print_int("Function execution complete, cleaning up\n");
     free_environment(&local_env);
+
     return result;
 }
 

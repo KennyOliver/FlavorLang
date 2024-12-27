@@ -137,6 +137,12 @@ typedef struct ASTNode
         // Function
         ASTFunctionCall function_call;
 
+        // Function Return
+        struct
+        {
+            struct ASTNode *return_value;
+        } function_return;
+
         // Variable
         char *variable_name;
     };

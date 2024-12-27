@@ -408,9 +408,10 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_data = parse_expression(state);
-    node->next = NULL;
+    // node->function_call.return_data = parse_expression(state);
+    node->assignment.value = parse_expression(state);
 
+    node->next = NULL;
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
     return node;
 }
@@ -1037,6 +1038,7 @@ ASTNode *parse_function_call(ParserState *state)
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
+    debug_print_par("AST_FUNCTION_CALL\n");
     node->function_call.name = strdup(name->lexeme);
 
     // Initialize both parameters and arguments to NULL
