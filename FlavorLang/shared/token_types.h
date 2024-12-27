@@ -1,5 +1,5 @@
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef TOKEN_TYPES_H
+#define TOKEN_TYPES_H
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,7 +1,7 @@
 #ifndef PARSER_STATE_H
 #define PARSER_STATE_H
 
-#include "../shared/common.h"
+#include "../shared/token_types.h"
 #include <stdio.h>
 #include <stdbool.h>
 

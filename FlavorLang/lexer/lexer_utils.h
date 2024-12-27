@@ -1,7 +1,7 @@
 #ifndef LEXER_UTILS_H
 #define LEXER_UTILS_H
 
-#include "../shared/common.h"
+#include "../shared/token_types.h"
 
 #define INITIAL_TOKEN_CAPACITY 1024
 
