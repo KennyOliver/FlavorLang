@@ -1,5 +1,5 @@
-#ifndef TOKEN_UTILS_H
-#define TOKEN_UTILS_H
+#ifndef LEXER_UTILS_H
+#define LEXER_UTILS_H
 
 #include "../shared/common.h"
 
