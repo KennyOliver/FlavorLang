@@ -54,15 +54,15 @@ LiteralValue interpret(ASTNode *node, Environment *env)
         debug_print_int("Interpreted node type: `%d`\n", (int)node->type);
         if (node->type == TYPE_FLOAT)
         {
-            debug_print_int("Node is a number: `%f`\n", node->literal.value.floating_point);
+            debug_print_int("Node is float: `%f`\n", node->literal.value.floating_point);
         }
         else if (node->type == TYPE_INTEGER)
         {
-            debug_print_int("Node is a number: `%d`\n", node->literal.value.integer);
+            debug_print_int("Node is integer: `%d`\n", node->literal.value.integer);
         }
         else if (node->type == TYPE_STRING)
         {
-            debug_print_int("Node is a string: `%s`\n", node->literal.value.string);
+            debug_print_int("Node is string: `%s`\n", node->literal.value.string);
         }
         return interpret_assignment(node, env);
     case AST_BINARY_OP:
@@ -242,7 +242,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     }
     else
     {
-        debug_print_int("Left operand is a regular expression\n");
+        debug_print_int("Left operand is a typical expression\n");
         left = interpret(node->binary_op.left, env);
     }
 
@@ -253,12 +253,12 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     }
     else
     {
-        debug_print_int("Right operand is a regular expression\n");
+        debug_print_int("Right operand is a typical expression\n");
         right = interpret(node->binary_op.right, env);
     }
 
     char *operator= node->binary_op.operator;
-    debug_print_int("Operator: %s\n", operator);
+    debug_print_int("Operator: `%s`\n", operator);
 
     // Handle string concatenation with "+" operator
     if (operator[0] == '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING))
@@ -273,45 +273,45 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     if (left.type == TYPE_INTEGER)
     {
         left_value = (double)left.data.integer;
-        debug_print_int("Left value (integer): %d\n", left.data.integer);
+        debug_print_int("Left value (integer): `%d`\n", left.data.integer);
     }
     else if (left.type == TYPE_FLOAT)
     {
         left_value = left.data.floating_point;
-        debug_print_int("Left value (float): %f\n", left.data.floating_point);
+        debug_print_int("Left value (float): `%f`\n", left.data.floating_point);
     }
 
     if (right.type == TYPE_INTEGER)
     {
         right_value = (double)right.data.integer;
-        debug_print_int("Right value (integer): %d\n", right.data.integer);
+        debug_print_int("Right value (integer): `%d`\n", right.data.integer);
     }
     else if (right.type == TYPE_FLOAT)
     {
         right_value = right.data.floating_point;
-        debug_print_int("Right value (float): %f\n", right.data.floating_point);
+        debug_print_int("Right value (float): `%f`\n", right.data.floating_point);
     }
 
     LiteralValue result;
     result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) ? TYPE_FLOAT : TYPE_INTEGER;
 
-    // In interpret_binary_op() function, replace the switch statement with:
     switch (operator[0])
     {
     case '*':
-        debug_print_int("Performing multiplication: %f * %f\n", left_value, right_value);
+        debug_print_int("Performing multiplication: `%f * %f`\n", left_value, right_value);
         if (result.type == TYPE_FLOAT)
         {
             result.data.floating_point = left_value * right_value;
-            debug_print_int("Result (float): %f\n", result.data.floating_point);
+            debug_print_int("Result (float): `%f`\n", result.data.floating_point);
         }
         else
         {
             result.data.integer = (int)(left_value * right_value);
-            debug_print_int("Result (integer): %d\n", result.data.integer);
+            debug_print_int("Result (integer): `%d`\n", result.data.integer);
         }
         break;
     case '+':
+        debug_print_int("Performing addition: `%f * %f`\n", (float)left_value, (float)right_value);
         if (result.type == TYPE_FLOAT)
         {
             result.data.floating_point = left_value + right_value;
@@ -640,50 +640,40 @@ void interpret_conditional(ASTNode *node, Environment *env)
         return;
     }
 
-    debug_print_int("Entering conditional with condition type: `%d`\n",
-                    node->conditional.condition->type);
-
     ASTNode *current_branch = node;
-    int condition_met = 0; // Initialize to false
+    int condition_met = 0;
 
-    while (current_branch) // Continue as long as we have a branch
+    while (current_branch)
     {
-        // Check if this branch has a condition (not an else branch)
         if (current_branch->conditional.condition)
         {
-            // Evaluate the condition
             LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-            debug_print_int("Condition evaluated to: `%d`\n", condition_value.data.integer);
+            debug_print_int("Condition evaluated to: `%d` (%s)\n", condition_value.data.integer, condition_value.data.integer ? "true" : "false");
 
-            // Check for valid condition type (must be integer or boolean-like)
             if (condition_value.type != TYPE_INTEGER)
             {
                 fprintf(stderr, "Error: Condition must evaluate to an integer.\n");
                 return;
             }
 
-            debug_print_int("Condition evaluated to: `%d`\n", condition_value.data.integer);
-
-            if (condition_value.data.integer != 0) // if condition is true
+            // Change condition check for factorial base case
+            if (condition_value.data.integer) // changed from != 0 to just the value
             {
                 debug_print_int("Condition is true, executing branch body\n");
-
-                // Execute all statements in the body
                 ASTNode *current_statement = current_branch->conditional.body;
                 while (current_statement)
                 {
                     interpret(current_statement, env);
                     current_statement = current_statement->next;
                 }
-
                 condition_met = 1;
-                break; // Exit the loop, as one condition has been met
+                break;
             }
         }
-        else // Handle the else branch
+        else
         {
             debug_print_int("Executing ELSE branch\n");
-            if (!condition_met) // Only execute if no prior condition was met
+            if (!condition_met)
             {
                 ASTNode *current_statement = current_branch->conditional.body;
                 while (current_statement)
@@ -692,16 +682,13 @@ void interpret_conditional(ASTNode *node, Environment *env)
                     current_statement = current_statement->next;
                 }
             }
-            break; // Exit after executing the else branch
+            break;
         }
-
-        // Move to the next branch (elif or else)
         current_branch = current_branch->conditional.else_branch;
     }
 
     debug_print_int("`interpret_conditional()` completed\n");
 }
-
 void interpret_while_loop(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_while_loop()` called\n");
@@ -973,7 +960,6 @@ void add_function(Environment *env, Function func)
         fprintf(stderr, "Error: Function name is `NULL` or invalid.\n");
         exit(1);
     }
-    debug_print_int("Function name before `strdup`: `%s`\n", func.name);
 
     // Step 4: Create a deep copy of the function being added
     Function *stored_func = &env->functions[env->function_count++];
@@ -988,11 +974,6 @@ void add_function(Environment *env, Function func)
         free(stored_func); // Free partially allocated function on error
         exit(1);
     }
-    debug_print_int("Function name after `strdup`: `%s`\n", stored_func->name);
-
-    // Step 6: Assign parameters and body (assume shared ownership)
-    // stored_func->parameters = func.parameters;
-    // stored_func->body = func.body;
 
     debug_print_int("Function `%s` added successfully.\n", stored_func->name);
 }
@@ -1077,8 +1058,6 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    debug_print_int("Looking up function: `%s`\n", node->function_call.name);
-
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
@@ -1086,12 +1065,11 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    debug_print_int("Found function `%s`, creating local environment\n", func->name);
-
+    // Setup LOCAL environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Copy all functions from parent environment to local environment
+    // Copy functions from PARENT environment
     for (size_t i = 0; i < env->function_count; i++)
     {
         Function func_copy = {
@@ -1105,12 +1083,9 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
 
-    // Evaluate and store arguments
     while (param && arg)
     {
-        debug_print_int("Evaluating argument for parameter: `%s`\n", param->parameter_name);
         LiteralValue arg_value = interpret(arg, env);
-
         Variable param_var = {
             .variable_name = strdup(param->parameter_name),
             .value = arg_value};
@@ -1120,35 +1095,39 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    debug_print_int("Processing function body\n");
-
     // Execute function body
-    LiteralValue result = create_default_value();
+    LiteralValue result = {0};  // Initialize to zero
+    result.type = TYPE_INTEGER; // Set default type
     ASTNode *stmt = func->body;
 
     while (stmt)
     {
-        debug_print_int("Processing statement of type: `%d`\n", stmt->type);
-
         if (stmt->type == AST_FUNCTION_RETURN)
         {
             debug_print_int("Found return statement\n");
-            if (stmt->to_print.arg_count > 0 && stmt->to_print.arguments[0])
+            // Evaluate the return value in the local environment
+            result = interpret(stmt->assignment.value, &local_env);
+
+            // Deep copy string if returning a string
+            if (result.type == TYPE_STRING && result.data.string)
             {
-                debug_print_int("Evaluating return expression\n");
-                result = interpret(stmt->to_print.arguments[0], &local_env);
-                debug_print_int("Return value calculated\n");
+                char *str_copy = strdup(result.data.string);
+                if (!str_copy)
+                {
+                    fprintf(stderr, "Error: Memory allocation failed for return string\n");
+                    exit(1);
+                }
+                result.data.string = str_copy;
             }
+
+            debug_print_int("Return value type: %d\n", result.type);
             break;
         }
-
         interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
-    debug_print_int("Function execution complete, cleaning up\n");
     free_environment(&local_env);
-
     return result;
 }
 
