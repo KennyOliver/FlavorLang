@@ -46,13 +46,15 @@ ASTNode *parse_program(Token *tokens)
         {
             new_node = parse_switch_block(state);
         }
-        else if (strcmp(token->lexeme, "is") == 0)
-        {
-            new_node = parse_block(state);
-        }
         else if (strcmp(token->lexeme, "create") == 0)
         {
             new_node = parse_function_declaration(state);
+        }
+        else if (token->type == TOKEN_FUNCTION_NAME)
+        {
+            new_node = parse_function_call(state);
+            // Expect semicolon after standalone function call
+            expect_token(state, TOKEN_DELIMITER, "Expected ';' after function call");
         }
         else
         {
@@ -943,6 +945,12 @@ ASTNode *parse_function_declaration(ParserState *state)
 
 ASTNode *parse_argument_list(ParserState *state)
 {
+    // Check for empty argument list first
+    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE)
+    {
+        return NULL; // return NULL for empty argument list
+    }
+
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
@@ -995,19 +1003,15 @@ ASTNode *parse_function_call(ParserState *state)
 
     // Initialize both parameters and arguments to NULL
     node->function_call.parameters = NULL;
-    node->function_call.arguments = NULL; // Note to self: make sure to initialize this!
+    node->function_call.arguments = NULL;
 
     // Parse arguments (if any)
-    if (get_current_token(state)->type == TOKEN_PAREN_OPEN &&
-        strcmp(get_current_token(state)->lexeme, "(") == 0)
-    {
-        advance_token(state); // consume `(`
+    expect_token(state, TOKEN_PAREN_OPEN, "Expected '(' after function name");
 
-        // Store in arguments instead of parameters for function calls
-        node->function_call.arguments = parse_argument_list(state);
+    // Parse argument list (which can now be empty)
+    node->function_call.arguments = parse_argument_list(state);
 
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
-    }
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected ')' after argument list");
 
     node->next = NULL;
     return node;

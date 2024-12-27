@@ -18,7 +18,7 @@ create func3(x) {
 }
 
 create func4() {
-    return -5;
+    return 0 + 8;
 }
 
 
@@ -28,9 +28,9 @@ show "Result 1:", result1;
 let result2 = func2(2, 8);
 show "Result 2:", result2;
 
-# let result3 = func3(2);
-# func3();
-# show "Result 3:", result3;
+let result3 = func3(2);
+func3(5);
+show "Result 3:", result3;
 
-# let result4 = func4(2, 3);
-# show "Result 4:", result4;
+let result4 = func4();
+show "Result 4:", result4;
