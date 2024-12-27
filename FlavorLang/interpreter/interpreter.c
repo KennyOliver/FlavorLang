@@ -165,25 +165,6 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env)
         exit(1);
     }
 
-    if (var->value.type == TYPE_FLOAT)
-    {
-        debug_print_int("Retrieved variable `%s` with value `%f`\n",
-                        node->variable_name,
-                        var->value.data.floating_point);
-    }
-    else if (var->value.type == TYPE_INTEGER)
-    {
-        debug_print_int("Retrieved variable `%s` with value `%f`\n",
-                        node->variable_name,
-                        var->value.data.integer);
-    }
-    else if (var->value.type == TYPE_STRING)
-    {
-        debug_print_int("Retrieved variable `%s` with value `%s`\n",
-                        node->variable_name,
-                        var->value.data.string);
-    }
-
     return var->value;
 }
 
