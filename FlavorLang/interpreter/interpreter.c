@@ -515,7 +515,16 @@ void interpret_print(ASTNode *node, Environment *env)
         switch (value.type)
         {
         case TYPE_FLOAT:
-            printf("%f", value.data.floating_point);
+            if ((int)value.data.floating_point == value.data.floating_point)
+            {
+                // Value is effectively an integer, force one decimal place
+                printf("%.1f", value.data.floating_point);
+            }
+            else
+            {
+                // Otherwise, use `%g` for trimming unnecessary zeroes
+                printf("%g", value.data.floating_point);
+            }
             break;
         case TYPE_INTEGER:
             printf("%d", value.data.integer);
