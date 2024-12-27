@@ -1,7 +1,7 @@
 #ifndef LEXER_H
 #define LEXER_H
 
-#include "../shared/common.h"
+#include "../shared/token_types.h"
 
 // Read a file into a string
 char *read_file(const char *filename);
