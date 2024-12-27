@@ -1,6 +1,6 @@
-#include "tokenizer.h"
+#include "lexer.h"
 #include "keywords.h"
-#include "token_utils.h"
+#include "lexer_utils.h"
 #include "../debug/debug.h"
 #include <string.h>
 #include <ctype.h>
