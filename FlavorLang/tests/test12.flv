@@ -1,0 +1,10 @@
+let stop_loop = False;
+let count = 0;
+
+while stop_loop != True {
+    show "Count:", count;
+    
+    if count < 10 {
+        count = count + 1;
+    }
+}
