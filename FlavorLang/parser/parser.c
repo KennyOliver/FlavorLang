@@ -499,38 +499,24 @@ ASTNode *parse_conditional_block(ParserState *state) {
 }
 
 ASTNode *parse_while_block(ParserState *state) {
-    // Allocate memory for the ASTNode
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
-    // Set the node type to loop
     node->type = AST_LOOP;
 
-    // Ensure the current token is 'while'
-    Token *current = get_current_token(state);
-    if (strcmp(current->lexeme, "while") != 0) {
-        parser_error("Expected `while` keyword", current);
-    }
-    advance_token(state);
+    // Ensure the current token is `while`
+    expect_token(state, TOKEN_KEYWORD, "Expected `while` keyword");
 
     // Parse the condition expression
     node->loop.condition = parse_expression(state);
 
-    // Expect a colon after the condition
-    current = get_current_token(state);
-    if (current->type != TOKEN_DELIMITER || strcmp(current->lexeme, ":") != 0) {
-        parser_error("Expected `:` after while condition", current);
-    }
-    advance_token(state);
-
-    // Parse the loop body (indented block)
+    expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
     node->loop.body = parse_block(state);
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
 
-    // Add code to re-evaluate the condition after each iteration
-    node->loop.re_evaluate_condition = 1; // Flag to indicate re-evaluation
-
+    // Optional re-evaluation logic
+    node->loop.re_evaluate_condition = 1;
     node->next = NULL;
     return node;
 }
