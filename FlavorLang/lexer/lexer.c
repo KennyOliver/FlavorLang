@@ -45,6 +45,7 @@ Token *tokenize(const char *source) {
     while (state.pos < state.length) {
         char c = state.source[state.pos];
 
+        // Whitespace
         if (is_whitespace(c)) {
             if (c == '\n') {
                 state.line++;
@@ -53,32 +54,44 @@ Token *tokenize(const char *source) {
             continue;
         }
 
+        // Comment
         if (c == '#') {
             scan_comment(&state);
             continue;
         }
 
+        // Number (Float & Integer)
         if (isdigit(c)) {
             scan_number(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
+        // String
         if (c == '"') {
             scan_string(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
+        // Boolean
+        if (c == 'F' || c == 'T') {
+            scan_boolean(&state, &tokens, &token_count, &capacity);
+            continue;
+        }
+
+        // Identifier
         if (is_valid_identifier_start(c)) {
             scan_identifier_or_keyword(&state, &tokens, &token_count,
                                        &capacity);
             continue;
         }
 
+        // Operator
         if (strchr("=+-*/<>!", c)) {
             scan_operator(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
+        // Delimiters
         if (strchr(",:;(){}", c)) {
             if (c == '(') {
                 // Peek previous token to check if it's an identifier for
