@@ -20,7 +20,21 @@ ASTNode *parse_program(Token *tokens)
         }
         else if (token->type == TOKEN_IDENTIFIER)
         {
-            new_node = parse_variable_assignment(state);
+            // Peek ahead to see if next token is an operator and if it's '='
+            Token *next_token = peek_next_token(state);
+            if (next_token &&
+                next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0)
+            {
+                // It's truly an assignment of the form `x = ...`
+                new_node = parse_variable_assignment(state);
+            }
+            else
+            {
+                // Otherwise, parse a plain expression statement (e.g. `n - 1;`)
+                // or a stand-alone function call that uses an identifier, etc.
+                new_node = parse_expression_statement(state);
+            }
         }
         else if (strcmp(token->lexeme, "show") == 0)
         {
@@ -76,6 +90,20 @@ ASTNode *parse_program(Token *tokens)
 
     free_parser_state(state);
     return head;
+}
+
+Token *peek_next_token(ParserState *state)
+{
+    // Just look at the next token (but don’t advance)
+    return &state->tokens[state->current_token + 1];
+}
+
+ASTNode *parse_expression_statement(ParserState *state)
+{
+    // Parse the expression (which can handle binary ops, variables, etc.)
+    ASTNode *expr_node = parse_expression(state);
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after expression statement");
+    return expr_node;
 }
 
 ASTNode *parse_variable_declaration(ParserState *state)
@@ -517,7 +545,17 @@ ASTNode *parse_block(ParserState *state)
         }
         else if (current->type == TOKEN_IDENTIFIER)
         {
-            statement = parse_variable_assignment(state);
+            Token *next_token = peek_next_token(state);
+            if (next_token &&
+                next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0)
+            {
+                statement = parse_variable_assignment(state);
+            }
+            else
+            {
+                statement = parse_expression_statement(state);
+            }
         }
         else if (current->type == TOKEN_PAREN_CLOSE)
         {
