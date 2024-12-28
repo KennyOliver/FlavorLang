@@ -72,12 +72,6 @@ Token *tokenize(const char *source) {
             continue;
         }
 
-        // Boolean
-        if (c == 'F' || c == 'T') {
-            scan_boolean(&state, &tokens, &token_count, &capacity);
-            continue;
-        }
-
         // Identifier
         if (is_valid_identifier_start(c)) {
             scan_identifier_or_keyword(&state, &tokens, &token_count,

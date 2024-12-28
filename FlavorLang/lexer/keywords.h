@@ -1,6 +1,7 @@
 #ifndef KEYWORDS_H
 #define KEYWORDS_H
 
+#include "../shared/token_types.h"
 #include <ctype.h>
 #include <stdlib.h>
 

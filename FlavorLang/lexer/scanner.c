@@ -111,16 +111,12 @@ void scan_identifier_or_keyword(ScannerState *state, Token **tokens,
 
     char *lexeme = strndup(&state->source[start], state->pos - start);
 
-    // Skip whitespace to check for function call
-    size_t temp_pos = state->pos;
-    while (temp_pos < state->length && isspace(state->source[temp_pos]))
-        temp_pos++;
-
-    if (temp_pos < state->length && state->source[temp_pos] == '(' &&
-        !is_keyword(lexeme)) {
-        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme,
+    // Determine if the lexeme is a keyword or identifier
+    int keyword_type = is_keyword(lexeme);
+    if (keyword_type == TOKEN_BOOLEAN) {
+        append_token(tokens, token_count, capacity, TOKEN_BOOLEAN, lexeme,
                      state->line);
-    } else if (is_keyword(lexeme)) {
+    } else if (keyword_type == TOKEN_KEYWORD) {
         append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme,
                      state->line);
     } else {
