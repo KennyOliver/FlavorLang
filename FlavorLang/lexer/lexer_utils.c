@@ -1,7 +1,7 @@
 #include "lexer_utils.h"
-#include <stdlib.h>
-#include <string.h>
+#include "../debug/debug.h"
 #include <ctype.h>
+#include <stdlib.h>
 
 #define TOKEN_ARRAY_GROWTH_FACTOR 2
 
@@ -84,26 +84,9 @@ void append_token(Token **tokens, size_t *count, size_t *capacity,
     }
 
     (*tokens)[*count] = (Token){
-        .type = type,
-        .lexeme = lexeme ? strdup(lexeme) : NULL,
-        .line = line};
+        .type = type, .lexeme = lexeme ? strdup(lexeme) : NULL, .line = line};
 
     (*count)++;
-}
-
-int is_valid_identifier_start(char c)
-{
-    return isalpha(c) || c == '_';
-}
-
-int is_valid_identifier_char(char c)
-{
-    return isalnum(c) || c == '_';
-}
-
-int is_whitespace(char c)
-{
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
 }
 
 void token_error(const char *message, int line)
@@ -153,10 +136,8 @@ void print_token(const Token *token)
         break;
     }
 
-    printf("Token{type: %s, lexeme: \"%s\", line: %d}\n",
-           type_str,
-           token->lexeme ? token->lexeme : "NULL",
-           token->line);
+    printf("Token{type: %s, lexeme: \"%s\", line: %d}\n", type_str,
+           token->lexeme ? token->lexeme : "NULL", token->line);
 }
 
 void dump_token_array(const Token *tokens, size_t count)
@@ -166,5 +147,29 @@ void dump_token_array(const Token *tokens, size_t count)
     {
         printf("[%zu] ", i);
         print_token(&tokens[i]);
+    }
+}
+
+void debug_print_tokens(Token *tokens)
+{
+    if (debug_flag)
+    {
+        int last_line = 0;
+
+        for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
+        {
+            if (tokens[i].line != last_line)
+            {
+                debug_print_lex("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line,
+                                tokens[i].type, tokens[i].lexeme);
+                last_line = tokens[i].line; // `last_line++` would only work if there
+                                            // were no empty lines
+            }
+            else
+            {
+                debug_print_lex("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type,
+                                tokens[i].lexeme);
+            }
+        }
     }
 }

@@ -1,21 +1,4 @@
 #include "lexer.h"
-#include "keywords.h"
-#include "lexer_utils.h"
-#include "../debug/debug.h"
-#include <string.h>
-#include <ctype.h>
-
-// Forward declarations of internal functions
-static void handle_comment(const char *source, size_t *pos);
-static void handle_number(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity, int line);
-static void handle_string(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity, int line);
-static void handle_identifier_or_keyword(const char *source, size_t *pos, size_t length,
-                                         Token **tokens, size_t *token_count, size_t *capacity, int line);
-static void handle_operator(const char *source, size_t *pos, size_t length,
-                            Token **tokens, size_t *token_count, size_t *capacity, int line);
-void print_tokens(Token *tokens);
 
 char *read_file(const char *filename)
 {
@@ -50,9 +33,12 @@ Token *tokenize(const char *source)
     if (!source)
         return NULL;
 
-    size_t pos = 0;
-    size_t length = strlen(source);
-    int line = 1;
+    // Initialize ScannerState
+    ScannerState state = {
+        .source = source,
+        .length = strlen(source),
+        .pos = 0,
+        .line = 1};
 
     size_t capacity = INITIAL_TOKEN_CAPACITY;
     size_t token_count = 0;
@@ -64,47 +50,47 @@ Token *tokenize(const char *source)
         return NULL;
     }
 
-    while (pos < length)
+    while (state.pos < state.length)
     {
-        char c = source[pos];
+        char c = state.source[state.pos];
 
         if (is_whitespace(c))
         {
             if (c == '\n')
             {
-                line++;
+                state.line++;
             }
-            pos++;
+            state.pos++;
             continue;
         }
 
         if (c == '#')
         {
-            handle_comment(source, &pos);
+            scan_comment(&state);
             continue;
         }
 
         if (isdigit(c))
         {
-            handle_number(source, &pos, length, &tokens, &token_count, &capacity, line);
+            scan_number(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (c == '"')
         {
-            handle_string(source, &pos, length, &tokens, &token_count, &capacity, line);
+            scan_string(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (is_valid_identifier_start(c))
         {
-            handle_identifier_or_keyword(source, &pos, length, &tokens, &token_count, &capacity, line);
+            scan_identifier_or_keyword(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (strchr("=+-*/<>", c))
         {
-            handle_operator(source, &pos, length, &tokens, &token_count, &capacity, line);
+            scan_operator(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
@@ -113,199 +99,32 @@ Token *tokenize(const char *source)
             if (c == '(' || c == '{')
             {
                 // Peek previous token to check if it's an identifier
-                if (token_count > 0 && tokens[token_count - 1].type == TOKEN_IDENTIFIER)
+                if (token_count > 0 &&
+                    tokens[token_count - 1].type == TOKEN_IDENTIFIER)
                 {
                     // Retroactively convert identifier to function call
                     tokens[token_count - 1].type = TOKEN_FUNCTION_NAME;
                 }
-                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN, strndup(&source[pos], 1), line);
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN,
+                             strndup(&state.source[state.pos], 1), state.line);
             }
             else if (c == ')' || c == '}')
             {
-                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE, strndup(&source[pos], 1), line);
+                append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE,
+                             strndup(&state.source[state.pos], 1), state.line);
             }
             else
             {
-                append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER, strndup(&source[pos], 1), line);
+                append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER,
+                             strndup(&state.source[state.pos], 1), state.line);
             }
-            pos++;
+            state.pos++;
             continue;
         }
 
-        token_error("Unexpected character encountered", line);
+        token_error("Unexpected character encountered", state.line);
     }
 
-    append_token(&tokens, &token_count, &capacity, TOKEN_EOF, NULL, line);
+    append_token(&tokens, &token_count, &capacity, TOKEN_EOF, NULL, state.line);
     return tokens;
-}
-
-static void handle_comment(const char *source, size_t *pos)
-{
-    while (source[*pos] != '\0' && source[*pos] != '\n')
-    {
-        (*pos)++;
-    }
-}
-
-static void handle_number(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity, int line)
-{
-    size_t start = *pos;
-    bool has_decimal_point = false;
-    bool is_negative = false;
-
-    // Check for negative sign
-    if (source[*pos] == '-')
-    {
-        // Need to verify this is actually a negative number and not a subtraction operator
-        // Look backwards for any previous token that would indicate this is a number
-        // (start of input, opening paren, operator, etc.)
-        bool is_start_of_expression = true;
-        if (*token_count > 0)
-        {
-            TokenType prev_type = (*tokens)[*token_count - 1].type;
-            if (prev_type == TOKEN_INTEGER || prev_type == TOKEN_FLOAT ||
-                prev_type == TOKEN_IDENTIFIER || prev_type == TOKEN_STRING ||
-                prev_type == TOKEN_PAREN_CLOSE)
-            {
-                // Likely a subtraction operator, not a negative sign
-                is_start_of_expression = false;
-            }
-        }
-
-        if (is_start_of_expression)
-        {
-            is_negative = true;
-            (*pos)++; // move past the negative sign
-        }
-        else
-        {
-            // Handle this as an operator instead
-            handle_operator(source, pos, length, tokens, token_count, capacity, line);
-            return;
-        }
-    }
-
-    // Verify there's at least one digit after the negative sign
-    if (*pos >= length || !isdigit(source[*pos]))
-    {
-        if (is_negative)
-        {
-            (*pos) = start; // reset position
-            handle_operator(source, pos, length, tokens, token_count, capacity, line);
-            return;
-        }
-        token_error("Invalid number format", line);
-    }
-
-    // Handle digits before & after a potential decimal point
-    while (*pos < length && (isdigit(source[*pos]) || (source[*pos] == '.' && !has_decimal_point)))
-    {
-        if (source[*pos] == '.')
-        {
-            if (*pos + 1 >= length || !isdigit(source[*pos + 1]))
-            {
-                // If there's no digit after the decimal point, treat the decimal as a separate token
-                break;
-            }
-            has_decimal_point = true;
-        }
-        (*pos)++;
-    }
-
-    char *lexeme = strndup(&source[start], *pos - start);
-    TokenType type = has_decimal_point ? TOKEN_FLOAT : TOKEN_INTEGER;
-    append_token(tokens, token_count, capacity, type, lexeme, line);
-    free(lexeme);
-}
-
-static void handle_string(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity, int line)
-{
-    size_t start = ++(*pos); // skip opening quote
-    while (*pos < length && source[*pos] != '"')
-    {
-        (*pos)++;
-    }
-    if (*pos >= length || source[*pos] != '"')
-    {
-        token_error("Unterminated string literal", line);
-    }
-    char *lexeme = strndup(&source[start], *pos - start);
-    append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme, line);
-    free(lexeme);
-    (*pos)++; // Skip closing quote
-}
-
-static void handle_identifier_or_keyword(const char *source, size_t *pos, size_t length,
-                                         Token **tokens, size_t *token_count, size_t *capacity, int line)
-{
-    size_t start = *pos;
-    while (*pos < length && is_valid_identifier_char(source[*pos]))
-    {
-        (*pos)++;
-    }
-
-    char *lexeme = strndup(&source[start], *pos - start);
-
-    // Skip whitespace to check for function call
-    size_t temp_pos = *pos;
-    while (temp_pos < length && isspace(source[temp_pos]))
-        temp_pos++;
-
-    if (temp_pos < length && source[temp_pos] == '(' && !is_keyword(lexeme))
-    {
-        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme, line);
-    }
-    else if (is_keyword(lexeme))
-    {
-        append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme, line);
-    }
-    else
-    {
-        append_token(tokens, token_count, capacity, TOKEN_IDENTIFIER, lexeme, line);
-    }
-    free(lexeme);
-}
-
-static void handle_operator(const char *source, size_t *pos, size_t length,
-                            Token **tokens, size_t *token_count, size_t *capacity, int line)
-{
-    if ((*pos < length - 1) && ((source[*pos] == '=' && source[*pos + 1] == '=') ||
-                                (source[*pos] == '>' && source[*pos + 1] == '=') ||
-                                (source[*pos] == '<' && source[*pos + 1] == '=')))
-    {
-        char *lexeme = strndup(&source[*pos], 2);
-        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, line);
-        free(lexeme);
-        *pos += 2;
-    }
-    else
-    {
-        char *lexeme = strndup(&source[*pos], 1);
-        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, line);
-        free(lexeme);
-        (*pos)++;
-    }
-}
-
-void debug_print_tokens(Token *tokens)
-{
-    if (debug_flag)
-    {
-        int last_line = 0;
-
-        for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
-        {
-            if (tokens[i].line != last_line)
-            {
-                debug_print_lex("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line, tokens[i].type, tokens[i].lexeme);
-                last_line = tokens[i].line; // `last_line++` would only work if there were no empty lines
-            }
-            else
-            {
-                debug_print_lex("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type, tokens[i].lexeme);
-            }
-        }
-    }
 }
