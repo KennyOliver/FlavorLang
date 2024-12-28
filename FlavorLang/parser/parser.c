@@ -20,7 +20,21 @@ ASTNode *parse_program(Token *tokens)
         }
         else if (token->type == TOKEN_IDENTIFIER)
         {
-            new_node = parse_variable_assignment(state);
+            // Peek ahead to see if next token is an operator and if it's '='
+            Token *next_token = peek_next_token(state);
+            if (next_token &&
+                next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0)
+            {
+                // It's truly an assignment of the form `x = ...`
+                new_node = parse_variable_assignment(state);
+            }
+            else
+            {
+                // Otherwise, parse a plain expression statement (e.g. `n - 1;`)
+                // or a stand-alone function call that uses an identifier, etc.
+                new_node = parse_expression_statement(state);
+            }
         }
         else if (strcmp(token->lexeme, "show") == 0)
         {
@@ -76,6 +90,20 @@ ASTNode *parse_program(Token *tokens)
 
     free_parser_state(state);
     return head;
+}
+
+Token *peek_next_token(ParserState *state)
+{
+    // Just look at the next token (but don’t advance)
+    return &state->tokens[state->current_token + 1];
+}
+
+ASTNode *parse_expression_statement(ParserState *state)
+{
+    // Parse the expression (which can handle binary ops, variables, etc.)
+    ASTNode *expr_node = parse_expression(state);
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after expression statement");
+    return expr_node;
 }
 
 ASTNode *parse_variable_declaration(ParserState *state)
@@ -141,8 +169,7 @@ ASTNode *parse_variable_assignment(ParserState *state)
     }
 
     node->type = AST_ASSIGNMENT;
-    // node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.variable_name = name->lexeme;
+    node->assignment.variable_name = strdup(name->lexeme);
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
@@ -228,28 +255,6 @@ ASTNode *parse_input(ParserState *state)
 
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
     node->next = NULL;
-    return node;
-}
-
-ASTNode *parse_identifier(ParserState *state)
-{
-    Token *current = get_current_token(state);
-    if (current->type != TOKEN_IDENTIFIER)
-    {
-        parser_error("Expected identifier", current);
-    }
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
-        parser_error("Memory allocation failed", current);
-    }
-
-    node->type = AST_ASSIGNMENT;
-    node->variable_name = strdup(current->lexeme);
-    node->next = NULL;
-
-    advance_token(state);
     return node;
 }
 
@@ -408,9 +413,10 @@ ASTNode *parse_function_return(ParserState *state)
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_data = parse_expression(state);
-    node->next = NULL;
+    // node->function_call.return_data = parse_expression(state);
+    node->assignment.value = parse_expression(state);
 
+    node->next = NULL;
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
     return node;
 }
@@ -516,7 +522,17 @@ ASTNode *parse_block(ParserState *state)
         }
         else if (current->type == TOKEN_IDENTIFIER)
         {
-            statement = parse_variable_assignment(state);
+            Token *next_token = peek_next_token(state);
+            if (next_token &&
+                next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0)
+            {
+                statement = parse_variable_assignment(state);
+            }
+            else
+            {
+                statement = parse_expression_statement(state);
+            }
         }
         else if (current->type == TOKEN_PAREN_CLOSE)
         {
@@ -541,48 +557,6 @@ ASTNode *parse_block(ParserState *state)
         {
             tail->next = statement;
             tail = statement;
-        }
-    }
-
-    // Handle implicit return for function bodies
-    if (state->in_function_body)
-    {
-        if (!head)
-        {
-            // Block is empty, add implicit return
-            head = malloc(sizeof(ASTNode));
-            if (!head)
-            {
-                parser_error("Memory allocation failed for implicit return", NULL);
-            }
-            head->type = AST_FUNCTION_RETURN;
-            head->function_call.return_data = NULL;
-            head->next = NULL;
-        }
-        else
-        {
-            // Check the last statement
-            ASTNode *last_statement = head;
-            while (last_statement->next)
-            {
-                last_statement = last_statement->next;
-            }
-
-            if (last_statement->type != AST_FUNCTION_RETURN)
-            {
-                // Add implicit return
-                ASTNode *implicit_return = malloc(sizeof(ASTNode));
-                if (!implicit_return)
-                {
-                    parser_error("Memory allocation failed for implicit return", NULL);
-                }
-                implicit_return->type = AST_FUNCTION_RETURN;
-                implicit_return->function_call.return_data = NULL;
-                implicit_return->next = NULL;
-
-                last_statement->next = implicit_return;
-                debug_print_par("Implicit return added to block\n");
-            }
         }
     }
 
@@ -874,42 +848,6 @@ ASTNode *parse_function_body(ParserState *state)
 {
     ASTNode *body = parse_block(state);
 
-    if (!body)
-    {
-        // Implicit return for empty function bodies
-        body = malloc(sizeof(ASTNode));
-        if (!body)
-        {
-            parser_error("Memory allocation failed for implicit return", NULL);
-        }
-        body->type = AST_FUNCTION_RETURN;
-        body->function_call.return_data = NULL;
-        body->next = NULL;
-        debug_print_par("Implicit return added to empty function body\n");
-    }
-    else
-    {
-        // Add implicit return if the last statement isn't a return
-        ASTNode *last_statement = body;
-        while (last_statement->next)
-        {
-            last_statement = last_statement->next;
-        }
-        if (last_statement->type != AST_FUNCTION_RETURN)
-        {
-            ASTNode *implicit_return = malloc(sizeof(ASTNode));
-            if (!implicit_return)
-            {
-                parser_error("Memory allocation failed for implicit return", NULL);
-            }
-            implicit_return->type = AST_FUNCTION_RETURN;
-            implicit_return->function_call.return_data = NULL;
-            implicit_return->next = NULL;
-            last_statement->next = implicit_return;
-            debug_print_par("Implicit return added to function body\n");
-        }
-    }
-
     return body;
 }
 
@@ -1037,6 +975,7 @@ ASTNode *parse_function_call(ParserState *state)
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
+    debug_print_par("AST_FUNCTION_CALL\n");
     node->function_call.name = strdup(name->lexeme);
 
     // Initialize both parameters and arguments to NULL
