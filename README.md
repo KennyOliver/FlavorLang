@@ -139,6 +139,9 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
 
+<details>
+<summary>Expand to see examples</summary>
+
 ### 1. 👋 Hello World <a id="hello-world"></a>
 
 The simplest program to print "Hello world!".
@@ -298,6 +301,8 @@ if time > 15:
 
 show "After error?";
 ```
+
+</details>
 
 ---
 
@@ -481,310 +486,209 @@ $ ./flavor tests/test3.flv --debug
 
 ## Lexer <a id="lexer"></a>
 
-The FlavorLang lexer is responsible for breaking down source code into its fundamental components, known as tokens. These tokens deliver as the input for the parser and play a crucial role in interpreting and executing FlavorLang programs.
+The FlavorLang lexer is responsible for breaking the input source code into fundamental components, called **tokens**. These tokens then serve as the input for the parser, enabling FlavorLang to interpret and execute your code.
 
 ### Overview <a id="lexer-overview"></a>
 
-| Token Type | Examples                          | Description                                         |
-| ---------- | --------------------------------- | --------------------------------------------------- |
-| KEYWORD    | `show`, `create`, `deliver`, `if` | Redeliverd keywords in the language.                |
-| IDENTIFIER | `cake`, `temperature`             | Variable or function names.                         |
-| NUMBER     | `42`, `200`, `3.14`               | Integer or floating-point numbers.                  |
-| STRING     | `"Hello World!"`                  | String literals.                                    |
-| SYMBOL     | `=`, `:`, `,`, `+`, `-`           | Operators, colons, parentheses, etc.                |
-| NEWLINE    | `\n`                              | Marks the end of a line.                            |
-| WHITESPACE | ` `, `\t`                         | Spaces or tabs (can be ignored).                    |
-| COMMENT    | `#`                               | This is a comment Lines starting with # (optional). |
-| EOF        | End of input                      | Signals the end of the program.                     |
+Below are the **core** token types recognized by the lexer:
+
+| Token Type     | Examples                          | Description                                                      |
+| -------------- | --------------------------------- | ---------------------------------------------------------------- |
+| **KEYWORD**    | `show`, `create`, `deliver`, `if` | Reserved language keywords (e.g., `let`, `while`, `burn`, etc.). |
+| **IDENTIFIER** | `cake`, `temperature`             | Names for variables, functions, or parameters.                   |
+| **NUMBER**     | `42`, `200`, `3.14`               | Integer or floating-point numeric literals.                      |
+| **STRING**     | `"Hello World!"`                  | Text enclosed in double quotes.                                  |
+| **OPERATOR**   | `=`, `==`, `+`, `-`, `>=`         | Single or multi-character operators used in expressions.         |
+| **DELIMITER**  | `,`, `:`, `(`, `)`, `;`, `{`, `}` | Punctuation symbols that mark statement boundaries or grouping.  |
+| **COMMENT**    | `#`                               | Everything from `#` to the end of a line is ignored.             |
+| **EOF**        | End of input                      | Signifies that there are no more tokens to read.                 |
 
 ### How the Lexer Works
 
-#### 1. Input and Initialization
+1. **Input & Initialization**
 
-    - The lexer reads the entire source code from a file or string input.
-    - It initializes a token buffer to store the tokens and processes the input character by character.
+   - The lexer reads the entire file into a string.
+   - It creates a token buffer (dynamic array) that grows as needed.
 
-#### 2. Character Classification
+2. **Character Classification**
 
-Each character in the source is categorized into one of the following types:
+   - **Whitespace** is skipped, incrementing `line` if `\n`.
+   - **Comments** begin with `#` and continue until end of line.
+   - **Numbers** are sequences of digits (`0-9`), optionally including one decimal point.
+   - **Strings** are enclosed in double quotes (`"`), supporting multiple characters.
+   - **Identifiers or Keywords** are alphanumeric sequences that either match a keyword (e.g., `let`) or become `IDENTIFIER`.
+   - **Operators** (e.g. `=`, `==`, `>=`) may be single or multi-character.
+   - **Delimiters** (e.g. `,`, `;`, `(`) are tokenized in a straightforward manner.
 
-- **Whitespace**: Skipped, with line numbers updated for newlines.
-- **Comments**: Ignored after the `#` symbol until the end of the line.
-- **Numbers**: Sequences of digits are recognized as numeric literals.
-- **Strings**: Text enclosed in double quotes `"` is identified as a string literal.
-- **Identifiers or Keywords**: Alphanumeric sequences starting with a valid character are checked against a keyword list or treated as identifiers.
-- **Operators**: Symbols like `=`, `+`, and `>=` are parsed as operators.
-- **Delimiters**: Characters such as `,`, `:`, and `(` are directly tokenized.
-- **_Unexpected characters trigger a syntax error._**
+3. **Token Construction**
 
-#### 3. Token Construction
+   - Each recognized piece of text is turned into a token:
+     - **Type**: The token kind (keyword, number, operator, etc.).
+     - **Lexeme**: The exact substring from the source code.
+     - **Line Number**: The line on which the token appears.
 
-- For each recognized character or sequence, a token is created with the following attributes:
-- Type: The kind of token (e.g., TOKEN_NUMBER, TOKEN_IDENTIFIER, TOKEN_OPERATOR).
-- Lexeme: The string representation of the token.
-- Line Number: The line where the token was encountered.
-- Tokens are stored in a dynamically allocated array, which grows as needed.
+4. **End of File**
+   - After scanning all characters, the lexer appends a `TOKEN_EOF` to signify there are no more tokens.
 
-#### 4. End of File
+#### Tokenizing Key Constructs
 
-- After processing all characters, a special `TOKEN_EOF` is appended to signal the end of the input.
-
-### Tokenizing Key Constructs
-
-#### 1. Comments
-
-- Begin with `#` and continue until the end of the line.
-- Ignored entirely by the lexer.
-
-#### 2. Numbers
-
-- Consist of one or more digits (0-9).
-- **Example**: `123` → `TOKEN_NUMBER`
-
-#### 3. Strings
-
-- Enclosed in double quotes `"`and may span multiple characters.
-- Unterminated strings result in a syntax error.
-- **Example**: `"Hello"` → `TOKEN_STRING`
-
-#### 4. Identifiers and Keywords
-
-- **Identifiers**: Alphanumeric sequences used for variables and function names.
-- **Keywords**: Reserved words like `for`, `if`, and `let`.
-- The lexer determines if a sequence matches a keyword using the is_keyword function.
-- **Example**: `for` → `TOKEN_KEYWORD`, `myVar` → `TOKEN_IDENTIFIER`
-
-#### 5. Operators
-
-- Single or multi-character symbols (=, ==, >=).
-- Multi-character operators are recognized first to ensure proper tokenization.
-- Example: `>=` → `TOKEN_OPERATOR`
-
-#### 6. Delimiters
-
-- Single-character symbols like `,`, `:`, and `(` are tokenized directly.
-- Example: `,` → `TOKEN_DELIMITER`
+- **Comments**: Start at `#` and continue until `\n`. The lexer ignores them entirely.
+- **Numbers**: If digits are encountered, they may form either an `INTEGER` or `FLOAT` if a decimal point is found.
+- **Strings**: Start and end with `"`. Unterminated strings trigger an error.
+- **Identifiers/Keywords**: Any valid identifier start (letter or `_`) followed by letters/digits forms an identifier, and it’s cross-checked against a keywords list to decide if it’s `KEYWORD`.
+- **Operators**: Single (`+`, `-`, `=`) or multi-character (`==`, `>=`, `<=`) operators.
+- **Delimiters**: For punctuation like `,`, `(`, `)`, `;`, the lexer directly appends a token.
 
 ### Debugging Tokens <a id="debugging-tokens"></a>
 
-- The lexer includes a debugging flag `--debug` to print all generated tokens.
-- Each token’s type, lexeme, and line number are displayed for easier inspection of the tokenization process.
+- Use the `--debug` flag to print all generated tokens (with their types, lexemes, and line numbers). This helps diagnose lexical issues quickly.
 
-#### Example Output:
+#### Example Debug Output
 
 ```
-[Line 1] Token Type: 1 | Lexeme: for
-[Line 1] Token Type: 2 | Lexeme: x
-[Line 1] Token Type: 3 | Lexeme: in
+[Line 1] Token Type: KEYWORD | Lexeme: let
+[Line 1] Token Type: IDENTIFIER | Lexeme: x
+[Line 1] Token Type: OPERATOR | Lexeme: =
+[Line 1] Token Type: INTEGER | Lexeme: 10
 ...
 ```
 
 ### Error Handling <a id="lexer-error-handling"></a>
 
-- The lexer raises errors for:
-- Unexpected characters.
-- Unterminated string literals.
-- Memory allocation failures.
-- Each error includes the line number to assist with debugging.
+- **Unexpected Characters**: If the lexer encounters an unrecognized symbol, it raises an error and terminates.
+- **Unterminated Strings**: If a `"` is opened and never closed, the lexer reports an error with the line number.
+- **Memory Allocation Failures**: If resizing or token creation fails, the lexer exits.
 
 ### Future Enhancements <a id="future-enhancements"></a>
 
-- Support for additional operators and delimiters.
-- Improved error recovery to handle malformed inputs gracefully.
-- Optimizations for performance with large files.
+- **Additional Operators**: E.g., `!=`, `++`, or typed operators if the language evolves.
+- **Better Error Recovery**: Instead of immediate exit, attempt to skip malformed input.
+- **Performance Tweaks**: For very large .flv files, more efficient reading and token building.
 
 ---
 
 ## Parser
 
-The parser converts the tokenized input into an Abstract Syntax Tree (AST), which represents the logical structure of the program.
+After the lexer produces tokens, the **parser** converts them into an **Abstract Syntax Tree (AST)** that represents the logical structure of the program.
 
 ### Key Structures
 
-- `ASTNode`: Represents a node in the syntax tree.
-- `ParserState`: Tracks the current token and handles parsing state.
-- `Token`: Represents individual units from the lexer (keywords, operators, literals, etc.).
+- **`ASTNode`**: The building block of the AST, representing statements, expressions, loops, etc.
+- **`ParserState`**: Tracks current token index, plus optional flags (e.g. `in_function_body`) for controlling parse flow.
+- **`Token`**: The lexical units from the lexer.
 
 ### Main Parsing Functions
 
-#### 1. `parse_program`
+1. **`parse_program`**
 
-- **Purpose**: Entry point for the parser. Processes the entire token stream.
-- **Steps**:
-  - Initializes `ParserState`.
-  - Iterates over tokens until `TOKEN_EOF` is reached.
-  - Based on the token type, invokes specific parsing functions (e.g., `parse_variable_declaration`, `parse_conditional_block`).
-  - Links parsed nodes into a linked list to form the AST.
+   - Initializes parser state, loops until `TOKEN_EOF`, and delegates each statement to the correct parse function.
 
-#### 2. `parse_variable_declaration`
+2. **`parse_variable_declaration`**
 
-- **Purpose**: Parses `let` statements (e.g., `let x = 10;`).
-- **Steps**:
-  - Ensures the token sequence matches `let <identifier> = <expression>;`.
-  - Creates an `AST_ASSIGNMENT` node, storing the variable name and its value.
-  - Expects a semicolon at the end of the declaration.
+   - Parses `let x = <expression>;`
+   - Produces an `AST_ASSIGNMENT` node with `variable_name` and the parsed `value`.
 
-#### 3. `parse_variable_assignment`
+3. **`parse_variable_assignment`**
 
-- **Purpose**: Parses assignments (e.g., `x = 20;`).
-  - **Steps**:
-  - Reads the identifier and ensures it’s followed by = and an expression.
-  - Creates an `AST_ASSIGNMENT` node linking the variable and its new value.
-  - Expects a semicolon at the end of the assignment.
+   - Parses direct assignments like `x = 20;`.
 
-#### 4. `parse_print_statement`
+4. **`parse_print_statement`**
 
-- **Purpose**: Parses `show` (print) statements (e.g., `show "Hello";`).
-  - **Steps**:
-  - Reads the show keyword and parses arguments until a semicolon.
-  - Stores arguments in an `AST_PRINT` node.
+   - Reads `show` and then one or more expressions (split by `,`) until a `;`.
+   - Produces an `AST_PRINT` node containing arguments.
 
-#### 5. `parse_expression`
+5. **`parse_expression`**
 
-- **Purpose**: Parses mathematical or logical expressions.
-- **Steps**:
-  - Calls parse_term to handle individual terms (identifiers, literals).
-  - Recursively parses binary operators to build a tree structure for expressions.
-  - **Output**: An `AST_BINARY_OP` node with left and right subtrees.
+   - Recursively parses numeric or string expressions (including binary operators).
+   - Results in `AST_BINARY_OP` nodes (like `x + 5`).
 
-#### 6. `parse_conditional_block`
+6. **`parse_conditional_block`**
 
-- **Purpose**: Parses `if`, `elif`, and `else` blocks.
-- **Steps**:
-  - Reads the condition after `if` or `elif` and expects a colon.
-  - Parses the block body and recursively handles `elif` or `else`.
-  - Creates an `AST_CONDITIONAL` node with condition, body, and optional `else` branch.
+   - Handles `if`, `elif`, `else`.
+   - Creates `AST_CONDITIONAL` with a condition and body, plus chained else branches.
 
-#### 7. `parse_while_block`
+7. **`parse_while_block`**
 
-- **Purpose**: Parses `while` loops.
-- **Steps**:
-  - Ensures the `while` keyword is followed by a condition and colon.
-  - Parses the loop body and stores the condition in an `AST_LOOP` node.
+   - For `while <condition>:`, builds an `AST_LOOP` node referencing the loop body.
 
-#### 8. `parse_block`
-
-- **Purpose**: Parses a series of statements in a block (e.g., an indented region).
-- **Steps**:
-  - Reads tokens until an end marker (e.g., `elif`, `else`, `EOF`).
-  - Calls appropriate parsing functions for each statement.
-
-### Supporting Functions
-
-- `parse_literal_or_identifier`: Determines if a token is a literal (e.g., number, string) or identifier and creates the appropriate AST node.
-- `parse_term`: A wrapper around `parse_literal_or_identifier`.
-- `free_ast`: Recursively frees all memory associated with the AST.
+8. **`parse_block`**
+   - Repeatedly parses statements until a block terminator (like `}` or an `else`) is reached.
+   - Builds a linked list of statements.
 
 ### Error Handling
 
-- parser_error: Reports unexpected tokens or syntax violations and terminates parsing.
-- expect_token: Ensures the next token matches the expected type or lexeme.
+- **`parser_error(...)`**: Raises a fatal error if a token is unexpected or a semicolon is missing, etc.
+- **`expect_token(...)`**: Ensures the next token is exactly what we want, or raises an error.
 
-### Workflow Example:
+### Example
 
-Given the code snippet:
-
-```
+```flv
 let x = 10;
 
 if x > 5:
     show "Big";
 ```
 
-#### 1. Tokenized Input:
+- **Lexer**: Transforms this into tokens:
 
-```
-[TOKEN_KEYWORD(let), TOKEN_IDENTIFIER(x), TOKEN_OPERATOR(=), TOKEN_NUMBER(10), ...]
-```
+  [`TOKEN_KEYWORD(let)`, `TOKEN_IDENTIFIER(x)`, `TOKEN_OPERATOR(=)`, `TOKEN_INTEGER(10)`, `TOKEN_DELIMITER(;)`, `TOKEN_KEYWORD(if)`, ...]
 
-#### 2. Parser Output (AST):
-
-```
-AST_ASSIGNMENT -> AST_CONDITIONAL
--> (Condition: AST_BINARY_OP(x > 5))
--> (Body: AST_PRINT("Big"))
-```
+- **Parser**: Produces an AST where:
+  - `AST_ASSIGNMENT` (`x = 10`)
+  - `AST_CONDITIONA` (`if x > 5`) → body: `AST_PRINT("Big")`
 
 ---
 
 ## Interpreter
 
-The interpreter in FlavorLang is tasked with processing the abstract syntax tree (AST) produced by the parser. Through this process, it systematically evaluates different elements of FlavorLang, including variable assignments, complex expressions, loops, and conditionals.
+The interpreter takes the AST and executes it.
+In FlavorLang, this means:
+
+1. Evaluating Expressions
+2. Assigning / Retrieving Variables
+3. Managing Conditionals & Loops
+4. Handling Function Calls
+5. Printing & Error Handling
 
 ### Main Interpreter Functions
 
-#### 1. Core Interpretation Flow
+- interpret_node(...): The primary function that returns an `InterpretResult`, containing a LiteralValue plus a did_return flag indicating if a function return (deliver) occurred.
+- `interpret_assignment(...)`: Assigns values to variables in the environment.
+- `interpret_binary_op(...)`: Applies arithmetic or comparison operators to numeric or string values.
+- `interpret_conditional(...)`: Runs `if`/`elif`/`else` logic, short-circuiting if a `deliver` statement is hit.
+- `interpret_while_loop(...)`: Evaluates a loop’s condition repeatedly, stopping if `did_return` is set or condition is false.
+- `interpret_function_call(...)`: Creates a local environment for function parameters, executes the function body, and handles the final return value.
 
-- `interpret()`function: The main entry point for interpreting an AST node. It recursively processes the node based on its type.
-- Each node in the AST represents a different construct in the program (e.g., literals, assignments, binary operations, print statements).
-- The interpreter evaluates these nodes and carries out the corresponding operations.
+### Flow Control with InterpretResult
 
-#### 2. Key Components
+- `interpret_node(...)` always returns an InterpretResult:
+- `.value` = The `LiteralValue` result of the node.
+- `.did_return` = true if a deliver statement was encountered, letting parent code know to halt further statements.
+- This approach ensures something like:
 
-- **Literal Values**:
-  - The interpreter supports literal values (e.g., numbers, strings).
-  - The `interpret_literal()`function extracts the value and returns a `LiteralValue`that contains the appropriate data (either a number or string).
-- **Variables**:
+```flv
+create factorial(n) {
+    if n <= 1:
+        deliver 1;
+    else:
+        deliver n * factorial(n - 1);
+}
 
-  - The interpreter can read and modify variables.
-  - The `interpret_variable()`function retrieves a variable’s value from the environment.
-  - The `interpret_assignment()`function handles variable assignment, either updating existing variables or creating new ones in the environment.
+let result = factorial(3);
+```
 
-- **Binary Operations**:
-
-  - Binary operations (e.g., `+`, `-`, `*`, `/`) are handled by the `interpret_binary_op()`function.
-  - The interpreter evaluates both operands and applies the operator to produce the result. Special cases include string concatenation and comparisons (`<`, `<=`, `>`, `>=`, `==`).
-
-- **Print Statements**:
-
-  - The `interpret_print()`function evaluates the arguments of the print statement and outputs them (either literals, variables, or expressions).
-
-- **Conditionals**:
-
-  - The `interpret_conditional()`function processes `if`/`else` branches, evaluating the condition and executing the appropriate body.
-  - It continues evaluating `elif` or `else` branches if the condition fails, stopping once a condition evaluates as true.
-
-- **Loops**:
-  - The `interpret_while_loop()`function processes while loops by evaluating the loop’s condition and repeatedly executing the loop’s body as long as the condition is true.
-
-#### 3. Handling Environment
-
-- The interpreter operates on an `Environment` structure, which stores variables and their values.
-- The `get_variable()`function is used to look up a variable’s value in the environment.
-- The `init_environment()`function initializes the environment, while `free_environment()`cleans up the allocated resources when done.
-
-#### 4. Helper Functions
-
-- The interpreter uses helper functions to ensure safe memory management and smooth execution of the program, such as `create_default_value()`for initializing a zeroed `LiteralValue`, or expanding the environment’s variable storage as necessary.
-
-#### 5. Flow Control
-
-- The `interpret_program()`function processes the entire program by iterating over each statement and interpreting it.
-- Each type of AST node is handled by a different case in the switch statement in `interpret()`(e.g., `AST_LITERAL`, `AST_ASSIGNMENT`, `AST_BINARY_OP`, etc.).
-
-#### 6. Error Handling
-
-- There are multiple checks for errors, such as undefined variables (`get_variable()`), division by zero (`interpret_binary_op()`), and invalid types (`interpret_literal()`).
-- If the program encounters an error, it terminates with a descriptive message and exits (`exit(1)`).
-
-### Summary of Steps
-
-1. **Check Node Type**: The `interpret()`function first checks the type of the AST node (e.g., literal, assignment, binary operation).
-2. **Evaluate Node**: Depending on the node type, it calls the respective function to handle the logic (e.g., `interpret_literal()`for literals, `interpret_assignment()`for assignments).
-3. **Return Value**: After performing the necessary operation (like evaluation or assignment), the function returns a `LiteralValue`representing the result of the operation.
-4. **Error Handling**: In case of an unsupported operation or invalid state (e.g., dividing by zero), the interpreter exits with an error message.
+…stops interpreting once `deliver 1;` is returned in the base case.
 
 ### Example Execution Flow
 
-Consider the following AST node for a simple assignment.
+For x = 5 + 3:
 
-```
-x = 5 + 3
-```
+1. interpret_node(AST_ASSIGNMENT) → calls interpret_assignment().
+2. interpret_node(RHS: AST_BINARY_OP) → calls interpret_binary_op().
+3. interpret_node(left=5) returns 5; similarly right=3 returns 3.
+4. After 5 + 3 = 8, store x = 8 in the environment.
 
-The `interpret()` function will:
+### Error Handling
 
-1. Encounter an `AST_ASSIGNMENT` node.
-2. Call `interpret_assignment()` which will evaluate the right-hand side (`5 + 3`).
-3. This triggers `interpret_binary_op()` which evaluates the operands `5` and `3`, applies the `+` operator, and returns `8`.
-4. Then the interpreter updates the variable x in the environment with the new value (`8`).
+- Checks for undefined variables, invalid operator usage, division by zero, etc.
+- On error, prints a message and calls exit(1).
