@@ -294,6 +294,11 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.integer = left_value == right_value;
             return result;
         }
+        if (strcmp(operator, "!=") == 0) {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value != right_value;
+            return result;
+        }
     }
 
     // Then handle single-character operators
