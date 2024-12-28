@@ -3,7 +3,7 @@
 #include <string.h>
 #include "../debug/debug.h"
 
-LiteralValue interpret(ASTNode *node, Environment *env);
+InterpretResult interpret_node(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);
 LiteralValue interpret_variable(ASTNode *node, Environment *env);
 LiteralValue interpret_assignment(ASTNode *node, Environment *env);
@@ -33,95 +33,128 @@ LiteralValue create_default_value()
     return value;
 }
 
-LiteralValue interpret(ASTNode *node, Environment *env)
+// A helper to wrap `LiteralValue` in `InterpretResult`
+static InterpretResult make_result(LiteralValue val, bool did_return)
+{
+    InterpretResult r;
+    r.value = val;
+    r.did_return = did_return;
+    return r;
+}
+
+InterpretResult interpret_node(ASTNode *node, Environment *env)
 {
     if (!node)
     {
         fprintf(stderr, "Error: Attempt to interpret NULL node\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        return make_result(
+            (LiteralValue){.type = TYPE_ERROR},
+            false);
     }
 
-    debug_print_int("`interpret()` called\n");
+    debug_print_int("`interpret_node()` called\n");
 
     switch (node->type)
     {
     case AST_LITERAL:
         debug_print_int("\tMatched: `AST_LITERAL`\n");
-        return interpret_literal(node);
+        return make_result(interpret_literal(node), false);
 
     case AST_ASSIGNMENT:
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
-        return interpret_assignment(node, env);
+        return make_result(interpret_assignment(node, env), false);
 
     case AST_BINARY_OP:
         debug_print_int("\tMatched: `AST_BINARY_OP`\n");
-        return interpret_binary_op(node, env);
+        return make_result(interpret_binary_op(node, env), false);
 
     case AST_PRINT:
         debug_print_int("\tMatched: `AST_PRINT`\n");
         interpret_print(node, env);
-        return create_default_value();
+        return make_result(create_default_value(), false);
 
     case AST_INPUT:
     {
         debug_print_int("\tMatched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
-        return v.value;
+
+        // Wrap v.value in an InterpretResult, with did_return=false
+        return make_result(v.value, false);
     }
 
     case AST_CONDITIONAL:
+    {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
         interpret_conditional(node, env);
-        return create_default_value();
+        // interpret_conditional(...) doesn’t return a value directly,
+        // so we just wrap a default in an InterpretResult
+        return make_result(create_default_value(), false);
+    }
 
     case AST_FUNCTION_CALL:
+    {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
-        return interpret_function_call(node, env);
+        // interpret_function_call(...) returns a LiteralValue
+        LiteralValue fc_val = interpret_function_call(node, env);
+        // wrap it in an InterpretResult
+        return make_result(fc_val, false);
+    }
 
     case AST_FUNCTION_DECLARATION:
+    {
         debug_print_int("\tMatched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
-        return create_default_value();
+        // again, no direct return from a function declaration
+        return make_result(create_default_value(), false);
+    }
 
     case AST_FUNCTION_RETURN:
     {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
 
-        // If there's no expression, treat it as an error
         if (!node->assignment.value)
         {
-            // Error out, so we can notice "phantom returns" in the AST
             fprintf(stderr, "Error: Return statement has no expression! (Parser bug?)\n");
             exit(1);
         }
 
-        // Otherwise interpret the actual return expression
-        LiteralValue return_value = interpret(node->assignment.value, env);
+        LiteralValue return_value = interpret_node(node->assignment.value, env).value;
         debug_print_int("Return value before returning: type=%d, value=%d\n",
                         return_value.type,
-                        return_value.type == TYPE_INTEGER ? return_value.data.integer : 0);
-        return return_value;
+                        (return_value.type == TYPE_INTEGER) ? return_value.data.integer : 0);
+
+        // Return this value, but also set did_return = true
+        return make_result(return_value, true);
     }
 
     case AST_LOOP:
+    {
         debug_print_int("\tMatched: `AST_LOOP`\n");
         interpret_while_loop(node, env);
-        return create_default_value();
+        return make_result(create_default_value(), false);
+    }
 
     case AST_VARIABLE:
+    {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
-        return interpret_variable(node, env);
+        LiteralValue var_val = interpret_variable(node, env);
+        return make_result(var_val, false);
+    }
 
     case AST_SWITCH:
+    {
         debug_print_int("\tMatched: `AST_SWITCH`\n");
         interpret_switch(node, env);
-        return create_default_value();
+        return make_result(create_default_value(), false);
+    }
 
     case AST_ERROR:
+    {
         debug_print_int("\tMatched: `AST_ERROR`\n");
         interpret_raise_error(node, env);
-        return create_default_value();
-
+        // interpret_raise_error usually calls exit(), but let's just do:
+        return make_result(create_default_value(), false);
+    }
     default:
         fprintf(stderr, "Error: Unsupported ASTNode type.\n");
         exit(1);
@@ -134,7 +167,7 @@ void interpret_program(ASTNode *program, Environment *env)
     while (current)
     {
         debug_print_int("Executing top-level statement\n");
-        interpret(current, env);
+        interpret_node(current, env);
         current = current->next;
     }
 }
@@ -193,20 +226,17 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env)
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    LiteralValue new_value;
-    if (node->assignment.value->type == AST_FUNCTION_CALL)
-    {
-        new_value = interpret_function_call(node->assignment.value, env);
-    }
-    else
-    {
-        new_value = interpret(node->assignment.value, env);
-    }
+    // Evaluate the right-hand side
+    InterpretResult assign_r = interpret_node(node->assignment.value, env);
+    // If the RHS triggered a return, we’re ignoring it for assignment, but you could handle it
+    LiteralValue new_value = assign_r.value;
 
+    // Add or update variable
     Variable new_var = {
         .variable_name = strdup(node->assignment.variable_name),
         .value = new_value};
     add_variable(env, new_var);
+
     return new_value;
 }
 
@@ -253,13 +283,15 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
     debug_print_int("Interpreting binary operation\n");
 
     // First evaluate both operands
-    LiteralValue left = interpret(node->binary_op.left, env);
+    InterpretResult left_r = interpret_node(node->binary_op.left, env);
+    LiteralValue left = left_r.value;
     if (left.type == TYPE_ERROR)
     {
-        return left;
+        return left; // or handle error
     }
 
-    LiteralValue right = interpret(node->binary_op.right, env);
+    InterpretResult right_r = interpret_node(node->binary_op.right, env);
+    LiteralValue right = right_r.value;
     if (right.type == TYPE_ERROR)
     {
         return right;
@@ -440,27 +472,26 @@ void interpret_print(ASTNode *node, Environment *env)
     for (size_t i = 0; i < node->to_print.arg_count; i++)
     {
         ASTNode *arg = node->to_print.arguments[i];
-        LiteralValue value = interpret(arg, env);
+        InterpretResult r = interpret_node(arg, env);
+        LiteralValue lv = r.value;
 
-        switch (value.type)
+        switch (lv.type)
         {
         case TYPE_FLOAT:
-            if ((int)value.data.floating_point == value.data.floating_point)
+            if ((int)lv.data.floating_point == lv.data.floating_point)
             {
-                // Value is effectively an integer, force one decimal place
-                printf("%.1f", value.data.floating_point);
+                printf("%.1f", lv.data.floating_point);
             }
             else
             {
-                // Otherwise, use `%g` for trimming unnecessary zeroes
-                printf("%g", value.data.floating_point);
+                printf("%g", lv.data.floating_point);
             }
             break;
         case TYPE_INTEGER:
-            printf("%d", value.data.integer);
+            printf("%d", lv.data.integer);
             break;
         case TYPE_STRING:
-            printf("%s", value.data.string);
+            printf("%s", lv.data.string);
             break;
         case TYPE_ERROR:
             fprintf(stderr, "Error: Invalid literal type.\n");
@@ -618,23 +649,28 @@ void interpret_conditional(ASTNode *node, Environment *env)
     {
         if (current_branch->conditional.condition)
         {
-            LiteralValue condition_value = interpret(current_branch->conditional.condition, env);
-            debug_print_int("Condition evaluated to: `%d` (%s)\n", condition_value.data.integer, condition_value.data.integer ? "true" : "false");
-
-            if (condition_value.type != TYPE_INTEGER)
+            // Instead of interpret(...) => interpret_node(...)
+            InterpretResult cond_res = interpret_node(current_branch->conditional.condition, env);
+            if (cond_res.did_return)
             {
-                fprintf(stderr, "Error: Condition must evaluate to an integer.\n");
+                // If we returned inside the condition, bubble up here:
                 return;
             }
 
-            // Change condition check for factorial base case
-            if (condition_value.data.integer) // changed from != 0 to just the value
+            LiteralValue condition_value = cond_res.value;
+            // ...
+            if (condition_value.data.integer)
             {
-                debug_print_int("Condition is true, executing branch body\n");
+                // interpret the if body
                 ASTNode *current_statement = current_branch->conditional.body;
                 while (current_statement)
                 {
-                    interpret(current_statement, env);
+                    InterpretResult body_res = interpret_node(current_statement, env);
+                    if (body_res.did_return)
+                    {
+                        // bubble up
+                        return;
+                    }
                     current_statement = current_statement->next;
                 }
                 condition_met = 1;
@@ -643,13 +679,17 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
         else
         {
-            debug_print_int("Executing ELSE branch\n");
+            // interpret the ELSE block
             if (!condition_met)
             {
                 ASTNode *current_statement = current_branch->conditional.body;
                 while (current_statement)
                 {
-                    interpret(current_statement, env);
+                    InterpretResult body_res = interpret_node(current_statement, env);
+                    if (body_res.did_return)
+                    {
+                        return;
+                    }
                     current_statement = current_statement->next;
                 }
             }
@@ -660,6 +700,7 @@ void interpret_conditional(ASTNode *node, Environment *env)
 
     debug_print_int("`interpret_conditional()` completed\n");
 }
+
 void interpret_while_loop(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_while_loop()` called\n");
@@ -669,38 +710,36 @@ void interpret_while_loop(ASTNode *node, Environment *env)
 
     while (1)
     {
-        debug_print_int("Starting new iteration of `while` loop\n");
-
-        LiteralValue condition_value = interpret(condition, env);
-
-        if (condition_value.type == TYPE_INTEGER)
+        InterpretResult cond_r = interpret_node(condition, env);
+        if (cond_r.did_return)
         {
-            debug_print_int("Condition evaluated to: `%f`\n", condition_value.data.integer);
+            // bubble up immediately
+            return;
         }
 
-        if (condition_value.data.integer != 0)
+        if (cond_r.value.type != TYPE_INTEGER)
         {
-            debug_print_int("`while` condition is true, executing body\n");
+            fprintf(stderr, "While condition must be integer\n");
+            return;
+        }
 
+        if (cond_r.value.data.integer)
+        {
+            // interpret the body
             ASTNode *current = body;
-            while (current != NULL)
+            while (current)
             {
-                debug_print_int("Executing body statement of type: `%d`\n", current->type);
-                interpret(current, env);
+                InterpretResult body_r = interpret_node(current, env);
+                if (body_r.did_return)
+                {
+                    // bubble up
+                    return;
+                }
                 current = current->next;
-            }
-
-            debug_print_int("After body execution:\n");
-            for (size_t i = 0; i < env->variable_count; i++)
-            {
-                debug_print_int("Variable `%s`: value = `%s`",
-                                env->variables[i].variable_name,
-                                env->variables[i].value.data.integer ? "true" : "false");
             }
         }
         else
         {
-            debug_print_int("`while` condition is false, exiting loop\n");
             break;
         }
     }
@@ -712,11 +751,11 @@ void interpret_switch(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_switch()`\n");
 
-    // First evaluate the switch expression
-    LiteralValue switch_value = interpret(node->switch_case.expression, env);
+    // Evaluate the switch expression
+    InterpretResult switch_r = interpret_node(node->switch_case.expression, env);
+    LiteralValue switch_val = switch_r.value;
     debug_print_int("Switch expression evaluated\n");
 
-    // Go through each case
     ASTCaseNode *current_case = node->switch_case.cases;
     int break_encountered = 0;
 
@@ -724,69 +763,62 @@ void interpret_switch(ASTNode *node, Environment *env)
     {
         if (current_case->condition == NULL)
         {
-            // This is the `else` case
+            // `else` case
             debug_print_int("Executing `else` case\n");
-            if (!break_encountered)
+            ASTNode *current_statement = current_case->body;
+            while (current_statement && !break_encountered)
             {
-                // Execute the `else` block
-                ASTNode *current_statement = current_case->body;
-                while (current_statement && !break_encountered)
+                if (current_statement->type == AST_BREAK)
                 {
-                    if (current_statement->type == AST_BREAK)
-                    {
-                        break_encountered = 1;
-                        break;
-                    }
-                    interpret(current_statement, env);
-                    current_statement = current_statement->next;
+                    break_encountered = 1;
+                    break;
                 }
+                // interpret_node(...) returning InterpretResult
+                interpret_node(current_statement, env);
+                current_statement = current_statement->next;
             }
             break;
         }
-
-        // Evaluate the case condition
-        LiteralValue case_value = interpret(current_case->condition, env);
-
-        // Check if types match and values are equal
-        if (switch_value.type == case_value.type)
+        else
         {
-            int values_match = 0;
+            // Evaluate the case condition
+            InterpretResult case_r = interpret_node(current_case->condition, env);
+            LiteralValue case_val = case_r.value;
 
-            if (switch_value.type == TYPE_FLOAT)
+            if (switch_val.type == case_val.type)
             {
-                values_match = (switch_value.data.floating_point == case_value.data.floating_point);
-            }
-            else if (switch_value.type == TYPE_INTEGER)
-            {
-                values_match = (switch_value.data.integer == case_value.data.integer);
-            }
-            else if (switch_value.type == TYPE_STRING)
-            {
-                values_match = (strcmp(switch_value.data.string, case_value.data.string) == 0);
-            }
+                int values_match = 0;
 
-            if (values_match)
-            {
-                debug_print_int("Match found, executing case body\n");
-
-                // Execute all statements in the matching case
-                ASTNode *current_statement = current_case->body;
-                while (current_statement && !break_encountered)
+                if (switch_val.type == TYPE_FLOAT)
                 {
-                    if (current_statement->type == AST_BREAK)
+                    values_match = (switch_val.data.floating_point == case_val.data.floating_point);
+                }
+                else if (switch_val.type == TYPE_INTEGER)
+                {
+                    values_match = (switch_val.data.integer == case_val.data.integer);
+                }
+                else if (switch_val.type == TYPE_STRING)
+                {
+                    values_match = (strcmp(switch_val.data.string, case_val.data.string) == 0);
+                }
+
+                if (values_match)
+                {
+                    debug_print_int("Match found, executing case body\n");
+
+                    ASTNode *current_statement = current_case->body;
+                    while (current_statement && !break_encountered)
                     {
-                        break_encountered = 1;
-                        break;
+                        if (current_statement->type == AST_BREAK)
+                        {
+                            break_encountered = 1;
+                            break;
+                        }
+                        interpret_node(current_statement, env);
+                        current_statement = current_statement->next;
                     }
-                    interpret(current_statement, env);
-                    current_statement = current_statement->next;
+                    // If break_encountered, break
                 }
-
-                if (break_encountered)
-                {
-                    break;
-                }
-                // Otherwise fall-through to next case (allowing case stacking)
             }
         }
 
@@ -1029,7 +1061,6 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Get the function from environment
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
@@ -1037,11 +1068,11 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Create a local environment
+    // Create local environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Copy all parent functions into the local environment
+    // Copy parent's functions
     for (size_t i = 0; i < env->function_count; i++)
     {
         Function func_copy = {
@@ -1052,77 +1083,54 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     }
 
     // Bind parameters
-    ASTFunctionParameter *param = func->parameters;
+    ASTFunctionParameter *p = func->parameters;
     ASTNode *arg = node->function_call.arguments;
-    while (param && arg)
+    while (p && arg)
     {
-        LiteralValue arg_value = interpret(arg, env);
+        InterpretResult arg_res = interpret_node(arg, env);
+        LiteralValue arg_value = arg_res.value;
         if (arg_value.type == TYPE_ERROR)
         {
             free_environment(&local_env);
-            return arg_value;
+            return arg_value; // or do something
         }
 
         Variable param_var = {
-            .variable_name = strdup(param->parameter_name),
-            .value = arg_value};
+            .variable_name = strdup(p->parameter_name),
+            .value = arg_res.value};
         add_variable(&local_env, param_var);
 
-        param = param->next;
+        p = p->next;
         arg = arg->next;
     }
 
-    // Interpret the function body
-    LiteralValue result = create_default_value(); // default = 0
+    // Now interpret function body
+    LiteralValue result = create_default_value(); // default 0
     ASTNode *stmt = func->body;
 
     while (stmt)
     {
-        LiteralValue current_val = interpret(stmt, &local_env);
+        InterpretResult r = interpret_node(stmt, &local_env);
 
-        // Short-circuit if we hit a return
-        if (stmt->type == AST_FUNCTION_RETURN)
+        if (r.did_return)
         {
-            debug_print_int("Function returning with value type=%d, value=%d\n",
-                            current_val.type,
-                            current_val.type == TYPE_INTEGER ? current_val.data.integer : 0);
-
-            // Copy the returned value
-            LiteralValue return_val = {.type = current_val.type};
-            switch (current_val.type)
-            {
-            case TYPE_INTEGER:
-                return_val.data.integer = current_val.data.integer;
-                break;
-            case TYPE_FLOAT:
-                return_val.data.floating_point = current_val.data.floating_point;
-                break;
-            case TYPE_STRING:
-                if (current_val.data.string)
-                    return_val.data.string = strdup(current_val.data.string);
-                break;
-            default:
-                break;
-            }
-
+            // Short-circuit
             free_environment(&local_env);
-            return return_val;
+            return r.value; // the literal from the return
         }
 
-        // If there's an error, bail
-        if (current_val.type == TYPE_ERROR)
+        if (r.value.type == TYPE_ERROR)
         {
             free_environment(&local_env);
-            return current_val;
+            return r.value;
         }
 
-        // Otherwise keep going
-        result = current_val;
+        // else keep going
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
-    return result;
+    return result; // if no explicit return, we return 0
 }
 
 // Initialize the environment

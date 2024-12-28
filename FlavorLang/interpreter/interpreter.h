@@ -62,6 +62,12 @@ typedef struct
     size_t function_capacity;
 } Environment;
 
+typedef struct
+{
+    LiteralValue value; // The result of interpreting a node
+    bool did_return;    // True if this node caused a function return to bubble up
+} InterpretResult;
+
 // Initialize the environment
 void init_environment(Environment *env);
 
