@@ -69,41 +69,6 @@ Token *resize_token_array(Token *tokens, size_t *capacity);
 void append_token(Token **tokens, size_t *count, size_t *capacity,
                   TokenType type, const char *lexeme, int line);
 
-// Token validation and checking
-
-/**
- * Checks if a character can be the start of an identifier.
- *
- * This function checks if the character is a letter (a-z, A-Z) or an underscore (`_`),
- * which are valid starting characters for an identifier.
- *
- * @param c The character to check.
- * @return 1 if the character can be the start of an identifier, 0 otherwise.
- */
-int is_valid_identifier_start(char c);
-
-/**
- * Checks if a character can be part of an identifier.
- *
- * This function checks if the character is alphanumeric (a-z, A-Z, 0-9) or an underscore (`_`),
- * which are valid characters for an identifier after the first character.
- *
- * @param c The character to check.
- * @return 1 if the character can be part of an identifier, 0 otherwise.
- */
-int is_valid_identifier_char(char c);
-
-/**
- * Checks if a character is whitespace.
- *
- * This function checks if the character is one of the following whitespace characters:
- * space, tab, carriage return, or newline.
- *
- * @param c The character to check.
- * @return 1 if the character is whitespace, 0 otherwise.
- */
-int is_whitespace(char c);
-
 // Error handling
 
 /**

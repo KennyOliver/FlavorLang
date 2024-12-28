@@ -90,15 +90,6 @@ void append_token(Token **tokens, size_t *count, size_t *capacity,
     (*count)++;
 }
 
-int is_valid_identifier_start(char c) { return isalpha(c) || c == '_'; }
-
-int is_valid_identifier_char(char c) { return isalnum(c) || c == '_'; }
-
-int is_whitespace(char c)
-{
-    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
-}
-
 void token_error(const char *message, int line)
 {
     if (line >= 0)

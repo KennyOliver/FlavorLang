@@ -78,3 +78,12 @@ int is_operator(const char *lexeme)
 
     return 0;
 }
+
+int is_valid_identifier_start(char c) { return isalpha(c) || c == '_'; }
+
+int is_valid_identifier_char(char c) { return isalnum(c) || c == '_'; }
+
+int is_whitespace(char c)
+{
+    return c == ' ' || c == '\t' || c == '\r' || c == '\n';
+}
