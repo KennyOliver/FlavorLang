@@ -1,5 +1,6 @@
-try:
+try {
     burn "This recipe failed!";
     show "This won't run!";
-rescue:
+} rescue {
     show "Caught an error: Recipe needs improvement.";
+}
