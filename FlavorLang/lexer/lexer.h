@@ -5,7 +5,6 @@
 #include "keywords.h"
 #include "lexer_utils.h"
 #include "scanner.h"
-#include <ctype.h>
 #include <string.h>
 
 #define INITIAL_TOKEN_CAPACITY 1024

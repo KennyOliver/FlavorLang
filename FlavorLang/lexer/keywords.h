@@ -2,6 +2,7 @@
 #define KEYWORDS_H
 
 #include <stdlib.h>
+#include <ctype.h>
 
 // Array of FlavorLang keywords
 /**

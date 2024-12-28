@@ -3,6 +3,7 @@
 
 #include "../shared/token_types.h"
 #include <stdbool.h>
+#include <string.h>
 
 /**
  * Skips over a comment in the source code.

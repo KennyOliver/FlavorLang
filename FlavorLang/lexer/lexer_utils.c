@@ -2,7 +2,6 @@
 #include "../debug/debug.h"
 #include <ctype.h>
 #include <stdlib.h>
-#include <string.h>
 
 #define TOKEN_ARRAY_GROWTH_FACTOR 2
 
