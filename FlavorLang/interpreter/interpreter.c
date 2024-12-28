@@ -38,8 +38,7 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     if (!node)
     {
         fprintf(stderr, "Error: Attempt to interpret NULL node\n");
-        return (LiteralValue){
-            .type = TYPE_ERROR};
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
     debug_print_int("`interpret()` called\n");
@@ -88,20 +87,19 @@ LiteralValue interpret(ASTNode *node, Environment *env)
     {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
 
-        // Safely handle if return node has no value to interpret
+        // If there's no expression, treat it as an error
         if (!node->assignment.value)
         {
-            debug_print_int("Return statement has no expression; returning 1 by default\n");
-            LiteralValue default_val = {.type = TYPE_INTEGER, .data.integer = 1};
-            return default_val;
+            // Error out, so we can notice "phantom returns" in the AST
+            fprintf(stderr, "Error: Return statement has no expression! (Parser bug?)\n");
+            exit(1);
         }
 
-        // Otherwise interpret the return expression
+        // Otherwise interpret the actual return expression
         LiteralValue return_value = interpret(node->assignment.value, env);
         debug_print_int("Return value before returning: type=%d, value=%d\n",
                         return_value.type,
                         return_value.type == TYPE_INTEGER ? return_value.data.integer : 0);
-
         return return_value;
     }
 
@@ -1031,6 +1029,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
+    // Get the function from environment
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
@@ -1038,11 +1037,11 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Create a local environment for the function
+    // Create a local environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Copy parent environment's functions into the local environment
+    // Copy all parent functions into the local environment
     for (size_t i = 0; i < env->function_count; i++)
     {
         Function func_copy = {
@@ -1052,10 +1051,9 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         add_function(&local_env, func_copy);
     }
 
-    // Bind function parameters with arguments
+    // Bind parameters
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
-
     while (param && arg)
     {
         LiteralValue arg_value = interpret(arg, env);
@@ -1074,26 +1072,23 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    // Now interpret the function body
-    LiteralValue result = create_default_value();
+    // Interpret the function body
+    LiteralValue result = create_default_value(); // default = 0
     ASTNode *stmt = func->body;
 
     while (stmt)
     {
-        // Interpret the statement
         LiteralValue current_val = interpret(stmt, &local_env);
 
-        // If the statement is a return, short-circuit immediately
+        // Short-circuit if we hit a return
         if (stmt->type == AST_FUNCTION_RETURN)
         {
             debug_print_int("Function returning with value type=%d, value=%d\n",
                             current_val.type,
                             current_val.type == TYPE_INTEGER ? current_val.data.integer : 0);
 
-            // Make a copy of the value we just got
-            LiteralValue return_val = {
-                .type = current_val.type};
-
+            // Copy the returned value
+            LiteralValue return_val = {.type = current_val.type};
             switch (current_val.type)
             {
             case TYPE_INTEGER:
@@ -1104,9 +1099,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
                 break;
             case TYPE_STRING:
                 if (current_val.data.string)
-                {
                     return_val.data.string = strdup(current_val.data.string);
-                }
                 break;
             default:
                 break;
@@ -1116,14 +1109,14 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
             return return_val;
         }
 
-        // If we got an error from interpreting, bail out
+        // If there's an error, bail
         if (current_val.type == TYPE_ERROR)
         {
             free_environment(&local_env);
             return current_val;
         }
 
-        // If it was just a normal statement (not return), keep track of the last result
+        // Otherwise keep going
         result = current_val;
         stmt = stmt->next;
     }
