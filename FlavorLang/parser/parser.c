@@ -363,8 +363,7 @@ ASTNode *parse_block(ParserState *state) {
                         current->type, current->lexeme);
 
         // Break if we hit end of block
-        if (current->type == TOKEN_PAREN_CLOSE &&
-            strcmp(current->lexeme, "}") == 0) {
+        if (current->type == TOKEN_BRACE_CLOSE) {
             break;
         }
 
@@ -471,9 +470,9 @@ ASTNode *parse_conditional_block(ParserState *state) {
         // Parse condition expression
         node->conditional.condition = parse_expression(state);
 
-        expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
+        expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
         node->conditional.body = parse_block(state);
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
+        expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
     } else if (strcmp(current->lexeme, "else") == 0) {
         // Consume `else`
         advance_token(state);
@@ -481,9 +480,9 @@ ASTNode *parse_conditional_block(ParserState *state) {
         // No condition => node->conditional.condition = NULL
         node->conditional.condition = NULL;
 
-        expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
+        expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
         node->conditional.body = parse_block(state);
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
+        expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
     } else {
         parser_error("Expected `if`, `elif`, or `else`", current);
     }
@@ -511,9 +510,9 @@ ASTNode *parse_while_block(ParserState *state) {
     // Parse the condition expression
     node->loop.condition = parse_expression(state);
 
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
     node->loop.body = parse_block(state);
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
 
     // Optional re-evaluation logic
     node->loop.re_evaluate_condition = 1;
@@ -549,8 +548,9 @@ ASTNode *parse_switch_block(ParserState *state) {
     // Parse switch expression
     node->switch_case.expression = parse_expression(state);
 
-    // Expect colon
-    expect_token(state, TOKEN_DELIMITER, "Expected `:`");
+    // Expect `{` instead of `:`
+    expect_token(state, TOKEN_BRACE_OPEN,
+                 "Expected '{' after check expression");
 
     // Parse cases
     node->switch_case.cases = NULL;
@@ -578,8 +578,6 @@ ASTNode *parse_switch_block(ParserState *state) {
 
             // Parse case value
             case_node->condition = parse_expression(state);
-
-            // Expect colon
             expect_token(state, TOKEN_DELIMITER,
                          "Expected `:` after case value");
 
@@ -602,12 +600,11 @@ ASTNode *parse_switch_block(ParserState *state) {
                 parser_error("Memory allocation failed", current);
             }
 
-            default_case->condition = NULL; // no condition for `else
+            default_case->condition = NULL; // no condition for `else`
 
-            // Expect colon
             expect_token(state, TOKEN_DELIMITER, "Expected `:` after else");
 
-            // Parse else body
+            // Parse `else` body
             default_case->body = parse_block(state);
             default_case->next = NULL;
 
@@ -617,11 +614,13 @@ ASTNode *parse_switch_block(ParserState *state) {
             } else {
                 last_case->next = default_case;
             }
-            break; // else is always the last case
+            break; // `else` is always the last case
         } else {
-            break; // Exit on any other keyword
+            break; // exit on any other keyword
         }
     }
+
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected '}' to close check block");
 
     node->next = NULL;
     return node;
