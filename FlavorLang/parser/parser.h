@@ -23,7 +23,6 @@ ASTNode *parse_function_call(ParserState *state);
 
 // Expression parsing
 ASTNode *parse_expression(ParserState *state);
-// ASTNode *parse_identifier(ParserState *state);
 ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
