@@ -3,23 +3,6 @@
 #include <string.h>
 #include "../debug/debug.h"
 
-InterpretResult interpret_node(ASTNode *node, Environment *env);
-LiteralValue interpret_literal(ASTNode *node);
-LiteralValue interpret_variable(ASTNode *node, Environment *env);
-LiteralValue interpret_assignment(ASTNode *node, Environment *env);
-LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
-Variable *get_variable(Environment *env, const char *variable_name);
-void add_variable(Environment *env, Variable var);
-void interpret_print(ASTNode *node, Environment *env);
-void interpret_raise_error(ASTNode *node, Environment *env);
-Variable interpret_input(Environment *env);
-InterpretResult interpret_conditional(ASTNode *node, Environment *env);
-void interpret_while_loop(ASTNode *node, Environment *env);
-void interpret_switch(ASTNode *node, Environment *env);
-void interpret_function_declaration(ASTNode *node, Environment *env);
-LiteralValue interpret_function_call(ASTNode *node, Environment *env);
-ASTNode *copy_ast_node(ASTNode *node);
-
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value()
 {
