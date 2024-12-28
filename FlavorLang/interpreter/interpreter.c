@@ -37,9 +37,9 @@ LiteralValue interpret(ASTNode *node, Environment *env)
 {
     if (!node)
     {
+        fprintf(stderr, "Error: Attempt to interpret NULL node\n");
         return (LiteralValue){
-            .type = TYPE_ERROR,
-        };
+            .type = TYPE_ERROR};
     }
 
     debug_print_int("`interpret()` called\n");
@@ -243,37 +243,33 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 {
     debug_print_int("Interpreting binary operation\n");
 
-    debug_print_int("Binary operation check - left node type: %d\n", node->binary_op.left->type);
-    debug_print_int("Binary operation check - right node type: %d\n", node->binary_op.right->type);
+    // First evaluate both operands
+    LiteralValue left = interpret(node->binary_op.left, env);
+    LiteralValue right = interpret(node->binary_op.right, env);
 
-    // Step 1: Interpret left and right operands
-    // First, check if either operand is a function call
-    LiteralValue left, right;
-
-    if (node->binary_op.left->type == AST_FUNCTION_CALL)
+    if (left.type == TYPE_ERROR || right.type == TYPE_ERROR)
     {
-        debug_print_int("Left operand is a function call\n");
-        left = interpret_function_call(node->binary_op.left, env);
-    }
-    else
-    {
-        debug_print_int("Left operand is a typical expression\n");
-        left = interpret(node->binary_op.left, env);
-    }
-
-    if (node->binary_op.right->type == AST_FUNCTION_CALL)
-    {
-        debug_print_int("Right operand is a function call\n");
-        right = interpret_function_call(node->binary_op.right, env);
-    }
-    else
-    {
-        debug_print_int("Right operand is a typical expression\n");
-        right = interpret(node->binary_op.right, env);
+        LiteralValue error = {.type = TYPE_ERROR};
+        return error;
     }
 
     char *operator= node->binary_op.operator;
     debug_print_int("Operator: `%s`\n", operator);
+
+    // Handle multiplication
+    if (operator[0] == '*')
+    {
+        LiteralValue result;
+        result.type = TYPE_INTEGER;
+
+        // Convert both operands to integers if needed
+        int left_val = (left.type == TYPE_FLOAT) ? (int)left.data.floating_point : left.data.integer;
+
+        int right_val = (right.type == TYPE_FLOAT) ? (int)right.data.floating_point : right.data.integer;
+
+        result.data.integer = left_val * right_val;
+        return result;
+    }
 
     // Handle string concatenation with "+" operator
     if (operator[0] == '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING))
@@ -1101,7 +1097,10 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 
     while (param && arg)
     {
+        // Evaluate argument in the PARENT environment
         LiteralValue arg_value = interpret(arg, env);
+
+        // Create variable in LOCAL environment
         Variable param_var = {
             .variable_name = strdup(param->parameter_name),
             .value = arg_value};
@@ -1111,53 +1110,30 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
         arg = arg->next;
     }
 
-    // Execute function body with proper return value handling
-    LiteralValue result = {
-        .type = TYPE_INTEGER,
-        .data.integer = 0};
-
+    // Execute function body
+    LiteralValue result = {.type = TYPE_INTEGER, .data.integer = 0};
     ASTNode *stmt = func->body;
+
     while (stmt)
     {
+        // Handle return statements
         if (stmt->type == AST_FUNCTION_RETURN)
         {
-            // Get the return value
+            // Evaluate return expression in LOCAL environment
             result = interpret(stmt->assignment.value, &local_env);
 
-            // Validate and ensure proper type conversion
-            if (result.type == TYPE_ERROR)
-            {
-                fprintf(stderr, "Error: Invalid return value from function\n");
-                exit(1);
-            }
-
-            // If it's a float, convert to int for consistency
-            if (result.type == TYPE_FLOAT)
-            {
-                result.type = TYPE_INTEGER;
-                result.data.integer = (int)result.data.floating_point;
-            }
-
-            debug_print_int("Function returning value: type=`%d`, value=`%d`\n",
-                            result.type,
-                            result.type == TYPE_INTEGER ? result.data.integer : 0);
-
-            break;
+            // Clean up and return immediately
+            free_environment(&local_env);
+            return result;
         }
+
+        // Execute statement
         interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
     // Clean up
     free_environment(&local_env);
-
-    // Ensure we're returning a valid type
-    if (result.type != TYPE_INTEGER && result.type != TYPE_FLOAT && result.type != TYPE_STRING)
-    {
-        result.type = TYPE_INTEGER;
-        result.data.integer = 0;
-    }
-
     return result;
 }
 
