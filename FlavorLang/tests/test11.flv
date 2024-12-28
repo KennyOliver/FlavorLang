@@ -2,7 +2,8 @@ let time = 20;
 
 show "Before error.";
 
-if time > 15:
+if time > 15 {
     burn "Too late!", "The food got burnt!";
+}
 
 show "After error?";

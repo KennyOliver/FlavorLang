@@ -1,9 +1,10 @@
 let flour_added = 1;
 
-while flour_added < 3:
+while flour_added < 3 {
     show "Adding flour...";
     flour_added = flour_added + 1;
     show "Test";
+}
 
 show "All flour has been added!";
 show "Flour added:", flour_added;

@@ -13,48 +13,56 @@ show "Age:", age;
 # 3
 let oven_temperature = 200;
 
-if oven_temperature > 180:
+if oven_temperature > 180 {
     show "The oven is hot!";
-elif oven_temperature == 180:
+} elif oven_temperature == 180 {
     show "The oven is just right!";
-else:
+} else {
     show "The oven is too cold!";
+}
 
 
 # 4
-for let i = 1 to 5:
+for let i = 1 to 5 {
     show "Mixing... Step", i;
+}
 
 
 # 5
-let flour_added = 0;
+let flour_added = 1;
 
-while flour_added < 3:
+while flour_added < 3 {
     show "Adding flour...";
-    let flour_added = flour_added + 1;
+    flour_added = flour_added + 1;
+    show "Test";
+}
 
 show "All flour has been added!";
+show "Flour added:", flour_added;
+
 
 
 # 6
-create bake_cake with let temperature:
-    if temperature < 180:
+create bake_cake(temperature):
+    if temperature < 180 {
         show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
-    else:
+	} else {
         show "Baking cake at", temperature, "degrees!";
         deliver "Cake is ready!";
+	}
 
-let result = bake_cake with 200;
+let result = bake_cake(200);
 show result;
 
 
 # 7
-try:
+try {
     burn "This recipe failed!";
     show "This won't run!";
-rescue:
+} rescue {
     show "Caught an error: Recipe needs improvement.";
+}
 
 
 # 8
@@ -69,13 +77,16 @@ show data;
 # 9
 let dessert = "cake";
 
-check dessert:
+check dessert {
     is "cake":
         show "Bake the cake!";
     is "pie":
-        show "createare the pie!";
+    is "cookie":
+        show "Prepare the oven!";
+        break;
     else:
         show "Dessert not on the menu.";
+}
 
 
 # 10
