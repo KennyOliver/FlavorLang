@@ -13,7 +13,7 @@
  * @param source The source code being tokenized.
  * @param pos A pointer to the current position in the source code.
  */
-static void handle_comment(const char *source, size_t *pos);
+static void scan_comment(const char *source, size_t *pos);
 
 /**
  * Processes a number (integer or float) in the source code.
@@ -32,9 +32,9 @@ static void handle_comment(const char *source, size_t *pos);
  * @param capacity The allocated capacity for the token array.
  * @param line The current line number in the source code.
  */
-static void handle_number(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity,
-                          int line);
+static void scan_number(const char *source, size_t *pos, size_t length,
+                        Token **tokens, size_t *token_count, size_t *capacity,
+                        int line);
 
 /**
  * Processes a string literal in the source code.
@@ -51,9 +51,9 @@ static void handle_number(const char *source, size_t *pos, size_t length,
  * @param capacity The allocated capacity for the token array.
  * @param line The current line number in the source code.
  */
-static void handle_string(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count, size_t *capacity,
-                          int line);
+static void scan_string(const char *source, size_t *pos, size_t length,
+                        Token **tokens, size_t *token_count, size_t *capacity,
+                        int line);
 
 /**
  * Processes an identifier or keyword in the source code.
@@ -71,10 +71,10 @@ static void handle_string(const char *source, size_t *pos, size_t length,
  * @param capacity The allocated capacity for the token array.
  * @param line The current line number in the source code.
  */
-static void handle_identifier_or_keyword(const char *source, size_t *pos,
-                                         size_t length, Token **tokens,
-                                         size_t *token_count, size_t *capacity,
-                                         int line);
+static void scan_identifier_or_keyword(const char *source, size_t *pos,
+                                       size_t length, Token **tokens,
+                                       size_t *token_count, size_t *capacity,
+                                       int line);
 
 /**
  * Processes an operator in the source code.
@@ -91,8 +91,8 @@ static void handle_identifier_or_keyword(const char *source, size_t *pos,
  * @param capacity The allocated capacity for the token array.
  * @param line The current line number in the source code.
  */
-static void handle_operator(const char *source, size_t *pos, size_t length,
-                            Token **tokens, size_t *token_count,
-                            size_t *capacity, int line);
+static void scan_operator(const char *source, size_t *pos, size_t length,
+                          Token **tokens, size_t *token_count,
+                          size_t *capacity, int line);
 
 #endif
