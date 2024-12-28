@@ -169,8 +169,7 @@ ASTNode *parse_variable_assignment(ParserState *state)
     }
 
     node->type = AST_ASSIGNMENT;
-    // node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.variable_name = name->lexeme;
+    node->assignment.variable_name = strdup(name->lexeme);
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
@@ -256,28 +255,6 @@ ASTNode *parse_input(ParserState *state)
 
     expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
     node->next = NULL;
-    return node;
-}
-
-ASTNode *parse_identifier(ParserState *state)
-{
-    Token *current = get_current_token(state);
-    if (current->type != TOKEN_IDENTIFIER)
-    {
-        parser_error("Expected identifier", current);
-    }
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
-        parser_error("Memory allocation failed", current);
-    }
-
-    node->type = AST_ASSIGNMENT;
-    node->variable_name = strdup(current->lexeme);
-    node->next = NULL;
-
-    advance_token(state);
     return node;
 }
 
