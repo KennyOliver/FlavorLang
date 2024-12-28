@@ -110,19 +110,23 @@ void scan_identifier_or_keyword(ScannerState *state, Token **tokens,
 
 void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
                    size_t *capacity) {
-    if ((state->pos < state->length - 1) &&
-        ((state->source[state->pos] == '=' &&
-          state->source[state->pos + 1] == '=') ||
-         (state->source[state->pos] == '>' &&
-          state->source[state->pos + 1] == '=') ||
-         (state->source[state->pos] == '<' &&
-          state->source[state->pos + 1] == '='))) {
+    char first_char = state->source[state->pos];
+    char second_char =
+        state->pos < state->length - 1 ? state->source[state->pos + 1] : '\0';
+
+    // Check for two-character operators
+    if (second_char != '\0' &&
+        ((first_char == '=' && second_char == '=') ||  // ==
+         (first_char == '>' && second_char == '=') ||  // >=
+         (first_char == '<' && second_char == '=') ||  // <=
+         (first_char == '!' && second_char == '='))) { // !=
         char *lexeme = strndup(&state->source[state->pos], 2);
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);
         free(lexeme);
         state->pos += 2;
     } else {
+        // Handle single-character operators
         char *lexeme = strndup(&state->source[state->pos], 1);
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);

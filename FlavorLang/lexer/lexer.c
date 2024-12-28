@@ -74,7 +74,7 @@ Token *tokenize(const char *source) {
             continue;
         }
 
-        if (strchr("=+-*/<>", c)) {
+        if (strchr("=+-*/<>!", c)) {
             scan_operator(&state, &tokens, &token_count, &capacity);
             continue;
         }
