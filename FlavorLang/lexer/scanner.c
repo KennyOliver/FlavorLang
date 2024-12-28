@@ -1,6 +1,6 @@
 #include "scanner.h"
 
-static void scan_comment(const char *source, size_t *pos)
+void scan_comment(const char *source, size_t *pos)
 {
     while (source[*pos] != '\0' && source[*pos] != '\n')
     {
@@ -8,9 +8,9 @@ static void scan_comment(const char *source, size_t *pos)
     }
 }
 
-static void scan_number(const char *source, size_t *pos, size_t length,
-                        Token **tokens, size_t *token_count, size_t *capacity,
-                        int line)
+void scan_number(const char *source, size_t *pos, size_t length,
+                 Token **tokens, size_t *token_count, size_t *capacity,
+                 int line)
 {
     size_t start = *pos;
     bool has_decimal_point = false;
@@ -83,9 +83,9 @@ static void scan_number(const char *source, size_t *pos, size_t length,
     free(lexeme);
 }
 
-static void scan_string(const char *source, size_t *pos, size_t length,
-                        Token **tokens, size_t *token_count, size_t *capacity,
-                        int line)
+void scan_string(const char *source, size_t *pos, size_t length,
+                 Token **tokens, size_t *token_count, size_t *capacity,
+                 int line)
 {
     size_t start = ++(*pos); // skip opening quote
     while (*pos < length && source[*pos] != '"')
@@ -102,10 +102,10 @@ static void scan_string(const char *source, size_t *pos, size_t length,
     (*pos)++; // Skip closing quote
 }
 
-static void scan_identifier_or_keyword(const char *source, size_t *pos,
-                                       size_t length, Token **tokens,
-                                       size_t *token_count, size_t *capacity,
-                                       int line)
+void scan_identifier_or_keyword(const char *source, size_t *pos,
+                                size_t length, Token **tokens,
+                                size_t *token_count, size_t *capacity,
+                                int line)
 {
     size_t start = *pos;
     while (*pos < length && is_valid_identifier_char(source[*pos]))
@@ -136,9 +136,9 @@ static void scan_identifier_or_keyword(const char *source, size_t *pos,
     free(lexeme);
 }
 
-static void scan_operator(const char *source, size_t *pos, size_t length,
-                          Token **tokens, size_t *token_count,
-                          size_t *capacity, int line)
+void scan_operator(const char *source, size_t *pos, size_t length,
+                   Token **tokens, size_t *token_count,
+                   size_t *capacity, int line)
 {
     if ((*pos < length - 1) &&
         ((source[*pos] == '=' && source[*pos + 1] == '=') ||
