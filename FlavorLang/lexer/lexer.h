@@ -10,10 +10,24 @@
 
 #define INITIAL_TOKEN_CAPACITY 1024
 
-// Read a file into a string
+/**
+ * Reads a file into a dynamically allocated buffer.
+ *
+ * @param filename The name of the file to read.
+ * @return A string containing the file's content, or `NULL` if an error occurs.
+ */
 char *read_file(const char *filename);
 
-// Converts source code to tokens
+/**
+ * Tokenizes source code into a list of tokens.
+ *
+ * Scans the source code character by character and identifies various token
+ * types (e.g., numbers, strings, operators, delimiters). Returns a dynamically
+ * allocated array of tokens or `NULL` if an error occurs.
+ *
+ * @param source The source code to tokenize.
+ * @return An array of tokens, or `NULL` if an error occurs.
+ */
 Token *tokenize(const char *source);
 
 #endif
