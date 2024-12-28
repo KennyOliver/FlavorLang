@@ -8,6 +8,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#define INITIAL_TOKEN_CAPACITY 1024
+
 // Read a file into a string
 char *read_file(const char *filename);
 
