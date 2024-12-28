@@ -715,14 +715,14 @@ ASTNode *parse_function_declaration(ParserState *state) {
     }
 
     // Parse function body
-    if (get_current_token(state)->type == TOKEN_PAREN_OPEN) {
+    if (get_current_token(state)->type == TOKEN_BRACE_OPEN) {
         advance_token(state); // Consume `(`
         state->in_function_body = true;
         node->function_call.body =
             parse_function_body(state); // Parse function body
         state->in_function_body = false;
 
-        expect_token(state, TOKEN_PAREN_CLOSE,
+        expect_token(state, TOKEN_BRACE_CLOSE,
                      "Expected `}` to close function body");
     } else {
         parser_error("Expected `{` to start function body",
