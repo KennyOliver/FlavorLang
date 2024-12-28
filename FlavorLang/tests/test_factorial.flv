@@ -9,5 +9,5 @@ create factorial(n) {
         deliver n * factorial(n - 1);
 }
 
-let result = factorial(3);
-show "Factorial of 3 is:", result;
+let result = factorial(10);
+show "Factorial of 10 is:", result;
