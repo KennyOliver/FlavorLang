@@ -1,9 +1,11 @@
 #ifndef SCANNER_H
-#define SCANNERH
+#define SCANNER_H
 
 #include "../shared/token_types.h"
 #include <stdbool.h>
 #include <string.h>
+#include "keywords.h"
+#include "lexer_utils.h"
 
 /**
  * Skips over a comment in the source code.
