@@ -3,12 +3,13 @@ let y = -3.14;
 show x, y;
 
 create func1(temperature) { 
-    if temperature < 180: 
+    if temperature < 180 {
         show "Temperature is too low to bake!";
         burn "Cake burned!"; 
-    else: 
+    } else {
         show "Baking cake at", temperature, "degrees!";
         deliver "Cake is ready!";
+    }
 }
 
 create func2(x, y) { 

@@ -1,6 +1,6 @@
 let dessert = "cake";
 
-check dessert:
+check dessert {
     is "cake":
         show "Bake the cake!";
     is "pie":
@@ -9,3 +9,4 @@ check dessert:
         break;
     else:
         show "Dessert not on the menu.";
+}

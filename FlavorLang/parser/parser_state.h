@@ -6,10 +6,10 @@
 #include <stdio.h>
 
 typedef struct {
-  Token *tokens;
-  size_t current_token;
-  bool in_switch_block;
-  bool in_function_body;
+    Token *tokens;
+    size_t current_token;
+    bool in_switch_block;
+    bool in_function_body;
 } ParserState;
 
 // Create and destroy parser state

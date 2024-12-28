@@ -169,12 +169,13 @@ Use `if`, `elif`, and `else` to control program flow.
 ```py
 let oven_temperature = 200;
 
-if oven_temperature > 180:
+if oven_temperature > 180 {
 	show "The oven is hot!";
-elif oven_temperature == 180:
+} elif oven_temperature == 180 {
 	show "The oven is just right!";
-else:
+} else {
 	show "The oven is too cold!";
+}
 ```
 
 ### 4. 🔁 For Loop <a id="for-loop"></a>
@@ -182,8 +183,9 @@ else:
 Use `for` to iterate a block of code.
 
 ```py
-for i in 1..5:
-	show "Mixing... Step", i;
+for i in 1..5 {
+  show "Mixing... Step", i;
+}
 ```
 
 ### 5. 🔄 While Loop <a id="while-loop"></a>
@@ -193,9 +195,10 @@ Use `while` for condition-based repetition.
 ```py
 let flour_added = 0;
 
-while flour_added < 3:
+while flour_added < 3 {
 	show "Adding flour...";
 	let flour_added = flour_added + 1;
+}
 
 show "All flour has been added!";
 ```
@@ -207,12 +210,13 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 
 ```py
 create bake_cake(temperature) {
-	if temperature < 180:
+	if temperature < 180 {
 		show "Temperature is too low to bake!";
-		burn "Cake burned!";  # Stops function execution immediately
-	else:
+		burn "Cake burned!";  # stops function execution immediately
+  } else {
 		show "Baking cake at", temperature, "degrees!";
 		deliver "Cake is ready!";
+  }
 }
 
 let result = bake_cake(200);
@@ -224,11 +228,12 @@ show result;
 Use `try` and `rescue` to handle errors.
 
 ```py
-try:
+try {
 	burn "This recipe failed!";
 	show "This won't run!";
-rescue:
+} rescue {
 	show "Caught an error: Recipe needs improvement.";
+}
 ```
 
 ### 8. 📄 File Operations <a id="file-operations"></a>
@@ -258,7 +263,7 @@ The `check`-`is` syntax in FlavorLang provides an intuitive way to match multipl
 ```py
 let dessert = "cake";
 
-check dessert:
+check dessert {
 	is "cake":
 		show "Bake the cake!";
 	is "pie":
@@ -267,6 +272,7 @@ check dessert:
 		break;
 	else:
 		show "Dessert not on the menu.";
+}
 ```
 
 #### Output
@@ -296,8 +302,9 @@ let time = 20;
 
 show "Before error.";
 
-if time > 15:
+if time > 15 {
 	burn "Too late!", "The food got burnt!";
+}
 
 show "After error?";
 ```
@@ -350,12 +357,13 @@ In this section, `test3.flv` is used as an example to demonstrate how the --debu
 ```
 let oven_temperature = 200;
 
-if oven_temperature > 180:
-    show "The oven is hot!";
-elif oven_temperature == 180:
-    show "The oven is just right!";
-else:
-    show "The oven is too cold!";
+if oven_temperature > 180 {
+  show "The oven is hot!";
+} elif oven_temperature == 180 {
+  show "The oven is just right!";
+} else {
+  show "The oven is too cold!";
+}
 ```
 
 - This script assigns a value to the variable oven_temperature and checks its value using conditional statements.

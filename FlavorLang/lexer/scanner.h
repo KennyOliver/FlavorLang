@@ -7,8 +7,7 @@
 #include <stdbool.h>
 #include <string.h>
 
-typedef struct
-{
+typedef struct {
     const char *source;
     size_t length;
     size_t pos;
@@ -19,7 +18,8 @@ typedef struct
  * Skips over a comment in the source code.
  *
  * This function increments the position pointer in the `ScannerState` until the
- * end of the comment is reached, which is marked by a newline or the end of the string.
+ * end of the comment is reached, which is marked by a newline or the end of the
+ * string.
  *
  * @param state The current scanning state, which includes the source code,
  *              the current position, and the line number.
@@ -31,9 +31,9 @@ void scan_comment(ScannerState *state);
  *
  * This function identifies and processes a number, handling optional negative
  * signs, decimals, and invalid formats. It also decides whether the number is
- * an integer or a floating-point number based on the presence of a decimal point.
- * If an invalid number format is encountered, it will handle it as an error or
- * as an operator, depending on the context.
+ * an integer or a floating-point number based on the presence of a decimal
+ * point. If an invalid number format is encountered, it will handle it as an
+ * error or as an operator, depending on the context.
  *
  * @param state The current scanning state, which includes the source code,
  *              the current position, and the line number.
@@ -81,8 +81,8 @@ void scan_identifier_or_keyword(ScannerState *state, Token **tokens,
  * Processes an operator in the source code.
  *
  * This function identifies and processes operators, including multi-character
- * operators like `==`, `>=`, and `<=`. It increments the position in the `ScannerState`
- * appropriately after each operator is processed.
+ * operators like `==`, `>=`, and `<=`. It increments the position in the
+ * `ScannerState` appropriately after each operator is processed.
  *
  * @param state The current scanning state, which includes the source code,
  *              the current position, and the line number.

@@ -1,12 +1,13 @@
 create factorial(n) {
     show "Called with n:", n;
 
-    if n <= 1:
+    if n <= 1 {
         show "Base case";
         deliver 1;
-    else:
+    } else {
         show "Calling: factorial with n =", n;
         deliver n * factorial(n - 1);
+    }
 }
 
 let result = factorial(10);

@@ -1,88 +1,59 @@
 #include "parser.h"
-#include <string.h>
 #include "../debug/debug.h"
+#include <string.h>
 
-ASTNode *parse_program(Token *tokens)
-{
+ASTNode *parse_program(Token *tokens) {
     ParserState *state = create_parser_state(tokens);
     ASTNode *head = NULL;
     ASTNode *current = NULL;
 
-    while (get_current_token(state)->type != TOKEN_EOF)
-    {
+    while (get_current_token(state)->type != TOKEN_EOF) {
         ASTNode *new_node = NULL;
         Token *token = get_current_token(state);
 
         // Match statements based on token type
-        if (strcmp(token->lexeme, "let") == 0)
-        {
+        if (strcmp(token->lexeme, "let") == 0) {
             new_node = parse_variable_declaration(state);
-        }
-        else if (token->type == TOKEN_IDENTIFIER)
-        {
+        } else if (token->type == TOKEN_IDENTIFIER) {
             // Peek ahead to see if next token is an operator and if it's '='
             Token *next_token = peek_next_token(state);
-            if (next_token &&
-                next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0)
-            {
+            if (next_token && next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0) {
                 // It's truly an assignment of the form `x = ...`
                 new_node = parse_variable_assignment(state);
-            }
-            else
-            {
+            } else {
                 // Otherwise, parse a plain expression statement (e.g. `n - 1;`)
                 // or a stand-alone function call that uses an identifier, etc.
                 new_node = parse_expression_statement(state);
             }
-        }
-        else if (strcmp(token->lexeme, "show") == 0)
-        {
+        } else if (strcmp(token->lexeme, "show") == 0) {
             new_node = parse_print_statement(state);
-        }
-        else if (strcmp(token->lexeme, "burn") == 0)
-        {
+        } else if (strcmp(token->lexeme, "burn") == 0) {
             new_node = parse_raise_error(state);
-        }
-        else if (strcmp(token->lexeme, "taste") == 0)
-        {
+        } else if (strcmp(token->lexeme, "taste") == 0) {
             new_node = parse_input(state);
-        }
-        else if (strcmp(token->lexeme, "if") == 0)
-        {
+        } else if (strcmp(token->lexeme, "if") == 0) {
             new_node = parse_conditional_block(state);
-        }
-        else if (strcmp(token->lexeme, "while") == 0)
-        {
+        } else if (strcmp(token->lexeme, "while") == 0) {
             new_node = parse_while_block(state);
-        }
-        else if (strcmp(token->lexeme, "check") == 0)
-        {
+        } else if (strcmp(token->lexeme, "check") == 0) {
             new_node = parse_switch_block(state);
-        }
-        else if (strcmp(token->lexeme, "create") == 0)
-        {
+        } else if (strcmp(token->lexeme, "create") == 0) {
             new_node = parse_function_declaration(state);
-        }
-        else if (token->type == TOKEN_FUNCTION_NAME)
-        {
+        } else if (token->type == TOKEN_FUNCTION_NAME) {
             new_node = parse_function_call(state);
             // Expect semicolon after standalone function call
-            expect_token(state, TOKEN_DELIMITER, "Expected ';' after function call");
-        }
-        else
-        {
+            expect_token(state, TOKEN_DELIMITER,
+                         "Expected ';' after function call");
+        } else {
             parser_error("Unexpected token at start of statement", token);
         }
 
         // Add node to AST
-        if (!head)
-        {
+        if (!head) {
             head = new_node;
             current = new_node;
-        }
-        else
-        {
+        } else {
             current->next = new_node;
             current = new_node;
         }
@@ -92,22 +63,20 @@ ASTNode *parse_program(Token *tokens)
     return head;
 }
 
-Token *peek_next_token(ParserState *state)
-{
+Token *peek_next_token(ParserState *state) {
     // Just look at the next token (but don’t advance)
     return &state->tokens[state->current_token + 1];
 }
 
-ASTNode *parse_expression_statement(ParserState *state)
-{
+ASTNode *parse_expression_statement(ParserState *state) {
     // Parse the expression (which can handle binary ops, variables, etc.)
     ASTNode *expr_node = parse_expression(state);
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after expression statement");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after expression statement");
     return expr_node;
 }
 
-ASTNode *parse_variable_declaration(ParserState *state)
-{
+ASTNode *parse_variable_declaration(ParserState *state) {
     debug_print_par("Starting variable declaration parse\n");
     expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
 
@@ -120,23 +89,18 @@ ASTNode *parse_variable_declaration(ParserState *state)
 
     // Create AST node
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_ASSIGNMENT;
 
     // Create a deep copy of the variable name
-    if (name && name->lexeme)
-    {
+    if (name && name->lexeme) {
         node->assignment.variable_name = strdup(name->lexeme);
-        if (!node->assignment.variable_name)
-        {
+        if (!node->assignment.variable_name) {
             parser_error("Memory allocation failed for variable name", name);
         }
-    }
-    else
-    {
+    } else {
         parser_error("Invalid variable name token", name);
     }
 
@@ -145,12 +109,12 @@ ASTNode *parse_variable_declaration(ParserState *state)
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after variable declaration");
     return node;
 }
 
-ASTNode *parse_variable_assignment(ParserState *state)
-{
+ASTNode *parse_variable_assignment(ParserState *state) {
     debug_print_par("Starting variable assignment parse\n");
 
     // Parse variable name
@@ -163,8 +127,7 @@ ASTNode *parse_variable_assignment(ParserState *state)
     expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
@@ -173,37 +136,35 @@ ASTNode *parse_variable_assignment(ParserState *state)
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after variable declaration");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after variable declaration");
 
     return node;
 }
 
-ASTNode *helper_print(ParserState *state)
-{
+ASTNode *helper_print(ParserState *state) {
     // Create print node
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
     node->type = AST_PRINT;
     node->to_print.arguments = malloc(sizeof(ASTNode *) * MAX_ARGUMENTS);
-    if (!node->to_print.arguments)
-    {
+    if (!node->to_print.arguments) {
         free(node);
-        parser_error("Memory allocation failed for arguments array", get_current_token(state));
+        parser_error("Memory allocation failed for arguments array",
+                     get_current_token(state));
     }
     node->to_print.arg_count = 0;
 
     // Parse arguments until we hit a semicolon
     while (get_current_token(state)->type != TOKEN_DELIMITER &&
-           get_current_token(state)->type != TOKEN_EOF)
-    {
+           get_current_token(state)->type != TOKEN_EOF) {
 
-        if (node->to_print.arg_count >= MAX_ARGUMENTS)
-        {
-            parser_error("Too many arguments in show statement", get_current_token(state));
+        if (node->to_print.arg_count >= MAX_ARGUMENTS) {
+            parser_error("Too many arguments in show statement",
+                         get_current_token(state));
         }
 
         // Parse the argument
@@ -212,8 +173,8 @@ ASTNode *helper_print(ParserState *state)
 
         // Check for comma separator
         Token *current = get_current_token(state);
-        if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ",") == 0)
-        {
+        if (current->type == TOKEN_DELIMITER &&
+            strcmp(current->lexeme, ",") == 0) {
             advance_token(state); // consume the comma
         }
     }
@@ -223,15 +184,13 @@ ASTNode *helper_print(ParserState *state)
     return node;
 }
 
-ASTNode *parse_print_statement(ParserState *state)
-{
+ASTNode *parse_print_statement(ParserState *state) {
     debug_print_par("Starting print statement parse\n");
     expect_token(state, TOKEN_KEYWORD, "Expected 'show' keyword");
     return helper_print(state);
 }
 
-ASTNode *parse_raise_error(ParserState *state)
-{
+ASTNode *parse_raise_error(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `burn` keyword");
 
     ASTNode *node = helper_print(state);
@@ -241,13 +200,11 @@ ASTNode *parse_raise_error(ParserState *state)
     return node;
 }
 
-ASTNode *parse_input(ParserState *state)
-{
+ASTNode *parse_input(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `taste` keyword");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
@@ -258,35 +215,28 @@ ASTNode *parse_input(ParserState *state)
     return node;
 }
 
-ASTNode *parse_literal_or_identifier(ParserState *state)
-{
+ASTNode *parse_literal_or_identifier(ParserState *state) {
     Token *current = get_current_token(state);
 
     // Check for negative numbers
-    if (current->type == TOKEN_OPERATOR && strcmp(current->lexeme, "-") == 0)
-    {
+    if (current->type == TOKEN_OPERATOR && strcmp(current->lexeme, "-") == 0) {
         // Look ahead to next token
         advance_token(state);
         Token *next = get_current_token(state);
 
         // Check if it's a number
-        if (next->type == TOKEN_INTEGER || next->type == TOKEN_FLOAT)
-        {
+        if (next->type == TOKEN_INTEGER || next->type == TOKEN_FLOAT) {
             ASTNode *node = malloc(sizeof(ASTNode));
-            if (!node)
-            {
+            if (!node) {
                 parser_error("Memory allocation failed", current);
             }
 
             node->type = AST_LITERAL;
 
-            if (next->type == TOKEN_FLOAT)
-            {
+            if (next->type == TOKEN_FLOAT) {
                 node->literal.type = LITERAL_FLOAT;
                 node->literal.value.floating_point = -atof(next->lexeme);
-            }
-            else
-            {
+            } else {
                 node->literal.type = LITERAL_INTEGER;
                 node->literal.value.integer = -atoi(next->lexeme);
             }
@@ -294,9 +244,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
             node->next = NULL;
             advance_token(state);
             return node;
-        }
-        else
-        {
+        } else {
             // If it's not followed by a number, rewind and treat as operator
             state->current_token--;
             current = get_current_token(state);
@@ -304,28 +252,22 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
     }
 
     // Original literal/identifier handling
-    if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER || current->type == TOKEN_STRING)
-    {
+    if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER ||
+        current->type == TOKEN_STRING) {
         ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node)
-        {
+        if (!node) {
             parser_error("Memory allocation failed", current);
         }
 
         node->type = AST_LITERAL;
 
-        if (current->type == TOKEN_FLOAT)
-        {
+        if (current->type == TOKEN_FLOAT) {
             node->literal.type = LITERAL_FLOAT;
             node->literal.value.floating_point = atof(current->lexeme);
-        }
-        else if (current->type == TOKEN_INTEGER)
-        {
+        } else if (current->type == TOKEN_INTEGER) {
             node->literal.type = LITERAL_INTEGER;
             node->literal.value.integer = atoi(current->lexeme);
-        }
-        else
-        {
+        } else {
             node->literal.type = LITERAL_STRING;
             node->literal.value.string = strdup(current->lexeme);
         }
@@ -333,12 +275,9 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
         node->next = NULL;
         advance_token(state);
         return node;
-    }
-    else if (current->type == TOKEN_IDENTIFIER)
-    {
+    } else if (current->type == TOKEN_IDENTIFIER) {
         ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node)
-        {
+        if (!node) {
             parser_error("Memory allocation failed", current);
         }
 
@@ -348,12 +287,10 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 
         advance_token(state);
         return node;
-    }
-    else if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "taste") == 0)
-    {
+    } else if (current->type == TOKEN_KEYWORD &&
+               strcmp(current->lexeme, "taste") == 0) {
         ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node)
-        {
+        if (!node) {
             parser_error("Memory allocation failed", current);
         }
 
@@ -362,9 +299,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
 
         advance_token(state);
         return node;
-    }
-    else if (current->type == TOKEN_FUNCTION_NAME)
-    {
+    } else if (current->type == TOKEN_FUNCTION_NAME) {
         ASTNode *node = parse_function_call(state);
         return node;
     }
@@ -373,18 +308,15 @@ ASTNode *parse_literal_or_identifier(ParserState *state)
     return NULL;
 }
 
-ASTNode *parse_term(ParserState *state)
-{
+ASTNode *parse_term(ParserState *state) {
     return parse_literal_or_identifier(state);
 }
 
-ASTNode *parse_expression(ParserState *state)
-{
+ASTNode *parse_expression(ParserState *state) {
     ASTNode *node = parse_term(state);
 
     // Check for binary operators
-    while (get_current_token(state)->type == TOKEN_OPERATOR)
-    {
+    while (get_current_token(state)->type == TOKEN_OPERATOR) {
         Token *operator= get_current_token(state);
         advance_token(state);
 
@@ -402,13 +334,11 @@ ASTNode *parse_expression(ParserState *state)
     return node;
 }
 
-ASTNode *parse_function_return(ParserState *state)
-{
+ASTNode *parse_function_return(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `deliver` keyword");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
@@ -417,144 +347,101 @@ ASTNode *parse_function_return(ParserState *state)
     node->assignment.value = parse_expression(state);
 
     node->next = NULL;
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after deliver statement");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after deliver statement");
     return node;
 }
 
-ASTNode *parse_block(ParserState *state)
-{
+ASTNode *parse_block(ParserState *state) {
     debug_print_par("Starting to parse block\n");
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
-    while (get_current_token(state)->type != TOKEN_EOF)
-    {
+    while (get_current_token(state)->type != TOKEN_EOF) {
         Token *current = get_current_token(state);
         debug_print_par("Parsing token in block: type=`%d`, lexeme=`%s`\n",
-                        current->type,
-                        current->lexeme);
+                        current->type, current->lexeme);
 
         // Break if we hit end of block
-        if (current->type == TOKEN_PAREN_CLOSE && strcmp(current->lexeme, "}") == 0)
-        {
+        if (current->type == TOKEN_BRACE_CLOSE) {
             break;
         }
 
         // Check for block end conditions
         // Handle semicolons between statements without breaking the block
-        if (current->type == TOKEN_DELIMITER && strcmp(current->lexeme, ";") == 0)
-        {
+        if (current->type == TOKEN_DELIMITER &&
+            strcmp(current->lexeme, ";") == 0) {
             advance_token(state);
             continue; // continue to next statement instead of breaking
         }
 
         // Handle `is` in check blocks
-        if (current->type == TOKEN_KEYWORD)
-        {
+        if (current->type == TOKEN_KEYWORD) {
             if ((strcmp(current->lexeme, "elif") == 0 ||
                  strcmp(current->lexeme, "else") == 0) ||
-                (!state->in_switch_block && strcmp(current->lexeme, "is") == 0))
-            {
+                (!state->in_switch_block &&
+                 strcmp(current->lexeme, "is") == 0)) {
                 break;
             }
         }
 
         // Parse statement
         ASTNode *statement = NULL;
-        if (current->type == TOKEN_KEYWORD)
-        {
-            if (strcmp(current->lexeme, "deliver") == 0)
-            {
+        if (current->type == TOKEN_KEYWORD) {
+            if (strcmp(current->lexeme, "deliver") == 0) {
                 statement = parse_function_return(state);
-                if (head)
-                {
+                if (head) {
                     tail->next = statement;
                     tail = statement;
-                }
-                else
-                {
+                } else {
                     head = tail = statement;
                 }
                 break; // exit block after deliver
-            }
-            else if (strcmp(current->lexeme, "show") == 0)
-            {
+            } else if (strcmp(current->lexeme, "show") == 0) {
                 statement = parse_print_statement(state);
-            }
-            else if (strcmp(current->lexeme, "burn") == 0)
-            {
+            } else if (strcmp(current->lexeme, "burn") == 0) {
                 statement = parse_raise_error(state);
-            }
-            else if (strcmp(current->lexeme, "if") == 0)
-            {
+            } else if (strcmp(current->lexeme, "if") == 0) {
                 statement = parse_conditional_block(state);
-            }
-            else if (strcmp(current->lexeme, "while") == 0)
-            {
+            } else if (strcmp(current->lexeme, "while") == 0) {
                 statement = parse_while_block(state);
-            }
-            else if (strcmp(current->lexeme, "check") == 0)
-            {
+            } else if (strcmp(current->lexeme, "check") == 0) {
                 state->in_switch_block = true;
                 statement = parse_switch_block(state);
                 state->in_switch_block = false;
-            }
-            else if (strcmp(current->lexeme, "break") == 0)
-            {
+            } else if (strcmp(current->lexeme, "break") == 0) {
                 statement = parse_break_statement(state);
-            }
-            else if (strcmp(current->lexeme, "let") == 0)
-            {
+            } else if (strcmp(current->lexeme, "let") == 0) {
                 statement = parse_variable_declaration(state);
-            }
-            else if (strcmp(current->lexeme, "create") == 0)
-            {
+            } else if (strcmp(current->lexeme, "create") == 0) {
                 statement = parse_function_declaration(state);
-            }
-            else if (state->in_switch_block && strcmp(current->lexeme, "is") == 0)
-            {
+            } else if (state->in_switch_block &&
+                       strcmp(current->lexeme, "is") == 0) {
                 break;
-            }
-            else
-            {
+            } else {
                 parser_error("Unexpected keyword in block", current);
             }
-        }
-        else if (current->type == TOKEN_IDENTIFIER)
-        {
+        } else if (current->type == TOKEN_IDENTIFIER) {
             Token *next_token = peek_next_token(state);
-            if (next_token &&
-                next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0)
-            {
+            if (next_token && next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0) {
                 statement = parse_variable_assignment(state);
-            }
-            else
-            {
+            } else {
                 statement = parse_expression_statement(state);
             }
-        }
-        else if (current->type == TOKEN_PAREN_CLOSE)
-        {
+        } else if (current->type == TOKEN_PAREN_CLOSE) {
             state->in_function_body = false;
-        }
-        else if (current->type == TOKEN_EOF)
-        {
+        } else if (current->type == TOKEN_EOF) {
             break;
-        }
-        else
-        {
+        } else {
             parser_error("Unexpected token in block", current);
         }
 
         // Add statement to list
-        if (!head)
-        {
+        if (!head) {
             head = statement;
             tail = statement;
-        }
-        else
-        {
+        } else {
             tail->next = statement;
             tail = statement;
         }
@@ -563,123 +450,82 @@ ASTNode *parse_block(ParserState *state)
     return head;
 }
 
-ASTNode *parse_conditional_block(ParserState *state)
-{
+ASTNode *parse_conditional_block(ParserState *state) {
+    // Allocate the node
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
     node->type = AST_CONDITIONAL;
-    Token *current = get_current_token(state);
+    node->next = NULL;
+    node->conditional.else_branch = NULL;
 
-    // Handle if/elif/else
-    if (strcmp(current->lexeme, "if") == 0 || strcmp(current->lexeme, "elif") == 0)
-    {
+    // Expect either `if`, `elif`, or `else`
+    Token *current = get_current_token(state);
+    if (strcmp(current->lexeme, "if") == 0 ||
+        strcmp(current->lexeme, "elif") == 0) {
+        // Consume `if`/`elif`
         advance_token(state);
+
+        // Parse condition expression
         node->conditional.condition = parse_expression(state);
 
-        // Expect colon
-        if (get_current_token(state)->type != TOKEN_DELIMITER ||
-            strcmp(get_current_token(state)->lexeme, ":") != 0)
-        {
-            parser_error("Expected ':' after condition", get_current_token(state));
-        }
+        expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
+        node->conditional.body = parse_block(state);
+        expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
+    } else if (strcmp(current->lexeme, "else") == 0) {
+        // Consume `else`
         advance_token(state);
-    }
-    else if (strcmp(current->lexeme, "else") == 0)
-    {
-        advance_token(state);
+
+        // No condition => node->conditional.condition = NULL
         node->conditional.condition = NULL;
 
-        // Expect colon
-        if (get_current_token(state)->type != TOKEN_DELIMITER ||
-            strcmp(get_current_token(state)->lexeme, ":") != 0)
-        {
-            parser_error("Expected ':' after else", get_current_token(state));
-        }
-        advance_token(state);
-    }
-    else
-    {
-        parser_error("Expected 'if', 'elif', or 'else'", current);
+        expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
+        node->conditional.body = parse_block(state);
+        expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
+    } else {
+        parser_error("Expected `if`, `elif`, or `else`", current);
     }
 
-    // Parse body
-    node->conditional.body = parse_block(state);
-
-    // Check for elif/else
-    current = get_current_token(state);
-    if (current->type == TOKEN_KEYWORD)
-    {
-        if (strcmp(current->lexeme, "elif") == 0 || strcmp(current->lexeme, "else") == 0)
-        {
-            node->conditional.else_branch = parse_conditional_block(state);
-        }
-        else
-        {
-            node->conditional.else_branch = NULL;
-        }
-    }
-    else
-    {
-        node->conditional.else_branch = NULL;
+    // Check if next token is `elif` or `else` to chain
+    Token *next = get_current_token(state);
+    if (next->type == TOKEN_KEYWORD && (strcmp(next->lexeme, "elif") == 0 ||
+                                        strcmp(next->lexeme, "else") == 0)) {
+        node->conditional.else_branch = parse_conditional_block(state);
     }
 
-    node->next = NULL;
     return node;
 }
 
-ASTNode *parse_while_block(ParserState *state)
-{
-    // Allocate memory for the ASTNode
+ASTNode *parse_while_block(ParserState *state) {
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
-    // Set the node type to loop
     node->type = AST_LOOP;
 
-    // Ensure the current token is 'while'
-    Token *current = get_current_token(state);
-    if (strcmp(current->lexeme, "while") != 0)
-    {
-        parser_error("Expected `while` keyword", current);
-    }
-    advance_token(state);
+    // Ensure the current token is `while`
+    expect_token(state, TOKEN_KEYWORD, "Expected `while` keyword");
 
     // Parse the condition expression
     node->loop.condition = parse_expression(state);
 
-    // Expect a colon after the condition
-    current = get_current_token(state);
-    if (current->type != TOKEN_DELIMITER || strcmp(current->lexeme, ":") != 0)
-    {
-        parser_error("Expected `:` after while condition", current);
-    }
-    advance_token(state);
-
-    // Parse the loop body (indented block)
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
     node->loop.body = parse_block(state);
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
 
-    // Add code to re-evaluate the condition after each iteration
-    node->loop.re_evaluate_condition = 1; // Flag to indicate re-evaluation
-
+    // Optional re-evaluation logic
+    node->loop.re_evaluate_condition = 1;
     node->next = NULL;
     return node;
 }
 
-ASTNode *parse_break_statement(ParserState *state)
-{
+ASTNode *parse_break_statement(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `break` keyword");
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after break");
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
@@ -688,11 +534,9 @@ ASTNode *parse_break_statement(ParserState *state)
     return node;
 }
 
-ASTNode *parse_switch_block(ParserState *state)
-{
+ASTNode *parse_switch_block(ParserState *state) {
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
@@ -704,139 +548,115 @@ ASTNode *parse_switch_block(ParserState *state)
     // Parse switch expression
     node->switch_case.expression = parse_expression(state);
 
-    // Expect colon
-    expect_token(state, TOKEN_DELIMITER, "Expected `:`");
+    // Expect `{` instead of `:`
+    expect_token(state, TOKEN_BRACE_OPEN,
+                 "Expected '{' after check expression");
 
     // Parse cases
     node->switch_case.cases = NULL;
     ASTCaseNode *last_case = NULL;
 
     Token *current;
-    while ((current = get_current_token(state)))
-    {
+    while ((current = get_current_token(state))) {
         // Skip any delimiters between cases
-        if (current->type == TOKEN_DELIMITER)
-        {
+        if (current->type == TOKEN_DELIMITER) {
             advance_token(state);
             continue;
         }
 
-        if (current->type != TOKEN_KEYWORD)
-        {
+        if (current->type != TOKEN_KEYWORD) {
             break; // exit if not a keyword (`is`/`else`)
         }
 
-        if (strcmp(current->lexeme, "is") == 0)
-        {
+        if (strcmp(current->lexeme, "is") == 0) {
             advance_token(state); // consume `is`
 
             ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
-            if (!case_node)
-            {
+            if (!case_node) {
                 parser_error("Memory allocation failed", current);
             }
 
             // Parse case value
             case_node->condition = parse_expression(state);
-
-            // Expect colon
-            expect_token(state, TOKEN_DELIMITER, "Expected `:` after case value");
+            expect_token(state, TOKEN_DELIMITER,
+                         "Expected `:` after case value");
 
             // Parse case body
             case_node->body = parse_block(state);
             case_node->next = NULL;
 
             // Add to cases list
-            if (!node->switch_case.cases)
-            {
+            if (!node->switch_case.cases) {
                 node->switch_case.cases = case_node;
-            }
-            else
-            {
+            } else {
                 last_case->next = case_node;
             }
             last_case = case_node;
-        }
-        else if (strcmp(current->lexeme, "else") == 0)
-        {
+        } else if (strcmp(current->lexeme, "else") == 0) {
             advance_token(state); // consume `else`
 
             ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
-            if (!default_case)
-            {
+            if (!default_case) {
                 parser_error("Memory allocation failed", current);
             }
 
-            default_case->condition = NULL; // no condition for `else
+            default_case->condition = NULL; // no condition for `else`
 
-            // Expect colon
             expect_token(state, TOKEN_DELIMITER, "Expected `:` after else");
 
-            // Parse else body
+            // Parse `else` body
             default_case->body = parse_block(state);
             default_case->next = NULL;
 
             // Add as last case
-            if (!node->switch_case.cases)
-            {
+            if (!node->switch_case.cases) {
                 node->switch_case.cases = default_case;
-            }
-            else
-            {
+            } else {
                 last_case->next = default_case;
             }
-            break; // else is always the last case
-        }
-        else
-        {
-            break; // Exit on any other keyword
+            break; // `else` is always the last case
+        } else {
+            break; // exit on any other keyword
         }
     }
+
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected '}' to close check block");
 
     node->next = NULL;
     return node;
 }
 
-ASTFunctionParameter *parse_parameter_list(ParserState *state)
-{
+ASTFunctionParameter *parse_parameter_list(ParserState *state) {
     ASTFunctionParameter *head = NULL;
     ASTFunctionParameter *tail = NULL;
 
-    while (1)
-    {
+    while (1) {
         // Parse parameter name
         Token *name = get_current_token(state);
         expect_token(state, TOKEN_IDENTIFIER, "Expected parameter name");
 
         // Create parameter node
         ASTFunctionParameter *param_node = malloc(sizeof(ASTFunctionParameter));
-        if (!param_node)
-        {
+        if (!param_node) {
             parser_error("Memory allocation failed", get_current_token(state));
         }
         param_node->parameter_name = strdup(name->lexeme);
         param_node->next = NULL;
 
         // Add parameter to linked list
-        if (!head)
-        {
+        if (!head) {
             head = param_node;
             tail = param_node;
-        }
-        else
-        {
+        } else {
             tail->next = param_node;
             tail = param_node;
         }
 
         // Check for comma (indicates another parameter)
         if (get_current_token(state)->type == TOKEN_DELIMITER &&
-            strcmp(get_current_token(state)->lexeme, ",") == 0)
-        {
+            strcmp(get_current_token(state)->lexeme, ",") == 0) {
             advance_token(state); // consume `,`
-        }
-        else
-        {
+        } else {
             break;
         }
     }
@@ -844,30 +664,27 @@ ASTFunctionParameter *parse_parameter_list(ParserState *state)
     return head;
 }
 
-ASTNode *parse_function_body(ParserState *state)
-{
+ASTNode *parse_function_body(ParserState *state) {
     ASTNode *body = parse_block(state);
 
     return body;
 }
 
-ASTNode *parse_function_declaration(ParserState *state)
-{
+ASTNode *parse_function_declaration(ParserState *state) {
     // Expect and consume the `create` keyword
     expect_token(state, TOKEN_KEYWORD, "Expected `create` keyword");
 
     // Parse function name
     Token *name = get_current_token(state);
-    if (name->type != TOKEN_FUNCTION_NAME)
-    {
+    if (name->type != TOKEN_FUNCTION_NAME) {
         parser_error("Expected function name after `create`", name);
     }
 
     // Create the function declaration node
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
-        parser_error("Memory allocation failed for function declaration node", name);
+    if (!node) {
+        parser_error("Memory allocation failed for function declaration node",
+                     name);
     }
 
     node->type = AST_FUNCTION_DECLARATION;
@@ -880,81 +697,68 @@ ASTNode *parse_function_declaration(ParserState *state)
     advance_token(state); // Move past the function name
 
     // Parse parameters
-    if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
-    {
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // Consume `(`
 
         // Check if the parameter list is empty
-        if (get_current_token(state)->type == TOKEN_PAREN_CLOSE)
-        {
+        if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
             node->function_call.parameters = NULL; // No parameters
-        }
-        else
-        {
+        } else {
             node->function_call.parameters = parse_parameter_list(state);
         }
 
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after parameter list");
-    }
-    else
-    {
-        parser_error("Expected `(` for parameter list", get_current_token(state));
+        expect_token(state, TOKEN_PAREN_CLOSE,
+                     "Expected `)` after parameter list");
+    } else {
+        parser_error("Expected `(` for parameter list",
+                     get_current_token(state));
     }
 
     // Parse function body
-    if (get_current_token(state)->type == TOKEN_PAREN_OPEN)
-    {
+    if (get_current_token(state)->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // Consume `(`
         state->in_function_body = true;
-        node->function_call.body = parse_function_body(state); // Parse function body
+        node->function_call.body =
+            parse_function_body(state); // Parse function body
         state->in_function_body = false;
 
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` to close function body");
-    }
-    else
-    {
-        parser_error("Expected `{` to start function body", get_current_token(state));
+        expect_token(state, TOKEN_PAREN_CLOSE,
+                     "Expected `}` to close function body");
+    } else {
+        parser_error("Expected `{` to start function body",
+                     get_current_token(state));
     }
 
     return node;
 }
 
-ASTNode *parse_argument_list(ParserState *state)
-{
+ASTNode *parse_argument_list(ParserState *state) {
     // Check for empty argument list first
-    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE)
-    {
+    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
         return NULL; // return NULL for empty argument list
     }
 
     ASTNode *head = NULL;
     ASTNode *tail = NULL;
 
-    while (1)
-    {
+    while (1) {
         // Parse arguments as expressions
         ASTNode *arg = parse_expression(state);
 
         // Add argument to linked list
-        if (!head)
-        {
+        if (!head) {
             head = arg;
             tail = arg;
-        }
-        else
-        {
+        } else {
             tail->next = arg;
             tail = arg;
         }
 
         // Check for comma (indicates another argument)
         if (get_current_token(state)->type == TOKEN_DELIMITER &&
-            strcmp(get_current_token(state)->lexeme, ",") == 0)
-        {
+            strcmp(get_current_token(state)->lexeme, ",") == 0) {
             advance_token(state); // consume `,`
-        }
-        else
-        {
+        } else {
             break;
         }
     }
@@ -962,16 +766,14 @@ ASTNode *parse_argument_list(ParserState *state)
     return head;
 }
 
-ASTNode *parse_function_call(ParserState *state)
-{
+ASTNode *parse_function_call(ParserState *state) {
     // Parse function name
     Token *name = get_current_token(state);
     expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
 
     // Create function call node
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node)
-    {
+    if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
@@ -994,18 +796,14 @@ ASTNode *parse_function_call(ParserState *state)
     return node;
 }
 
-void free_ast(ASTNode *node)
-{
-    while (node)
-    {
+void free_ast(ASTNode *node) {
+    while (node) {
         ASTNode *next = node->next;
 
-        switch (node->type)
-        {
+        switch (node->type) {
         case AST_PRINT:
         case AST_ERROR:
-            for (size_t i = 0; i < node->to_print.arg_count; i++)
-            {
+            for (size_t i = 0; i < node->to_print.arg_count; i++) {
                 free_ast(node->to_print.arguments[i]);
             }
             free(node->to_print.arguments);
@@ -1021,8 +819,7 @@ void free_ast(ASTNode *node)
             break;
 
         case AST_LITERAL:
-            if (node->literal.type == LITERAL_STRING)
-            {
+            if (node->literal.type == LITERAL_STRING) {
                 free(node->literal.value.string);
             }
             break;
@@ -1061,28 +858,23 @@ void free_ast(ASTNode *node)
             break;
 
         case AST_SWITCH:
-            if (node->switch_case.expression)
-            {
+            if (node->switch_case.expression) {
                 free_ast(node->switch_case.expression);
             }
 
-            if (node->switch_case.cases)
-            {
+            if (node->switch_case.cases) {
                 ASTCaseNode *case_node = node->switch_case.cases;
 
-                while (case_node)
-                {
+                while (case_node) {
                     ASTCaseNode *next = case_node->next;
 
                     // Free the condition ASTNode if it exists
-                    if (case_node->condition)
-                    {
+                    if (case_node->condition) {
                         free_ast(case_node->condition);
                     }
 
                     // Free the body
-                    if (case_node->body)
-                    {
+                    if (case_node->body) {
                         free_ast(case_node->body);
                     }
 
