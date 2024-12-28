@@ -545,48 +545,6 @@ ASTNode *parse_block(ParserState *state)
         }
     }
 
-    // Handle implicit return for function bodies
-    if (state->in_function_body)
-    {
-        if (!head)
-        {
-            // Block is empty, add implicit return
-            head = malloc(sizeof(ASTNode));
-            if (!head)
-            {
-                parser_error("Memory allocation failed for implicit return", NULL);
-            }
-            head->type = AST_FUNCTION_RETURN;
-            head->function_call.return_data = NULL;
-            head->next = NULL;
-        }
-        else
-        {
-            // Check the last statement
-            ASTNode *last_statement = head;
-            while (last_statement->next)
-            {
-                last_statement = last_statement->next;
-            }
-
-            if (last_statement->type != AST_FUNCTION_RETURN)
-            {
-                // Add implicit return
-                ASTNode *implicit_return = malloc(sizeof(ASTNode));
-                if (!implicit_return)
-                {
-                    parser_error("Memory allocation failed for implicit return", NULL);
-                }
-                implicit_return->type = AST_FUNCTION_RETURN;
-                implicit_return->function_call.return_data = NULL;
-                implicit_return->next = NULL;
-
-                last_statement->next = implicit_return;
-                debug_print_par("Implicit return added to block\n");
-            }
-        }
-    }
-
     return head;
 }
 
@@ -874,42 +832,6 @@ ASTFunctionParameter *parse_parameter_list(ParserState *state)
 ASTNode *parse_function_body(ParserState *state)
 {
     ASTNode *body = parse_block(state);
-
-    if (!body)
-    {
-        // Implicit return for empty function bodies
-        body = malloc(sizeof(ASTNode));
-        if (!body)
-        {
-            parser_error("Memory allocation failed for implicit return", NULL);
-        }
-        body->type = AST_FUNCTION_RETURN;
-        body->function_call.return_data = NULL;
-        body->next = NULL;
-        debug_print_par("Implicit return added to empty function body\n");
-    }
-    else
-    {
-        // Add implicit return if the last statement isn't a return
-        ASTNode *last_statement = body;
-        while (last_statement->next)
-        {
-            last_statement = last_statement->next;
-        }
-        if (last_statement->type != AST_FUNCTION_RETURN)
-        {
-            ASTNode *implicit_return = malloc(sizeof(ASTNode));
-            if (!implicit_return)
-            {
-                parser_error("Memory allocation failed for implicit return", NULL);
-            }
-            implicit_return->type = AST_FUNCTION_RETURN;
-            implicit_return->function_call.return_data = NULL;
-            implicit_return->next = NULL;
-            last_statement->next = implicit_return;
-            debug_print_par("Implicit return added to function body\n");
-        }
-    }
 
     return body;
 }
