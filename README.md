@@ -139,6 +139,9 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
 
+<details>
+<summary>Expand to see examples</summary>
+
 ### 1. 👋 Hello World <a id="hello-world"></a>
 
 The simplest program to print "Hello world!".
@@ -298,6 +301,8 @@ if time > 15:
 
 show "After error?";
 ```
+
+</details>
 
 ---
 
