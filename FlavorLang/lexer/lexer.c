@@ -33,9 +33,12 @@ Token *tokenize(const char *source)
     if (!source)
         return NULL;
 
-    size_t pos = 0;
-    size_t length = strlen(source);
-    int line = 1;
+    // Initialize ScannerState
+    ScannerState state = {
+        .source = source,
+        .length = strlen(source),
+        .pos = 0,
+        .line = 1};
 
     size_t capacity = INITIAL_TOKEN_CAPACITY;
     size_t token_count = 0;
@@ -47,51 +50,47 @@ Token *tokenize(const char *source)
         return NULL;
     }
 
-    while (pos < length)
+    while (state.pos < state.length)
     {
-        char c = source[pos];
+        char c = state.source[state.pos];
 
         if (is_whitespace(c))
         {
             if (c == '\n')
             {
-                line++;
+                state.line++;
             }
-            pos++;
+            state.pos++;
             continue;
         }
 
         if (c == '#')
         {
-            scan_comment(source, &pos);
+            scan_comment(&state);
             continue;
         }
 
         if (isdigit(c))
         {
-            scan_number(source, &pos, length, &tokens, &token_count, &capacity,
-                        line);
+            scan_number(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (c == '"')
         {
-            scan_string(source, &pos, length, &tokens, &token_count, &capacity,
-                        line);
+            scan_string(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (is_valid_identifier_start(c))
         {
-            scan_identifier_or_keyword(source, &pos, length, &tokens, &token_count,
-                                       &capacity, line);
+            scan_identifier_or_keyword(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         if (strchr("=+-*/<>", c))
         {
-            scan_operator(source, &pos, length, &tokens, &token_count, &capacity,
-                          line);
+            scan_operator(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
@@ -107,25 +106,25 @@ Token *tokenize(const char *source)
                     tokens[token_count - 1].type = TOKEN_FUNCTION_NAME;
                 }
                 append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_OPEN,
-                             strndup(&source[pos], 1), line);
+                             strndup(&state.source[state.pos], 1), state.line);
             }
             else if (c == ')' || c == '}')
             {
                 append_token(&tokens, &token_count, &capacity, TOKEN_PAREN_CLOSE,
-                             strndup(&source[pos], 1), line);
+                             strndup(&state.source[state.pos], 1), state.line);
             }
             else
             {
                 append_token(&tokens, &token_count, &capacity, TOKEN_DELIMITER,
-                             strndup(&source[pos], 1), line);
+                             strndup(&state.source[state.pos], 1), state.line);
             }
-            pos++;
+            state.pos++;
             continue;
         }
 
-        token_error("Unexpected character encountered", line);
+        token_error("Unexpected character encountered", state.line);
     }
 
-    append_token(&tokens, &token_count, &capacity, TOKEN_EOF, NULL, line);
+    append_token(&tokens, &token_count, &capacity, TOKEN_EOF, NULL, state.line);
     return tokens;
 }

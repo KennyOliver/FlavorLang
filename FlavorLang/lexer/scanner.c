@@ -1,27 +1,22 @@
 #include "scanner.h"
 
-void scan_comment(const char *source, size_t *pos)
+void scan_comment(ScannerState *state)
 {
-    while (source[*pos] != '\0' && source[*pos] != '\n')
+    while (state->source[state->pos] != '\0' && state->source[state->pos] != '\n')
     {
-        (*pos)++;
+        state->pos++;
     }
 }
 
-void scan_number(const char *source, size_t *pos, size_t length,
-                 Token **tokens, size_t *token_count, size_t *capacity,
-                 int line)
+void scan_number(ScannerState *state, Token **tokens, size_t *token_count, size_t *capacity)
 {
-    size_t start = *pos;
+    size_t start = state->pos;
     bool has_decimal_point = false;
     bool is_negative = false;
 
     // Check for negative sign
-    if (source[*pos] == '-')
+    if (state->source[state->pos] == '-')
     {
-        // Need to verify this is actually a negative number and not a subtraction
-        // operator Look backwards for any previous token that would indicate this
-        // is a number (start of input, opening paren, operator, etc.)
         bool is_start_of_expression = true;
         if (*token_count > 0)
         {
@@ -30,7 +25,6 @@ void scan_number(const char *source, size_t *pos, size_t length,
                 prev_type == TOKEN_IDENTIFIER || prev_type == TOKEN_STRING ||
                 prev_type == TOKEN_PAREN_CLOSE)
             {
-                // Likely a subtraction operator, not a negative sign
                 is_start_of_expression = false;
             }
         }
@@ -38,123 +32,110 @@ void scan_number(const char *source, size_t *pos, size_t length,
         if (is_start_of_expression)
         {
             is_negative = true;
-            (*pos)++; // move past the negative sign
+            state->pos++; // move past the negative sign
         }
         else
         {
-            // Handle this as an operator instead
-            scan_operator(source, pos, length, tokens, token_count, capacity, line);
+            scan_operator(state, tokens, token_count, capacity);
             return;
         }
     }
 
-    // Verify there's at least one digit after the negative sign
-    if (*pos >= length || !isdigit(source[*pos]))
+    if (state->pos >= state->length || !isdigit(state->source[state->pos]))
     {
         if (is_negative)
         {
-            (*pos) = start; // reset position
-            scan_operator(source, pos, length, tokens, token_count, capacity, line);
+            state->pos = start; // reset position
+            scan_operator(state, tokens, token_count, capacity);
             return;
         }
-        token_error("Invalid number format", line);
+        token_error("Invalid number format", state->line);
     }
 
-    // Handle digits before & after a potential decimal point
-    while (*pos < length && (isdigit(source[*pos]) ||
-                             (source[*pos] == '.' && !has_decimal_point)))
+    while (state->pos < state->length && (isdigit(state->source[state->pos]) ||
+                                          (state->source[state->pos] == '.' && !has_decimal_point)))
     {
-        if (source[*pos] == '.')
+        if (state->source[state->pos] == '.')
         {
-            if (*pos + 1 >= length || !isdigit(source[*pos + 1]))
+            if (state->pos + 1 >= state->length || !isdigit(state->source[state->pos + 1]))
             {
-                // If there's no digit after the decimal point, treat the decimal as a
-                // separate token
-                break;
+                break; // if there's no digit after the decimal point, treat the decimal as a separate token
             }
             has_decimal_point = true;
         }
-        (*pos)++;
+        state->pos++;
     }
 
-    char *lexeme = strndup(&source[start], *pos - start);
+    char *lexeme = strndup(&state->source[start], state->pos - start);
     TokenType type = has_decimal_point ? TOKEN_FLOAT : TOKEN_INTEGER;
-    append_token(tokens, token_count, capacity, type, lexeme, line);
+    append_token(tokens, token_count, capacity, type, lexeme, state->line);
     free(lexeme);
 }
 
-void scan_string(const char *source, size_t *pos, size_t length,
-                 Token **tokens, size_t *token_count, size_t *capacity,
-                 int line)
+void scan_string(ScannerState *state, Token **tokens, size_t *token_count, size_t *capacity)
 {
-    size_t start = ++(*pos); // skip opening quote
-    while (*pos < length && source[*pos] != '"')
+    size_t start = ++(state->pos); // skip opening quote
+    while (state->pos < state->length && state->source[state->pos] != '"')
     {
-        (*pos)++;
+        state->pos++;
     }
-    if (*pos >= length || source[*pos] != '"')
+    if (state->pos >= state->length || state->source[state->pos] != '"')
     {
-        token_error("Unterminated string literal", line);
+        token_error("Unterminated string literal", state->line);
     }
-    char *lexeme = strndup(&source[start], *pos - start);
-    append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme, line);
+    char *lexeme = strndup(&state->source[start], state->pos - start);
+    append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme, state->line);
     free(lexeme);
-    (*pos)++; // Skip closing quote
+    state->pos++; // Skip closing quote
 }
 
-void scan_identifier_or_keyword(const char *source, size_t *pos,
-                                size_t length, Token **tokens,
-                                size_t *token_count, size_t *capacity,
-                                int line)
+void scan_identifier_or_keyword(ScannerState *state, Token **tokens, size_t *token_count, size_t *capacity)
 {
-    size_t start = *pos;
-    while (*pos < length && is_valid_identifier_char(source[*pos]))
+    size_t start = state->pos;
+    while (state->pos < state->length && is_valid_identifier_char(state->source[state->pos]))
     {
-        (*pos)++;
+        state->pos++;
     }
 
-    char *lexeme = strndup(&source[start], *pos - start);
+    char *lexeme = strndup(&state->source[start], state->pos - start);
 
     // Skip whitespace to check for function call
-    size_t temp_pos = *pos;
-    while (temp_pos < length && isspace(source[temp_pos]))
+    size_t temp_pos = state->pos;
+    while (temp_pos < state->length && isspace(state->source[temp_pos]))
         temp_pos++;
 
-    if (temp_pos < length && source[temp_pos] == '(' && !is_keyword(lexeme))
+    if (temp_pos < state->length && state->source[temp_pos] == '(' && !is_keyword(lexeme))
     {
-        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme,
-                     line);
+        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme, state->line);
     }
     else if (is_keyword(lexeme))
     {
-        append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme, line);
+        append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme, state->line);
     }
     else
     {
-        append_token(tokens, token_count, capacity, TOKEN_IDENTIFIER, lexeme, line);
+        append_token(tokens, token_count, capacity, TOKEN_IDENTIFIER, lexeme, state->line);
     }
     free(lexeme);
 }
 
-void scan_operator(const char *source, size_t *pos, size_t length,
-                   Token **tokens, size_t *token_count,
-                   size_t *capacity, int line)
+void scan_operator(ScannerState *state, Token **tokens, size_t *token_count, size_t *capacity)
 {
-    if ((*pos < length - 1) &&
-        ((source[*pos] == '=' && source[*pos + 1] == '=') ||
-         (source[*pos] == '>' && source[*pos + 1] == '=') ||
-         (source[*pos] == '<' && source[*pos + 1] == '=')))
+    if ((state->pos < state->length - 1) &&
+        ((state->source[state->pos] == '=' && state->source[state->pos + 1] == '=') ||
+         (state->source[state->pos] == '>' && state->source[state->pos + 1] == '=') ||
+         (state->source[state->pos] == '<' && state->source[state->pos + 1] == '=')))
     {
-        char *lexeme = strndup(&source[*pos], 2);
-        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, line);
+        char *lexeme = strndup(&state->source[state->pos], 2);
+        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, state->line);
         free(lexeme);
-        *pos += 2;
+        state->pos += 2;
     }
     else
     {
-        char *lexeme = strndup(&source[*pos], 1);
-        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, line);
+        char *lexeme = strndup(&state->source[state->pos], 1);
+        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme, state->line);
         free(lexeme);
-        (*pos)++;
+        state->pos++;
     }
 }
