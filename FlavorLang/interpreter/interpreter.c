@@ -1017,40 +1017,37 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     if (!node || !node->function_call.name)
     {
         fprintf(stderr, "Error: Invalid function call\n");
-        LiteralValue error = {.type = TYPE_ERROR};
-        return error;
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
         fprintf(stderr, "Error: Undefined function `%s`\n", node->function_call.name);
-        LiteralValue error = {.type = TYPE_ERROR};
-        return error;
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Setup LOCAL environment
+    // Setup local environment
     Environment local_env;
     init_environment(&local_env);
 
-    // Copy functions from PARENT environment
+    // Copy functions from parent environment
     for (size_t i = 0; i < env->function_count; i++)
     {
         Function func_copy = {
             .name = strdup(env->functions[i].name),
             .parameters = copy_function_parameters(env->functions[i].parameters),
-            .body = copy_ast_node(env->functions[i].body),
-        };
+            .body = copy_ast_node(env->functions[i].body)};
         add_function(&local_env, func_copy);
     }
 
-    // Set up parameters
+    // Evaluate arguments in parent environment and bind to parameters
     ASTFunctionParameter *param = func->parameters;
     ASTNode *arg = node->function_call.arguments;
 
     while (param && arg)
     {
-        LiteralValue arg_value = interpret(arg, env); // Note: Using parent env for argument evaluation
+        LiteralValue arg_value = interpret(arg, env);
         if (arg_value.type == TYPE_ERROR)
         {
             free_environment(&local_env);
@@ -1074,16 +1071,35 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     {
         result = interpret(stmt, &local_env);
 
-        // If this was a return statement, propagate the value up
+        // Important: If this was a return statement, properly propagate the value
         if (stmt->type == AST_FUNCTION_RETURN)
         {
-            debug_print_int("Function returning with value type=`%d`, value=`%d`\n",
+            debug_print_int("Function returning with value type=%d, value=%d\n",
                             result.type,
                             result.type == TYPE_INTEGER ? result.data.integer : 0);
-            free_environment(&local_env);
-            return result;
-        }
 
+            // Create a new LiteralValue to return to avoid any pointer issues
+            LiteralValue return_val = {
+                .type = result.type};
+
+            switch (result.type)
+            {
+            case TYPE_INTEGER:
+                return_val.data.integer = result.data.integer;
+                break;
+            case TYPE_FLOAT:
+                return_val.data.floating_point = result.data.floating_point;
+                break;
+            case TYPE_STRING:
+                return_val.data.string = strdup(result.data.string);
+                break;
+            default:
+                break;
+            }
+
+            free_environment(&local_env);
+            return return_val;
+        }
         stmt = stmt->next;
     }
 
