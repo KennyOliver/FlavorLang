@@ -5,13 +5,7 @@
 
 extern bool debug_flag;
 
-typedef enum
-{
-    GENERAL,
-    LEXER,
-    PARSER,
-    INTERPRETER
-} DebugMode;
+typedef enum { GENERAL, LEXER, PARSER, INTERPRETER } DebugMode;
 
 void parse_cli_args(int argc, char *argv[]);
 void debug_print_basic(const char *message, ...);
