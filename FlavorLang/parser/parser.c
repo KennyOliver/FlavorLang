@@ -452,58 +452,49 @@ ASTNode *parse_block(ParserState *state) {
 }
 
 ASTNode *parse_conditional_block(ParserState *state) {
+    // Allocate the node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-
     node->type = AST_CONDITIONAL;
-    Token *current = get_current_token(state);
+    node->next = NULL;
+    node->conditional.else_branch = NULL;
 
-    // Handle if/elif/else
+    // Expect either `if`, `elif`, or `else`
+    Token *current = get_current_token(state);
     if (strcmp(current->lexeme, "if") == 0 ||
         strcmp(current->lexeme, "elif") == 0) {
+        // Consume `if`/`elif`
         advance_token(state);
+
+        // Parse condition expression
         node->conditional.condition = parse_expression(state);
 
-        // Expect colon
-        if (get_current_token(state)->type != TOKEN_DELIMITER ||
-            strcmp(get_current_token(state)->lexeme, ":") != 0) {
-            parser_error("Expected ':' after condition",
-                         get_current_token(state));
-        }
-        advance_token(state);
+        expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
+        node->conditional.body = parse_block(state);
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
     } else if (strcmp(current->lexeme, "else") == 0) {
+        // Consume `else`
         advance_token(state);
+
+        // No condition => node->conditional.condition = NULL
         node->conditional.condition = NULL;
 
-        // Expect colon
-        if (get_current_token(state)->type != TOKEN_DELIMITER ||
-            strcmp(get_current_token(state)->lexeme, ":") != 0) {
-            parser_error("Expected ':' after else", get_current_token(state));
-        }
-        advance_token(state);
+        expect_token(state, TOKEN_PAREN_OPEN, "Expected `{` delimiter");
+        node->conditional.body = parse_block(state);
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `}` delimiter");
     } else {
-        parser_error("Expected 'if', 'elif', or 'else'", current);
+        parser_error("Expected `if`, `elif`, or `else`", current);
     }
 
-    // Parse body
-    node->conditional.body = parse_block(state);
-
-    // Check for elif/else
-    current = get_current_token(state);
-    if (current->type == TOKEN_KEYWORD) {
-        if (strcmp(current->lexeme, "elif") == 0 ||
-            strcmp(current->lexeme, "else") == 0) {
-            node->conditional.else_branch = parse_conditional_block(state);
-        } else {
-            node->conditional.else_branch = NULL;
-        }
-    } else {
-        node->conditional.else_branch = NULL;
+    // Check if next token is `elif` or `else` to chain
+    Token *next = get_current_token(state);
+    if (next->type == TOKEN_KEYWORD && (strcmp(next->lexeme, "elif") == 0 ||
+                                        strcmp(next->lexeme, "else") == 0)) {
+        node->conditional.else_branch = parse_conditional_block(state);
     }
 
-    node->next = NULL;
     return node;
 }
 
