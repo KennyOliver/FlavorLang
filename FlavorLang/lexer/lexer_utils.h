@@ -26,5 +26,6 @@ void token_error(const char *message, int line);
 // Debug utilities
 void print_token(const Token *token);
 void dump_token_array(const Token *tokens, size_t count);
+void debug_print_tokens(Token *tokens);
 
 #endif
