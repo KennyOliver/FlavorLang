@@ -245,31 +245,20 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
 
     // First evaluate both operands
     LiteralValue left = interpret(node->binary_op.left, env);
-    LiteralValue right = interpret(node->binary_op.right, env);
-
-    if (left.type == TYPE_ERROR || right.type == TYPE_ERROR)
+    if (left.type == TYPE_ERROR)
     {
-        LiteralValue error = {.type = TYPE_ERROR};
-        return error;
+        return left;
     }
 
+    LiteralValue right = interpret(node->binary_op.right, env);
+    if (right.type == TYPE_ERROR)
+    {
+        return right;
+    }
+
+    // In interpret_binary_op, replace the switch and operator handling with:
     char *operator= node->binary_op.operator;
     debug_print_int("Operator: `%s`\n", operator);
-
-    // Handle multiplication
-    if (operator[0] == '*')
-    {
-        LiteralValue result;
-        result.type = TYPE_INTEGER;
-
-        // Convert both operands to integers if needed
-        int left_val = (left.type == TYPE_FLOAT) ? (int)left.data.floating_point : left.data.integer;
-
-        int right_val = (right.type == TYPE_FLOAT) ? (int)right.data.floating_point : right.data.integer;
-
-        result.data.integer = left_val * right_val;
-        return result;
-    }
 
     // Handle string concatenation with "+" operator
     if (operator[0] == '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING))
@@ -277,70 +266,56 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         return handle_string_concatenation(left, right);
     }
 
-    // Get numeric values, preserving types
-    double left_value = 0;
-    double right_value = 0;
-
-    if (left.type == TYPE_INTEGER)
-    {
-        left_value = (double)left.data.integer;
-        debug_print_int("Left value (integer): `%d`\n", left.data.integer);
-    }
-    else if (left.type == TYPE_FLOAT)
-    {
-        left_value = left.data.floating_point;
-        debug_print_int("Left value (float): `%f`\n", left.data.floating_point);
-    }
-
-    if (right.type == TYPE_INTEGER)
-    {
-        right_value = (double)right.data.integer;
-        debug_print_int("Right value (integer): `%d`\n", right.data.integer);
-    }
-    else if (right.type == TYPE_FLOAT)
-    {
-        right_value = right.data.floating_point;
-        debug_print_int("Right value (float): `%f`\n", right.data.floating_point);
-    }
+    // Get numeric values
+    double left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point : (double)left.data.integer;
+    double right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point : (double)right.data.integer;
 
     LiteralValue result;
     result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) ? TYPE_FLOAT : TYPE_INTEGER;
 
+    // First check for two-character operators
+    if (operator[1] != '\0')
+    {
+        if (strcmp(operator, "<=") == 0)
+        {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value <= right_value;
+            return result;
+        }
+        if (strcmp(operator, ">=") == 0)
+        {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value >= right_value;
+            return result;
+        }
+        if (strcmp(operator, "==") == 0)
+        {
+            result.type = TYPE_INTEGER;
+            result.data.integer = left_value == right_value;
+            return result;
+        }
+    }
+
+    // Then handle single-character operators
     switch (operator[0])
     {
     case '*':
-        debug_print_int("Performing multiplication: `%f * %f`\n", left_value, right_value);
         if (result.type == TYPE_FLOAT)
-        {
             result.data.floating_point = left_value * right_value;
-            debug_print_int("Result (float): `%f`\n", result.data.floating_point);
-        }
         else
-        {
             result.data.integer = (int)(left_value * right_value);
-            debug_print_int("Result (integer): `%d`\n", result.data.integer);
-        }
         break;
     case '+':
-        debug_print_int("Performing addition: `%f * %f`\n", (float)left_value, (float)right_value);
         if (result.type == TYPE_FLOAT)
-        {
             result.data.floating_point = left_value + right_value;
-        }
         else
-        {
             result.data.integer = (int)(left_value + right_value);
-        }
         break;
     case '-':
         if (result.type == TYPE_FLOAT)
-        {
             result.data.floating_point = left_value - right_value;
-        }
         else
-        {
             result.data.integer = (int)(left_value - right_value);
-        }
         break;
     case '/':
         if (right_value == 0)
@@ -349,13 +324,9 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
             exit(1);
         }
         if (result.type == TYPE_FLOAT)
-        {
             result.data.floating_point = left_value / right_value;
-        }
         else
-        {
             result.data.integer = (int)(left_value / right_value);
-        }
         break;
     case '<':
         result.type = TYPE_INTEGER;
@@ -365,29 +336,9 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env)
         result.type = TYPE_INTEGER;
         result.data.integer = left_value > right_value;
         break;
-    case '=':
-        if (operator[1] == '=')
-        { // handle ==
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value == right_value;
-        }
-        break;
     default:
-        if (strcmp(operator, "<=") == 0)
-        {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value <= right_value;
-        }
-        else if (strcmp(operator, ">=") == 0)
-        {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value >= right_value;
-        }
-        else
-        {
-            fprintf(stderr, "Error: Unknown operator '%s'\n", operator);
-            exit(1);
-        }
+        fprintf(stderr, "Error: Unknown operator '%s'\n", operator);
+        exit(1);
     }
 
     return result;
@@ -1066,14 +1017,16 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
     if (!node || !node->function_call.name)
     {
         fprintf(stderr, "Error: Invalid function call\n");
-        exit(1);
+        LiteralValue error = {.type = TYPE_ERROR};
+        return error;
     }
 
     Function *func = get_function(env, node->function_call.name);
     if (!func)
     {
         fprintf(stderr, "Error: Undefined function `%s`\n", node->function_call.name);
-        exit(1);
+        LiteralValue error = {.type = TYPE_ERROR};
+        return error;
     }
 
     // Setup LOCAL environment
@@ -1097,10 +1050,13 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 
     while (param && arg)
     {
-        // Evaluate argument in the PARENT environment
-        LiteralValue arg_value = interpret(arg, env);
+        LiteralValue arg_value = interpret(arg, env); // Note: Using parent env for argument evaluation
+        if (arg_value.type == TYPE_ERROR)
+        {
+            free_environment(&local_env);
+            return arg_value;
+        }
 
-        // Create variable in LOCAL environment
         Variable param_var = {
             .variable_name = strdup(param->parameter_name),
             .value = arg_value};
@@ -1116,23 +1072,21 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env)
 
     while (stmt)
     {
-        // Handle return statements
+        result = interpret(stmt, &local_env);
+
+        // If this was a return statement, propagate the value up
         if (stmt->type == AST_FUNCTION_RETURN)
         {
-            // Evaluate return expression in LOCAL environment
-            result = interpret(stmt->assignment.value, &local_env);
-
-            // Clean up and return immediately
+            debug_print_int("Function returning with value type=`%d`, value=`%d`\n",
+                            result.type,
+                            result.type == TYPE_INTEGER ? result.data.integer : 0);
             free_environment(&local_env);
             return result;
         }
 
-        // Execute statement
-        interpret(stmt, &local_env);
         stmt = stmt->next;
     }
 
-    // Clean up
     free_environment(&local_env);
     return result;
 }
