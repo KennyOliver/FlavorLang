@@ -13,7 +13,7 @@ void add_variable(Environment *env, Variable var);
 void interpret_print(ASTNode *node, Environment *env);
 void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
-void interpret_conditional(ASTNode *node, Environment *env);
+InterpretResult interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
@@ -78,17 +78,14 @@ InterpretResult interpret_node(ASTNode *node, Environment *env)
         debug_print_int("\tMatched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
 
-        // Wrap v.value in an InterpretResult, with did_return=false
+        // Wrap `v.value` in an `InterpretResult`, with `did_return=false`
         return make_result(v.value, false);
     }
 
     case AST_CONDITIONAL:
     {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
-        interpret_conditional(node, env);
-        // interpret_conditional(...) doesn’t return a value directly,
-        // so we just wrap a default in an InterpretResult
-        return make_result(create_default_value(), false);
+        return interpret_conditional(node, env);
     }
 
     case AST_FUNCTION_CALL:
@@ -632,14 +629,13 @@ Variable interpret_input(Environment *env)
     return *var;
 }
 
-void interpret_conditional(ASTNode *node, Environment *env)
+InterpretResult interpret_conditional(ASTNode *node, Environment *env)
 {
     debug_print_int("`interpret_conditional()` called\n");
-
     if (!node)
     {
-        fprintf(stderr, "Error: Null node passed to `interpret_conditional()`.\n");
-        return;
+        // error
+        return make_result((LiteralValue){.type = TYPE_ERROR}, false);
     }
 
     ASTNode *current_branch = node;
@@ -649,29 +645,30 @@ void interpret_conditional(ASTNode *node, Environment *env)
     {
         if (current_branch->conditional.condition)
         {
-            // Instead of interpret(...) => interpret_node(...)
             InterpretResult cond_res = interpret_node(current_branch->conditional.condition, env);
             if (cond_res.did_return)
             {
-                // If we returned inside the condition, bubble up here:
-                return;
+                return cond_res; // bubble up immediately
             }
 
-            LiteralValue condition_value = cond_res.value;
-            // ...
-            if (condition_value.data.integer)
+            if (cond_res.value.type != TYPE_INTEGER)
+            {
+                // error
+                return make_result((LiteralValue){.type = TYPE_ERROR}, false);
+            }
+
+            if (cond_res.value.data.integer)
             {
                 // interpret the if body
-                ASTNode *current_statement = current_branch->conditional.body;
-                while (current_statement)
+                ASTNode *cs = current_branch->conditional.body;
+                while (cs)
                 {
-                    InterpretResult body_res = interpret_node(current_statement, env);
+                    InterpretResult body_res = interpret_node(cs, env);
                     if (body_res.did_return)
                     {
-                        // bubble up
-                        return;
+                        return body_res;
                     }
-                    current_statement = current_statement->next;
+                    cs = cs->next;
                 }
                 condition_met = 1;
                 break;
@@ -679,26 +676,27 @@ void interpret_conditional(ASTNode *node, Environment *env)
         }
         else
         {
-            // interpret the ELSE block
+            // else
             if (!condition_met)
             {
-                ASTNode *current_statement = current_branch->conditional.body;
-                while (current_statement)
+                ASTNode *cs = current_branch->conditional.body;
+                while (cs)
                 {
-                    InterpretResult body_res = interpret_node(current_statement, env);
+                    InterpretResult body_res = interpret_node(cs, env);
                     if (body_res.did_return)
                     {
-                        return;
+                        return body_res;
                     }
-                    current_statement = current_statement->next;
+                    cs = cs->next;
                 }
             }
             break;
         }
         current_branch = current_branch->conditional.else_branch;
     }
-
     debug_print_int("`interpret_conditional()` completed\n");
+    // if no return triggered, just return a normal result
+    return make_result(create_default_value(), false);
 }
 
 void interpret_while_loop(ASTNode *node, Environment *env)
