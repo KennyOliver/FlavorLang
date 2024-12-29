@@ -585,28 +585,39 @@ Variable interpret_input(Environment *env) {
 InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` called\n");
     if (!node) {
-        // error
+        // Error
         return make_result((LiteralValue){.type = TYPE_ERROR}, false);
     }
 
     ASTNode *current_branch = node;
-    int condition_met = 0;
+    bool condition_met = false;
 
     while (current_branch) {
         if (current_branch->conditional.condition) {
             InterpretResult cond_res =
                 interpret_node(current_branch->conditional.condition, env);
             if (cond_res.did_return) {
-                return cond_res; // bubble up immediately
+                // Bubble up immediately
+                return cond_res;
             }
 
-            if (cond_res.value.type != TYPE_INTEGER) {
-                // error
+            // Check for valid condition types
+            if (cond_res.value.type != TYPE_INTEGER &&
+                cond_res.value.type != TYPE_BOOLEAN) {
+                fprintf(stderr, "Error: Condition expression must be boolean "
+                                "or integer.\n");
                 return make_result((LiteralValue){.type = TYPE_ERROR}, false);
             }
 
-            if (cond_res.value.data.integer) {
-                // interpret the if body
+            bool condition_true = false;
+            if (cond_res.value.type == TYPE_BOOLEAN) {
+                condition_true = cond_res.value.data.boolean;
+            } else if (cond_res.value.type == TYPE_INTEGER) {
+                condition_true = (cond_res.value.data.integer != 0);
+            }
+
+            if (condition_true) {
+                // Interpret the conditional body
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
@@ -615,11 +626,13 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                     }
                     cs = cs->next;
                 }
-                condition_met = 1;
+                condition_met = true;
+
+                // Exit after the first true condition
                 break;
             }
         } else {
-            // else
+            // Else branch
             if (!condition_met) {
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
@@ -630,12 +643,17 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                     cs = cs->next;
                 }
             }
+
+            // Exit after else
             break;
         }
+
         current_branch = current_branch->conditional.else_branch;
     }
+
     debug_print_int("`interpret_conditional()` completed\n");
-    // if no return triggered, just return a normal result
+
+    // Return a default value if no conditions met
     return make_result(create_default_value(), false);
 }
 
