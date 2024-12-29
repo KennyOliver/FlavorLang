@@ -445,6 +445,9 @@ void interpret_print(ASTNode *node, Environment *env) {
         case TYPE_STRING:
             printf("%s", lv.data.string);
             break;
+        case TYPE_BOOLEAN:
+            printf("%s", lv.data.boolean ? "True" : "False");
+            break;
         case TYPE_ERROR:
             fprintf(stderr, "Error: Invalid literal type.\n");
             break;
