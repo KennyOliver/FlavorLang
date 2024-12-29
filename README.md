@@ -219,7 +219,11 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5 {
-  show "Mixing... Step", i;
+    show "Mixing... Step", i;
+}
+
+for j in 10..=1 by -3 {
+    show j;
 }
 ```
 
@@ -344,7 +348,7 @@ if time > 15 {
 show "After error?";
 ```
 
-### 12. Use Booleans <a id="use-booleans"></a>
+### 🔵 12. Use Booleans <a id="use-booleans"></a>
 
 Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
 
