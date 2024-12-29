@@ -1,8 +1,12 @@
-#1
+# ==================================================
+# 1
+# ==================================================
 show "Hello world!";
 
 
+# ==================================================
 # 2
+# ==================================================
 let name = "Chef";
 let age = 25;
 
@@ -10,7 +14,9 @@ show "Name:", name;
 show "Age:", age;
 
 
+# ==================================================
 # 3
+# ==================================================
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
@@ -22,7 +28,9 @@ if oven_temperature > 180 {
 }
 
 
+# ==================================================
 # 4
+# ==================================================
 for i in 1..5 {
     show "Mixing... Step", i;
 }
@@ -32,8 +40,9 @@ for j in 10..=1 by -3 {
 }
 
 
-
+# ==================================================
 # 5
+# ==================================================
 let flour_added = 0;
 
 while flour_added < 3 {
@@ -46,10 +55,10 @@ show "All flour has been added!";
 show "Flour added:", flour_added;
 
 
-
-
+# ==================================================
 # 6
-create bake_cake(temperature):
+# ==================================================
+create bake_cake(temperature) {
     if temperature < 180 {
         show "Temperature is too low to bake!";
         burn "Cake burned!";  # Stops function execution immediately
@@ -57,30 +66,26 @@ create bake_cake(temperature):
         show "Baking cake at", temperature, "degrees!";
         deliver "Cake is ready!";
 	}
+}
 
 let result = bake_cake(200);
 show result;
 
 
+# ==================================================
 # 7
-try {
-    burn "This recipe failed!";
-    show "This won't run!";
-} rescue {
-    show "Caught an error: Recipe needs improvement.";
-}
+# ==================================================
+# try {
+#     burn "This recipe failed!";
+#     show "This won't run!";
+# } rescue {
+#     show "Caught an error: Recipe needs improvement.";
+# }
 
 
+# ==================================================
 # 8
-plate "output.txt" with "Freshly baked cake ready to deliver!";
-garnish "output.txt" with "\nDon't forget the toppings!";
-
-let data = gather "output.txt";
-show "File Contents:";
-show data;
-
-
-# 9
+# ==================================================
 let dessert = "cake";
 
 check dessert {
@@ -95,8 +100,56 @@ check dessert {
 }
 
 
-# 10
+# ==================================================
+# 9
+# ==================================================
 show "What's your favorite dessert?";
 let favorite = taste;
 
 show "You chose:", favorite;
+
+
+# ==================================================
+# 10
+# ==================================================
+let time = 20;
+
+show "Before error.";
+
+if time > 15 {
+    burn "Too late!", "The food got burnt!";
+}
+
+
+# ==================================================
+# 11
+# ==================================================
+show "After error?";
+
+let stop_loop = False;
+let count = 10;
+
+show "Preparing for launch!";
+
+while stop_loop != True {
+    show count;
+    
+    if count > 0 {
+        count = count - 1;
+    } else {
+        stop_loop = True;
+    }
+}
+
+show "Blast off!";
+
+
+# ==================================================
+# 11
+# ==================================================
+# plate "output.txt" with "Freshly baked cake ready to deliver!";
+# garnish "output.txt" with "\nDon't forget the toppings!";
+
+# let data = gather "output.txt";
+# show "File Contents:";
+# show data;
