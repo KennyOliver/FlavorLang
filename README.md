@@ -21,6 +21,7 @@
    - [Switch-Case Logic](#switch-case-logic)
    - [User Input](#user-input)
    - [Raise an Error](#raise-error)
+   - [Use Booleans](#use-booleans)
 5. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 6. [Why FlavorLang?](#why-flavorlang)
 7. [Debugging](#debugging)
@@ -307,6 +308,26 @@ if time > 15 {
 }
 
 show "After error?";
+```
+
+### 12. Use Booleans <a id="use-booleans"></a>
+
+Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
+
+```py
+let stop_loop = False;
+let count = 0;
+
+while stop_loop != True {
+    show "Count:", count;
+
+    if count < 10 {
+        count = count + 1;
+    } else {
+        stop_loop = True;
+    }
+}
+
 ```
 
 </details>
