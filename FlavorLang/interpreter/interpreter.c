@@ -714,7 +714,7 @@ void interpret_switch(ASTNode *node, Environment *env) {
     debug_print_int("Switch expression evaluated\n");
 
     ASTCaseNode *current_case = node->switch_case.cases;
-    int break_encountered = 0;
+    bool break_encountered = false;
 
     while (current_case && !break_encountered) {
         if (current_case->condition == NULL) {
@@ -723,10 +723,10 @@ void interpret_switch(ASTNode *node, Environment *env) {
             ASTNode *current_statement = current_case->body;
             while (current_statement && !break_encountered) {
                 if (current_statement->type == AST_BREAK) {
-                    break_encountered = 1;
+                    break_encountered = true;
                     break;
                 }
-                // interpret_node(...) returning InterpretResult
+                // `interpret_node(...)` returning `InterpretResult`
                 interpret_node(current_statement, env);
                 current_statement = current_statement->next;
             }
@@ -737,10 +737,14 @@ void interpret_switch(ASTNode *node, Environment *env) {
                 interpret_node(current_case->condition, env);
             LiteralValue case_val = case_r.value;
 
-            if (switch_val.type == case_val.type) {
-                int values_match = 0;
+            bool values_match = false;
 
-                if (switch_val.type == TYPE_FLOAT) {
+            // Handle type comparison
+            if (switch_val.type == case_val.type) {
+                if (switch_val.type == TYPE_BOOLEAN) {
+                    values_match =
+                        (switch_val.data.boolean == case_val.data.boolean);
+                } else if (switch_val.type == TYPE_FLOAT) {
                     values_match = (switch_val.data.floating_point ==
                                     case_val.data.floating_point);
                 } else if (switch_val.type == TYPE_INTEGER) {
@@ -750,21 +754,21 @@ void interpret_switch(ASTNode *node, Environment *env) {
                     values_match = (strcmp(switch_val.data.string,
                                            case_val.data.string) == 0);
                 }
+            }
 
-                if (values_match) {
-                    debug_print_int("Match found, executing case body\n");
+            if (values_match) {
+                debug_print_int("Match found, executing case body\n");
 
-                    ASTNode *current_statement = current_case->body;
-                    while (current_statement && !break_encountered) {
-                        if (current_statement->type == AST_BREAK) {
-                            break_encountered = 1;
-                            break;
-                        }
-                        interpret_node(current_statement, env);
-                        current_statement = current_statement->next;
+                ASTNode *current_statement = current_case->body;
+                while (current_statement && !break_encountered) {
+                    if (current_statement->type == AST_BREAK) {
+                        break_encountered = true;
+                        break;
                     }
-                    // If break_encountered, break
+                    interpret_node(current_statement, env);
+                    current_statement = current_statement->next;
                 }
+                // If break_encountered, break
             }
         }
 
