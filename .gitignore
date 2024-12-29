@@ -3,4 +3,7 @@
 FlavorLang/flavor
 FlavorLang/flavor.dSYM/
 obj
-node_modules/
+
+# VS Code Extension
+vscode-extension/node_modules/
+vscode-extension/*.vsix
