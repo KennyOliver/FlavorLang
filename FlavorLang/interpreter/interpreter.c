@@ -712,9 +712,8 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
 
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     if (node->type != AST_FOR_LOOP) {
-        fprintf(
-            stderr,
-            "Error: interpret_for_loop called with non-for loop AST node.\n");
+        fprintf(stderr, "Error: `interpret_for_loop` called with "
+                        "non-`for`-loop `ASTNode`\n");
         exit(1);
     }
 
@@ -737,7 +736,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         return end_res.value;
     }
 
-    // Determine start and end as floats for flexibility
+    // Determine start & end as floats for flexibility
     double start_val, end_val;
     if (start_res.value.type == TYPE_FLOAT) {
         start_val = start_res.value.data.floating_point;
@@ -745,7 +744,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         start_val = (double)start_res.value.data.integer;
     } else {
         fprintf(stderr,
-                "Error: Start expression in for loop must be numeric.\n");
+                "Error: Start expression in `for` loop must be numeric\n");
         exit(1);
     }
 
@@ -754,7 +753,8 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     } else if (end_res.value.type == TYPE_INTEGER) {
         end_val = (double)end_res.value.data.integer;
     } else {
-        fprintf(stderr, "Error: End expression in for loop must be numeric.\n");
+        fprintf(stderr,
+                "Error: End expression in `for` loop must be numeric\n");
         exit(1);
     }
 
@@ -772,7 +772,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
             step = (double)step_res.value.data.integer;
         } else {
             fprintf(stderr,
-                    "Error: Step expression in for loop must be numeric.\n");
+                    "Error: Step expression in `for` loop must be numeric\n");
             exit(1);
         }
     } else {
@@ -786,7 +786,15 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Validate step to prevent infinite loops
     if (step < 1e-9 && step > -1e-9) {
-        fprintf(stderr, "Error: Step value cannot be zero in for loop.\n");
+        fprintf(stderr, "Error: Step value cannot be zero in `for` loop\n");
+        exit(1);
+    }
+
+    // Validate step to check if step is in correct direction
+    if ((start_val < end_val && step < 0) ||
+        (start_val > end_val && step > 0)) {
+        fprintf(stderr, "Error: Step value is in the wrong direction for the "
+                        "specified range of the `for` loop\n");
         exit(1);
     }
 
@@ -825,7 +833,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         } else if (var->value.type == TYPE_INTEGER) {
             current_val = (double)var->value.data.integer;
         } else {
-            fprintf(stderr, "Error: Loop variable `%s` must be numeric.\n",
+            fprintf(stderr, "Error: Loop variable `%s` must be numeric\n",
                     loop_var);
             exit(1);
         }
