@@ -260,7 +260,6 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         return right;
     }
 
-    // In interpret_binary_op, replace the switch and operator handling with:
     char *operator= node->binary_op.operator;
     debug_print_int("Operator: `%s`\n", operator);
 
@@ -270,38 +269,47 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         return handle_string_concatenation(left, right);
     }
 
-    // Get numeric values
-    double left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                                  : (double)left.data.integer;
-    double right_value = (right.type == TYPE_FLOAT)
-                             ? right.data.floating_point
-                             : (double)right.data.integer;
+    // Get numeric values for arithmetic and comparison
+    double left_value = 0.0, right_value = 0.0;
+    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
+                                               : (double)left.data.integer;
+        right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
+                                                 : (double)right.data.integer;
+    } else {
+        left_value = (double)left.data.integer;
+        right_value = (double)right.data.integer;
+    }
 
     LiteralValue result;
-    result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
-                      ? TYPE_FLOAT
-                      : TYPE_INTEGER;
+    // Default to TYPE_INTEGER or TYPE_FLOAT for arithmetic operations
+    if (strcmp(operator, "*") == 0 || strcmp(operator, "/") == 0 ||
+        strcmp(operator, "+") == 0 || strcmp(operator, "-") == 0) {
+        result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
+                          ? TYPE_FLOAT
+                          : TYPE_INTEGER;
+    }
 
     // First check for two-character operators
     if (operator[1] != '\0') {
         if (strcmp(operator, "<=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value <= right_value;
+            result.type = TYPE_BOOLEAN; // Changed to TYPE_BOOLEAN
+            result.data.boolean = (left_value <= right_value);
             return result;
         }
         if (strcmp(operator, ">=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value >= right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value >= right_value);
             return result;
         }
         if (strcmp(operator, "==") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value == right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value == right_value);
             return result;
         }
         if (strcmp(operator, "!=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value != right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value != right_value);
             return result;
         }
     }
@@ -337,12 +345,12 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.integer = (int)(left_value / right_value);
         break;
     case '<':
-        result.type = TYPE_INTEGER;
-        result.data.integer = left_value < right_value;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value < right_value);
         break;
     case '>':
-        result.type = TYPE_INTEGER;
-        result.data.integer = left_value > right_value;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value > right_value);
         break;
     default:
         fprintf(stderr, "Error: Unknown operator `%s`\n", operator);
