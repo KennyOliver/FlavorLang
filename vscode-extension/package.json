@@ -30,7 +30,7 @@
       {
         "language": "flavorlang",
         "scopeName": "source.flavorlang",
-        "path": "./syntaxes/myLang.tmLanguage.json"
+        "path": "./syntaxes/flavorlang.tmLanguage.json"
       }
     ]
   },
