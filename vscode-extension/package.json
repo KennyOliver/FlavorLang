@@ -35,10 +35,13 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "vsce package",
     "compile": "npm run vscode:prepublish"
   },
   "devDependencies": {
     "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "@vscode/vsce": "^3.2.1",
+    "punycode": "^2.3.1"
   }
 }
