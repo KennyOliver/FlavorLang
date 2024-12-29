@@ -7,9 +7,15 @@
 ## 📖 Table of Contents
 
 1. [Quick Start](#quick-start)
+
 2. [Execution Flags & Behaviors](#execution-flags--behaviors)
+
 3. [Syntax Keywords](#syntax-keywords)
-4. [Syntax Examples](#syntax-examples)
+
+4. [Data Types](#data-types)
+
+5. [Syntax Examples](#syntax-examples)
+
    - [Hello World](#hello-world)
    - [Defining Variables](#defining-variables)
    - [Conditional Logic](#conditional-logic)
@@ -22,26 +28,36 @@
    - [User Input](#user-input)
    - [Raise an Error](#raise-error)
    - [Use Booleans](#use-booleans)
-5. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
-6. [Why FlavorLang?](#why-flavorlang)
-7. [Debugging](#debugging)
+
+6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
+
+7. [Why FlavorLang?](#why-flavorlang)
+
+8. [Debugging](#debugging)
+
    - [Overview](#debugging-overview)
    - [Example Script](#debugging-example-script)
    - [Debug Output Breakdown](#debugging-debug-output-breakdown)
    - [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
-8. [Lexer](#lexer)
+
+9. [Lexer](#lexer)
+
    - [Overview](#lexer-overview)
    - [How the Lexer Works](#how-the-lexer-works)
    - [Debugging Tokens](#debugging-tokens)
    - [Error Handling](#lexer-error-handling)
    - [Future Enhancements](#future-enhancements)
-9. [Parser](#parser)
-   - [Key Structures](#key-structures)
-   - [Main Parsing Functions](#main-parsing-functions)
-   - [Supporting Functions](#supporting-functions)
-   - [Error Handling](#error-handling)
-   - [Workflow Example](#workflow-example)
-10. [Interpreter](#interpreter)
+
+10. [Parser](#parser)
+
+    - [Key Structures](#key-structures)
+    - [Main Parsing Functions](#main-parsing-functions)
+    - [Supporting Functions](#supporting-functions)
+    - [Error Handling](#error-handling)
+    - [Workflow Example](#workflow-example)
+
+11. [Interpreter](#interpreter)
+
     - [Main Interpreter Functions](#Main-Interpreter-Functions)
     - [Summary of Steps](#Summary-of-Steps)
     - [Example Execution Flow](#Example-Execution-Flow)
@@ -133,6 +149,24 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
 | `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
+
+---
+
+## Data Types
+
+| Data Type | Syntax Example    | Capacity/Range                                                                                 | Implemented? |
+| --------- | ----------------- | ---------------------------------------------------------------------------------------------- | ------------ |
+| `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.    | ✅           |
+| `float`   | `3.14`            | `float` (32-bit): ±3.4E±38. `double` (64-bit): ±1.8E±308.                                      | ✅           |
+| `integer` | `42`              | Typically −2,147,483,648 to 2,147,483,647 (32-bit). Larger range for 64-bit.                   | ✅           |
+| `boolean` | `true` / `false`  | `1` for true, `0` for false. Typically stored as 1 byte, though this can vary by architecture. | ✅           |
+
+### Explanation
+
+- **string**: In C, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
+- **float**: The `float` type is a 32-bit floating-point number, typically with a range of ±3.4E±38. If you're using `double` (64-bit), it has a range of ±1.8E±308. In the `LiteralNode` struct, we are using `double` for floating-point literals, which offers higher precision.
+- **integer**: The typical range for an `integer` (32-bit) is from −2,147,483,648 to 2,147,483,647. For larger integers, the range increases with a 64-bit integer type (e.g., ±9.2E18).
+- **boolean**: Booleans are typically stored as `1` (true) and `0` (false). While they are logically 1-bit, they are typically stored in 1 byte, though this can vary based on the system's architecture.
 
 ---
 
