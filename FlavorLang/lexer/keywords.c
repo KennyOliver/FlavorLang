@@ -53,7 +53,7 @@ int is_keyword(const char *lexeme) {
         }
     }
 
-    return 0;
+    return TOKEN_IDENTIFIER;
 }
 
 int is_operator(const char *lexeme) {
