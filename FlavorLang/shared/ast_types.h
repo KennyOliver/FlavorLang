@@ -18,6 +18,7 @@ typedef enum {
     AST_CONDITIONAL,
     AST_BINARY_OP,
     AST_WHILE_LOOP,
+    AST_FOR_LOOP,
     AST_SWITCH,
     AST_BREAK,
     AST_VARIABLE,
@@ -67,12 +68,22 @@ typedef struct {
     char *operator;
 } ASTBinaryOp;
 
-// AST WhileLoop Node
+// AST While Loop Node
 typedef struct {
     struct ASTNode *condition;
     int re_evaluate_condition;
     struct ASTNode *body;
 } ASTWhileLoop;
+
+// AST For Loop Node
+typedef struct {
+    char *loop_variable;
+    struct ASTNode *start_expr;
+    struct ASTNode *end_expr;
+    bool inclusive;
+    struct ASTNode *step_expr;
+    struct ASTNode *body;
+} ASTForLoop;
 
 // AST Function Parameter
 typedef struct ASTFunctionParameter {
@@ -122,6 +133,9 @@ typedef struct ASTNode {
 
         // While loop
         ASTWhileLoop while_loop;
+
+        // For loop
+        ASTForLoop for_loop;
 
         // Function
         ASTFunctionCall function_call;
