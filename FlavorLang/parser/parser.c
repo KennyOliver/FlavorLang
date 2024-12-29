@@ -35,16 +35,15 @@ ASTNode *parse_program(Token *tokens) {
         } else if (strcmp(token->lexeme, "if") == 0) {
             new_node = parse_conditional_block(state);
         } else if (strcmp(token->lexeme, "while") == 0) {
-            new_node = parse_while_block(state);
+            new_node = parse_while_loop(state);
         } else if (strcmp(token->lexeme, "check") == 0) {
             new_node = parse_switch_block(state);
         } else if (strcmp(token->lexeme, "create") == 0) {
             new_node = parse_function_declaration(state);
         } else if (token->type == TOKEN_FUNCTION_NAME) {
             new_node = parse_function_call(state);
-            // Expect semicolon after standalone function call
             expect_token(state, TOKEN_DELIMITER,
-                         "Expected ';' after function call");
+                         "Expected `;` after function call");
         } else {
             parser_error("Unexpected token at start of statement", token);
         }
@@ -411,7 +410,7 @@ ASTNode *parse_block(ParserState *state) {
             } else if (strcmp(current->lexeme, "if") == 0) {
                 statement = parse_conditional_block(state);
             } else if (strcmp(current->lexeme, "while") == 0) {
-                statement = parse_while_block(state);
+                statement = parse_while_loop(state);
             } else if (strcmp(current->lexeme, "check") == 0) {
                 state->in_switch_block = true;
                 statement = parse_switch_block(state);
@@ -504,7 +503,7 @@ ASTNode *parse_conditional_block(ParserState *state) {
     return node;
 }
 
-ASTNode *parse_while_block(ParserState *state) {
+ASTNode *parse_while_loop(ParserState *state) {
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
