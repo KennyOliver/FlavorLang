@@ -152,10 +152,13 @@ LiteralValue interpret_literal(ASTNode *node) {
     case LITERAL_FLOAT:
         value.type = TYPE_FLOAT;
         value.data.floating_point = node->literal.value.floating_point;
+        debug_print_int("Created float literal: `%f`\n",
+                        value.data.floating_point);
         break;
     case LITERAL_INTEGER:
         value.type = TYPE_INTEGER;
         value.data.integer = node->literal.value.integer;
+        debug_print_int("Created integer literal: `%d`\n", value.data.integer);
         break;
     case LITERAL_BOOLEAN:
         value.type = TYPE_BOOLEAN;
