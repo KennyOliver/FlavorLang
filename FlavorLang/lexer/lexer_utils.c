@@ -134,12 +134,12 @@ void debug_print_tokens(Token *tokens) {
 
         for (int i = 0; tokens[i].type != TOKEN_EOF; i++) {
             if (tokens[i].line != last_line) {
-                debug_print_lex("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line,
+                debug_print_lex("%-6dType: %-2d  Lex: `%s`\n", tokens[i].line,
                                 tokens[i].type, tokens[i].lexeme);
                 last_line = tokens[i].line; // `last_line++` would only work if
                                             // there were no empty lines
             } else {
-                debug_print_lex("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type,
+                debug_print_lex("\t  Type: %-2d  Lex: `%s`\n", tokens[i].type,
                                 tokens[i].lexeme);
             }
         }
