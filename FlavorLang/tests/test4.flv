@@ -5,3 +5,9 @@ for i in 1..5 {
 for j in 10..=1 by -3 {
     show j;
 }
+
+
+# Invalid loop - interpreter throws an error
+# for j in 10..=1 by 2 {
+#     show j;
+# }

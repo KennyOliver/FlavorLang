@@ -5,62 +5,72 @@
 ASTNode *parse_program(Token *tokens) {
     ParserState *state = create_parser_state(tokens);
     ASTNode *head = NULL;
-    ASTNode *current = NULL;
+    ASTNode *tail = NULL;
 
     while (get_current_token(state)->type != TOKEN_EOF) {
-        ASTNode *new_node = NULL;
-        Token *token = get_current_token(state);
+        ASTNode *stmt = parse_statement(state);
+        if (!stmt)
+            break;
 
-        // Match statements based on token type
-        if (strcmp(token->lexeme, "let") == 0) {
-            new_node = parse_variable_declaration(state);
-        } else if (token->type == TOKEN_IDENTIFIER) {
-            // Peek ahead to see if next token is an operator and if it's '='
-            Token *next_token = peek_next_token(state);
-            if (next_token && next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0) {
-                // It's truly an assignment of the form `x = ...`
-                new_node = parse_variable_assignment(state);
-            } else {
-                // Otherwise, parse a plain expression statement (e.g. `n - 1;`)
-                // or a stand-alone function call that uses an identifier, etc.
-                new_node = parse_expression_statement(state);
-            }
-        } else if (strcmp(token->lexeme, "show") == 0) {
-            new_node = parse_print_statement(state);
-        } else if (strcmp(token->lexeme, "burn") == 0) {
-            new_node = parse_raise_error(state);
-        } else if (strcmp(token->lexeme, "taste") == 0) {
-            new_node = parse_input(state);
-        } else if (strcmp(token->lexeme, "if") == 0) {
-            new_node = parse_conditional_block(state);
-        } else if (strcmp(token->lexeme, "while") == 0) {
-            new_node = parse_while_block(state);
-        } else if (strcmp(token->lexeme, "check") == 0) {
-            new_node = parse_switch_block(state);
-        } else if (strcmp(token->lexeme, "create") == 0) {
-            new_node = parse_function_declaration(state);
-        } else if (token->type == TOKEN_FUNCTION_NAME) {
-            new_node = parse_function_call(state);
-            // Expect semicolon after standalone function call
-            expect_token(state, TOKEN_DELIMITER,
-                         "Expected ';' after function call");
-        } else {
-            parser_error("Unexpected token at start of statement", token);
-        }
-
-        // Add node to AST
         if (!head) {
-            head = new_node;
-            current = new_node;
+            head = tail = stmt;
         } else {
-            current->next = new_node;
-            current = new_node;
+            tail->next = stmt;
+            tail = stmt;
         }
     }
 
     free_parser_state(state);
     return head;
+}
+
+ASTNode *parse_statement(ParserState *state) {
+    Token *token = get_current_token(state);
+
+    if (!token)
+        return NULL;
+
+    if (match_token(state, "let"))
+        return parse_variable_declaration(state);
+    if (token->type == TOKEN_IDENTIFIER) {
+        Token *next_token = peek_next_token(state);
+        if (next_token && next_token->type == TOKEN_OPERATOR &&
+            strcmp(next_token->lexeme, "=") == 0) {
+            return parse_variable_assignment(state);
+        } else {
+            return parse_expression_statement(state);
+        }
+    }
+    if (match_token(state, "show"))
+        return parse_print_statement(state);
+    if (match_token(state, "burn"))
+        return parse_raise_error(state);
+    if (match_token(state, "taste"))
+        return parse_input(state);
+    if (match_token(state, "if"))
+        return parse_conditional_block(state);
+    if (match_token(state, "while"))
+        return parse_while_loop(state);
+    if (match_token(state, "for"))
+        return parse_for_loop(state);
+    if (match_token(state, "check"))
+        return parse_switch_block(state);
+    if (match_token(state, "create"))
+        return parse_function_declaration(state);
+    if (token->type == TOKEN_FUNCTION_NAME) {
+        ASTNode *node = parse_function_call(state);
+        expect_token(state, TOKEN_DELIMITER,
+                     "Expected `;` after function call");
+        return node;
+    }
+
+    parser_error("Unexpected token at start of statement", token);
+    return NULL;
+}
+
+bool match_token(ParserState *state, const char *lexeme) {
+    Token *token = get_current_token(state);
+    return token && strcmp(token->lexeme, lexeme) == 0;
 }
 
 Token *peek_next_token(ParserState *state) {
@@ -411,7 +421,9 @@ ASTNode *parse_block(ParserState *state) {
             } else if (strcmp(current->lexeme, "if") == 0) {
                 statement = parse_conditional_block(state);
             } else if (strcmp(current->lexeme, "while") == 0) {
-                statement = parse_while_block(state);
+                statement = parse_while_loop(state);
+            } else if (strcmp(current->lexeme, "for") == 0) {
+                statement = parse_for_loop(state);
             } else if (strcmp(current->lexeme, "check") == 0) {
                 state->in_switch_block = true;
                 statement = parse_switch_block(state);
@@ -504,26 +516,129 @@ ASTNode *parse_conditional_block(ParserState *state) {
     return node;
 }
 
-ASTNode *parse_while_block(ParserState *state) {
+ASTNode *parse_while_loop(ParserState *state) {
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-    node->type = AST_LOOP;
+    node->type = AST_WHILE_LOOP;
 
-    // Ensure the current token is `while`
     expect_token(state, TOKEN_KEYWORD, "Expected `while` keyword");
-
-    // Parse the condition expression
-    node->loop.condition = parse_expression(state);
+    node->while_loop.condition = parse_expression(state);
 
     expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
-    node->loop.body = parse_block(state);
+    node->while_loop.body = parse_block(state);
     expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
 
     // Optional re-evaluation logic
-    node->loop.re_evaluate_condition = 1;
+    node->while_loop.re_evaluate_condition = 1;
     node->next = NULL;
+    return node;
+}
+
+ASTNode *parse_for_loop(ParserState *state) {
+    debug_print_par("Parsing a `for` loop...\n");
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed", get_current_token(state));
+    }
+    node->type = AST_FOR_LOOP;
+
+    // Expect `for` keyword
+    expect_token(state, TOKEN_KEYWORD, "Expected `for` keyword");
+    debug_print_par("Found `for` keyword\n");
+
+    // Parse loop variable
+    Token *var_token = get_current_token(state);
+    if (var_token->type != TOKEN_IDENTIFIER) {
+        parser_error("Expected loop variable identifier", var_token);
+    }
+    char *loop_var = strdup(var_token->lexeme);
+    if (!loop_var) {
+        parser_error("Memory allocation failed for loop variable", var_token);
+    }
+    debug_print_par("Loop variable: %s\n", loop_var);
+    advance_token(state); // Consume loop variable
+
+    // Expect `in` keyword
+    expect_token(state, TOKEN_KEYWORD, "Expected `in` keyword");
+    debug_print_par("Found `in` keyword\n");
+
+    // Parse start expression as a literal
+    ASTNode *start_expr = parse_literal_or_identifier(state);
+    if (!start_expr) {
+        parser_error("Expected start expression in for loop",
+                     get_current_token(state));
+    }
+    debug_print_par("Parsed start expression\n");
+
+    // Parse `..` or `..=` operator
+    Token *range_op = get_current_token(state);
+    bool inclusive = false;
+    if (range_op->type == TOKEN_OPERATOR &&
+        strcmp(range_op->lexeme, "..") == 0) {
+        inclusive = false;
+    } else if (range_op->type == TOKEN_OPERATOR &&
+               strcmp(range_op->lexeme, "..=") == 0) {
+        inclusive = true;
+    } else {
+        parser_error("Expected `..` or `..=` operator in for loop", range_op);
+    }
+    debug_print_par("Found range operator: %s\n", range_op->lexeme);
+    advance_token(state); // Consume range operator
+
+    // Parse end expression as a literal
+    ASTNode *end_expr = parse_literal_or_identifier(state);
+    if (!end_expr) {
+        parser_error("Expected end expression in for loop",
+                     get_current_token(state));
+    }
+    debug_print_par("Parsed end expression\n");
+
+    // Initialize step expression to NULL
+    ASTNode *step_expr = NULL;
+
+    // Check for optional `by` keyword
+    Token *current = get_current_token(state);
+    if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "by") == 0) {
+        debug_print_par("Found `by` keyword\n");
+        advance_token(state); // Consume `by` keyword
+
+        // Parse step expression as a full expression
+        step_expr = parse_expression(state);
+        if (!step_expr) {
+            parser_error("Expected step expression after `by`",
+                         get_current_token(state));
+        }
+        debug_print_par("Parsed step expression\n");
+    }
+
+    expect_token(state, TOKEN_BRACE_OPEN,
+                 "Expected `{` delimiter to start loop body");
+    debug_print_par("Found `{` to start loop body\n");
+
+    // Parse loop body
+    ASTNode *body = parse_block(state);
+    if (!body) {
+        parser_error("Expected loop body", get_current_token(state));
+    }
+    debug_print_par("Parsed loop body\n");
+
+    expect_token(state, TOKEN_BRACE_CLOSE,
+                 "Expected `}` delimiter to end loop body");
+    debug_print_par("Found `}` to end loop body\n");
+
+    // Assign parsed components to ASTForLoop
+    node->for_loop.loop_variable = loop_var;
+    node->for_loop.start_expr = start_expr;
+    node->for_loop.end_expr = end_expr;
+    node->for_loop.inclusive = inclusive;
+    node->for_loop.step_expr = step_expr;
+    node->for_loop.body = body;
+    node->next = NULL;
+
+    debug_print_par("Successfully parsed a `for` loop\n");
     return node;
 }
 
@@ -843,9 +958,17 @@ void free_ast(ASTNode *node) {
             free_ast(node->binary_op.right);
             break;
 
-        case AST_LOOP:
-            free_ast(node->loop.condition);
-            free_ast(node->loop.body);
+        case AST_WHILE_LOOP:
+            free_ast(node->while_loop.condition);
+            free_ast(node->while_loop.body);
+            break;
+
+        case AST_FOR_LOOP:
+            free(node->for_loop.loop_variable);
+            free_ast(node->for_loop.start_expr);
+            free_ast(node->for_loop.end_expr);
+            free_ast(node->for_loop.step_expr);
+            free_ast(node->for_loop.body);
             break;
 
         case AST_VARIABLE:

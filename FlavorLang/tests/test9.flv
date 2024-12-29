@@ -1,12 +1,4 @@
-let dessert = "cake";
+show "What's your favorite dessert?";
+let favorite = taste;
 
-check dessert {
-    is "cake":
-        show "Bake the cake!";
-    is "pie":
-    is "cookie":
-        show "Prepare the oven!";
-        break;
-    else:
-        show "Dessert not on the menu.";
-}
+show "You chose:", favorite;

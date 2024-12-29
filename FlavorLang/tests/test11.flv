@@ -1,9 +1,6 @@
-let time = 20;
+plate "output.txt" with "Freshly baked cake ready to deliver!";
+garnish "output.txt" with "\nDon't forget the toppings!";
 
-show "Before error.";
-
-if time > 15 {
-    burn "Too late!", "The food got burnt!";
-}
-
-show "After error?";
+let data = gather "output.txt";
+show "File Contents:";
+show data;

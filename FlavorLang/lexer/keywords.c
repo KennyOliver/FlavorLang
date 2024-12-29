@@ -7,7 +7,8 @@ const char *KEYWORDS[] = {
     "elif",    // else if
     "else",    // else
     "for",     // for
-    "to",      // for range
+    "in",      // for in
+    "by",      // for in by
     "while",   // while
     "check",   // switch
     "is",      // case
@@ -32,8 +33,8 @@ const size_t KEYWORDS_COUNT =
     sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1; // - 1 for sentinel value
 
 const char *OPERATORS[] = {
-    "=", "==", "!=", "!=", "+",  "-", "*",
-    "/", "<",  ">",  ">=", "<=", NULL // sentinel value
+    "=", "==", "!=", "!=", "+",  "-",   "*", "/",
+    "<", ">",  ">=", "<=", "..", "..=", NULL // sentinel value
 };
 
 const size_t OPERATORS_COUNT =

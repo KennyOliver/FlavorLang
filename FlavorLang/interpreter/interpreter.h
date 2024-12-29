@@ -70,6 +70,7 @@ void interpret_raise_error(ASTNode *node, Environment *env);
 Variable interpret_input(Environment *env);
 InterpretResult interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
+LiteralValue interpret_for_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
