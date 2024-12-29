@@ -52,15 +52,17 @@ FlavorLang blends coding with culinary creativity! Write programs like recipesâ€
    - [Debug Output Breakdown](#debugging-debug-output-breakdown)
    - [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
 
-9. [Lexer](#lexer)
+9. [VS Code Syntax Highlighter Extension](#vs-code-syntax-highlighter-extension)
 
-   - [Overview](#lexer-overview)
-   - [How the Lexer Works](#how-the-lexer-works)
-   - [Debugging Tokens](#debugging-tokens)
-   - [Error Handling](#lexer-error-handling)
-   - [Future Enhancements](#future-enhancements)
+10. [Lexer](#lexer)
 
-10. [Parser](#parser)
+- [Overview](#lexer-overview)
+- [How the Lexer Works](#how-the-lexer-works)
+- [Debugging Tokens](#debugging-tokens)
+- [Error Handling](#lexer-error-handling)
+- [Future Enhancements](#future-enhancements)
+
+11. [Parser](#parser)
 
     - [Key Structures](#key-structures)
     - [Main Parsing Functions](#main-parsing-functions)
@@ -68,7 +70,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipesâ€
     - [Error Handling](#error-handling)
     - [Workflow Example](#workflow-example)
 
-11. [Interpreter](#interpreter)
+12. [Interpreter](#interpreter)
 
     - [Main Interpreter Functions](#Main-Interpreter-Functions)
     - [Summary of Steps](#Summary-of-Steps)
@@ -606,6 +608,40 @@ Run this to enable debugging for `test3.flv`.
 ```bash
 $ ./flavor tests/test3.flv --debug
 ```
+
+---
+
+## VS Code Syntax Highlighter Extension
+
+## Install the VS Code Syntax Highlighter for FlavorLang
+
+### 1. Build the Extension
+
+- Navigate to the `vscode-extension` folder and install dependencies:
+
+  ```bash
+  cd vscode-extension
+  npm install
+  ```
+
+### 2. Package the Extension
+
+- Use vsce (Visual Studio Code Extension Manager) to create the `.vsix` package:
+
+  ```bash
+  npx vsce package
+  ```
+
+This generates a `.vsix` file in the vscode-extension folder.
+
+### 3. Install in VS Code
+
+- Open VS Code.
+- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on Mac) and select _`Extensions: Install from VSIXâ€¦`_.
+- Select the generated `.vsix` file.
+
+Open a `.flv` file in VS Code.
+You should see custom syntax highlighting for FlavorLang!
 
 ---
 
