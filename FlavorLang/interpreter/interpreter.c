@@ -1,4 +1,23 @@
 #include "interpreter.h"
+#include "../debug/debug.h"
+#include <stdio.h>
+#include <string.h>
+
+#include <stdarg.h>
+
+void error_interpreter(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    printf("\033[31m"); // red text color
+    printf("Error: ");
+    vprintf(format, args);
+    printf("\033[0m\n"); // reset text color
+
+    va_end(args);
+    fflush(stdout);
+    exit(1);
+}
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value() {
@@ -49,6 +68,8 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_INPUT: {
         debug_print_int("\tMatched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
+
+        // Wrap `v.value` in an `InterpretResult`, with `did_return=false`
         return make_result(v.value, false);
     }
 
@@ -59,7 +80,9 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_FUNCTION_CALL: {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
+        // interpret_function_call(...) returns a LiteralValue
         LiteralValue fc_val = interpret_function_call(node, env);
+        // wrap it in an InterpretResult
         return make_result(fc_val, false);
     }
 
@@ -72,6 +95,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_FUNCTION_RETURN: {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
+
+        // if (!node->assignment.value) {
+        //     error_interpreter(
+        //         "Return statement has no expression! (Parser bug?)\n");
+        // }
 
         LiteralValue return_value =
             interpret_node(node->assignment.value, env).value;
@@ -166,6 +194,7 @@ LiteralValue interpret_literal(ASTNode *node) {
 }
 
 LiteralValue interpret_variable(ASTNode *node, Environment *env) {
+    // printf("Env var 0: `%s`\n", env->variables[0].variable_name);
     Variable *var = get_variable(env, node->variable_name);
     if (!var) {
         error_interpreter("Undefined variable `%s`.\n", node->variable_name);
@@ -378,7 +407,7 @@ void add_variable(Environment *env, Variable var) {
             if (env->variables[i].value.type == TYPE_STRING &&
                 env->variables[i].value.data.string) {
                 free(env->variables[i]
-                         .value.data.string); // free existing string memory
+                         .value.data.string); // Free existing string memory
             }
             env->variables[i].value = var.value;
 
@@ -961,14 +990,11 @@ copy_function_parameters(ASTFunctionParameter *param_list) {
 
         // Add the new parameter to the linked list
         if (new_head == NULL) {
-            // Set as head if it's the first node
-            new_head = new_param;
+            new_head = new_param; // Set as head if it's the first node
         } else {
-            // Attach to the end of the list
-            new_tail->next = new_param;
+            new_tail->next = new_param; // Attach to the end of the list
         }
-        // Update the tail pointer
-        new_tail = new_param;
+        new_tail = new_param; // Update the tail pointer
 
         // Move to the next parameter in the source list
         param_list = param_list->next;
@@ -1032,9 +1058,9 @@ void add_function(Environment *env, Function func) {
     // Step 4: Create a deep copy of the function being added
     Function *stored_func = &env->functions[env->function_count++];
     stored_func->parameters = copy_function_parameters(
-        func.parameters); // create a copy of parameters
+        func.parameters); // Create a copy of parameters
     stored_func->body =
-        copy_ast_node(func.body); // still assuming shared ownership of the body
+        copy_ast_node(func.body); // Still assuming shared ownership of the body
                                   // (might need a copy if modified)
 
     // Step 5: Safely duplicate the function name
@@ -1173,5 +1199,33 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
     }
 
     free_environment(&local_env);
-    return result; // if no explicit return, then return 0
+    return result; // if no explicit return, we return 0
+}
+
+// Initialize the environment
+void init_environment(Environment *env) {
+    // Existing variable initialization
+    env->variable_count = 0;
+    env->capacity = 10;
+    env->variables = malloc(env->capacity * sizeof(Variable));
+
+    // Add function initialization
+    env->function_count = 0;
+    env->function_capacity = 10;
+    env->functions = malloc(env->function_capacity * sizeof(Function));
+}
+
+// Free the environment
+void free_environment(Environment *env) {
+    // Free variables
+    for (size_t i = 0; i < env->variable_count; i++) {
+        free(env->variables[i].variable_name);
+    }
+    free(env->variables);
+
+    // Free functions
+    for (size_t i = 0; i < env->function_count; i++) {
+        free(env->functions[i].name);
+    }
+    free(env->functions);
 }
