@@ -1,0 +1,47 @@
+{
+  "name": "flavorlang-vscode",
+  "displayName": "FlavorLang Support",
+  "description": "Syntax highlighting for FlavorLang programming language.",
+  "version": "1.0.0",
+  "publisher": "KennyOliver",
+  "engines": {
+    "vscode": "^1.50.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "flavorlang",
+        "aliases": [
+          "FlavorLang",
+          "flavorlang"
+        ],
+        "extensions": [
+          ".flv",
+          ".flavor",
+          ".flavorlang"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "flavorlang",
+        "scopeName": "source.flavorlang",
+        "path": "./syntaxes/flavorlang.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "npm run vscode:prepublish"
+  },
+  "devDependencies": {
+    "vsce": "^2.15.0"
+  },
+  "dependencies": {
+    "@vscode/vsce": "^3.2.1",
+    "punycode": "^2.3.1"
+  }
+}
