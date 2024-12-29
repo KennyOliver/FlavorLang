@@ -7,7 +7,8 @@ const char *KEYWORDS[] = {
     "elif",    // else if
     "else",    // else
     "for",     // for
-    "to",      // for range
+    "in",      // for in
+    "by",      // for in by
     "while",   // while
     "check",   // switch
     "is",      // case
