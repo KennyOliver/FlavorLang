@@ -95,7 +95,7 @@ $ make
 Create a file named **`recipe.flv`** with the following content.
 
 ```py
-show "Welcome to FlavorLang!";
+show("Welcome to FlavorLang!");
 ```
 
 ### 3. Run the Program
@@ -194,7 +194,7 @@ Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 The simplest program to print "Hello world!".
 
 ```py
-show "Hello world!";
+show("Hello world!");
 ```
 
 ### 2. 🍲 Defining Variables <a id="defining-variables"></a>
@@ -205,8 +205,8 @@ Use `let` to declare and initialize variables.
 let name = "Chef";
 let age = 25;
 
-show "Name:", name;
-show "Age:", age;
+show("Name:", name);
+show("Age:", age);
 ```
 
 ### 3. 🔄 Conditional Logic <a id="conditional-logic"></a>
@@ -217,11 +217,11 @@ Use `if`, `elif`, and `else` to control program flow.
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-	show "The oven is hot!";
+	show("The oven is hot!");
 } elif oven_temperature == 180 {
-	show "The oven is just right!";
+	show("The oven is just right!");
 } else {
-	show "The oven is too cold!";
+	show("The oven is too cold!");
 }
 ```
 
@@ -231,11 +231,11 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5 {
-    show "Mixing... Step", i;
+    show("Mixing... Step", i);
 }
 
 for j in 10..=1 by -3 {
-    show j;
+    show(j);
 }
 ```
 
@@ -247,11 +247,11 @@ Use `while` for condition-based repetition.
 let flour_added = 0;
 
 while flour_added < 3 {
-	show "Adding flour...";
+	show("Adding flour...");
 	let flour_added = flour_added + 1;
 }
 
-show "All flour has been added!";
+show("All flour has been added!");
 ```
 
 ### 6. 📦 Functions with Return <a id="functions-with-return"></a>
@@ -262,16 +262,16 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 ```py
 create bake_cake(temperature) {
 	if temperature < 180 {
-		show "Temperature is too low to bake!";
-		burn "Cake burned!";  # stops function execution immediately
+		show("Temperature is too low to bake!");
+		burn("Cake burned!");  # stops function execution immediately
   } else {
-		show "Baking cake at", temperature, "degrees!";
+		show("Baking cake at", temperature, "degrees!");
 		deliver "Cake is ready!";
   }
 }
 
 let result = bake_cake(200);
-show result;
+show(result);
 ```
 
 ### 7. 🛠️ Error Handling <a id="error-handling"></a>
@@ -280,10 +280,10 @@ Use `try` and `rescue` to handle errors.
 
 ```py
 try {
-	burn "This recipe failed!";
-	show "This won't run!";
+	burn("This recipe failed!");
+	show("This won't run!");
 } rescue {
-	show "Caught an error: Recipe needs improvement.";
+	show("Caught an error: Recipe needs improvement.");
 }
 ```
 
@@ -301,13 +301,13 @@ let dessert = "cake";
 
 check dessert {
 	is "cake":
-		show "Bake the cake!";
+		show("Bake the cake!");
 	is "pie":
 	is "cookie":
-		show "Prepare the oven!";
+		show("Prepare the oven!");
 		break;
 	else:
-		show "Dessert not on the menu.";
+		show("Dessert not on the menu.");
 }
 ```
 
@@ -323,10 +323,10 @@ Dessert not on the menu.
 Use `taste` to accept input from the user.
 
 ```py
-show "What's your favorite dessert?";
+show("What's your favorite dessert?");
 let favorite = taste;
 
-show "You chose:", favorite;
+show("You chose:", favorite);
 ```
 
 ### 🔵 10. Use Booleans <a id="use-booleans"></a>
@@ -337,10 +337,10 @@ Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluat
 let stop_loop = False;
 let count = 10;
 
-show "Preparing for launch!";
+show("Preparing for launch!");
 
 while stop_loop != True {
-    show count;
+    show(count);
 
     if count > 0 {
         count = count - 1;
@@ -349,7 +349,7 @@ while stop_loop != True {
     }
 }
 
-show "Blast off!";
+show("Blast off!");
 ```
 
 ### 11. 📄 File Operations <a id="file-operations"></a>
@@ -363,8 +363,8 @@ plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";
-show "File Contents:";
-show data;
+show("File Contents:");
+show(data);
 ```
 
 ### 12. ⛔️ Raise an Error <a id="raise-error"></a>
@@ -374,13 +374,13 @@ Use `burn` to raise an error and halt execution.
 ```py
 let time = 20;
 
-show "Before error.";
+show("Before error.");
 
 if time > 15 {
-	burn "Too late!", "The food got burnt!";
+	burn("Too late!", "The food got burnt!");
 }
 
-show "After error?";
+show("After error?");
 ```
 
 </details>
@@ -475,11 +475,11 @@ In this section, `test3.flv` is used as an example to demonstrate how the --debu
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-  show "The oven is hot!";
+  show("The oven is hot!");
 } elif oven_temperature == 180 {
-  show "The oven is just right!";
+  show("The oven is just right!");
 } else {
-  show "The oven is too cold!";
+  show("The oven is too cold!");
 }
 ```
 
@@ -547,7 +547,7 @@ The interpreter executes the script step by step:
 
 #### `show` in Debug Mode
 
-The show statement is executed as part of the conditional blocks:
+The `show` statement is executed as part of the conditional blocks:
 
 ##### 1. Tokenization
 
@@ -751,7 +751,7 @@ After the lexer produces tokens, the **parser** converts them into an **Abstract
 let x = 10;
 
 if x > 5:
-    show "Big";
+    show("Big");
 ```
 
 - **Lexer**: Transforms this into tokens:

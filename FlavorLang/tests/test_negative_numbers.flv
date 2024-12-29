@@ -1,13 +1,13 @@
 let x = -10;
 let y = -3.14;
-show x, y;
+show(x, y);
 
 create func1(temperature) { 
     if temperature < 180 {
-        show "Temperature is too low to bake!";
-        burn "Cake burned!"; 
+        show("Temperature is too low to bake!");
+        burn("Cake burned!"); 
     } else {
-        show "Baking cake at", temperature, "degrees!";
+        show("Baking cake at", temperature, "degrees!");
         deliver "Cake is ready!";
     }
 }
@@ -19,7 +19,7 @@ create func2(x, y) {
 }
 
 create func3(x) { 
-    show "X:", x;
+    show("X:", x);
 }
 
 create func4() { 
@@ -27,15 +27,15 @@ create func4() {
 }
 
 let result1 = func1(200);
-show "Result 1:", result1;
+show("Result 1:", result1);
 
 let result2 = func2(2, 8);
-show "Result 2:", result2;
+show("Result 2:", result2);
 
 let result3 = func3(2);
 func3(5);
-show "Result 3:", result3;
+show("Result 3:", result3);
 
 # all functions return 0 by default
 let result4 = func4();
-show "Result 4:", result4;
+show("Result 4:", result4);

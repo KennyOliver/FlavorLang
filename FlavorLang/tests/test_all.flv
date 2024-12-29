@@ -1,7 +1,7 @@
 # ==================================================
 # 1
 # ==================================================
-show "Hello world!";
+show("Hello world!");
 
 
 # ==================================================
@@ -10,8 +10,8 @@ show "Hello world!";
 let name = "Chef";
 let age = 25;
 
-show "Name:", name;
-show "Age:", age;
+show("Name:", name);
+show("Age:", age);
 
 
 # ==================================================
@@ -20,11 +20,11 @@ show "Age:", age;
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-    show "The oven is hot!";
+    show("The oven is hot!");
 } elif oven_temperature == 180 {
-    show "The oven is just right!";
+    show("The oven is just right!");
 } else {
-    show "The oven is too cold!";
+    show("The oven is too cold!");
 }
 
 
@@ -32,11 +32,11 @@ if oven_temperature > 180 {
 # 4
 # ==================================================
 for i in 1..5 {
-    show "Mixing... Step", i;
+    show("Mixing... Step", i);
 }
 
 for j in 10..=1 by -3 {
-    show j;
+    show(j);
 }
 
 
@@ -46,13 +46,13 @@ for j in 10..=1 by -3 {
 let flour_added = 0;
 
 while flour_added < 3 {
-    show "Adding flour...";
+    show("Adding flour...");
     flour_added = flour_added + 1;
-    show "End of iteration";
+    show("End of iteration");
 }
 
-show "All flour has been added!";
-show "Flour added:", flour_added;
+show("All flour has been added!");
+show("Flour added:", flour_added);
 
 
 # ==================================================
@@ -60,26 +60,26 @@ show "Flour added:", flour_added;
 # ==================================================
 create bake_cake(temperature) {
     if temperature < 180 {
-        show "Temperature is too low to bake!";
-        burn "Cake burned!";  # Stops function execution immediately
+        show("Temperature is too low to bake!");
+        burn("Cake burned!"); # stops function execution immediately
 	} else {
-        show "Baking cake at", temperature, "degrees!";
+        show("Baking cake at", temperature, "degrees!");
         deliver "Cake is ready!";
 	}
 }
 
 let result = bake_cake(200);
-show result;
+show(result);
 
 
 # ==================================================
 # 7
 # ==================================================
 # try {
-#     burn "This recipe failed!";
-#     show "This won't run!";
+#     burn("This recipe failed!");
+#     show("This won't run!");
 # } rescue {
-#     show "Caught an error: Recipe needs improvement.";
+#     show("Caught an error: Recipe needs improvement.");
 # }
 
 
@@ -90,37 +90,35 @@ let dessert = "cake";
 
 check dessert {
     is "cake":
-        show "Bake the cake!";
+        show("Bake the cake!");
     is "pie":
     is "cookie":
-        show "Prepare the oven!";
+        show("Prepare the oven!");
         break;
     else:
-        show "Dessert not on the menu.";
+        show("Dessert not on the menu.");
 }
 
 
 # ==================================================
 # 9
 # ==================================================
-show "What's your favorite dessert?";
+show("What's your favorite dessert?");
 let favorite = taste;
 
-show "You chose:", favorite;
-
+show("You chose:", favorite);
 
 # ==================================================
 # 10
 # ==================================================
-show "After error?";
 
 let stop_loop = False;
 let count = 10;
 
-show "Preparing for launch!";
+show("Preparing for launch!");
 
 while stop_loop != True {
-    show count;
+    show(count);
     
     if count > 0 {
         count = count - 1;
@@ -129,7 +127,7 @@ while stop_loop != True {
     }
 }
 
-show "Blast off!";
+show("Blast off!");
 
 
 # ==================================================
@@ -139,8 +137,8 @@ show "Blast off!";
 # garnish "output.txt" with "\nDon't forget the toppings!";
 
 # let data = gather "output.txt";
-# show "File Contents:";
-# show data;
+# show("File Contents:");
+# show(data);
 
 
 # ==================================================
@@ -148,8 +146,10 @@ show "Blast off!";
 # ==================================================
 let time = 20;
 
-show "Before error.";
+show("Before error.");
 
 if time > 15 {
-    burn "Too late!", "The food got burnt!";
+    burn("Too late!", "The food got burnt!");
 }
+
+show("After error?");

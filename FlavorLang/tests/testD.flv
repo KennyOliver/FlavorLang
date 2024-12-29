@@ -1,8 +1,8 @@
 create test(fruit_count) {
     if fruit_count != 4 {
-        show "Perfect amount of fruit";
+        show("Perfect amount of fruit");
     } else {
-        show "Undesired amount!";
+        show("Undesired amount!");
     }
 }
 
