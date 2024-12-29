@@ -350,18 +350,21 @@ Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluat
 
 ```py
 let stop_loop = False;
-let count = 0;
+let count = 10;
+
+show "Preparing for launch!";
 
 while stop_loop != True {
-    show "Count:", count;
+    show count;
 
-    if count < 10 {
-        count = count + 1;
+    if count > 0 {
+        count = count - 1;
     } else {
         stop_loop = True;
     }
 }
 
+show "Blast off!";
 ```
 
 </details>
