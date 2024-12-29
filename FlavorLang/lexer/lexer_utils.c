@@ -5,11 +5,9 @@
 
 #define TOKEN_ARRAY_GROWTH_FACTOR 2
 
-Token *create_token(TokenType type, const char *lexeme, int line)
-{
+Token *create_token(TokenType type, const char *lexeme, int line) {
     Token *token = malloc(sizeof(Token));
-    if (!token)
-    {
+    if (!token) {
         token_error("Memory allocation failed", line);
         return NULL;
     }
@@ -17,52 +15,42 @@ Token *create_token(TokenType type, const char *lexeme, int line)
     token->type = type;
     token->line = line;
 
-    if (lexeme)
-    {
+    if (lexeme) {
         token->lexeme = strdup(lexeme);
-        if (!token->lexeme)
-        {
+        if (!token->lexeme) {
             free(token);
             token_error("Memory allocation failed for lexeme", line);
             return NULL;
         }
-    }
-    else
-    {
+    } else {
         token->lexeme = NULL;
     }
 
     return token;
 }
 
-void free_token(Token *token)
-{
-    if (token)
-    {
+void free_token(Token *token) {
+    if (token) {
         free(token->lexeme);
         free(token);
     }
 }
 
-void free_token_array(Token *tokens)
-{
+void free_token_array(Token *tokens) {
     if (!tokens)
         return;
 
-    for (size_t i = 0; tokens[i].type != TOKEN_EOF; i++)
-    {
+    for (size_t i = 0; tokens[i].type != TOKEN_EOF; i++) {
         free(tokens[i].lexeme);
     }
     free(tokens);
 }
 
-Token *resize_token_array(Token *tokens, size_t *capacity)
-{
+Token *resize_token_array(Token *tokens, size_t *capacity) {
     size_t new_capacity = *capacity * TOKEN_ARRAY_GROWTH_FACTOR;
     Token *new_tokens = realloc(tokens, sizeof(Token) * new_capacity);
 
-    if (!new_tokens)
-    {
+    if (!new_tokens) {
         free_token_array(tokens);
         token_error("Failed to resize token array", -1);
         return NULL;
@@ -73,10 +61,8 @@ Token *resize_token_array(Token *tokens, size_t *capacity)
 }
 
 void append_token(Token **tokens, size_t *count, size_t *capacity,
-                  TokenType type, const char *lexeme, int line)
-{
-    if (*count >= *capacity - 1)
-    { // -1 to leave room for EOF token
+                  TokenType type, const char *lexeme, int line) {
+    if (*count >= *capacity - 1) { // -1 to leave room for EOF token
         Token *new_tokens = resize_token_array(*tokens, capacity);
         if (!new_tokens)
             return;
@@ -89,24 +75,18 @@ void append_token(Token **tokens, size_t *count, size_t *capacity,
     (*count)++;
 }
 
-void token_error(const char *message, int line)
-{
-    if (line >= 0)
-    {
+void token_error(const char *message, int line) {
+    if (line >= 0) {
         fprintf(stderr, "Error on line %d: %s\n", line, message);
-    }
-    else
-    {
+    } else {
         fprintf(stderr, "Error: %s\n", message);
     }
     exit(1);
 }
 
-void print_token(const Token *token)
-{
+void print_token(const Token *token) {
     const char *type_str;
-    switch (token->type)
-    {
+    switch (token->type) {
     case TOKEN_KEYWORD:
         type_str = "KEYWORD";
         break;
@@ -140,33 +120,25 @@ void print_token(const Token *token)
            token->lexeme ? token->lexeme : "NULL", token->line);
 }
 
-void dump_token_array(const Token *tokens, size_t count)
-{
+void dump_token_array(const Token *tokens, size_t count) {
     printf("Token Array (%zu tokens):\n", count);
-    for (size_t i = 0; i < count; i++)
-    {
+    for (size_t i = 0; i < count; i++) {
         printf("[%zu] ", i);
         print_token(&tokens[i]);
     }
 }
 
-void debug_print_tokens(Token *tokens)
-{
-    if (debug_flag)
-    {
+void debug_print_tokens(Token *tokens) {
+    if (debug_flag) {
         int last_line = 0;
 
-        for (int i = 0; tokens[i].type != TOKEN_EOF; i++)
-        {
-            if (tokens[i].line != last_line)
-            {
+        for (int i = 0; tokens[i].type != TOKEN_EOF; i++) {
+            if (tokens[i].line != last_line) {
                 debug_print_lex("%-6dType: `%d`  Lex: `%s`\n", tokens[i].line,
                                 tokens[i].type, tokens[i].lexeme);
-                last_line = tokens[i].line; // `last_line++` would only work if there
-                                            // were no empty lines
-            }
-            else
-            {
+                last_line = tokens[i].line; // `last_line++` would only work if
+                                            // there were no empty lines
+            } else {
                 debug_print_lex("\t  Type: `%d`  Lex: `%s`\n", tokens[i].type,
                                 tokens[i].lexeme);
             }
