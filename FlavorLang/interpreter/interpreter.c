@@ -143,10 +143,6 @@ LiteralValue interpret_literal(ASTNode *node) {
     debug_print_int("Interpreting literal value...\n");
     debug_print_int("Literal type: %d\n", node->literal.type);
 
-    if (node->literal.type == LITERAL_INTEGER) {
-        debug_print_int("Integer value: %d\n", node->literal.value.integer);
-    }
-
     switch (node->literal.type) {
     case LITERAL_STRING:
         value.type = TYPE_STRING;
@@ -156,10 +152,19 @@ LiteralValue interpret_literal(ASTNode *node) {
     case LITERAL_FLOAT:
         value.type = TYPE_FLOAT;
         value.data.floating_point = node->literal.value.floating_point;
+        debug_print_int("Created float literal: `%f`\n",
+                        value.data.floating_point);
         break;
     case LITERAL_INTEGER:
         value.type = TYPE_INTEGER;
         value.data.integer = node->literal.value.integer;
+        debug_print_int("Created integer literal: `%d`\n", value.data.integer);
+        break;
+    case LITERAL_BOOLEAN:
+        value.type = TYPE_BOOLEAN;
+        value.data.boolean = node->literal.value.boolean;
+        debug_print_int("Created boolean literal: `%s`\n",
+                        value.data.boolean ? "True" : "False");
         break;
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
@@ -255,7 +260,6 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         return right;
     }
 
-    // In interpret_binary_op, replace the switch and operator handling with:
     char *operator= node->binary_op.operator;
     debug_print_int("Operator: `%s`\n", operator);
 
@@ -265,38 +269,47 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         return handle_string_concatenation(left, right);
     }
 
-    // Get numeric values
-    double left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                                  : (double)left.data.integer;
-    double right_value = (right.type == TYPE_FLOAT)
-                             ? right.data.floating_point
-                             : (double)right.data.integer;
+    // Get numeric values for arithmetic and comparison
+    double left_value = 0.0, right_value = 0.0;
+    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
+                                               : (double)left.data.integer;
+        right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
+                                                 : (double)right.data.integer;
+    } else {
+        left_value = (double)left.data.integer;
+        right_value = (double)right.data.integer;
+    }
 
     LiteralValue result;
-    result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
-                      ? TYPE_FLOAT
-                      : TYPE_INTEGER;
+    // Default to TYPE_INTEGER or TYPE_FLOAT for arithmetic operations
+    if (strcmp(operator, "*") == 0 || strcmp(operator, "/") == 0 ||
+        strcmp(operator, "+") == 0 || strcmp(operator, "-") == 0) {
+        result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
+                          ? TYPE_FLOAT
+                          : TYPE_INTEGER;
+    }
 
     // First check for two-character operators
     if (operator[1] != '\0') {
         if (strcmp(operator, "<=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value <= right_value;
+            result.type = TYPE_BOOLEAN; // Changed to TYPE_BOOLEAN
+            result.data.boolean = (left_value <= right_value);
             return result;
         }
         if (strcmp(operator, ">=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value >= right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value >= right_value);
             return result;
         }
         if (strcmp(operator, "==") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value == right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value == right_value);
             return result;
         }
         if (strcmp(operator, "!=") == 0) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = left_value != right_value;
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value != right_value);
             return result;
         }
     }
@@ -332,12 +345,12 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.integer = (int)(left_value / right_value);
         break;
     case '<':
-        result.type = TYPE_INTEGER;
-        result.data.integer = left_value < right_value;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value < right_value);
         break;
     case '>':
-        result.type = TYPE_INTEGER;
-        result.data.integer = left_value > right_value;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value > right_value);
         break;
     default:
         fprintf(stderr, "Error: Unknown operator `%s`\n", operator);
@@ -439,6 +452,9 @@ void interpret_print(ASTNode *node, Environment *env) {
             break;
         case TYPE_STRING:
             printf("%s", lv.data.string);
+            break;
+        case TYPE_BOOLEAN:
+            printf("%s", lv.data.boolean ? "True" : "False");
             break;
         case TYPE_ERROR:
             fprintf(stderr, "Error: Invalid literal type.\n");
@@ -569,28 +585,39 @@ Variable interpret_input(Environment *env) {
 InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` called\n");
     if (!node) {
-        // error
+        // Error
         return make_result((LiteralValue){.type = TYPE_ERROR}, false);
     }
 
     ASTNode *current_branch = node;
-    int condition_met = 0;
+    bool condition_met = false;
 
     while (current_branch) {
         if (current_branch->conditional.condition) {
             InterpretResult cond_res =
                 interpret_node(current_branch->conditional.condition, env);
             if (cond_res.did_return) {
-                return cond_res; // bubble up immediately
+                // Bubble up immediately
+                return cond_res;
             }
 
-            if (cond_res.value.type != TYPE_INTEGER) {
-                // error
+            // Check for valid condition types
+            if (cond_res.value.type != TYPE_INTEGER &&
+                cond_res.value.type != TYPE_BOOLEAN) {
+                fprintf(stderr, "Error: Condition expression must be boolean "
+                                "or integer.\n");
                 return make_result((LiteralValue){.type = TYPE_ERROR}, false);
             }
 
-            if (cond_res.value.data.integer) {
-                // interpret the if body
+            bool condition_true = false;
+            if (cond_res.value.type == TYPE_BOOLEAN) {
+                condition_true = cond_res.value.data.boolean;
+            } else if (cond_res.value.type == TYPE_INTEGER) {
+                condition_true = (cond_res.value.data.integer != 0);
+            }
+
+            if (condition_true) {
+                // Interpret the conditional body
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
@@ -599,11 +626,13 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                     }
                     cs = cs->next;
                 }
-                condition_met = 1;
+                condition_met = true;
+
+                // Exit after the first true condition
                 break;
             }
         } else {
-            // else
+            // Else branch
             if (!condition_met) {
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
@@ -614,12 +643,17 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                     cs = cs->next;
                 }
             }
+
+            // Exit after else
             break;
         }
+
         current_branch = current_branch->conditional.else_branch;
     }
+
     debug_print_int("`interpret_conditional()` completed\n");
-    // if no return triggered, just return a normal result
+
+    // Return a default value if no conditions met
     return make_result(create_default_value(), false);
 }
 
@@ -632,27 +666,37 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
     while (1) {
         InterpretResult cond_r = interpret_node(condition, env);
         if (cond_r.did_return) {
-            // bubble up immediately
+            // Bubble up immediately
             return;
         }
 
-        if (cond_r.value.type != TYPE_INTEGER) {
-            fprintf(stderr, "While condition must be integer\n");
+        // Check for valid condition types
+        if (cond_r.value.type != TYPE_INTEGER &&
+            cond_r.value.type != TYPE_BOOLEAN) {
+            fprintf(stderr, "While condition must be boolean or integer\n");
             return;
         }
 
-        if (cond_r.value.data.integer) {
-            // interpret the body
+        bool condition_true = false;
+        if (cond_r.value.type == TYPE_BOOLEAN) {
+            condition_true = cond_r.value.data.boolean;
+        } else if (cond_r.value.type == TYPE_INTEGER) {
+            condition_true = (cond_r.value.data.integer != 0);
+        }
+
+        if (condition_true) {
+            // Interpret the loop body
             ASTNode *current = body;
             while (current) {
                 InterpretResult body_r = interpret_node(current, env);
                 if (body_r.did_return) {
-                    // bubble up
+                    // Bubble up
                     return;
                 }
                 current = current->next;
             }
         } else {
+            // Exit loop if condition is false
             break;
         }
     }
@@ -670,7 +714,7 @@ void interpret_switch(ASTNode *node, Environment *env) {
     debug_print_int("Switch expression evaluated\n");
 
     ASTCaseNode *current_case = node->switch_case.cases;
-    int break_encountered = 0;
+    bool break_encountered = false;
 
     while (current_case && !break_encountered) {
         if (current_case->condition == NULL) {
@@ -679,10 +723,10 @@ void interpret_switch(ASTNode *node, Environment *env) {
             ASTNode *current_statement = current_case->body;
             while (current_statement && !break_encountered) {
                 if (current_statement->type == AST_BREAK) {
-                    break_encountered = 1;
+                    break_encountered = true;
                     break;
                 }
-                // interpret_node(...) returning InterpretResult
+                // `interpret_node(...)` returning `InterpretResult`
                 interpret_node(current_statement, env);
                 current_statement = current_statement->next;
             }
@@ -693,10 +737,14 @@ void interpret_switch(ASTNode *node, Environment *env) {
                 interpret_node(current_case->condition, env);
             LiteralValue case_val = case_r.value;
 
-            if (switch_val.type == case_val.type) {
-                int values_match = 0;
+            bool values_match = false;
 
-                if (switch_val.type == TYPE_FLOAT) {
+            // Handle type comparison
+            if (switch_val.type == case_val.type) {
+                if (switch_val.type == TYPE_BOOLEAN) {
+                    values_match =
+                        (switch_val.data.boolean == case_val.data.boolean);
+                } else if (switch_val.type == TYPE_FLOAT) {
                     values_match = (switch_val.data.floating_point ==
                                     case_val.data.floating_point);
                 } else if (switch_val.type == TYPE_INTEGER) {
@@ -706,21 +754,21 @@ void interpret_switch(ASTNode *node, Environment *env) {
                     values_match = (strcmp(switch_val.data.string,
                                            case_val.data.string) == 0);
                 }
+            }
 
-                if (values_match) {
-                    debug_print_int("Match found, executing case body\n");
+            if (values_match) {
+                debug_print_int("Match found, executing case body\n");
 
-                    ASTNode *current_statement = current_case->body;
-                    while (current_statement && !break_encountered) {
-                        if (current_statement->type == AST_BREAK) {
-                            break_encountered = 1;
-                            break;
-                        }
-                        interpret_node(current_statement, env);
-                        current_statement = current_statement->next;
+                ASTNode *current_statement = current_case->body;
+                while (current_statement && !break_encountered) {
+                    if (current_statement->type == AST_BREAK) {
+                        break_encountered = true;
+                        break;
                     }
-                    // If break_encountered, break
+                    interpret_node(current_statement, env);
+                    current_statement = current_statement->next;
                 }
+                // If break_encountered, break
             }
         }
 

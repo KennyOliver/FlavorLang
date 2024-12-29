@@ -251,9 +251,9 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         }
     }
 
-    // Original literal/identifier handling
+    // Handle literals and identifiers
     if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER ||
-        current->type == TOKEN_STRING) {
+        current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
         ASTNode *node = malloc(sizeof(ASTNode));
         if (!node) {
             parser_error("Memory allocation failed", current);
@@ -267,9 +267,16 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         } else if (current->type == TOKEN_INTEGER) {
             node->literal.type = LITERAL_INTEGER;
             node->literal.value.integer = atoi(current->lexeme);
-        } else {
+        } else if (current->type == TOKEN_STRING) {
             node->literal.type = LITERAL_STRING;
             node->literal.value.string = strdup(current->lexeme);
+        } else if (current->type == TOKEN_BOOLEAN) { // Handle boolean
+            node->literal.type = LITERAL_BOOLEAN;
+            if (strcmp(current->lexeme, "True") == 0) {
+                node->literal.value.boolean = 1;
+            } else {
+                node->literal.value.boolean = 0;
+            }
         }
 
         node->next = NULL;

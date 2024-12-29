@@ -1,6 +1,7 @@
 #ifndef AST_TYPES_H
 #define AST_TYPES_H
 
+#include <stdbool.h>
 #include <stdlib.h>
 
 #define MAX_ARGUMENTS 1024
@@ -11,7 +12,6 @@ typedef enum {
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,
-    // AST_FUNCTION_PARAMETER,
     AST_PRINT,
     AST_INPUT,
     AST_LITERAL,
@@ -26,19 +26,25 @@ typedef enum {
 
 // Literal Node
 typedef struct {
-    enum { LITERAL_STRING, LITERAL_FLOAT, LITERAL_INTEGER } type;
+    enum {
+        LITERAL_STRING,
+        LITERAL_FLOAT,
+        LITERAL_INTEGER,
+        LITERAL_BOOLEAN
+    } type;
     union {
         char *string;
         double floating_point;
         int integer;
+        bool boolean;
     } value;
 } LiteralNode;
 
-// AST Case Node for "is" and "else" blocks in a switch-case
+// AST Case Node for `is` and `else` blocks in a switch-case
 typedef struct ASTCaseNode {
-    struct ASTNode *condition; // Condition for "is" (NULL for "else")
-    struct ASTNode *body;      // Body of the case
-    struct ASTCaseNode *next;  // Pointer to the next case (linked list)
+    struct ASTNode *condition;
+    struct ASTNode *body;
+    struct ASTCaseNode *next;
 } ASTCaseNode;
 
 // AST Switch Node
@@ -49,10 +55,9 @@ typedef struct {
 
 // AST Conditional Node
 typedef struct {
-    struct ASTNode *condition; // the condition (e.g., oven_temperature > 180)
-    struct ASTNode *body;      // the body of the `if` block
-    struct ASTNode
-        *else_branch; // optional: points to next `elif` or `else` block
+    struct ASTNode *condition;
+    struct ASTNode *body;
+    struct ASTNode *else_branch;
 } ASTConditional;
 
 // AST Binary Operation Node
@@ -72,7 +77,7 @@ typedef struct {
 // AST Function Parameter
 typedef struct ASTFunctionParameter {
     char *parameter_name; // Parameter name
-    // LiteralNode *type;                 // Optional: parameter type (e.g.,
+    // LiteralNode *type;              // Optional: parameter type (e.g.,
     // int, string, etc.)
     struct ASTFunctionParameter *next; // Linked list for multiple parameters
 } ASTFunctionParameter;
@@ -113,7 +118,7 @@ typedef struct ASTNode {
         ASTConditional conditional;
 
         // Switch
-        ASTSwitch switch_case; // Added field for switch-case
+        ASTSwitch switch_case;
 
         // While loop
         ASTLoop loop;
@@ -124,6 +129,7 @@ typedef struct ASTNode {
         // Variable
         char *variable_name;
     };
+
     struct ASTNode *next; // Link to the next statement or node
 } ASTNode;
 
