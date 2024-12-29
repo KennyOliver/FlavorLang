@@ -444,6 +444,34 @@ void add_variable(Environment *env, Variable var) {
     env->variable_count++;
 }
 
+void print_formatted_string(const char *str) {
+    for (const char *p = str; *p != '\0'; p++) {
+        if (*p == '\\') {
+            p++; // look at the next character
+            switch (*p) {
+            case 'n':
+                putchar('\n');
+                break;
+            case 't':
+                putchar('\t');
+                break;
+            case '\\':
+                putchar('\\');
+                break;
+            case '"':
+                putchar('"');
+                break;
+            default:
+                putchar('\\'); // print the backslash
+                putchar(*p);   // print the unrecognized character that follows
+                break;
+            }
+        } else {
+            putchar(*p); // print non-escape characters as-is
+        }
+    }
+}
+
 void interpret_print(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_print()`\n");
 
@@ -464,7 +492,7 @@ void interpret_print(ASTNode *node, Environment *env) {
             printf("%d", lv.data.integer);
             break;
         case TYPE_STRING:
-            printf("%s", lv.data.string);
+            print_formatted_string(lv.data.string);
             break;
         case TYPE_BOOLEAN:
             printf("%s", lv.data.boolean ? "True" : "False");
