@@ -666,27 +666,37 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
     while (1) {
         InterpretResult cond_r = interpret_node(condition, env);
         if (cond_r.did_return) {
-            // bubble up immediately
+            // Bubble up immediately
             return;
         }
 
-        if (cond_r.value.type != TYPE_INTEGER) {
-            fprintf(stderr, "While condition must be integer\n");
+        // Check for valid condition types
+        if (cond_r.value.type != TYPE_INTEGER &&
+            cond_r.value.type != TYPE_BOOLEAN) {
+            fprintf(stderr, "While condition must be boolean or integer\n");
             return;
         }
 
-        if (cond_r.value.data.integer) {
-            // interpret the body
+        bool condition_true = false;
+        if (cond_r.value.type == TYPE_BOOLEAN) {
+            condition_true = cond_r.value.data.boolean;
+        } else if (cond_r.value.type == TYPE_INTEGER) {
+            condition_true = (cond_r.value.data.integer != 0);
+        }
+
+        if (condition_true) {
+            // Interpret the loop body
             ASTNode *current = body;
             while (current) {
                 InterpretResult body_r = interpret_node(current, env);
                 if (body_r.did_return) {
-                    // bubble up
+                    // Bubble up
                     return;
                 }
                 current = current->next;
             }
         } else {
+            // Exit loop if condition is false
             break;
         }
     }
