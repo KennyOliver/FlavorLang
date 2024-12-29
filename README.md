@@ -219,7 +219,11 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5 {
-  show "Mixing... Step", i;
+    show "Mixing... Step", i;
+}
+
+for j in 10..=1 by -3 {
+    show j;
 }
 ```
 
@@ -344,7 +348,7 @@ if time > 15 {
 show "After error?";
 ```
 
-### 12. Use Booleans <a id="use-booleans"></a>
+### 🔵 12. Use Booleans <a id="use-booleans"></a>
 
 Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
 
@@ -375,21 +379,64 @@ show "Blast off!";
 
 ```ebnf
 program              ::= statement* ;
-statement            ::= variable_declaration | print_statement | if_statement | loop_statement | function_definition ;
+
+statement            ::= variable_declaration
+                       | print_statement
+                       | if_statement
+                       | loop_statement
+                       | function_definition
+                       | error_handling
+                       | file_operation
+                       | switch_case
+                       | user_input
+                       | raise_error ;
+
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-print_statement      ::= "show" expression ("," expression)* ";" ;  // Multiple arguments require commas
-                        | "show" expression ;  // Single argument allows no brackets
-if_statement         ::= "if" condition ":" block ("elif" condition ":" block)* ("else" ":" block)? ;
-loop_statement       ::= "while" condition ":" block
-                       | "for" IDENTIFIER "in" range [ "by" step ] ":" block ;
-function_definition  ::= "create" IDENTIFIER "with" parameter_list ":" block ;
-block                ::= statement+ ;
+
+print_statement      ::= "show" expression ("," expression)* ";"   // Multiple arguments require commas
+                       | "show" expression ;  // Single argument allows no brackets
+
+if_statement         ::= "if" condition block
+                       ("elif" condition block)*
+                       ("else" block)? ;
+
+loop_statement       ::= "while" condition block
+                       | "for" IDENTIFIER "in" range [ "by" step ] block ;
+
+function_definition  ::= "create" IDENTIFIER "with" parameter_list block ;
+
+error_handling       ::= "try" block "rescue" block ;
+
+file_operation       ::= "plate" STRING "with" expression
+                       | "garnish" STRING "with" expression
+                       | "gather" STRING ;
+
+switch_case          ::= "check" expression block case_clause* [ "else" block ] ;
+
+case_clause          ::= "is" expression block
+                       | "is" expression block "break" ;
+
+user_input           ::= "taste" ;
+
+raise_error          ::= "burn" expression ("," expression)* ";" ;
+
+block                ::= "{" statement+ "}" ;
+
 condition            ::= expression comparison_operator expression ;
-expression           ::= NUMBER | STRING | IDENTIFIER | (expression math_operator expression) ;
+
+expression           ::= NUMBER | STRING | IDENTIFIER | boolean | "(" expression math_operator expression ")" ;
+
+boolean              ::= "True" | "False" ;
+
 comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
+
 math_operator        ::= "+" | "-" | "*" | "/" ;
+
 parameter_list       ::= IDENTIFIER ("," IDENTIFIER)* ;
-range                ::= expression ".." expression ;
+
+range                ::= expression ".." expression
+                       | expression "..=" expression ;
+
 step                 ::= expression ;
 ```
 
