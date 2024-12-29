@@ -105,6 +105,12 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         return make_result(create_default_value(), false);
     }
 
+    case AST_FOR_LOOP: {
+        debug_print_int("\tMatched: `AST_FOR_LOOP`\n");
+        LiteralValue for_loop = interpret_for_loop(node, env);
+        return make_result(for_loop, false);
+    }
+
     case AST_VARIABLE: {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
         LiteralValue var_val = interpret_variable(node, env);
@@ -702,6 +708,159 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
     }
 
     debug_print_int("`interpret_while_loop()` completed\n");
+}
+
+LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
+    if (node->type != AST_FOR_LOOP) {
+        fprintf(
+            stderr,
+            "Error: interpret_for_loop called with non-for loop AST node.\n");
+        exit(1);
+    }
+
+    // Extract loop components
+    char *loop_var = node->for_loop.loop_variable;
+    ASTNode *start_expr = node->for_loop.start_expr;
+    ASTNode *end_expr = node->for_loop.end_expr;
+    bool inclusive = node->for_loop.inclusive;
+    ASTNode *step_expr = node->for_loop.step_expr; // may be `NULL`
+    ASTNode *body = node->for_loop.body;
+
+    // Evaluate start and end expressions
+    InterpretResult start_res = interpret_node(start_expr, env);
+    if (start_res.value.type == TYPE_ERROR) {
+        return start_res.value;
+    }
+
+    InterpretResult end_res = interpret_node(end_expr, env);
+    if (end_res.value.type == TYPE_ERROR) {
+        return end_res.value;
+    }
+
+    // Determine start and end as floats for flexibility
+    double start_val, end_val;
+    if (start_res.value.type == TYPE_FLOAT) {
+        start_val = start_res.value.data.floating_point;
+    } else if (start_res.value.type == TYPE_INTEGER) {
+        start_val = (double)start_res.value.data.integer;
+    } else {
+        fprintf(stderr,
+                "Error: Start expression in for loop must be numeric.\n");
+        exit(1);
+    }
+
+    if (end_res.value.type == TYPE_FLOAT) {
+        end_val = end_res.value.data.floating_point;
+    } else if (end_res.value.type == TYPE_INTEGER) {
+        end_val = (double)end_res.value.data.integer;
+    } else {
+        fprintf(stderr, "Error: End expression in for loop must be numeric.\n");
+        exit(1);
+    }
+
+    // Evaluate step expression if present
+    double step = 1.0; // default
+    if (step_expr) {
+        InterpretResult step_res = interpret_node(step_expr, env);
+        if (step_res.value.type == TYPE_ERROR) {
+            return step_res.value;
+        }
+
+        if (step_res.value.type == TYPE_FLOAT) {
+            step = step_res.value.data.floating_point;
+        } else if (step_res.value.type == TYPE_INTEGER) {
+            step = (double)step_res.value.data.integer;
+        } else {
+            fprintf(stderr,
+                    "Error: Step expression in for loop must be numeric.\n");
+            exit(1);
+        }
+    } else {
+        // Determine implied step based on range direction
+        if (start_val < end_val) {
+            step = 1.0;
+        } else {
+            step = -1.0;
+        }
+    }
+
+    // Validate step to prevent infinite loops
+    if (step < 1e-9 && step > -1e-9) {
+        fprintf(stderr, "Error: Step value cannot be zero in for loop.\n");
+        exit(1);
+    }
+
+    // Assign or update loop variable in the environment
+    Variable *var = get_variable(env, loop_var);
+    if (!var) {
+        // Variable does not exist; create it
+        var = allocate_variable(env, loop_var);
+        if (start_res.value.type == TYPE_FLOAT) {
+            var->value.type = TYPE_FLOAT;
+            var->value.data.floating_point = start_val;
+        } else {
+            var->value.type = TYPE_INTEGER;
+            var->value.data.integer = (int)start_val;
+        }
+    } else {
+        // Update existing variable
+        if (start_res.value.type == TYPE_FLOAT ||
+            var->value.type == TYPE_FLOAT) {
+            var->value.type = TYPE_FLOAT;
+            var->value.data.floating_point = start_val;
+        } else {
+            var->value.type = TYPE_INTEGER;
+            var->value.data.integer = (int)start_val;
+        }
+    }
+
+    // Determine loop direction
+    bool is_ascending = step > 0.0;
+
+    while (1) {
+        // Fetch current value
+        double current_val;
+        if (var->value.type == TYPE_FLOAT) {
+            current_val = var->value.data.floating_point;
+        } else if (var->value.type == TYPE_INTEGER) {
+            current_val = (double)var->value.data.integer;
+        } else {
+            fprintf(stderr, "Error: Loop variable `%s` must be numeric.\n",
+                    loop_var);
+            exit(1);
+        }
+
+        // Check loop condition
+        bool condition = is_ascending ? (inclusive ? (current_val <= end_val)
+                                                   : (current_val < end_val))
+                                      : (inclusive ? (current_val >= end_val)
+                                                   : (current_val > end_val));
+
+        if (!condition) {
+            break;
+        }
+
+        // Execute loop body
+        ASTNode *current_stmt = body;
+        while (current_stmt) {
+            InterpretResult res = interpret_node(current_stmt, env);
+            if (res.did_return) {
+                // Propagate return if encountered
+                return res.value;
+            }
+            current_stmt = current_stmt->next;
+        }
+
+        // Update loop variable
+        if (var->value.type == TYPE_FLOAT) {
+            var->value.data.floating_point += step;
+        } else if (var->value.type == TYPE_INTEGER) {
+            var->value.data.integer += (int)step;
+        }
+    }
+
+    // Loops do not return values
+    return create_default_value();
 }
 
 void interpret_switch(ASTNode *node, Environment *env) {

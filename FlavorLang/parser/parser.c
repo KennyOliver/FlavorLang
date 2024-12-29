@@ -614,7 +614,6 @@ ASTNode *parse_for_loop(ParserState *state) {
         debug_print_par("Parsed step expression\n");
     }
 
-    // Expect '{' to start loop body
     expect_token(state, TOKEN_BRACE_OPEN,
                  "Expected `{` delimiter to start loop body");
     debug_print_par("Found `{` to start loop body\n");
@@ -626,7 +625,6 @@ ASTNode *parse_for_loop(ParserState *state) {
     }
     debug_print_par("Parsed loop body\n");
 
-    // Expect '}' to end loop body
     expect_token(state, TOKEN_BRACE_CLOSE,
                  "Expected `}` delimiter to end loop body");
     debug_print_par("Found `}` to end loop body\n");
