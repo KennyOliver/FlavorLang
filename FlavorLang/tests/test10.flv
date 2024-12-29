@@ -1,10 +1,10 @@
 let stop_loop = False;
 let count = 10;
 
-show "Preparing for launch!";
+show("Preparing for launch!");
 
 while stop_loop != True {
-    show count;
+    show(count);
     
     if count > 0 {
         count = count - 1;
@@ -13,4 +13,4 @@ while stop_loop != True {
     }
 }
 
-show "Blast off!";
+show("Blast off!");

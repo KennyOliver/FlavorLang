@@ -168,8 +168,19 @@ ASTNode *helper_print(ParserState *state) {
     }
     node->to_print.arg_count = 0;
 
-    // Parse arguments until we hit a semicolon
-    while (get_current_token(state)->type != TOKEN_DELIMITER &&
+    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` before arguments list");
+
+    // Handle empty argument list
+    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
+        advance_token(state); // consume the `)`
+        expect_token(state, TOKEN_DELIMITER,
+                     "Expected `;` after show statement");
+        node->next = NULL;
+        return node;
+    }
+
+    // Parse arguments
+    while (get_current_token(state)->type != TOKEN_PAREN_CLOSE &&
            get_current_token(state)->type != TOKEN_EOF) {
 
         if (node->to_print.arg_count >= MAX_ARGUMENTS) {
@@ -181,15 +192,21 @@ ASTNode *helper_print(ParserState *state) {
         ASTNode *arg = parse_expression(state);
         node->to_print.arguments[node->to_print.arg_count++] = arg;
 
-        // Check for comma separator
+        // Check for comma or closing parenthesis
         Token *current = get_current_token(state);
+        debug_print_par("[DEBUG PRS] Current Token: Type=%d, Lexeme=`%s`\n",
+                        current->type, current->lexeme);
         if (current->type == TOKEN_DELIMITER &&
             strcmp(current->lexeme, ",") == 0) {
             advance_token(state); // consume the comma
+        } else if (current->type != TOKEN_PAREN_CLOSE) {
+            parser_error("Expected `,` or `)` in arguments list",
+                         get_current_token(state));
         }
     }
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after arguments list");
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after show statement");
     node->next = NULL;
     return node;
 }
@@ -202,11 +219,8 @@ ASTNode *parse_print_statement(ParserState *state) {
 
 ASTNode *parse_raise_error(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `burn` keyword");
-
     ASTNode *node = helper_print(state);
-
     node->type = AST_ERROR;
-
     return node;
 }
 

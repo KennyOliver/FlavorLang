@@ -2,11 +2,11 @@ let dessert = "cake";
 
 check dessert {
     is "cake":
-        show "Bake the cake!";
+        show("Bake the cake!");
     is "pie":
     is "cookie":
-        show "Prepare the oven!";
+        show("Prepare the oven!");
         break;
     else:
-        show "Dessert not on the menu.";
+        show("Dessert not on the menu.");
 }
