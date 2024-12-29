@@ -1,6 +1,18 @@
-# 🌶️ **FlavorLang** &mdash; _Cook 'n' Code_
+<h1 align="center">
+<img src="./logo/logo_transparent.png" width="50%" align="center" />
+</h1>
 
-**FlavorLang** is a language designed around cooking. From adding ingredients to cooking & serving, you can create programs as flavorful as your imagination. With a unique set of keywords, FlavorLang combines utility, creativity, and fun!
+<h1 align="center">
+   <b>🌶️<br />FlavorLang</b>
+   <br />
+   <i>"Cook 'n' Code"</i>
+</h1>
+
+<p align="center">
+FlavorLang blends coding with culinary creativity! Write programs like recipes—add ingredients, cook, and serve ideas with unique keywords that make coding as fun and flavorful as your imagination.
+</p>
+
+<br />
 
 ---
 
