@@ -96,12 +96,10 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_FUNCTION_RETURN: {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
 
-        if (!node->assignment.value) {
-            fprintf(
-                stderr,
-                "Error: Return statement has no expression! (Parser bug?)\n");
-            exit(1);
-        }
+        // if (!node->assignment.value) {
+        //     error_interpreter(
+        //         "Return statement has no expression! (Parser bug?)\n");
+        // }
 
         LiteralValue return_value =
             interpret_node(node->assignment.value, env).value;
@@ -146,8 +144,9 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         return make_result(create_default_value(), false);
     }
     default:
-        fprintf(stderr, "Error: Unsupported ASTNode type.\n");
-        exit(1);
+        error_interpreter("Unsupported ASTNode type.\n");
+        return make_result(create_default_value(),
+                           false); // keep compiler happy
     }
 }
 
@@ -189,8 +188,7 @@ LiteralValue interpret_literal(ASTNode *node) {
                         value.data.boolean ? "True" : "False");
         break;
     default:
-        fprintf(stderr, "Error: Unsupported literal type.\n");
-        exit(1);
+        error_interpreter("Unsupported literal type.\n");
     }
     return value;
 }
@@ -199,9 +197,7 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env) {
     // printf("Env var 0: `%s`\n", env->variables[0].variable_name);
     Variable *var = get_variable(env, node->variable_name);
     if (!var) {
-        fprintf(stderr, "Error: Undefined variable `%s`.\n",
-                node->variable_name);
-        exit(1);
+        error_interpreter("Undefined variable `%s`.\n", node->variable_name);
     }
 
     return var->value;
@@ -253,9 +249,8 @@ LiteralValue handle_string_concatenation(LiteralValue left,
 
     char *new_string = malloc(new_size);
     if (!new_string) {
-        fprintf(stderr,
-                "Error: Memory allocation failed for string concatenation.\n");
-        exit(1);
+        error_interpreter(
+            "Memory allocation failed for string concatenation.\n");
     }
 
     strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
@@ -358,8 +353,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         break;
     case '/':
         if (right_value == 0) {
-            fprintf(stderr, "Error: Division by zero\n");
-            exit(1);
+            error_interpreter("Division by zero\n");
         }
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value / right_value;
@@ -375,8 +369,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         result.data.boolean = (left_value > right_value);
         break;
     default:
-        fprintf(stderr, "Error: Unknown operator `%s`\n", operator);
-        exit(1);
+        error_interpreter("Unknown operator `%s`\n", operator);
     }
 
     return result;
@@ -430,11 +423,9 @@ void add_variable(Environment *env, Variable var) {
         env->variables =
             realloc(env->variables, env->capacity * sizeof(Variable));
         if (!env->variables) {
-            fprintf(
-                stderr,
-                "Error: Memory allocation failed while adding variable `%s`.\n",
+            error_interpreter(
+                "Memory allocation failed while adding variable `%s`.\n",
                 var.variable_name);
-            exit(1);
         }
     }
 
@@ -539,8 +530,7 @@ Variable *allocate_variable(Environment *env, const char *name) {
         env->variables =
             realloc(env->variables, env->capacity * sizeof(Variable));
         if (!env->variables) {
-            fprintf(stderr, "Error: Memory allocation failed.\n");
-            exit(1);
+            error_interpreter("Memory allocation failed.\n");
         }
     }
 
@@ -728,9 +718,8 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
 
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     if (node->type != AST_FOR_LOOP) {
-        fprintf(stderr, "Error: `interpret_for_loop` called with "
-                        "non-`for`-loop `ASTNode`\n");
-        exit(1);
+        error_interpreter(
+            "`interpret_for_loop` called with non-`for`-loop `ASTNode`\n");
     }
 
     // Extract loop components
@@ -759,9 +748,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     } else if (start_res.value.type == TYPE_INTEGER) {
         start_val = (double)start_res.value.data.integer;
     } else {
-        fprintf(stderr,
-                "Error: Start expression in `for` loop must be numeric\n");
-        exit(1);
+        error_interpreter("Start expression in `for` loop must be numeric\n");
     }
 
     if (end_res.value.type == TYPE_FLOAT) {
@@ -769,9 +756,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     } else if (end_res.value.type == TYPE_INTEGER) {
         end_val = (double)end_res.value.data.integer;
     } else {
-        fprintf(stderr,
-                "Error: End expression in `for` loop must be numeric\n");
-        exit(1);
+        error_interpreter("End expression in `for` loop must be numeric\n");
     }
 
     // Evaluate step expression if present
@@ -787,9 +772,8 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         } else if (step_res.value.type == TYPE_INTEGER) {
             step = (double)step_res.value.data.integer;
         } else {
-            fprintf(stderr,
-                    "Error: Step expression in `for` loop must be numeric\n");
-            exit(1);
+            error_interpreter(
+                "Step expression in `for` loop must be numeric\n");
         }
     } else {
         // Determine implied step based on range direction
@@ -802,16 +786,14 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Validate step to prevent infinite loops
     if (step < 1e-9 && step > -1e-9) {
-        fprintf(stderr, "Error: Step value cannot be zero in `for` loop\n");
-        exit(1);
+        error_interpreter("Step value cannot be zero in `for` loop\n");
     }
 
     // Validate step to check if step is in correct direction
     if ((start_val < end_val && step < 0) ||
         (start_val > end_val && step > 0)) {
-        fprintf(stderr, "Error: Step value is in the wrong direction for the "
-                        "specified range of the `for` loop\n");
-        exit(1);
+        error_interpreter("Step value is in the wrong direction for the "
+                          "specified range of the `for` loop\n");
     }
 
     // Assign or update loop variable in the environment
@@ -849,9 +831,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         } else if (var->value.type == TYPE_INTEGER) {
             current_val = (double)var->value.data.integer;
         } else {
-            fprintf(stderr, "Error: Loop variable `%s` must be numeric\n",
-                    loop_var);
-            exit(1);
+            error_interpreter("Loop variable `%s` must be numeric\n", loop_var);
         }
 
         // Check loop condition
@@ -986,22 +966,20 @@ copy_function_parameters(ASTFunctionParameter *param_list) {
         // Allocate memory for the new parameter
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (new_param == NULL) {
-            fprintf(stderr, "Memory allocation failed for new parameter\n");
-            free_parameter_list(
-                new_head); // Clean up all previously allocated nodes
-            exit(1);
+            // Clean up all previously allocated nodes
+            free_parameter_list(new_head);
+            error_interpreter("Memory allocation failed for new parameter\n");
         }
 
         // Duplicate parameter name, ensuring it is not NULL
         if (param_list->parameter_name) {
             new_param->parameter_name = strdup(param_list->parameter_name);
             if (new_param->parameter_name == NULL) {
-                fprintf(stderr,
-                        "Memory allocation failed for parameter name\n");
-                free(new_param); // Free the current node
+                free(new_param); // free the current node
                 free_parameter_list(
-                    new_head); // Clean up previously allocated nodes
-                exit(1);
+                    new_head); // clean up previously allocated nodes
+                error_interpreter(
+                    "Memory allocation failed for parameter name\n");
             }
         } else {
             new_param->parameter_name = NULL;
@@ -1031,8 +1009,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     ASTNode *new_node = malloc(sizeof(ASTNode));
     if (!new_node) {
-        fprintf(stderr, "Error: Memory allocation failed in `copy_ast_node`\n");
-        exit(1);
+        error_interpreter("Memory allocation failed in `copy_ast_node`\n");
     }
 
     memcpy(new_node, node, sizeof(ASTNode));
@@ -1056,9 +1033,7 @@ void add_function(Environment *env, Function func) {
         env->functions =
             calloc(4, sizeof(Function)); // initialize with capacity
         if (!env->functions) {
-            fprintf(stderr,
-                    "Error: Initial allocation for functions failed.\n");
-            exit(1);
+            error_interpreter("Initial allocation for functions failed.\n");
         }
         env->function_capacity = 4;
     }
@@ -1069,8 +1044,7 @@ void add_function(Environment *env, Function func) {
         Function *new_functions =
             realloc(env->functions, new_capacity * sizeof(Function));
         if (!new_functions) {
-            fprintf(stderr, "Error: Memory allocation failed for functions.\n");
-            exit(1);
+            error_interpreter("Memory allocation failed for functions.\n");
         }
         env->functions = new_functions;
         env->function_capacity = new_capacity;
@@ -1078,8 +1052,7 @@ void add_function(Environment *env, Function func) {
 
     // Step 3: Verify `func.name` is valid
     if (!func.name) {
-        fprintf(stderr, "Error: Function name is `NULL` or invalid.\n");
-        exit(1);
+        error_interpreter("Function name is `NULL` or invalid.\n");
     }
 
     // Step 4: Create a deep copy of the function being added
@@ -1093,9 +1066,8 @@ void add_function(Environment *env, Function func) {
     // Step 5: Safely duplicate the function name
     stored_func->name = strdup(func.name); // allocate memory for name
     if (!stored_func->name) {
-        fprintf(stderr, "Error: Memory allocation failed for function name.\n");
         free(stored_func); // Free partially allocated function on error
-        exit(1);
+        error_interpreter("Memory allocation failed for function name.\n");
     }
 
     debug_print_int("Function `%s` added successfully.\n", stored_func->name);
@@ -1114,8 +1086,7 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_function_declaration()` called\n");
 
     if (!node || !node->function_call.name) {
-        fprintf(stderr, "Error: Invalid function declaration\n");
-        exit(1);
+        error_interpreter("Invalid function declaration\n");
     }
 
     // Initialize param_list as NULL
@@ -1127,17 +1098,14 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
     while (param) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
-            fprintf(stderr,
-                    "Error: Memory allocation failed for function parameter\n");
-            exit(1);
+            error_interpreter(
+                "Error: Memory allocation failed for function parameter\n");
         }
 
         new_param->parameter_name = strdup(param->parameter_name);
         if (!new_param->parameter_name) {
-            fprintf(stderr,
-                    "Error: Memory allocation failed for parameter name\n");
             free(new_param);
-            exit(1);
+            error_interpreter("Memory allocation failed for parameter name\n");
         }
 
         new_param->next = NULL;
