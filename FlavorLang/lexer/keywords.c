@@ -23,6 +23,8 @@ const char *KEYWORDS[] = {
     "garnish", // append
     "gather",  // read
     "recipe",  // import
+    "True",    // Boolean True
+    "False",   // Boolean False
     NULL       // sentinel value
 };
 
@@ -30,8 +32,7 @@ const size_t KEYWORDS_COUNT =
     sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1; // - 1 for sentinel value
 
 const char *OPERATORS[] = {
-    "=", "==", "!=", "+",  "-",  "*",
-    "/", "<",  ">",  ">=", "<=", NULL // sentinel value
+    "=", "==", "+", "-", "*", "/", "<", ">", ">=", "<=", NULL // sentinel value
 };
 
 const size_t OPERATORS_COUNT =
@@ -44,11 +45,15 @@ int is_keyword(const char *lexeme) {
 
     for (size_t i = 0; KEYWORDS[i] != NULL; i++) {
         if (strcmp(lexeme, KEYWORDS[i]) == 0) {
-            return 1;
+            // Check if it's a boolean
+            if (strcmp(lexeme, "True") == 0 || strcmp(lexeme, "False") == 0) {
+                return TOKEN_BOOLEAN;
+            }
+            return TOKEN_KEYWORD;
         }
     }
 
-    return 0;
+    return TOKEN_IDENTIFIER;
 }
 
 int is_operator(const char *lexeme) {

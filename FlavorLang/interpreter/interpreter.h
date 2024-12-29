@@ -5,7 +5,13 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-typedef enum { TYPE_FLOAT, TYPE_INTEGER, TYPE_STRING, TYPE_ERROR } LiteralType;
+typedef enum {
+    TYPE_BOOLEAN,
+    TYPE_FLOAT,
+    TYPE_INTEGER,
+    TYPE_STRING,
+    TYPE_ERROR
+} LiteralType;
 
 typedef enum { RETURN_NORMAL, RETURN_ERROR } ReturnType;
 
@@ -15,6 +21,7 @@ typedef struct {
         double floating_point;
         int integer;
         char *string;
+        bool boolean;
     } data;
 } LiteralValue;
 

@@ -76,7 +76,29 @@ void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
     append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme,
                  state->line);
     free(lexeme);
-    state->pos++; // Skip closing quote
+    state->pos++; // skip closing quote
+}
+
+void scan_boolean(ScannerState *state, Token **tokens, size_t *token_count,
+                  size_t *capacity) {
+    size_t start = state->pos;
+
+    // Check if it's a valid `True` or `False` literal
+    if (state->pos + 3 <= state->length &&
+        strncmp(&state->source[state->pos], "True", 4) == 0) {
+        state->pos += 4; // skip past "true"
+    } else if (state->pos + 4 <= state->length &&
+               strncmp(&state->source[state->pos], "False", 5) == 0) {
+        state->pos += 5; // skip past "false"
+    } else {
+        token_error("Invalid boolean literal", state->line);
+    }
+
+    // Extract the boolean lexeme and add it to the token array
+    char *lexeme = strndup(&state->source[start], state->pos - start);
+    append_token(tokens, token_count, capacity, TOKEN_BOOLEAN, lexeme,
+                 state->line);
+    free(lexeme);
 }
 
 void scan_identifier_or_keyword(ScannerState *state, Token **tokens,
@@ -89,16 +111,12 @@ void scan_identifier_or_keyword(ScannerState *state, Token **tokens,
 
     char *lexeme = strndup(&state->source[start], state->pos - start);
 
-    // Skip whitespace to check for function call
-    size_t temp_pos = state->pos;
-    while (temp_pos < state->length && isspace(state->source[temp_pos]))
-        temp_pos++;
-
-    if (temp_pos < state->length && state->source[temp_pos] == '(' &&
-        !is_keyword(lexeme)) {
-        append_token(tokens, token_count, capacity, TOKEN_FUNCTION_NAME, lexeme,
+    // Determine if the lexeme is a keyword or identifier
+    int keyword_type = is_keyword(lexeme);
+    if (keyword_type == TOKEN_BOOLEAN) {
+        append_token(tokens, token_count, capacity, TOKEN_BOOLEAN, lexeme,
                      state->line);
-    } else if (is_keyword(lexeme)) {
+    } else if (keyword_type == TOKEN_KEYWORD) {
         append_token(tokens, token_count, capacity, TOKEN_KEYWORD, lexeme,
                      state->line);
     } else {

@@ -61,6 +61,22 @@ void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
                  size_t *capacity);
 
 /**
+ * Processes a boolean literal in the source code.
+ *
+ * This function handles the extraction of boolean literals (`True` or `False`),
+ * ensuring that they are correctly identified and placed into the token array.
+ * If an invalid boolean value is found, it triggers an error.
+ *
+ * @param state The current scanning state, which includes the source code,
+ *              the current position, and the line number.
+ * @param tokens A pointer to the token array being built.
+ * @param token_count The current number of tokens.
+ * @param capacity The allocated capacity for the token array.
+ */
+void scan_boolean(ScannerState *state, Token **tokens, size_t *token_count,
+                  size_t *capacity);
+
+/**
  * Processes an identifier or keyword in the source code.
  *
  * This function handles identifiers and keywords, distinguishing between the
