@@ -1,6 +1,12 @@
-plate "output.txt" with "Freshly baked cake ready to deliver!";
-garnish "output.txt" with "\nDon't forget the toppings!";
+let dessert = "cake";
 
-let data = gather "output.txt";
-show "File Contents:";
-show data;
+check dessert {
+    is "cake":
+        show "Bake the cake!";
+    is "pie":
+    is "cookie":
+        show "Prepare the oven!";
+        break;
+    else:
+        show "Dessert not on the menu.";
+}

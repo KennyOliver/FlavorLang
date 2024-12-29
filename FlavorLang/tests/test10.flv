@@ -1,4 +1,9 @@
-show "What's your favorite dessert?";
-let favorite = taste;
+let time = 20;
 
-show "You chose:", favorite;
+show "Before error.";
+
+if time > 15 {
+    burn "Too late!", "The food got burnt!";
+}
+
+show "After error?";

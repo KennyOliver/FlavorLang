@@ -23,11 +23,11 @@
    - [While Loop](#while-loop)
    - [Functions with Return](#functions-with-return)
    - [Error Handling](#error-handling)
-   - [File Operations](#file-operations)
    - [Switch-Case Logic](#switch-case-logic)
    - [User Input](#user-input)
    - [Raise an Error](#raise-error)
    - [Use Booleans](#use-booleans)
+   - [File Operations](#file-operations)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -275,22 +275,7 @@ try {
 }
 ```
 
-### 8. 📄 File Operations <a id="file-operations"></a>
-
-- `Plate`: Write to a file.
-- `Garnish`: Append to a file.
-- `Gather`: Read from a file.
-
-```py
-plate "output.txt" with "Freshly baked cake ready to deliver!";
-garnish "output.txt" with "\nDon't forget the toppings!";
-
-let data = gather "output.txt";
-show "File Contents:";
-show data;
-```
-
-### 9. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
+### 8. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
 
 The `check`-`is` syntax in FlavorLang provides an intuitive way to match multiple conditions with beginner-friendly behavior inspired by Python & Go.
 
@@ -321,7 +306,7 @@ Bake the cake!
 Dessert not on the menu.
 ```
 
-### 10. 📥 User Input <a id="user-input"></a>
+### 9. 📥 User Input <a id="user-input"></a>
 
 Use `taste` to accept input from the user.
 
@@ -332,7 +317,7 @@ let favorite = taste;
 show "You chose:", favorite;
 ```
 
-### 11. ⛔️ Raise an Error <a id="raise-error"></a>
+### 10. ⛔️ Raise an Error <a id="raise-error"></a>
 
 Use `burn` to raise an error and halt execution.
 
@@ -348,7 +333,7 @@ if time > 15 {
 show "After error?";
 ```
 
-### 🔵 12. Use Booleans <a id="use-booleans"></a>
+### 🔵 11. Use Booleans <a id="use-booleans"></a>
 
 Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
 
@@ -369,6 +354,21 @@ while stop_loop != True {
 }
 
 show "Blast off!";
+```
+
+### 12. 📄 File Operations <a id="file-operations"></a>
+
+- `Plate`: Write to a file.
+- `Garnish`: Append to a file.
+- `Gather`: Read from a file.
+
+```py
+plate "output.txt" with "Freshly baked cake ready to deliver!";
+garnish "output.txt" with "\nDon't forget the toppings!";
+
+let data = gather "output.txt";
+show "File Contents:";
+show data;
 ```
 
 </details>

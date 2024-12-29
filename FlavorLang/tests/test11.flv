@@ -1,9 +1,16 @@
-let time = 20;
+let stop_loop = False;
+let count = 10;
 
-show "Before error.";
+show "Preparing for launch!";
 
-if time > 15 {
-    burn "Too late!", "The food got burnt!";
+while stop_loop != True {
+    show count;
+    
+    if count > 0 {
+        count = count - 1;
+    } else {
+        stop_loop = True;
+    }
 }
 
-show "After error?";
+show "Blast off!";
