@@ -17,7 +17,7 @@ typedef enum {
     AST_LITERAL,
     AST_CONDITIONAL,
     AST_BINARY_OP,
-    AST_LOOP,
+    AST_WHILE_LOOP,
     AST_SWITCH,
     AST_BREAK,
     AST_VARIABLE,
@@ -67,12 +67,12 @@ typedef struct {
     char *operator;
 } ASTBinaryOp;
 
-// AST Loop Node
+// AST WhileLoop Node
 typedef struct {
     struct ASTNode *condition;
     int re_evaluate_condition;
     struct ASTNode *body;
-} ASTLoop;
+} ASTWhileLoop;
 
 // AST Function Parameter
 typedef struct ASTFunctionParameter {
@@ -121,7 +121,7 @@ typedef struct ASTNode {
         ASTSwitch switch_case;
 
         // While loop
-        ASTLoop loop;
+        ASTWhileLoop while_loop;
 
         // Function
         ASTFunctionCall function_call;

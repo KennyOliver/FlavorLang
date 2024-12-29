@@ -508,13 +508,20 @@ ASTNode *parse_while_loop(ParserState *state) {
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-    node->type = AST_LOOP;
+    node->type = AST_WHILE_LOOP;
 
-    // Ensure the current token is `while`
     expect_token(state, TOKEN_KEYWORD, "Expected `while` keyword");
+    node->while_loop.condition = parse_expression(state);
 
-    // Parse the condition expression
-    node->loop.condition = parse_expression(state);
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
+    node->while_loop.body = parse_block(state);
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` delimiter");
+
+    // Optional re-evaluation logic
+    node->while_loop.re_evaluate_condition = 1;
+    node->next = NULL;
+    return node;
+}
 
     expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` delimiter");
     node->loop.body = parse_block(state);
@@ -842,9 +849,9 @@ void free_ast(ASTNode *node) {
             free_ast(node->binary_op.right);
             break;
 
-        case AST_LOOP:
-            free_ast(node->loop.condition);
-            free_ast(node->loop.body);
+        case AST_WHILE_LOOP:
+            free_ast(node->while_loop.condition);
+            free_ast(node->while_loop.body);
             break;
 
         case AST_VARIABLE:

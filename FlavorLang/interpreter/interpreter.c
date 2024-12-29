@@ -99,8 +99,8 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         return make_result(return_value, true);
     }
 
-    case AST_LOOP: {
-        debug_print_int("\tMatched: `AST_LOOP`\n");
+    case AST_WHILE_LOOP: {
+        debug_print_int("\tMatched: `AST_WHILE_LOOP`\n");
         interpret_while_loop(node, env);
         return make_result(create_default_value(), false);
     }
@@ -660,8 +660,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
 void interpret_while_loop(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_while_loop()` called\n");
 
-    ASTNode *condition = node->loop.condition;
-    ASTNode *body = node->loop.body;
+    ASTNode *condition = node->while_loop.condition;
+    ASTNode *body = node->while_loop.body;
 
     while (1) {
         InterpretResult cond_r = interpret_node(condition, env);
