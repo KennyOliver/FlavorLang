@@ -9,6 +9,7 @@ ASTNode *parse_program(Token *tokens);
 void free_ast(ASTNode *node);
 
 // Statement parsing
+ASTNode *parse_statement(ParserState *state);
 ASTNode *parse_variable_declaration(ParserState *state);
 ASTNode *parse_variable_assignment(ParserState *state);
 ASTNode *parse_print_statement(ParserState *state);
@@ -28,6 +29,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
 // Helper functions
+bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
 ASTNode *parse_expression_statement(ParserState *state);
 ASTNode *parse_block(ParserState *state);

@@ -5,63 +5,72 @@
 ASTNode *parse_program(Token *tokens) {
     ParserState *state = create_parser_state(tokens);
     ASTNode *head = NULL;
-    ASTNode *current = NULL;
+    ASTNode *tail = NULL;
 
     while (get_current_token(state)->type != TOKEN_EOF) {
-        ASTNode *new_node = NULL;
-        Token *token = get_current_token(state);
+        ASTNode *stmt = parse_statement(state);
+        if (!stmt)
+            break;
 
-        // Match statements based on token type
-        if (strcmp(token->lexeme, "let") == 0) {
-            new_node = parse_variable_declaration(state);
-        } else if (token->type == TOKEN_IDENTIFIER) {
-            // Peek ahead to see if next token is an operator and if it's '='
-            Token *next_token = peek_next_token(state);
-            if (next_token && next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0) {
-                // It's truly an assignment of the form `x = ...`
-                new_node = parse_variable_assignment(state);
-            } else {
-                // Otherwise, parse a plain expression statement (e.g. `n - 1;`)
-                // or a stand-alone function call that uses an identifier, etc.
-                new_node = parse_expression_statement(state);
-            }
-        } else if (strcmp(token->lexeme, "show") == 0) {
-            new_node = parse_print_statement(state);
-        } else if (strcmp(token->lexeme, "burn") == 0) {
-            new_node = parse_raise_error(state);
-        } else if (strcmp(token->lexeme, "taste") == 0) {
-            new_node = parse_input(state);
-        } else if (strcmp(token->lexeme, "if") == 0) {
-            new_node = parse_conditional_block(state);
-        } else if (strcmp(token->lexeme, "while") == 0) {
-            new_node = parse_while_loop(state);
-        } else if (strcmp(token->lexeme, "for") == 0) {
-            new_node = parse_for_loop(state);
-        } else if (strcmp(token->lexeme, "check") == 0) {
-            new_node = parse_switch_block(state);
-        } else if (strcmp(token->lexeme, "create") == 0) {
-            new_node = parse_function_declaration(state);
-        } else if (token->type == TOKEN_FUNCTION_NAME) {
-            new_node = parse_function_call(state);
-            expect_token(state, TOKEN_DELIMITER,
-                         "Expected `;` after function call");
-        } else {
-            parser_error("Unexpected token at start of statement", token);
-        }
-
-        // Add node to AST
         if (!head) {
-            head = new_node;
-            current = new_node;
+            head = tail = stmt;
         } else {
-            current->next = new_node;
-            current = new_node;
+            tail->next = stmt;
+            tail = stmt;
         }
     }
 
     free_parser_state(state);
     return head;
+}
+
+ASTNode *parse_statement(ParserState *state) {
+    Token *token = get_current_token(state);
+
+    if (!token)
+        return NULL;
+
+    if (match_token(state, "let"))
+        return parse_variable_declaration(state);
+    if (token->type == TOKEN_IDENTIFIER) {
+        Token *next_token = peek_next_token(state);
+        if (next_token && next_token->type == TOKEN_OPERATOR &&
+            strcmp(next_token->lexeme, "=") == 0) {
+            return parse_variable_assignment(state);
+        } else {
+            return parse_expression_statement(state);
+        }
+    }
+    if (match_token(state, "show"))
+        return parse_print_statement(state);
+    if (match_token(state, "burn"))
+        return parse_raise_error(state);
+    if (match_token(state, "taste"))
+        return parse_input(state);
+    if (match_token(state, "if"))
+        return parse_conditional_block(state);
+    if (match_token(state, "while"))
+        return parse_while_loop(state);
+    if (match_token(state, "for"))
+        return parse_for_loop(state);
+    if (match_token(state, "check"))
+        return parse_switch_block(state);
+    if (match_token(state, "create"))
+        return parse_function_declaration(state);
+    if (token->type == TOKEN_FUNCTION_NAME) {
+        ASTNode *node = parse_function_call(state);
+        expect_token(state, TOKEN_DELIMITER,
+                     "Expected `;` after function call");
+        return node;
+    }
+
+    parser_error("Unexpected token at start of statement", token);
+    return NULL;
+}
+
+bool match_token(ParserState *state, const char *lexeme) {
+    Token *token = get_current_token(state);
+    return token && strcmp(token->lexeme, lexeme) == 0;
 }
 
 Token *peek_next_token(ParserState *state) {
