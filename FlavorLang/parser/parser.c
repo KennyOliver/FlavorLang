@@ -963,6 +963,14 @@ void free_ast(ASTNode *node) {
             free_ast(node->while_loop.body);
             break;
 
+        case AST_FOR_LOOP:
+            free(node->for_loop.loop_variable);
+            free_ast(node->for_loop.start_expr);
+            free_ast(node->for_loop.end_expr);
+            free_ast(node->for_loop.step_expr);
+            free_ast(node->for_loop.body);
+            break;
+
         case AST_VARIABLE:
             free(node->variable_name);
             break;
