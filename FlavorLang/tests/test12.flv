@@ -6,5 +6,7 @@ while stop_loop != True {
     
     if count < 10 {
         count = count + 1;
+    } else {
+        stop_loop = True;
     }
 }
