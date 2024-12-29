@@ -1,16 +1,6 @@
-let stop_loop = False;
-let count = 10;
+plate "output.txt" with "Freshly baked cake ready to deliver!";
+garnish "output.txt" with "\nDon't forget the toppings!";
 
-show "Preparing for launch!";
-
-while stop_loop != True {
-    show count;
-    
-    if count > 0 {
-        count = count - 1;
-    } else {
-        stop_loop = True;
-    }
-}
-
-show "Blast off!";
+let data = gather "output.txt";
+show "File Contents:";
+show data;

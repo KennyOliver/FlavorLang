@@ -25,9 +25,9 @@
    - [Error Handling](#error-handling)
    - [Switch-Case Logic](#switch-case-logic)
    - [User Input](#user-input)
-   - [Raise an Error](#raise-error)
    - [Use Booleans](#use-booleans)
    - [File Operations](#file-operations)
+   - [Raise an Error](#raise-error)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -317,23 +317,7 @@ let favorite = taste;
 show "You chose:", favorite;
 ```
 
-### 10. ⛔️ Raise an Error <a id="raise-error"></a>
-
-Use `burn` to raise an error and halt execution.
-
-```py
-let time = 20;
-
-show "Before error.";
-
-if time > 15 {
-	burn "Too late!", "The food got burnt!";
-}
-
-show "After error?";
-```
-
-### 🔵 11. Use Booleans <a id="use-booleans"></a>
+### 🔵 10. Use Booleans <a id="use-booleans"></a>
 
 Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
 
@@ -356,7 +340,7 @@ while stop_loop != True {
 show "Blast off!";
 ```
 
-### 12. 📄 File Operations <a id="file-operations"></a>
+### 11. 📄 File Operations <a id="file-operations"></a>
 
 - `Plate`: Write to a file.
 - `Garnish`: Append to a file.
@@ -369,6 +353,22 @@ garnish "output.txt" with "\nDon't forget the toppings!";
 let data = gather "output.txt";
 show "File Contents:";
 show data;
+```
+
+### 12. ⛔️ Raise an Error <a id="raise-error"></a>
+
+Use `burn` to raise an error and halt execution.
+
+```py
+let time = 20;
+
+show "Before error.";
+
+if time > 15 {
+	burn "Too late!", "The food got burnt!";
+}
+
+show "After error?";
 ```
 
 </details>

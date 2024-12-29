@@ -112,18 +112,6 @@ show "You chose:", favorite;
 # ==================================================
 # 10
 # ==================================================
-let time = 20;
-
-show "Before error.";
-
-if time > 15 {
-    burn "Too late!", "The food got burnt!";
-}
-
-
-# ==================================================
-# 11
-# ==================================================
 show "After error?";
 
 let stop_loop = False;
@@ -153,3 +141,15 @@ show "Blast off!";
 # let data = gather "output.txt";
 # show "File Contents:";
 # show data;
+
+
+# ==================================================
+# 12
+# ==================================================
+let time = 20;
+
+show "Before error.";
+
+if time > 15 {
+    burn "Too late!", "The food got burnt!";
+}
