@@ -131,9 +131,9 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `if`      | Conditional logic            | Executes code only if a condition is true.                                                  | ✅           |
 | `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.                                           | ✅           |
 | `else`    | Conditional fallback         | Executes code if any prior `if`/`is` conditions are false.                                  | ✅           |
-| `for`     | For-loop                     | Iterates over a range or sequence, executing a block of code for each step.                 | ❌           |
-| `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            | ❌           |
-| `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. | ❌           |
+| `for`     | For-loop                     | Iterates over a range or sequence, executing a block of code for each step.                 | ✅           |
+| `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            | ✅           |
+| `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. | ✅           |
 | `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             | ✅           |
 | `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ✅           |
 | `is`      | Case clause                  | Defines a case inside `check`.                                                              | ✅           |
