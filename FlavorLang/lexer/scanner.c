@@ -131,18 +131,24 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
     char first_char = state->source[state->pos];
     char second_char =
         state->pos < state->length - 1 ? state->source[state->pos + 1] : '\0';
+    char third_char =
+        state->pos < state->length - 2 ? state->source[state->pos + 2] : '\0';
 
-    // Check for two-character operators
+    // Check for two-character & three-character operators
     if (second_char != '\0' &&
-        ((first_char == '=' && second_char == '=') ||  // ==
-         (first_char == '>' && second_char == '=') ||  // >=
-         (first_char == '<' && second_char == '=') ||  // <=
-         (first_char == '!' && second_char == '='))) { // !=
-        char *lexeme = strndup(&state->source[state->pos], 2);
+        ((first_char == '=' && second_char == '=') || // ==
+         (first_char == '>' && second_char == '=') || // >=
+         (first_char == '<' && second_char == '=') || // <=
+         (first_char == '!' && second_char == '=') || // !=
+         (first_char == '.' && second_char == '.') || // ..
+         (first_char == '.' && second_char == '.' &&
+          third_char == '='))) {                  // ..=
+        int length = (third_char == '=' ? 3 : 2); // determine operator length
+        char *lexeme = strndup(&state->source[state->pos], length);
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);
         free(lexeme);
-        state->pos += 2;
+        state->pos += length;
     } else {
         // Handle single-character operators
         char *lexeme = strndup(&state->source[state->pos], 1);
