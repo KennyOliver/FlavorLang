@@ -3,3 +3,4 @@
 FlavorLang/flavor
 FlavorLang/flavor.dSYM/
 obj
+node_modules/
