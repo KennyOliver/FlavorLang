@@ -1,9 +1,12 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "../debug/debug.h"
 #include "../shared/ast_types.h"
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef enum {
     TYPE_BOOLEAN,
@@ -75,12 +78,6 @@ void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
 ASTNode *copy_ast_node(ASTNode *node);
-
-// Initialize the environment
-void init_environment(Environment *env);
-
-// Free the environment
-void free_environment(Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);
