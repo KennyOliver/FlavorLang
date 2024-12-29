@@ -3,6 +3,22 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <stdarg.h>
+
+void error_interpreter(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    printf("\033[31m"); // red text color
+    printf("Error: ");
+    vprintf(format, args);
+    printf("\033[0m\n"); // reset text color
+
+    va_end(args);
+    fflush(stdout);
+    exit(1);
+}
+
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value() {
     LiteralValue value = {
