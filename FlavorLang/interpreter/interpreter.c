@@ -143,10 +143,6 @@ LiteralValue interpret_literal(ASTNode *node) {
     debug_print_int("Interpreting literal value...\n");
     debug_print_int("Literal type: %d\n", node->literal.type);
 
-    if (node->literal.type == LITERAL_INTEGER) {
-        debug_print_int("Integer value: %d\n", node->literal.value.integer);
-    }
-
     switch (node->literal.type) {
     case LITERAL_STRING:
         value.type = TYPE_STRING;
@@ -160,6 +156,12 @@ LiteralValue interpret_literal(ASTNode *node) {
     case LITERAL_INTEGER:
         value.type = TYPE_INTEGER;
         value.data.integer = node->literal.value.integer;
+        break;
+    case LITERAL_BOOLEAN:
+        value.type = TYPE_BOOLEAN;
+        value.data.boolean = node->literal.value.boolean;
+        debug_print_int("Created boolean literal: `%s`\n",
+                        value.data.boolean ? "True" : "False");
         break;
     default:
         fprintf(stderr, "Error: Unsupported literal type.\n");
