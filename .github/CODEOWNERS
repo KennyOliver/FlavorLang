@@ -1,0 +1,10 @@
+# Specify owners for specific directories or files
+
+/.github/CODEOWNERS @KennyOliver
+/docs/ @KennyOliver
+/src/ @KennyOliver
+/tests/ @KennyOliver
+
+# Global ownership (fallback for everything not explicitly defined above)
+
+- @KennyOliver
