@@ -1,7 +1,7 @@
 .DS_Store
 .vscode*
-FlavorLang/flavor
-FlavorLang/flavor.dSYM/
+src/flavor
+src/flavor.dSYM/
 obj
 
 # VS Code Extension
