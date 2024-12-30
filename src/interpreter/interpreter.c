@@ -104,7 +104,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
         LiteralValue return_value =
             interpret_node(node->assignment.value, env).value;
-        debug_print_int("Return value before returning: type=%d, value=%d\n",
+        debug_print_int("Return value before returning: type=%d, value=%lld\n",
                         return_value.type,
                         (return_value.type == TYPE_INTEGER)
                             ? return_value.data.integer
@@ -174,13 +174,14 @@ LiteralValue interpret_literal(ASTNode *node) {
     case LITERAL_FLOAT:
         value.type = TYPE_FLOAT;
         value.data.floating_point = node->literal.value.floating_point;
-        debug_print_int("Created float literal: `%f`\n",
+        debug_print_int("Created float literal: `%Lf`\n",
                         value.data.floating_point);
         break;
     case LITERAL_INTEGER:
         value.type = TYPE_INTEGER;
         value.data.integer = node->literal.value.integer;
-        debug_print_int("Created integer literal: `%d`\n", value.data.integer);
+        debug_print_int("Created integer literal: `%lld`\n",
+                        value.data.integer);
         break;
     case LITERAL_BOOLEAN:
         value.type = TYPE_BOOLEAN;
@@ -236,10 +237,10 @@ LiteralValue handle_string_concatenation(LiteralValue left,
     char num_str2[50] = {0};
 
     if (left.type == TYPE_FLOAT) {
-        snprintf(num_str1, sizeof(num_str1), "%f", left.data.floating_point);
+        snprintf(num_str1, sizeof(num_str1), "%Lf", left.data.floating_point);
     }
     if (right.type == TYPE_FLOAT) {
-        snprintf(num_str2, sizeof(num_str2), "%f", right.data.floating_point);
+        snprintf(num_str2, sizeof(num_str2), "%Lf", right.data.floating_point);
     }
 
     // Allocate memory for the concatenated string
@@ -291,9 +292,10 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     double left_value = 0.0, right_value = 0.0;
     if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
         left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                               : (double)left.data.integer;
-        right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
-                                                 : (double)right.data.integer;
+                                               : (FLOAT_SIZE)left.data.integer;
+        right_value = (right.type == TYPE_FLOAT)
+                          ? right.data.floating_point
+                          : (FLOAT_SIZE)right.data.integer;
     } else {
         left_value = (FLOAT_SIZE)left.data.integer;
         right_value = (FLOAT_SIZE)right.data.integer;
@@ -381,11 +383,11 @@ Variable *get_variable(Environment *env, const char *variable_name) {
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0) {
             if (env->variables[i].value.type == TYPE_FLOAT) {
-                debug_print_int("Variable found: `%s` with value `%f`\n",
+                debug_print_int("Variable found: `%s` with value `%Lf`\n",
                                 variable_name,
                                 env->variables[i].value.data.floating_point);
             } else if (env->variables[i].value.type == TYPE_INTEGER) {
-                debug_print_int("Variable found: `%s` with value `%d`\n",
+                debug_print_int("Variable found: `%s` with value `%lld`\n",
                                 variable_name,
                                 env->variables[i].value.data.integer);
             } else if (env->variables[i].value.type == TYPE_STRING) {
@@ -486,11 +488,11 @@ void interpret_print(ASTNode *node, Environment *env) {
             if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
                 printf("%.1Lf", lv.data.floating_point);
             } else {
-                printf("%g", lv.data.floating_point);
+                printf("%Lg", lv.data.floating_point);
             }
             break;
         case TYPE_INTEGER:
-            printf("%d", lv.data.integer);
+            printf("%lld", lv.data.integer);
             break;
         case TYPE_STRING:
             print_formatted_string(lv.data.string);
