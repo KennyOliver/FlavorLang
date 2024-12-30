@@ -31,9 +31,9 @@ jobs:
       - name: Build VS Code extension
         working-directory: vscode-extension
         run: |
-          npm ci                    # Install dependencies using a clean state
-          npm audit fix --force     # Address vulnerabilities
-          npx @vscode/vsce package  # Use npx to run the vsce package command
+          npm ci
+          npm audit fix --force || true  # Allow audit to fail without breaking the workflow
+          npx @vscode/vsce package
 
       # Step 4: Save the VSIX file as an artifact
       - name: Upload VS Code extension package

@@ -38,7 +38,7 @@
     "compile": "npm run vscode:prepublish"
   },
   "devDependencies": {
-    "vsce": "^2.15.0"
+    "@vscode/vsce": "^2.15.0"
   },
   "dependencies": {
     "@vscode/vsce": "^3.2.1",
