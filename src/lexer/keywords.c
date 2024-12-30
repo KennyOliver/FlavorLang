@@ -33,7 +33,7 @@ const size_t KEYWORDS_COUNT =
     sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1; // - 1 for sentinel value
 
 const char *OPERATORS[] = {
-    "=", "==", "!=", "!=", "+",  "-",   "*", "/",
+    "=", "==", "!=", "+",  "-",  "*",   "/",
     "<", ">",  ">=", "<=", "..", "..=", NULL // sentinel value
 };
 
