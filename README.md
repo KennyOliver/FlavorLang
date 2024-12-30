@@ -16,6 +16,14 @@ FlavorLang blends coding with culinary creativity! Write programs like recipesâ€
 
 ---
 
+[!IMPORTANT]
+
+> This project is currently in **Alpha**. While core functionality is largely stable, new features, syntax, and language designs are subject to change without prior notice.
+>
+> Please feel free to contribute by reporting any issues or suggestions in the repository's [Issues](https://github.com/KennyOliver/FlavorLang/issues/).
+
+---
+
 ## ðŸ“– Table of Contents
 
 1. [Quick Start](#quick-start)

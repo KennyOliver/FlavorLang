@@ -4,6 +4,11 @@
   "description": "Syntax highlighting for FlavorLang programming language.",
   "version": "1.0.0",
   "publisher": "KennyOliver",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KennyOliver/FlavorLang.git"
+  },
+  "license": "Apache-2.0",
   "engines": {
     "vscode": "^1.50.0"
   },
@@ -38,7 +43,7 @@
     "compile": "npm run vscode:prepublish"
   },
   "devDependencies": {
-    "vsce": "^2.15.0"
+    "@vscode/vsce": "^2.15.0"
   },
   "dependencies": {
     "@vscode/vsce": "^3.2.1",

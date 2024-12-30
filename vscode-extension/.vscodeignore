@@ -1,0 +1,8 @@
+# Exclude node_modules and test files
+node_modules/**
+.vscode/**
+*.log
+*.test.js
+tests/**
+coverage/**
+package-lock.json
