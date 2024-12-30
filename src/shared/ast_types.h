@@ -1,6 +1,7 @@
 #ifndef AST_TYPES_H
 #define AST_TYPES_H
 
+#include "data_types.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -35,8 +36,8 @@ typedef struct {
     } type;
     union {
         char *string;
-        double floating_point;
-        int integer;
+        FLOAT_SIZE floating_point;
+        INT_SIZE integer;
         bool boolean;
     } value;
 } LiteralNode;

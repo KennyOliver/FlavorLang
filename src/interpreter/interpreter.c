@@ -1,5 +1,6 @@
 #include "interpreter.h"
 #include "../debug/debug.h"
+#include "../shared/data_types.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -294,8 +295,8 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
                                                  : (double)right.data.integer;
     } else {
-        left_value = (double)left.data.integer;
-        right_value = (double)right.data.integer;
+        left_value = (FLOAT_SIZE)left.data.integer;
+        right_value = (FLOAT_SIZE)right.data.integer;
     }
 
     LiteralValue result;
@@ -337,19 +338,19 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value * right_value;
         else
-            result.data.integer = (int)(left_value * right_value);
+            result.data.integer = (INT_SIZE)(left_value * right_value);
         break;
     case '+':
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value + right_value;
         else
-            result.data.integer = (int)(left_value + right_value);
+            result.data.integer = (INT_SIZE)(left_value + right_value);
         break;
     case '-':
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value - right_value;
         else
-            result.data.integer = (int)(left_value - right_value);
+            result.data.integer = (INT_SIZE)(left_value - right_value);
         break;
     case '/':
         if (right_value == 0) {
@@ -358,7 +359,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value / right_value;
         else
-            result.data.integer = (int)(left_value / right_value);
+            result.data.integer = (INT_SIZE)(left_value / right_value);
         break;
     case '<':
         result.type = TYPE_BOOLEAN;
@@ -482,8 +483,8 @@ void interpret_print(ASTNode *node, Environment *env) {
 
         switch (lv.type) {
         case TYPE_FLOAT:
-            if ((int)lv.data.floating_point == lv.data.floating_point) {
-                printf("%.1f", lv.data.floating_point);
+            if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
+                printf("%.1Lf", lv.data.floating_point);
             } else {
                 printf("%g", lv.data.floating_point);
             }
@@ -774,7 +775,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     if (start_res.value.type == TYPE_FLOAT) {
         start_val = start_res.value.data.floating_point;
     } else if (start_res.value.type == TYPE_INTEGER) {
-        start_val = (double)start_res.value.data.integer;
+        start_val = (FLOAT_SIZE)start_res.value.data.integer;
     } else {
         error_interpreter("Start expression in `for` loop must be numeric\n");
     }
@@ -782,7 +783,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     if (end_res.value.type == TYPE_FLOAT) {
         end_val = end_res.value.data.floating_point;
     } else if (end_res.value.type == TYPE_INTEGER) {
-        end_val = (double)end_res.value.data.integer;
+        end_val = (FLOAT_SIZE)end_res.value.data.integer;
     } else {
         error_interpreter("End expression in `for` loop must be numeric\n");
     }
@@ -798,7 +799,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         if (step_res.value.type == TYPE_FLOAT) {
             step = step_res.value.data.floating_point;
         } else if (step_res.value.type == TYPE_INTEGER) {
-            step = (double)step_res.value.data.integer;
+            step = (FLOAT_SIZE)step_res.value.data.integer;
         } else {
             error_interpreter(
                 "Step expression in `for` loop must be numeric\n");
@@ -834,7 +835,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
             var->value.data.floating_point = start_val;
         } else {
             var->value.type = TYPE_INTEGER;
-            var->value.data.integer = (int)start_val;
+            var->value.data.integer = (INT_SIZE)start_val;
         }
     } else {
         // Update existing variable
@@ -844,7 +845,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
             var->value.data.floating_point = start_val;
         } else {
             var->value.type = TYPE_INTEGER;
-            var->value.data.integer = (int)start_val;
+            var->value.data.integer = (INT_SIZE)start_val;
         }
     }
 
@@ -857,7 +858,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         if (var->value.type == TYPE_FLOAT) {
             current_val = var->value.data.floating_point;
         } else if (var->value.type == TYPE_INTEGER) {
-            current_val = (double)var->value.data.integer;
+            current_val = (FLOAT_SIZE)var->value.data.integer;
         } else {
             error_interpreter("Loop variable `%s` must be numeric\n", loop_var);
         }
@@ -887,7 +888,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         if (var->value.type == TYPE_FLOAT) {
             var->value.data.floating_point += step;
         } else if (var->value.type == TYPE_INTEGER) {
-            var->value.data.integer += (int)step;
+            var->value.data.integer += (INT_SIZE)step;
         }
     }
 

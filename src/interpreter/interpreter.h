@@ -2,6 +2,7 @@
 #define INTERPRETER_H
 
 #include "../shared/ast_types.h"
+#include "../shared/data_types.h"
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -18,9 +19,9 @@ typedef enum { RETURN_NORMAL, RETURN_ERROR } ReturnType;
 typedef struct {
     LiteralType type;
     union {
-        double floating_point;
-        int integer;
         char *string;
+        FLOAT_SIZE floating_point;
+        INT_SIZE integer;
         bool boolean;
     } data;
 } LiteralValue;
