@@ -10,6 +10,6 @@ create factorial(n) {
     }
 }
 
-let n = 20;
+let n = 20;  # largest possible for 64-bit
 let result = factorial(n);
 show("Factorial of", n, "is:", result);
