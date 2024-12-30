@@ -32,6 +32,7 @@ jobs:
         working-directory: vscode-extension
         run: |
           npm ci       # Install dependencies using a clean state
+          npm i @vscode/vsce
           npm run vsce package  # Build the extension
 
       # Step 4: Save the VSIX file as an artifact
