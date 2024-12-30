@@ -1,6 +1,7 @@
 # Specify owners for specific directories or files
 
 /.github/CODEOWNERS @KennyOliver
+
 /docs/ @KennyOliver
 /src/ @KennyOliver
 /tests/ @KennyOliver
