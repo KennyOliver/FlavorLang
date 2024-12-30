@@ -1,0 +1,51 @@
+name: Build FlavorLang and VS Code Extension
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build FlavorLang and VS Code Extension
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Checkout the repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Step 2: Set up Node.js (for VS Code extension)
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20 # even versions are designated as stable
+
+      # Step 3: Install dependencies and build VS Code extension
+      - name: Build VS Code extension
+        working-directory: vscode-extension
+        run: |
+          npm ci       # Install dependencies using a clean state
+          npm run package-extension  # Build the extension
+
+      # Step 4: Save the VSIX file as an artifact
+      - name: Upload VS Code extension package
+        uses: actions/upload-artifact@v3
+        with:
+          name: flavorlang-extension
+          path: vscode-extension/*.vsix
+
+      # Step 5: Build FlavorLang interpreter
+      - name: Build FlavorLang interpreter
+        working-directory: src
+        run: make
+
+      # Step 6: Save the interpreter executable as an artifact
+      - name: Upload FlavorLang interpreter executable
+        uses: actions/upload-artifact@v3
+        with:
+          name: flavorlang-interpreter
+          path: src/flavor
