@@ -171,16 +171,16 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | Data Type | Syntax Example    | Capacity/Range                                                                                     | Implemented? |
 | --------- | ----------------- | -------------------------------------------------------------------------------------------------- | ------------ |
 | `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.        | ✅           |
-| `float`   | `3.14`            | `float` (32-bit): ±3.4E±38. `double` (64-bit): ±1.8E±308.                                          | ✅           |
-| `integer` | `42`              | Typically −2,147,483,648 to 2,147,483,647 (32-bit). Larger range for 64-bit.                       | ✅           |
+| `float`   | `3.14`            | `FLOAT_SIZE` (long double, 64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932.     | ✅           |
+| `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       | ✅           |
 | `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. | ✅           |
 
 ### Explanation
 
-- **string**: In C, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
-- **float**: The `float` type is a 32-bit floating-point number, typically with a range of ±3.4E±38. If you're using `double` (64-bit), it has a range of ±1.8E±308. In the `LiteralNode` struct, we are using `double` for floating-point literals, which offers higher precision.
-- **integer**: The typical range for an `integer` (32-bit) is from −2,147,483,648 to 2,147,483,647. For larger integers, the range increases with a 64-bit integer type (e.g., ±9.2E18).
-- **boolean**: Booleans are typically stored as `1` (`True`) and `0` (`False`). While they are logically 1-bit, they are typically stored in 1 byte, though this can vary based on the system's architecture.
+- **string**: In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
+- **float**: The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
+- **integer**: The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
+- **boolean**: Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
 
 ---
 
