@@ -4,6 +4,10 @@
   "description": "Syntax highlighting for FlavorLang programming language.",
   "version": "1.0.0",
   "publisher": "KennyOliver",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/KennyOliver/FlavorLang.git"
+  },
   "engines": {
     "vscode": "^1.50.0"
   },
