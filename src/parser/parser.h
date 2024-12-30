@@ -22,6 +22,7 @@ ASTNode *parse_break_statement(ParserState *state);
 ASTNode *parse_switch_block(ParserState *state);
 ASTNode *parse_function_declaration(ParserState *state);
 ASTNode *parse_function_call(ParserState *state);
+ASTNode *parse_function_return(ParserState *state);
 
 // Expression parsing
 ASTNode *parse_expression(ParserState *state);
@@ -33,5 +34,6 @@ bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
 ASTNode *parse_expression_statement(ParserState *state);
 ASTNode *parse_block(ParserState *state);
+ASTNode *parse_case_body(ParserState *state);
 
 #endif

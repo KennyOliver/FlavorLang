@@ -30,17 +30,10 @@ ASTNode *parse_statement(ParserState *state) {
     if (!token)
         return NULL;
 
+    debug_print_par("Current Token: Type=`%d`, Lexeme=`%s`\n", token->type,
+                    token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
-    if (token->type == TOKEN_IDENTIFIER) {
-        Token *next_token = peek_next_token(state);
-        if (next_token && next_token->type == TOKEN_OPERATOR &&
-            strcmp(next_token->lexeme, "=") == 0) {
-            return parse_variable_assignment(state);
-        } else {
-            return parse_expression_statement(state);
-        }
-    }
     if (match_token(state, "show"))
         return parse_print_statement(state);
     if (match_token(state, "burn"))
@@ -57,6 +50,12 @@ ASTNode *parse_statement(ParserState *state) {
         return parse_switch_block(state);
     if (match_token(state, "create"))
         return parse_function_declaration(state);
+    if (match_token(state, "break"))
+        return parse_break_statement(state);
+    if (match_token(state, "deliver"))
+        return parse_function_return(state);
+
+    // Handle function calls
     if (token->type == TOKEN_FUNCTION_NAME) {
         ASTNode *node = parse_function_call(state);
         expect_token(state, TOKEN_DELIMITER,
@@ -64,6 +63,21 @@ ASTNode *parse_statement(ParserState *state) {
         return node;
     }
 
+    // Handle variable assignments
+    if (token->type == TOKEN_IDENTIFIER) {
+        Token *next_token = peek_next_token(state);
+        if (next_token) {
+            debug_print_par("Peek Next Token: Type=`%d`, Lexeme=`%s`\n",
+                            next_token->type, next_token->lexeme);
+            if (next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0) {
+                return parse_variable_assignment(state);
+            }
+        }
+        return parse_expression_statement(state);
+    }
+
+    // If none of the above, raise an error
     parser_error("Unexpected token at start of statement", token);
     return NULL;
 }
@@ -130,11 +144,16 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     // Parse variable name
     Token *name = get_current_token(state);
     debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
-
-    advance_token(state);
+    advance_token(state); // consume variable name
 
     // Expect `=` operator
+    Token *op_token = get_current_token(state);
+    debug_print_par("Expected operator `=`, found: `%s`\n", op_token->lexeme);
     expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+
+    // Parse the expression on the right-hand side
+    ASTNode *value_node = parse_expression(state);
+    debug_print_par("Parsed expression for assignment\n");
 
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -143,11 +162,19 @@ ASTNode *parse_variable_assignment(ParserState *state) {
 
     node->type = AST_ASSIGNMENT;
     node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.value = parse_expression(state);
+    node->assignment.value = value_node;
     node->next = NULL;
 
+    // Expect `;` delimiter
+    Token *delimiter = get_current_token(state);
+    if (delimiter->type != TOKEN_DELIMITER ||
+        strcmp(delimiter->lexeme, ";") != 0) {
+        debug_print_par("Expected `;` after assignment, found: `%s`\n",
+                        delimiter->lexeme);
+    }
     expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after variable declaration");
+                 "Expected `;` after variable assignment");
+    debug_print_par("Consumed `;` after variable assignment\n");
 
     return node;
 }
@@ -398,79 +425,48 @@ ASTNode *parse_block(ParserState *state) {
             break;
         }
 
-        // Check for block end conditions
         // Handle semicolons between statements without breaking the block
         if (current->type == TOKEN_DELIMITER &&
             strcmp(current->lexeme, ";") == 0) {
             advance_token(state);
-            continue; // continue to next statement instead of breaking
+            continue;
         }
 
-        // Handle `is` in check blocks
+        // Handle `break` and `deliver` keywords
         if (current->type == TOKEN_KEYWORD) {
-            if ((strcmp(current->lexeme, "elif") == 0 ||
-                 strcmp(current->lexeme, "else") == 0) ||
-                (!state->in_switch_block &&
-                 strcmp(current->lexeme, "is") == 0)) {
-                break;
-            }
-        }
-
-        // Parse statement
-        ASTNode *statement = NULL;
-        if (current->type == TOKEN_KEYWORD) {
-            if (strcmp(current->lexeme, "deliver") == 0) {
-                statement = parse_function_return(state);
+            if (strcmp(current->lexeme, "break") == 0) {
+                ASTNode *break_node = parse_break_statement(state);
                 if (head) {
-                    tail->next = statement;
-                    tail = statement;
+                    tail->next = break_node;
+                    tail = break_node;
                 } else {
-                    head = tail = statement;
+                    head = tail = break_node;
                 }
-                break; // exit block after deliver
-            } else if (strcmp(current->lexeme, "show") == 0) {
-                statement = parse_print_statement(state);
-            } else if (strcmp(current->lexeme, "burn") == 0) {
-                statement = parse_raise_error(state);
-            } else if (strcmp(current->lexeme, "if") == 0) {
-                statement = parse_conditional_block(state);
-            } else if (strcmp(current->lexeme, "while") == 0) {
-                statement = parse_while_loop(state);
-            } else if (strcmp(current->lexeme, "for") == 0) {
-                statement = parse_for_loop(state);
-            } else if (strcmp(current->lexeme, "check") == 0) {
-                state->in_switch_block = true;
-                statement = parse_switch_block(state);
-                state->in_switch_block = false;
-            } else if (strcmp(current->lexeme, "break") == 0) {
-                statement = parse_break_statement(state);
-            } else if (strcmp(current->lexeme, "let") == 0) {
-                statement = parse_variable_declaration(state);
-            } else if (strcmp(current->lexeme, "create") == 0) {
-                statement = parse_function_declaration(state);
-            } else if (state->in_switch_block &&
-                       strcmp(current->lexeme, "is") == 0) {
-                break;
-            } else {
-                parser_error("Unexpected keyword in block", current);
+                break; // Exit block after `break`
             }
-        } else if (current->type == TOKEN_IDENTIFIER) {
-            Token *next_token = peek_next_token(state);
-            if (next_token && next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0) {
-                statement = parse_variable_assignment(state);
-            } else {
-                statement = parse_expression_statement(state);
+
+            if (strcmp(current->lexeme, "deliver") == 0) {
+                ASTNode *return_node = parse_function_return(state);
+                if (head) {
+                    tail->next = return_node;
+                    tail = return_node;
+                } else {
+                    head = tail = return_node;
+                }
+                break; // Exit block after `deliver`
             }
-        } else if (current->type == TOKEN_PAREN_CLOSE) {
-            state->in_function_body = false;
-        } else if (current->type == TOKEN_EOF) {
-            break;
-        } else {
-            parser_error("Unexpected token in block", current);
+
+            // Note: Do NOT handle `is` here anymore
         }
 
-        // Add statement to list
+        // Use `parse_statement` for standard statements
+        ASTNode *statement = parse_statement(state);
+        if (!statement) {
+            parser_error("Failed to parse statement in block", current);
+            break;
+        }
+
+        // Add statement to the linked list
         if (!head) {
             head = statement;
             tail = statement;
@@ -670,6 +666,39 @@ ASTNode *parse_break_statement(ParserState *state) {
     return node;
 }
 
+ASTNode *parse_case_body(ParserState *state) {
+    ASTNode *head = NULL;
+    ASTNode *tail = NULL;
+
+    while (1) {
+        Token *current = get_current_token(state);
+
+        // Stop parsing the body if we encounter 'is', 'else', or '}'
+        if ((current->type == TOKEN_KEYWORD &&
+             (strcmp(current->lexeme, "is") == 0 ||
+              strcmp(current->lexeme, "else") == 0)) ||
+            current->type == TOKEN_BRACE_CLOSE || current->type == TOKEN_EOF) {
+            break;
+        }
+
+        // Parse a statement
+        ASTNode *stmt = parse_statement(state);
+        if (!stmt) {
+            parser_error("Failed to parse statement in case body", current);
+        }
+
+        // Append the statement to the body linked list
+        if (!head) {
+            head = tail = stmt;
+        } else {
+            tail->next = stmt;
+            tail = stmt;
+        }
+    }
+
+    return head;
+}
+
 ASTNode *parse_switch_block(ParserState *state) {
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -684,81 +713,156 @@ ASTNode *parse_switch_block(ParserState *state) {
     // Parse switch expression
     node->switch_case.expression = parse_expression(state);
 
-    // Expect `{` instead of `:`
+    // Expect `{`
     expect_token(state, TOKEN_BRACE_OPEN,
                  "Expected '{' after check expression");
 
-    // Parse cases
+    // Initialize cases list
     node->switch_case.cases = NULL;
     ASTCaseNode *last_case = NULL;
 
-    Token *current;
-    while ((current = get_current_token(state))) {
-        // Skip any delimiters between cases
+    while (1) {
+        Token *current = get_current_token(state);
+
+        // Skip any delimiters (like newlines or semicolons) between cases
         if (current->type == TOKEN_DELIMITER) {
             advance_token(state);
             continue;
         }
 
-        if (current->type != TOKEN_KEYWORD) {
-            break; // exit if not a keyword (`is`/`else`)
-        }
+        // Handle `is` clauses
+        if (current->type == TOKEN_KEYWORD &&
+            strcmp(current->lexeme, "is") == 0) {
+            advance_token(state); // Consume 'is'
 
-        if (strcmp(current->lexeme, "is") == 0) {
-            advance_token(state); // consume `is`
+            // Parse condition expression
+            ASTNode *condition = parse_expression(state);
+            expect_token(state, TOKEN_DELIMITER,
+                         "Expected ':' after case value");
 
+            // Collect all consecutive `is` clauses
+            // allowing multiple `is` conditions to share the same body
+            ASTCaseNode *temp_head = NULL;
+            ASTCaseNode *temp_tail = NULL;
+
+            // Add the first condition
             ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
             if (!case_node) {
                 parser_error("Memory allocation failed", current);
             }
-
-            // Parse case value
-            case_node->condition = parse_expression(state);
-            expect_token(state, TOKEN_DELIMITER,
-                         "Expected `:` after case value");
-
-            // Parse case body
-            case_node->body = parse_block(state);
+            case_node->condition = condition;
+            case_node->body = NULL; // To be assigned after parsing the body
             case_node->next = NULL;
 
-            // Add to cases list
-            if (!node->switch_case.cases) {
-                node->switch_case.cases = case_node;
-            } else {
-                last_case->next = case_node;
-            }
-            last_case = case_node;
-        } else if (strcmp(current->lexeme, "else") == 0) {
-            advance_token(state); // consume `else`
+            temp_head = temp_tail = case_node;
 
+            // Check for additional `is` clauses
+            while (1) {
+                Token *next = get_current_token(state);
+                if (next->type == TOKEN_KEYWORD &&
+                    strcmp(next->lexeme, "is") == 0) {
+                    advance_token(state); // Consume 'is'
+
+                    // Parse next condition
+                    ASTNode *next_condition = parse_expression(state);
+                    expect_token(state, TOKEN_DELIMITER,
+                                 "Expected ':' after case value");
+
+                    // Create new case node
+                    ASTCaseNode *new_case = malloc(sizeof(ASTCaseNode));
+                    if (!new_case) {
+                        parser_error("Memory allocation failed", next);
+                    }
+                    new_case->condition = next_condition;
+                    new_case->body = NULL;
+                    new_case->next = NULL;
+
+                    // Add to temporary list
+                    temp_tail->next = new_case;
+                    temp_tail = new_case;
+                } else {
+                    break; // No more `is` clauses
+                }
+            }
+
+            // Now, parse the shared body
+            ASTNode *body = NULL;
+            Token *body_start = get_current_token(state);
+            if (body_start->type == TOKEN_BRACE_OPEN) {
+                advance_token(state); // Consume '{'
+                body = parse_block(state);
+                expect_token(state, TOKEN_BRACE_CLOSE,
+                             "Expected '}' after case body");
+            } else {
+                // Parse multiple statements as the shared body
+                body = parse_case_body(state);
+                // No need to expect a delimiter here since parse_case_body
+                // stops appropriately
+            }
+
+            // Assign the same body to all collected `is` cases
+            ASTCaseNode *temp_case = temp_head;
+            while (temp_case) {
+                temp_case->body = body;
+                // Link to the main cases list
+                if (!node->switch_case.cases) {
+                    node->switch_case.cases = temp_case;
+                } else {
+                    last_case->next = temp_case;
+                }
+                last_case = temp_case;
+                temp_case = temp_case->next;
+            }
+        }
+        // Handle `else` clause
+        else if (current->type == TOKEN_KEYWORD &&
+                 strcmp(current->lexeme, "else") == 0) {
+            advance_token(state); // Consume 'else'
+
+            // Parse `:` delimiter
+            expect_token(state, TOKEN_DELIMITER, "Expected ':' after `else`");
+
+            // Parse the body of `else`
+            ASTNode *body = NULL;
+            Token *body_start = get_current_token(state);
+            if (body_start->type == TOKEN_BRACE_OPEN) {
+                advance_token(state); // Consume '{'
+                body = parse_block(state);
+                expect_token(state, TOKEN_BRACE_CLOSE,
+                             "Expected '}' after else body");
+            } else {
+                // Parse multiple statements as the body
+                body = parse_case_body(state);
+                // No need to expect a delimiter here since `parse_case_body`
+                // stops appropriately
+            }
+
+            // Create the default case node
             ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
             if (!default_case) {
                 parser_error("Memory allocation failed", current);
             }
-
-            default_case->condition = NULL; // no condition for `else`
-
-            expect_token(state, TOKEN_DELIMITER, "Expected `:` after else");
-
-            // Parse `else` body
-            default_case->body = parse_block(state);
+            default_case->condition = NULL; // No condition for `else`
+            default_case->body = body;
             default_case->next = NULL;
 
-            // Add as last case
+            // Add to cases list
             if (!node->switch_case.cases) {
                 node->switch_case.cases = default_case;
             } else {
                 last_case->next = default_case;
             }
+            last_case = default_case;
+
             break; // `else` is always the last case
         } else {
-            break; // exit on any other keyword
+            break; // No more cases
         }
     }
 
+    // Expect the closing `}` of the entire `check` block
     expect_token(state, TOKEN_BRACE_CLOSE, "Expected '}' to close check block");
 
-    node->next = NULL;
     return node;
 }
 
