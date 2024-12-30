@@ -29,6 +29,9 @@ ASTNode *parse_statement(ParserState *state) {
 
     if (!token)
         return NULL;
+
+    debug_print_par("Current Token: Type=`%d`, Lexeme=`%s`\n", token->type,
+                    token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
     if (match_token(state, "show"))
@@ -58,6 +61,20 @@ ASTNode *parse_statement(ParserState *state) {
         expect_token(state, TOKEN_DELIMITER,
                      "Expected `;` after function call");
         return node;
+    }
+
+    // Handle variable assignments
+    if (token->type == TOKEN_IDENTIFIER) {
+        Token *next_token = peek_next_token(state);
+        if (next_token) {
+            debug_print_par("Peek Next Token: Type=`%d`, Lexeme=`%s`\n",
+                            next_token->type, next_token->lexeme);
+            if (next_token->type == TOKEN_OPERATOR &&
+                strcmp(next_token->lexeme, "=") == 0) {
+                return parse_variable_assignment(state);
+            }
+        }
+        return parse_expression_statement(state);
     }
 
     // If none of the above, raise an error
@@ -127,11 +144,16 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     // Parse variable name
     Token *name = get_current_token(state);
     debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
-
-    advance_token(state);
+    advance_token(state); // consume variable name
 
     // Expect `=` operator
+    Token *op_token = get_current_token(state);
+    debug_print_par("Expected operator `=`, found: `%s`\n", op_token->lexeme);
     expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+
+    // Parse the expression on the right-hand side
+    ASTNode *value_node = parse_expression(state);
+    debug_print_par("Parsed expression for assignment\n");
 
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -140,11 +162,19 @@ ASTNode *parse_variable_assignment(ParserState *state) {
 
     node->type = AST_ASSIGNMENT;
     node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.value = parse_expression(state);
+    node->assignment.value = value_node;
     node->next = NULL;
 
+    // Expect `;` delimiter
+    Token *delimiter = get_current_token(state);
+    if (delimiter->type != TOKEN_DELIMITER ||
+        strcmp(delimiter->lexeme, ";") != 0) {
+        debug_print_par("Expected `;` after assignment, found: `%s`\n",
+                        delimiter->lexeme);
+    }
     expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after variable declaration");
+                 "Expected `;` after variable assignment");
+    debug_print_par("Consumed `;` after variable assignment\n");
 
     return node;
 }
