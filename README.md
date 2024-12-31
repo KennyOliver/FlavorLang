@@ -48,6 +48,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipesâ€
    - [Use Booleans](#use-booleans)
    - [File Operations](#file-operations)
    - [Raise an Error](#raise-error)
+   - [Casting](#casting)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -391,6 +392,29 @@ if time > 15 {
 }
 
 show("After error?");
+```
+
+### 13. ðŸ”€ Casting
+
+```py
+let a = 1;
+show(a + a);
+show(string(a) + string(a));
+
+let b = "True";
+let c = "False";
+show(b == c);
+show(b != c);
+
+for _ in 1..=2 {
+    show("Enter a number:");
+    let user_input = int(taste);
+    let positive = user_input >= 0;
+    show("Positive?", positive);
+}
+
+show(int("+8"));
+
 ```
 
 </details>
