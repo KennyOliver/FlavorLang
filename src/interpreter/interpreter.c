@@ -51,6 +51,13 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
         return make_result(interpret_assignment(node, env), false);
 
+    case AST_UNARY_OP:
+        debug_print_int("\tMatched: `AST_UNARY_OP`\n");
+        {
+            LiteralValue unary_result = interpret_unary_op(node, env);
+            return make_result(unary_result, false);
+        }
+
     case AST_BINARY_OP:
         debug_print_int("\tMatched: `AST_BINARY_OP`\n");
         return make_result(interpret_binary_op(node, env), false);
@@ -217,7 +224,6 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env) {
     return new_value;
 }
 
-// Function to handle string concatenation
 LiteralValue handle_string_concatenation(LiteralValue left,
                                          LiteralValue right) {
     LiteralValue result;
@@ -228,10 +234,12 @@ LiteralValue handle_string_concatenation(LiteralValue left,
     char num_str2[50] = {0};
 
     if (left.type == TYPE_FLOAT) {
-        snprintf(num_str1, sizeof(num_str1), "%Lf", left.data.floating_point);
+        snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT_SPECIFIER,
+                 left.data.floating_point);
     }
     if (right.type == TYPE_FLOAT) {
-        snprintf(num_str2, sizeof(num_str2), "%Lf", right.data.floating_point);
+        snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT_SPECIFIER,
+                 right.data.floating_point);
     }
 
     // Allocate memory for the concatenated string
@@ -254,14 +262,106 @@ LiteralValue handle_string_concatenation(LiteralValue left,
     return result;
 }
 
+LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
+    // Debugging output
+    debug_print_int("Unary Operator: `%s`\n", op);
+
+    LiteralValue result;
+    memset(&result, 0, sizeof(LiteralValue)); // initialize result
+
+    // Handle logical NOT
+    if (strcmp(op, "!") == 0) {
+        // Ensure operand is boolean
+        if (operand.type != TYPE_BOOLEAN) {
+            error_interpreter(
+                "Unary operator `%s` requires a boolean operand.\n", op);
+        }
+
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = !operand.data.boolean;
+        return result;
+    }
+
+    // Handle unary minus
+    if (strcmp(op, "-") == 0) {
+        if (operand.type == TYPE_INTEGER) {
+            result.type = TYPE_INTEGER;
+            result.data.integer = -operand.data.integer;
+        } else if (operand.type == TYPE_FLOAT) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = -operand.data.floating_point;
+        } else {
+            error_interpreter(
+                "Unary operator `%s` requires a numeric operand.\n", op);
+        }
+        return result;
+    }
+
+    // Handle unary plus (no effect)
+    if (strcmp(op, "+") == 0) {
+        // Unary plus doesn't change the operand
+        result = operand;
+        return result;
+    }
+
+    // Add more unary operators as needed
+
+    error_interpreter("Unknown unary operator `%s`\n", op);
+    return result; // unreachable
+}
+
+LiteralValue interpret_unary_op(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_UNARY_OP) {
+        error_interpreter("Invalid unary operation node.\n");
+    }
+
+    // Extract the operator and operand
+    const char *op = node->unary_op.operator;
+    ASTNode *operand_node = node->unary_op.operand;
+
+    // Interpret the operand
+    InterpretResult operand_r = interpret_node(operand_node, env);
+    LiteralValue operand = operand_r.value;
+
+    // If interpreting the operand caused a return, propagate it
+    if (operand_r.did_return) {
+        return operand;
+    }
+
+    // Evaluate the unary operator
+    return evaluate_unary_operator(op, operand);
+}
+
 LiteralValue evaluate_operator(const char *op, LiteralValue left,
                                LiteralValue right) {
     debug_print_int("Operator: `%s`\n", op);
+
+    LiteralValue result;
+    memset(&result, 0, sizeof(LiteralValue)); // Initialize result
 
     // Handle string concatenation with "+" operator
     if (strcmp(op, "+") == 0 &&
         (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
         return handle_string_concatenation(left, right);
+    }
+
+    // Handle logical AND and OR
+    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
+        // Ensure both operands are boolean
+        if (left.type != TYPE_BOOLEAN || right.type != TYPE_BOOLEAN) {
+            error_interpreter(
+                "Logical operator `%s` requires boolean operands.\n", op);
+        }
+
+        result.type = TYPE_BOOLEAN;
+
+        if (strcmp(op, "&&") == 0) {
+            result.data.boolean = left.data.boolean && right.data.boolean;
+        } else { // op == "||"
+            result.data.boolean = left.data.boolean || right.data.boolean;
+        }
+
+        return result;
     }
 
     // Get numeric values for arithmetic and comparison
@@ -277,7 +377,6 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
         right_value = (FLOAT_SIZE)right.data.integer;
     }
 
-    LiteralValue result;
     // Determine result type based on operands
     if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
         result.type = TYPE_FLOAT;
