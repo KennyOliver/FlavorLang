@@ -1,26 +1,30 @@
-let a = True;
-let b = False;
+let t = True;
+let f = False;
 
-if (a) {
+if (t) {
     show(1);
 }
 
-if (b) {
+if (f) {
     show(2);
 }
 
-if (a && b) {
+if (t && f) {
     show(3);
 }
 
-if (a || b) {
+if (t || f) {
     show(4);
 }
 
-if (!a) {
+if (!t) {
     show(5);
 }
 
-if (!b) {
+if (!f) {
     show(6);
+}
+
+if (t && f) || (!f) {
+    show(7);
 }
