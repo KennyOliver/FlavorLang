@@ -17,6 +17,7 @@ typedef enum {
     AST_INPUT,
     AST_LITERAL,
     AST_CONDITIONAL,
+    AST_UNARY_OP,
     AST_BINARY_OP,
     AST_WHILE_LOOP,
     AST_FOR_LOOP,
@@ -62,6 +63,12 @@ typedef struct {
     struct ASTNode *body;
     struct ASTNode *else_branch;
 } ASTConditional;
+
+// AST Unary Operation Node
+typedef struct {
+    char *operator;
+    struct ASTNode *operand;
+} ASTUnaryOp;
 
 // AST Binary Operation Node
 typedef struct {
@@ -124,6 +131,9 @@ typedef struct ASTNode {
         // Literal
         LiteralNode literal;
 
+        // Unary operation
+        ASTUnaryOp unary_op;
+
         // Binary operation
         ASTBinaryOp binary_op;
 
@@ -146,12 +156,12 @@ typedef struct ASTNode {
         char *variable_name;
 
         struct {
-            char *cast_type;      // e.g., "string"
-            struct ASTNode *expr; // The expression being casted
+            char *cast_type;
+            struct ASTNode *expr;
         } cast;
     };
 
-    struct ASTNode *next; // Link to the next statement or node
+    struct ASTNode *next;
 } ASTNode;
 
 #endif
