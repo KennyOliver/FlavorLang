@@ -413,7 +413,7 @@ for _ in 1..=2 {
     show("Positive?", positive);
 }
 
-show(int("+8"));
+show(float("+8"));
 
 ```
 
