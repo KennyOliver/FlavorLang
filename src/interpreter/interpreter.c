@@ -289,7 +289,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     }
 
     // Get numeric values for arithmetic and comparison
-    double left_value = 0.0, right_value = 0.0;
+    FLOAT_SIZE left_value = 0.0, right_value = 0.0;
     if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
         left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
                                                : (FLOAT_SIZE)left.data.integer;
@@ -302,36 +302,11 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     }
 
     LiteralValue result;
-    // Default to TYPE_INTEGER or TYPE_FLOAT for arithmetic operations
-    if (strcmp(operator, "*") == 0 || strcmp(operator, "/") == 0 ||
-        strcmp(operator, "+") == 0 || strcmp(operator, "-") == 0) {
-        result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
-                          ? TYPE_FLOAT
-                          : TYPE_INTEGER;
-    }
-
-    // First check for two-character operators
-    if (operator[1] != '\0') {
-        if (strcmp(operator, "<=") == 0) {
-            result.type = TYPE_BOOLEAN; // Changed to TYPE_BOOLEAN
-            result.data.boolean = (left_value <= right_value);
-            return result;
-        }
-        if (strcmp(operator, ">=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value >= right_value);
-            return result;
-        }
-        if (strcmp(operator, "==") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value == right_value);
-            return result;
-        }
-        if (strcmp(operator, "!=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value != right_value);
-            return result;
-        }
+    // Determine result type based on operands
+    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        result.type = TYPE_FLOAT;
+    } else {
+        result.type = TYPE_INTEGER;
     }
 
     // Then handle single-character operators
@@ -1196,7 +1171,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         LiteralValue arg_value = arg_res.value;
         if (arg_value.type == TYPE_ERROR) {
             free_environment(&local_env);
-            return arg_value; // or do something
+            return arg_value; // or handle error
         }
 
         Variable param_var = {.variable_name = strdup(p->parameter_name),
