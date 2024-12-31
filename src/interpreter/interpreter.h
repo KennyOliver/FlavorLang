@@ -1,10 +1,17 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
+#include "../debug/debug.h"
 #include "../shared/ast_types.h"
 #include "../shared/data_types.h"
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 typedef enum {
     TYPE_BOOLEAN,
