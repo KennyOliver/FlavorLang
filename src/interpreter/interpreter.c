@@ -1,6 +1,8 @@
 #include "interpreter.h"
 #include "../debug/debug.h"
 #include "../shared/data_types.h"
+#include <errno.h>
+#include <limits.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -1248,6 +1250,45 @@ void free_environment(Environment *env) {
     free(env->functions);
 }
 
+bool is_valid_int(const char *str, INT_SIZE *out_value) {
+    char *endptr;
+    errno = 0; // reset errno before conversion
+    long long temp = strtoll(str, &endptr, 10);
+
+    // Check for conversion errors
+    if (errno != 0 || endptr == str || *endptr != '\0') {
+        return false;
+    }
+
+    // Optionally, check for overflow
+    if (temp < LLONG_MIN || temp > LLONG_MAX) {
+        return false;
+    }
+
+    if (out_value) {
+        *out_value = (INT_SIZE)temp;
+    }
+
+    return true;
+}
+
+bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
+    char *endptr;
+    errno = 0; // reset errno before conversion
+    long double temp = strtold(str, &endptr);
+
+    // Check for conversion errors
+    if (errno != 0 || endptr == str || *endptr != '\0') {
+        return false;
+    }
+
+    if (out_value) {
+        *out_value = (FLOAT_SIZE)temp;
+    }
+
+    return true;
+}
+
 LiteralValue interpret_cast(ASTNode *node, Environment *env) {
     if (node->type != AST_CAST) {
         error_interpreter("Expected `AST_CAST` node in `interpret_cast()`.\n");
@@ -1303,9 +1344,15 @@ LiteralValue interpret_cast(ASTNode *node, Environment *env) {
         result.type = TYPE_INTEGER;
 
         switch (original.type) {
-        case TYPE_STRING:
-            result.data.integer = atoll(original.data.string);
+        case TYPE_STRING: {
+            INT_SIZE temp;
+            if (!is_valid_int(original.data.string, &temp)) {
+                error_interpreter("Cannot cast string \"%s\" to int.\n",
+                                  original.data.string);
+            }
+            result.data.integer = temp;
             break;
+        }
         case TYPE_FLOAT:
             result.data.integer = (INT_SIZE)original.data.floating_point;
             break;
@@ -1324,9 +1371,15 @@ LiteralValue interpret_cast(ASTNode *node, Environment *env) {
         result.type = TYPE_FLOAT;
 
         switch (original.type) {
-        case TYPE_STRING:
-            result.data.floating_point = atof(original.data.string);
+        case TYPE_STRING: {
+            FLOAT_SIZE temp;
+            if (!is_valid_float(original.data.string, &temp)) {
+                error_interpreter("Cannot cast string \"%s\" to float.\n",
+                                  original.data.string);
+            }
+            result.data.floating_point = temp;
             break;
+        }
         case TYPE_INTEGER:
             result.data.floating_point = (FLOAT_SIZE)original.data.integer;
             break;
@@ -1343,7 +1396,7 @@ LiteralValue interpret_cast(ASTNode *node, Environment *env) {
         debug_print_int("Casted value to float: `%Lf`\n",
                         result.data.floating_point);
     } else {
-        error_interpreter("Unsupported cast type: %s\n", cast_type);
+        error_interpreter("Unsupported cast type: `%s`\n", cast_type);
     }
 
     return result;
