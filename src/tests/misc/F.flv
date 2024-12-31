@@ -8,7 +8,7 @@ show(a); # Expected: 6
 
 # Test case 3: Mixed operators
 let a = 1 + 2 * 3 - 4 / 2;
-show(a); # Expected: 5
+show(a); # Expected: 5.0
 
 # Test case 4: Right-associative exponentiation
 let a = 2 ** 3 ** 2;
