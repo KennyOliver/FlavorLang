@@ -309,27 +309,23 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         result.type = TYPE_INTEGER;
     }
 
-    // Then handle single-character operators
-    switch (operator[0]) {
-    case '*':
+    // Handle operators
+    if (strcmp(operator, "*") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value * right_value;
         else
             result.data.integer = (INT_SIZE)(left_value * right_value);
-        break;
-    case '+':
+    } else if (strcmp(operator, "+") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value + right_value;
         else
             result.data.integer = (INT_SIZE)(left_value + right_value);
-        break;
-    case '-':
+    } else if (strcmp(operator, "-") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value - right_value;
         else
             result.data.integer = (INT_SIZE)(left_value - right_value);
-        break;
-    case '/':
+    } else if (strcmp(operator, "/") == 0) {
         if (right_value == 0) {
             error_interpreter("Division by zero\n");
         }
@@ -337,16 +333,25 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.floating_point = left_value / right_value;
         else
             result.data.integer = (INT_SIZE)(left_value / right_value);
-        break;
-    case '<':
+    } else if (strcmp(operator, "<") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value < right_value);
-        break;
-    case '>':
+    } else if (strcmp(operator, ">") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value > right_value);
-        break;
-    default:
+    } else if (strcmp(operator, "<=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value <= right_value);
+    } else if (strcmp(operator, ">=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value >= right_value);
+    } else if (strcmp(operator, "==") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value == right_value);
+    } else if (strcmp(operator, "!=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value != right_value);
+    } else {
         error_interpreter("Unknown operator `%s`\n", operator);
     }
 
