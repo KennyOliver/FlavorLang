@@ -9,16 +9,15 @@
 </h1>
 
 <p align="center">
-FlavorLang blends coding with culinary creativity! Write programs like recipes—add ingredients, cook, and serve ideas with unique keywords that make coding as fun and flavorful as your imagination.
+FlavorLang blends coding with culinary creativity! Write programs like recipes &mdash; add ingredients, cook, and serve ideas with unique keywords that make coding as fun and flavorful as your imagination.
 </p>
 
 <br />
 
 ---
 
-[!IMPORTANT]
-
-> This project is currently in **Alpha**. While core functionality is largely stable, new features, syntax, and language designs are subject to change without prior notice.
+> [!IMPORTANT]
+> FlavorLang is currently in **Alpha**. While core functionality is largely stable, new features, syntax, and language designs are subject to change without prior notice.
 >
 > Please feel free to contribute by reporting any issues or suggestions in the repository's [Issues](https://github.com/KennyOliver/FlavorLang/issues/).
 
@@ -48,6 +47,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes�
    - [Use Booleans](#use-booleans)
    - [File Operations](#file-operations)
    - [Raise an Error](#raise-error)
+   - [Casting](#casting)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -391,6 +391,29 @@ if time > 15 {
 }
 
 show("After error?");
+```
+
+### 13. 🔀 Casting
+
+```py
+let a = 1;
+show(a + a);
+show(string(a) + string(a));
+
+let b = "True";
+let c = "False";
+show(b == c);
+show(b != c);
+
+for _ in 1..=2 {
+    show("Enter a number:");
+    let user_input = int(taste);
+    let positive = user_input >= 0;
+    show("Positive?", positive);
+}
+
+show(float("+8"));
+
 ```
 
 </details>

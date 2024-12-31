@@ -906,7 +906,6 @@ ASTFunctionParameter *parse_parameter_list(ParserState *state) {
 
 ASTNode *parse_function_body(ParserState *state) {
     ASTNode *body = parse_block(state);
-
     return body;
 }
 
@@ -1011,17 +1010,28 @@ ASTNode *parse_function_call(ParserState *state) {
     Token *name = get_current_token(state);
     expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
 
-    // Create function call node
+    // List of built-in casting functions
+    const char *built_in_casts[] = {"string", "int", "float"};
+    size_t num_casts = sizeof(built_in_casts) / sizeof(built_in_casts[0]);
+
+    // Check if the function is a casting function
+    for (size_t i = 0; i < num_casts; i++) {
+        if (strcmp(name->lexeme, built_in_casts[i]) == 0) {
+            // Delegate to generalized cast parsing
+            return parse_cast(state, built_in_casts[i]);
+        }
+    }
+
+    // Otherwise, handle as a regular function call
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
-    debug_print_par("AST_FUNCTION_CALL\n");
+    debug_print_par("AST_FUNCTION_CALL: %s\n", name->lexeme);
     node->function_call.name = strdup(name->lexeme);
 
-    // Initialize both parameters and arguments to NULL
-    node->function_call.parameters = NULL;
+    // Initialize arguments to NULL
     node->function_call.arguments = NULL;
 
     // Parse arguments (if any)
@@ -1133,6 +1143,11 @@ void free_ast(ASTNode *node) {
 
             break;
 
+        case AST_CAST:
+            free(node->cast.cast_type);
+            free_ast(node->cast.expr);
+            break;
+
         default:
             fprintf(stderr, "Error: Unknown `ASTNode` type in `free_ast`.\n");
             exit(1);
@@ -1141,4 +1156,36 @@ void free_ast(ASTNode *node) {
         free(node);
         node = next;
     }
+}
+
+ASTNode *parse_cast(ParserState *state, const char *cast_type) {
+    debug_print_par("Parsing cast to %s\n", cast_type);
+
+    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after cast type");
+
+    // Parse the expression to be casted
+    ASTNode *expr = parse_expression(state);
+    if (!expr) {
+        parser_error("Expected expression inside cast",
+                     get_current_token(state));
+    }
+
+    expect_token(state, TOKEN_PAREN_CLOSE,
+                 "Expected `)` after expression in cast");
+
+    // Create the CAST node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for cast node",
+                     get_current_token(state));
+    }
+
+    node->type = AST_CAST;
+    node->cast.cast_type = strdup(cast_type);
+    node->cast.expr = expr;
+    node->next = NULL;
+
+    debug_print_par("Successfully parsed `%s()` cast\n", cast_type);
+
+    return node;
 }

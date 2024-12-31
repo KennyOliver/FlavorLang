@@ -1,10 +1,9 @@
 #include "interpreter.h"
 #include "../debug/debug.h"
 #include "../shared/data_types.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <stdarg.h>
 
 void error_interpreter(const char *format, ...) {
     va_list args;
@@ -144,6 +143,14 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         // interpret_raise_error usually calls exit(), but let's just do:
         return make_result(create_default_value(), false);
     }
+
+    case AST_CAST:
+        debug_print_int("\tMatched: `AST_CAST`\n");
+        {
+            LiteralValue cast_val = interpret_cast(node, env);
+            return make_result(cast_val, false);
+        }
+
     default:
         error_interpreter("Unsupported ASTNode type.\n");
         return make_result(create_default_value(),
@@ -266,7 +273,7 @@ LiteralValue handle_string_concatenation(LiteralValue left,
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     debug_print_int("Interpreting binary operation\n");
 
-    // First evaluate both operands
+    // Evaluate both operands
     InterpretResult left_r = interpret_node(node->binary_op.left, env);
     LiteralValue left = left_r.value;
     if (left.type == TYPE_ERROR) {
@@ -283,13 +290,13 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     debug_print_int("Operator: `%s`\n", operator);
 
     // Handle string concatenation with "+" operator
-    if (operator[0] ==
-        '+' &&(left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+    if (strcmp(operator, "+") == 0 &&
+        (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
         return handle_string_concatenation(left, right);
     }
 
     // Get numeric values for arithmetic and comparison
-    double left_value = 0.0, right_value = 0.0;
+    FLOAT_SIZE left_value = 0.0, right_value = 0.0;
     if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
         left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
                                                : (FLOAT_SIZE)left.data.integer;
@@ -302,59 +309,30 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     }
 
     LiteralValue result;
-    // Default to TYPE_INTEGER or TYPE_FLOAT for arithmetic operations
-    if (strcmp(operator, "*") == 0 || strcmp(operator, "/") == 0 ||
-        strcmp(operator, "+") == 0 || strcmp(operator, "-") == 0) {
-        result.type = (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT)
-                          ? TYPE_FLOAT
-                          : TYPE_INTEGER;
+    // Determine result type based on operands
+    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+        result.type = TYPE_FLOAT;
+    } else {
+        result.type = TYPE_INTEGER;
     }
 
-    // First check for two-character operators
-    if (operator[1] != '\0') {
-        if (strcmp(operator, "<=") == 0) {
-            result.type = TYPE_BOOLEAN; // Changed to TYPE_BOOLEAN
-            result.data.boolean = (left_value <= right_value);
-            return result;
-        }
-        if (strcmp(operator, ">=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value >= right_value);
-            return result;
-        }
-        if (strcmp(operator, "==") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value == right_value);
-            return result;
-        }
-        if (strcmp(operator, "!=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value != right_value);
-            return result;
-        }
-    }
-
-    // Then handle single-character operators
-    switch (operator[0]) {
-    case '*':
+    // Handle operators
+    if (strcmp(operator, "*") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value * right_value;
         else
             result.data.integer = (INT_SIZE)(left_value * right_value);
-        break;
-    case '+':
+    } else if (strcmp(operator, "+") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value + right_value;
         else
             result.data.integer = (INT_SIZE)(left_value + right_value);
-        break;
-    case '-':
+    } else if (strcmp(operator, "-") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value - right_value;
         else
             result.data.integer = (INT_SIZE)(left_value - right_value);
-        break;
-    case '/':
+    } else if (strcmp(operator, "/") == 0) {
         if (right_value == 0) {
             error_interpreter("Division by zero\n");
         }
@@ -362,16 +340,25 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.floating_point = left_value / right_value;
         else
             result.data.integer = (INT_SIZE)(left_value / right_value);
-        break;
-    case '<':
+    } else if (strcmp(operator, "<") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value < right_value);
-        break;
-    case '>':
+    } else if (strcmp(operator, ">") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value > right_value);
-        break;
-    default:
+    } else if (strcmp(operator, "<=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value <= right_value);
+    } else if (strcmp(operator, ">=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value >= right_value);
+    } else if (strcmp(operator, "==") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value == right_value);
+    } else if (strcmp(operator, "!=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_value != right_value);
+    } else {
         error_interpreter("Unknown operator `%s`\n", operator);
     }
 
@@ -1196,7 +1183,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         LiteralValue arg_value = arg_res.value;
         if (arg_value.type == TYPE_ERROR) {
             free_environment(&local_env);
-            return arg_value; // or do something
+            return arg_value; // or handle error
         }
 
         Variable param_var = {.variable_name = strdup(p->parameter_name),
@@ -1259,4 +1246,105 @@ void free_environment(Environment *env) {
         free(env->functions[i].name);
     }
     free(env->functions);
+}
+
+LiteralValue interpret_cast(ASTNode *node, Environment *env) {
+    if (node->type != AST_CAST) {
+        error_interpreter("Expected `AST_CAST` node in `interpret_cast()`.\n");
+    }
+
+    char *cast_type = node->cast.cast_type;
+    ASTNode *expr = node->cast.expr;
+
+    // Evaluate the expression to be casted
+    InterpretResult expr_result = interpret_node(expr, env);
+    LiteralValue original = expr_result.value;
+
+    // If the expression resulted in a return, propagate it
+    if (expr_result.did_return) {
+        return original;
+    }
+
+    LiteralValue result;
+    memset(&result, 0, sizeof(LiteralValue)); // Initialize result
+
+    if (strcmp(cast_type, "string") == 0) {
+        result.type = TYPE_STRING;
+        char buffer[256] = {0};
+
+        switch (original.type) {
+        case TYPE_INTEGER:
+            snprintf(buffer, sizeof(buffer), INT_FORMAT_SPECIFIER,
+                     original.data.integer);
+            result.data.string = strdup(buffer);
+            break;
+        case TYPE_FLOAT:
+            snprintf(buffer, sizeof(buffer), FLOAT_FORMAT_SPECIFIER,
+                     original.data.floating_point);
+            result.data.string = strdup(buffer);
+            break;
+        case TYPE_BOOLEAN:
+            result.data.string =
+                strdup(original.data.boolean ? "True" : "False");
+            break;
+        case TYPE_STRING:
+            result.data.string = strdup(original.data.string);
+            break;
+        default:
+            error_interpreter("Unsupported type for string cast.\n");
+        }
+
+        if (!result.data.string) {
+            error_interpreter("Memory allocation failed during string cast.\n");
+        }
+
+        debug_print_int("Casted value to string: `%s`\n", result.data.string);
+    } else if (strcmp(cast_type, "int") == 0) {
+        result.type = TYPE_INTEGER;
+
+        switch (original.type) {
+        case TYPE_STRING:
+            result.data.integer = atoll(original.data.string);
+            break;
+        case TYPE_FLOAT:
+            result.data.integer = (INT_SIZE)original.data.floating_point;
+            break;
+        case TYPE_BOOLEAN:
+            result.data.integer = original.data.boolean ? 1 : 0;
+            break;
+        case TYPE_INTEGER:
+            result.data.integer = original.data.integer;
+            break;
+        default:
+            error_interpreter("Unsupported type for int cast.\n");
+        }
+
+        debug_print_int("Casted value to int: `%lld`\n", result.data.integer);
+    } else if (strcmp(cast_type, "float") == 0) {
+        result.type = TYPE_FLOAT;
+
+        switch (original.type) {
+        case TYPE_STRING:
+            result.data.floating_point = atof(original.data.string);
+            break;
+        case TYPE_INTEGER:
+            result.data.floating_point = (FLOAT_SIZE)original.data.integer;
+            break;
+        case TYPE_BOOLEAN:
+            result.data.floating_point = original.data.boolean ? 1.0 : 0.0;
+            break;
+        case TYPE_FLOAT:
+            result.data.floating_point = original.data.floating_point;
+            break;
+        default:
+            error_interpreter("Unsupported type for float cast.\n");
+        }
+
+        debug_print_int("Casted value to float: `%Lf`\n",
+                        result.data.floating_point);
+    } else {
+        error_interpreter("Unsupported cast type: %s\n", cast_type);
+    }
+
+    return result;
 }

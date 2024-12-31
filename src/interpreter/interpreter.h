@@ -76,6 +76,7 @@ void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
 ASTNode *copy_ast_node(ASTNode *node);
+LiteralValue interpret_cast(ASTNode *node, Environment *env);
 
 // Initialize the environment
 void init_environment(Environment *env);

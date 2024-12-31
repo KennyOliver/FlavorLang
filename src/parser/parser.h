@@ -29,11 +29,15 @@ ASTNode *parse_expression(ParserState *state);
 ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
+// Casting
+ASTNode *parse_cast(ParserState *state, const char *cast_type);
+
 // Helper functions
 bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
 ASTNode *parse_expression_statement(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 ASTNode *parse_case_body(ParserState *state);
+ASTNode *parse_function_body(ParserState *state);
 
 #endif
