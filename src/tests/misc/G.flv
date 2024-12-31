@@ -1,0 +1,26 @@
+let a = True;
+let b = False;
+
+if (a) {
+    show(1);
+}
+
+if (b) {
+    show(2);
+}
+
+if (a && b) {
+    show(3);
+}
+
+if (a || b) {
+    show(4);
+}
+
+if (!a) {
+    show(5);
+}
+
+if (!b) {
+    show(6);
+}
