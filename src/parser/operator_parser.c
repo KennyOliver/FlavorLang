@@ -1,3 +1,5 @@
+// operator_parser.c
+
 #include "operator_parser.h"
 #include "../debug/debug.h"
 #include <ctype.h>
@@ -9,10 +11,27 @@
 
 // Implementation of the main expression parser
 ASTNode *parse_operator_expression(ParserState *state) {
-    return parse_equality(state);
+    return parse_logical(state);
 }
 
-// Parsing functions based on precedence
+// Logical Operators: &&, ||
+ASTNode *parse_logical(ParserState *state) {
+    ASTNode *node = parse_equality(state);
+
+    while (match_operator(state, "&&") || match_operator(state, "||")) {
+        char *operator= strdup(state->previous->lexeme);
+        if (!operator) {
+            parser_error("Memory allocation failed for operator",
+                         state->current);
+        }
+        ASTNode *right = parse_equality(state);
+        node = create_binary_op_node(operator, node, right);
+    }
+
+    return node;
+}
+
+// Equality Operators: ==, !=
 ASTNode *parse_equality(ParserState *state) {
     ASTNode *node = parse_comparison(state);
 
@@ -29,6 +48,7 @@ ASTNode *parse_equality(ParserState *state) {
     return node;
 }
 
+// Comparison Operators: <, >, <=, >=
 ASTNode *parse_comparison(ParserState *state) {
     ASTNode *node = parse_term(state);
 
@@ -46,6 +66,7 @@ ASTNode *parse_comparison(ParserState *state) {
     return node;
 }
 
+// Additive Operators: +, -
 ASTNode *parse_term(ParserState *state) {
     ASTNode *node = parse_factor(state);
 
@@ -62,6 +83,7 @@ ASTNode *parse_term(ParserState *state) {
     return node;
 }
 
+// Multiplicative Operators: *, /, //, %
 ASTNode *parse_factor(ParserState *state) {
     ASTNode *node = parse_power(state);
 
@@ -79,6 +101,7 @@ ASTNode *parse_factor(ParserState *state) {
     return node;
 }
 
+// Exponentiation Operator: **
 ASTNode *parse_power(ParserState *state) {
     ASTNode *node = parse_unary(state);
 
@@ -95,6 +118,7 @@ ASTNode *parse_power(ParserState *state) {
     return node;
 }
 
+// Unary Operators: -, +, !
 ASTNode *parse_unary(ParserState *state) {
     if (match_operator(state, "-") || match_operator(state, "+") ||
         match_operator(state, "!")) {
@@ -110,10 +134,10 @@ ASTNode *parse_unary(ParserState *state) {
     return parse_primary(state);
 }
 
+// Primary Expressions: literals, variables, parentheses
 ASTNode *parse_primary(ParserState *state) {
     Token *current = get_current_token(state);
 
-    // Handle specific token types instead of TOKEN_LITERAL
     if (current->type == TOKEN_INTEGER || current->type == TOKEN_FLOAT ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
         ASTNode *node = create_literal_node(current);
@@ -128,14 +152,14 @@ ASTNode *parse_primary(ParserState *state) {
     }
 
     if (current->type == TOKEN_PAREN_OPEN) {
-        advance_token(state); // Consume '('
+        advance_token(state); // consume `(`
         ASTNode *node = parse_operator_expression(state);
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected ')' after expression");
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
         return node;
     }
 
     parser_error("Expected expression", current);
-    return NULL; // Unreachable
+    return NULL; // unreachable
 }
 
 // Helper function to match specific operators
@@ -148,7 +172,8 @@ bool match_operator(ParserState *state, const char *op) {
     return false;
 }
 
-// **Define the helper functions after their declarations**
+// Creation functions
+
 ASTNode *create_binary_op_node(char *operator, ASTNode * left, ASTNode *right) {
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
