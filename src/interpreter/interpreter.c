@@ -1,11 +1,4 @@
 #include "interpreter.h"
-#include "../debug/debug.h"
-#include "../shared/data_types.h"
-#include <errno.h>
-#include <limits.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string.h>
 
 void error_interpreter(const char *format, ...) {
     va_list args;
@@ -338,10 +331,31 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
         if (right_value == 0) {
             error_interpreter("Division by zero\n");
         }
+        result.type = TYPE_FLOAT;
+        result.data.floating_point = left_value / right_value;
+    } else if (strcmp(operator, "//") == 0) {
+        if (right_value == 0) {
+            error_interpreter("Floor division by zero\n");
+        }
         if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value / right_value;
+            result.data.floating_point = floor(left_value / right_value);
         else
             result.data.integer = (INT_SIZE)(left_value / right_value);
+    } else if (strcmp(operator, "%") == 0) {
+        if (right_value == 0) {
+            error_interpreter("Modulo by zero\n");
+        }
+        if (result.type == TYPE_FLOAT) {
+            result.data.floating_point = fmod(left_value, right_value);
+        } else {
+            result.data.integer =
+                (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
+        }
+    } else if (strcmp(operator, "**") == 0) {
+        if (result.type == TYPE_FLOAT)
+            result.data.floating_point = pow(left_value, right_value);
+        else
+            result.data.integer = (INT_SIZE)pow(left_value, right_value);
     } else if (strcmp(operator, "<") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value < right_value);

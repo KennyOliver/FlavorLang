@@ -135,26 +135,36 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
         state->pos < state->length - 2 ? state->source[state->pos + 2] : '\0';
 
     // Check for two-character & three-character operators
-    if (second_char != '\0' &&
-        ((first_char == '=' && second_char == '=') || // ==
-         (first_char == '>' && second_char == '=') || // >=
-         (first_char == '<' && second_char == '=') || // <=
-         (first_char == '!' && second_char == '=') || // !=
-         (first_char == '.' && second_char == '.') || // ..
-         (first_char == '.' && second_char == '.' &&
-          third_char == '='))) {                  // ..=
-        int length = (third_char == '=' ? 3 : 2); // determine operator length
-        char *lexeme = strndup(&state->source[state->pos], length);
-        append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
-                     state->line);
-        free(lexeme);
-        state->pos += length;
-    } else {
-        // Handle single-character operators
+    if (second_char != '\0') {
+        if ((first_char == '=' && second_char == '=') || // ==
+            (first_char == '>' && second_char == '=') || // >=
+            (first_char == '<' && second_char == '=') || // <=
+            (first_char == '!' && second_char == '=') || // !=
+            (first_char == '.' && second_char == '.') || // ..
+            (first_char == '.' && second_char == '.' &&
+             third_char == '=') ||                       // ..=
+            (first_char == '/' && second_char == '/') || // //
+            (first_char == '*' && second_char == '*')) { // **
+            int length =
+                (third_char == '=' ? 3 : 2); // determine operator length
+            char *lexeme = strndup(&state->source[state->pos], length);
+            append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
+                         state->line);
+            free(lexeme);
+            state->pos += length;
+            return;
+        }
+    }
+
+    // Handle single-character operators
+    if (strchr("=<>!+-*/%.", first_char)) {
         char *lexeme = strndup(&state->source[state->pos], 1);
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);
         free(lexeme);
         state->pos++;
+    } else {
+        fprintf(stderr, "Error: Unknown operator or invalid character `%d`",
+                state->line);
     }
 }
