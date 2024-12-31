@@ -6,3 +6,12 @@ let b = "True";
 let c = "False";
 show(b == c);
 show(b != c);
+
+for _ in 1..=2 {
+    show("Enter a number:");
+    let user_input = int(taste);
+    let positive = user_input >= 0;
+    show("Positive?", positive);
+}
+
+show(int("+8"));
