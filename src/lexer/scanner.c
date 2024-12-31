@@ -144,7 +144,9 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
             (first_char == '.' && second_char == '.' &&
              third_char == '=') ||                       // ..=
             (first_char == '/' && second_char == '/') || // //
-            (first_char == '*' && second_char == '*')) { // **
+            (first_char == '*' && second_char == '*') || // **
+            (first_char == '&' && second_char == '&') || // &&
+            (first_char == '|' && second_char == '|')) { // ||
             int length =
                 (third_char == '=' ? 3 : 2); // determine operator length
             char *lexeme = strndup(&state->source[state->pos], length);
@@ -164,7 +166,7 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
         free(lexeme);
         state->pos++;
     } else {
-        fprintf(stderr, "Error: Unknown operator or invalid character `%d`",
+        fprintf(stderr, "Error: Unknown operator or invalid character `%d`\n",
                 state->line);
     }
 }
