@@ -1,20 +1,17 @@
+#include "debug/debug.h"
+#include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include "interpreter/interpreter.h"
-#include "debug/debug.h"
 
-int main(int argc, char **argv)
-{
-    if (argc < 2)
-    {
+int main(int argc, char **argv) {
+    if (argc < 2) {
         fprintf(stderr, "Usage: `%s <file.flv>`\n", argv[0]);
         fprintf(stderr, "Reason: no `.flv` source file was provided\n");
         return 1;
-    }
-    else if (argc > 3)
-    {
+    } else if (argc > 3) {
         fprintf(stderr, "Usage: `%s <file.flv>`\n", argv[0]);
-        fprintf(stderr, "Reason: FlavorLang currently only accepts one `.flv` source file\n");
+        fprintf(stderr, "Reason: FlavorLang currently only accepts one `.flv` "
+                        "source file\n");
         return 1;
     }
 
@@ -34,6 +31,8 @@ int main(int argc, char **argv)
     // Parse
     ASTNode *ast = parse_program(tokens);
     debug_print_basic("Parsing complete!\n\n");
+    print_ast(ast, 0);
+    debug_print_basic("Finished printing AST\n\n");
 
     // Create environment
     Environment env;

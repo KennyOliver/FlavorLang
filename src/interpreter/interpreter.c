@@ -63,8 +63,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_INPUT: {
         debug_print_int("\tMatched: `AST_INPUT`\n");
         Variable v = interpret_input(env);
-
-        // Wrap `v.value` in an `InterpretResult`, with `did_return=false`
         return make_result(v.value, false);
     }
 
@@ -77,7 +75,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
         // interpret_function_call(...) returns a LiteralValue
         LiteralValue fc_val = interpret_function_call(node, env);
-        // wrap it in an InterpretResult
         return make_result(fc_val, false);
     }
 
@@ -90,12 +87,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_FUNCTION_RETURN: {
         debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
-
-        // if (!node->assignment.value) {
-        //     error_interpreter(
-        //         "Return statement has no expression! (Parser bug?)\n");
-        // }
-
         LiteralValue return_value =
             interpret_node(node->assignment.value, env).value;
         debug_print_int("Return value before returning: type=%d, value=%lld\n",
@@ -135,7 +126,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_ERROR: {
         debug_print_int("\tMatched: `AST_ERROR`\n");
         interpret_raise_error(node, env);
-        // interpret_raise_error usually calls exit(), but let's just do:
         return make_result(create_default_value(), false);
     }
 
@@ -198,7 +188,6 @@ LiteralValue interpret_literal(ASTNode *node) {
 }
 
 LiteralValue interpret_variable(ASTNode *node, Environment *env) {
-    // printf("Env var 0: `%s`\n", env->variables[0].variable_name);
     Variable *var = get_variable(env, node->variable_name);
     if (!var) {
         error_interpreter("Undefined variable `%s`.\n", node->variable_name);
@@ -265,27 +254,12 @@ LiteralValue handle_string_concatenation(LiteralValue left,
     return result;
 }
 
-LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
-    debug_print_int("Interpreting binary operation\n");
-
-    // Evaluate both operands
-    InterpretResult left_r = interpret_node(node->binary_op.left, env);
-    LiteralValue left = left_r.value;
-    if (left.type == TYPE_ERROR) {
-        return left; // or handle error
-    }
-
-    InterpretResult right_r = interpret_node(node->binary_op.right, env);
-    LiteralValue right = right_r.value;
-    if (right.type == TYPE_ERROR) {
-        return right;
-    }
-
-    char *operator= node->binary_op.operator;
-    debug_print_int("Operator: `%s`\n", operator);
+LiteralValue evaluate_operator(const char *op, LiteralValue left,
+                               LiteralValue right) {
+    debug_print_int("Operator: `%s`\n", op);
 
     // Handle string concatenation with "+" operator
-    if (strcmp(operator, "+") == 0 &&
+    if (strcmp(op, "+") == 0 &&
         (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
         return handle_string_concatenation(left, right);
     }
@@ -312,28 +286,28 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
     }
 
     // Handle operators
-    if (strcmp(operator, "*") == 0) {
+    if (strcmp(op, "*") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value * right_value;
         else
             result.data.integer = (INT_SIZE)(left_value * right_value);
-    } else if (strcmp(operator, "+") == 0) {
+    } else if (strcmp(op, "+") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value + right_value;
         else
             result.data.integer = (INT_SIZE)(left_value + right_value);
-    } else if (strcmp(operator, "-") == 0) {
+    } else if (strcmp(op, "-") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = left_value - right_value;
         else
             result.data.integer = (INT_SIZE)(left_value - right_value);
-    } else if (strcmp(operator, "/") == 0) {
+    } else if (strcmp(op, "/") == 0) {
         if (right_value == 0) {
             error_interpreter("Division by zero\n");
         }
         result.type = TYPE_FLOAT;
         result.data.floating_point = left_value / right_value;
-    } else if (strcmp(operator, "//") == 0) {
+    } else if (strcmp(op, "//") == 0) {
         if (right_value == 0) {
             error_interpreter("Floor division by zero\n");
         }
@@ -341,7 +315,7 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.floating_point = floor(left_value / right_value);
         else
             result.data.integer = (INT_SIZE)(left_value / right_value);
-    } else if (strcmp(operator, "%") == 0) {
+    } else if (strcmp(op, "%") == 0) {
         if (right_value == 0) {
             error_interpreter("Modulo by zero\n");
         }
@@ -351,34 +325,94 @@ LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
             result.data.integer =
                 (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
         }
-    } else if (strcmp(operator, "**") == 0) {
+    } else if (strcmp(op, "**") == 0) {
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = pow(left_value, right_value);
         else
             result.data.integer = (INT_SIZE)pow(left_value, right_value);
-    } else if (strcmp(operator, "<") == 0) {
+    } else if (strcmp(op, "<") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value < right_value);
-    } else if (strcmp(operator, ">") == 0) {
+    } else if (strcmp(op, ">") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value > right_value);
-    } else if (strcmp(operator, "<=") == 0) {
+    } else if (strcmp(op, "<=") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value <= right_value);
-    } else if (strcmp(operator, ">=") == 0) {
+    } else if (strcmp(op, ">=") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value >= right_value);
-    } else if (strcmp(operator, "==") == 0) {
+    } else if (strcmp(op, "==") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value == right_value);
-    } else if (strcmp(operator, "!=") == 0) {
+    } else if (strcmp(op, "!=") == 0) {
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value != right_value);
     } else {
-        error_interpreter("Unknown operator `%s`\n", operator);
+        error_interpreter("Unknown operator `%s`\n", op);
     }
 
     return result;
+}
+
+int get_operator_precedence(const char *op) {
+    if (strcmp(op, "**") == 0)
+        return 4; // highest precedence
+    if (strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "//") == 0 ||
+        strcmp(op, "%") == 0)
+        return 3;
+    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0)
+        return 2;
+    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || strcmp(op, "<=") == 0 ||
+        strcmp(op, ">=") == 0)
+        return 1;
+    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0)
+        return 1;
+
+    // Return `0` for unknown operators
+    return 0;
+}
+
+int is_right_associative(const char *op) {
+    return (strcmp(op, "**") == 0); // exponentiation is right-associative
+}
+
+LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_BINARY_OP) {
+        error_interpreter("Invalid binary operation node.");
+    }
+
+    // Interpret left operand
+    InterpretResult left_r = interpret_node(node->binary_op.left, env);
+    LiteralValue left = left_r.value;
+    if (left.type == TYPE_ERROR) {
+        return left; // propagate errors
+    }
+
+    // Interpret right operand
+    InterpretResult right_r = interpret_node(node->binary_op.right, env);
+    LiteralValue right = right_r.value;
+    if (right.type == TYPE_ERROR) {
+        return right; // propagate errors
+    }
+
+    // Evaluate based on operator
+    const char *op = node->binary_op.operator;
+
+    // Check precedence dynamically if subnodes have binary ops
+    if (node->binary_op.right->type == AST_BINARY_OP) {
+        int op_prec = get_operator_precedence(op);
+        int right_prec =
+            get_operator_precedence(node->binary_op.right->binary_op.operator);
+
+        // Reevaluate RHS if its operator has higher precedence
+        if (op_prec < right_prec ||
+            (op_prec == right_prec && is_right_associative(op))) {
+            right = interpret_binary_op(node->binary_op.right, env);
+        }
+    }
+
+    return evaluate_operator(op, left, right);
 }
 
 Variable *get_variable(Environment *env, const char *variable_name) {

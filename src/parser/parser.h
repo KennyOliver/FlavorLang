@@ -2,11 +2,15 @@
 #define PARSER_H
 
 #include "../shared/ast_types.h"
+#include "operator_parser.h"
 #include "parser_state.h"
 
 // Main parsing functions
 ASTNode *parse_program(Token *tokens);
 void free_ast(ASTNode *node);
+
+// Print AST
+void print_ast(ASTNode *node, int depth);
 
 // Statement parsing
 ASTNode *parse_statement(ParserState *state);
