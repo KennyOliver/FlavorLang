@@ -84,6 +84,8 @@ void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
 ASTNode *copy_ast_node(ASTNode *node);
 LiteralValue interpret_cast(ASTNode *node, Environment *env);
+LiteralValue interpret_unary_op(ASTNode *node, Environment *env);
+LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);
 
 // Initialize the environment
 void init_environment(Environment *env);

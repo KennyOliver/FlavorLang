@@ -1059,6 +1059,11 @@ void free_ast(ASTNode *node) {
             free_ast(node->conditional.else_branch);
             break;
 
+        case AST_UNARY_OP:
+            free(node->unary_op.operator);
+            free(node->unary_op.operand);
+            break;
+
         case AST_BINARY_OP:
             free(node->binary_op.operator);
             free_ast(node->binary_op.left);
@@ -1128,7 +1133,9 @@ void free_ast(ASTNode *node) {
             break;
 
         default:
-            fprintf(stderr, "Error: Unknown `ASTNode` type in `free_ast`.\n");
+            fprintf(stderr,
+                    "Error: Unknown `ASTNode` type `%d` in `free_ast`.\n",
+                    node->type);
             exit(1);
         }
 

@@ -1,0 +1,30 @@
+let t = True;
+let f = False;
+
+if (t) {
+    show(1);
+}
+
+if (f) {
+    show(2);
+}
+
+if (t && f) {
+    show(3);
+}
+
+if (t || f) {
+    show(4);
+}
+
+if (!t) {
+    show(5);
+}
+
+if (!f) {
+    show(6);
+}
+
+if (t && f) || (!f) {
+    show(7);
+}
