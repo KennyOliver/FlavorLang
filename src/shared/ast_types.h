@@ -23,6 +23,7 @@ typedef enum {
     AST_SWITCH,
     AST_BREAK,
     AST_VARIABLE,
+    AST_CAST,
     AST_ERROR
 } ASTNodeType;
 
@@ -143,6 +144,11 @@ typedef struct ASTNode {
 
         // Variable
         char *variable_name;
+
+        struct {
+            char *cast_type;      // e.g., "string"
+            struct ASTNode *expr; // The expression being casted
+        } cast;
     };
 
     struct ASTNode *next; // Link to the next statement or node
