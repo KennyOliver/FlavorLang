@@ -15,3 +15,9 @@ for _ in 1..=2 {
 }
 
 show(float("+8"));
+
+
+
+show(string(int(string("123"))));
+show(int("test"));
+show(int(""));
