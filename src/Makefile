@@ -1,6 +1,7 @@
 # Compiler and Flags
 CC = gcc
 CFLAGS = -Wall -Wextra -g
+LDFLAGS = -lm
 
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug
@@ -16,7 +17,7 @@ all: $(BIN)
 
 # Build the executable
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: %.c
