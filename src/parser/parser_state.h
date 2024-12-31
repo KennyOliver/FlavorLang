@@ -6,9 +6,11 @@
 #include <stdio.h>
 
 typedef struct {
-    Token *tokens;
-    size_t current_token;
-    bool in_function_body;
+    Token *tokens;         // Array of tokens
+    size_t current_token;  // Current token index
+    Token *current;        // Pointer to current token
+    Token *previous;       // Pointer to previous token
+    bool in_function_body; // Flag to indicate if parsing inside a function body
 } ParserState;
 
 // Create and destroy parser state
@@ -17,7 +19,7 @@ void free_parser_state(ParserState *state);
 
 // Token navigation
 Token *get_current_token(ParserState *state);
-Token *advance_token(ParserState *state);
+void advance_token(ParserState *state);
 void expect_token(ParserState *state, TokenType type,
                   const char *error_message);
 

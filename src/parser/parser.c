@@ -366,41 +366,9 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
     return NULL;
 }
 
-ASTNode *parse_term(ParserState *state) {
-    Token *current = get_current_token(state);
-
-    if (current->type == TOKEN_PAREN_OPEN) {
-        advance_token(state); // consume `(`
-        ASTNode *node = parse_expression(state);
-        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
-        return node;
-    }
-
-    return parse_literal_or_identifier(state);
-}
-
 ASTNode *parse_expression(ParserState *state) {
-    ASTNode *node = parse_term(state);
-
-    while (get_current_token(state)->type == TOKEN_OPERATOR) {
-        Token *operator= get_current_token(state);
-        advance_token(state); // consume operator
-
-        ASTNode *rhs = parse_term(state);
-        ASTNode *new_node = malloc(sizeof(ASTNode));
-        if (!new_node) {
-            parser_error("Memory allocation failed", get_current_token(state));
-        }
-
-        new_node->type = AST_BINARY_OP;
-        new_node->binary_op.operator= strdup(operator->lexeme);
-        new_node->binary_op.left = node;
-        new_node->binary_op.right = rhs;
-
-        node = new_node;
-    }
-
-    return node;
+    // Delegate to operator parser
+    return parse_operator_expression(state);
 }
 
 ASTNode *parse_function_return(ParserState *state) {

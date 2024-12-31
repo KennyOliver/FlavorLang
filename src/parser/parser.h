@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "../shared/ast_types.h"
+#include "operator_parser.h"
 #include "parser_state.h"
 
 // Main parsing functions
