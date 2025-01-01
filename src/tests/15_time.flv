@@ -12,27 +12,27 @@ create get_days_in_month(month, days_in_february) {
 
 
 create make_iso8601_string(year, month, day, hours, minutes, seconds) {
-    let month_string = month;
+    let month_string = string(month);
     if month < 9 {
         month_string = "0" + string(month);
     }
     
-    let day_string = day;
+    let day_string = string(day);
     if day < 9 {
         day_string = "0" + string(day);
     }
 
-    let hours_string = hours;
+    let hours_string = string(hours);
     if hours < 9 {
         hours_string = "0" + string(hours);
     }
 
-    let minutes_string = minutes;
+    let minutes_string = string(minutes);
     if minutes < 9 {
         minutes_string = "0" + string(minutes);
     }
 
-    let seconds_string = seconds;
+    let seconds_string = string(seconds);
     if seconds < 9 {
         seconds_string = "0" + string(seconds);
     }
@@ -44,7 +44,7 @@ create make_iso8601_string(year, month, day, hours, minutes, seconds) {
                     + minutes_string + ":"
                     + seconds_string + "Z";
 
-    deliver "";
+    deliver result;
 }
 
 
@@ -104,13 +104,16 @@ create unix_to_iso8601(unix_timestamp) {
 
     # Determine hours, minutes, and seconds
     let hours = remaining_seconds // SECONDS_IN_HOUR;
+    serve("hours:", hours);
     remaining_seconds = remaining_seconds % SECONDS_IN_HOUR;
     let minutes = remaining_seconds // SECONDS_IN_MINUTE;
+    serve("minutes:", minutes);
     let seconds = remaining_seconds % SECONDS_IN_MINUTE;
+    serve("seconds:", seconds);
 
     deliver make_iso8601_string(year, month, day, hours, minutes, seconds);
 }
 
 
-let result = unix_to_iso8601(20);
+let result = unix_to_iso8601(946730096);
 serve(result);
