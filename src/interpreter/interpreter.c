@@ -106,7 +106,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     }
 
     default:
-        error_interpreter("Unsupported ASTNode type.\n");
+        error_interpreter("Unsupported `ASTNode` type.\n");
         return make_result(create_default_value(),
                            false); // keep compiler happy
     }
@@ -995,6 +995,8 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
                    strcmp(func->name, "int") == 0 ||
                    strcmp(func->name, "float") == 0) {
             return builtin_cast(node, env);
+        } else if (strcmp(func->name, "get_time") == 0) {
+            return builtin_time();
         }
 
         // If no recognized built-in, error

@@ -14,6 +14,7 @@ LiteralValue builtin_random(ASTNode *node, Environment *env);
 LiteralValue builtin_output(ASTNode *node, Environment *env);
 LiteralValue builtin_error(ASTNode *node, Environment *env);
 LiteralValue builtin_cast(ASTNode *node, Environment *env);
+LiteralValue builtin_time();
 
 // Helpers
 void print_formatted_string(const char *str);
