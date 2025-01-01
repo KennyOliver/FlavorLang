@@ -891,4 +891,4 @@ For x = 5 + 3:
 
 This project is licensed under the Apache 2.0 License &mdash; see the [LICENSE](./LICENSE) file for details.
 
-&copy; 2024 Kenneth Oliver
+&copy; 2024-2025 Kenneth Oliver
