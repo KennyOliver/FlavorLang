@@ -1,9 +1,9 @@
 let time = 20;
 
-show("Before error.");
+serve("Before error.");
 
 if time > 15 {
     burn("Too late!", "The food got burnt!");
 }
 
-show("After error?");
+serve("After error?");

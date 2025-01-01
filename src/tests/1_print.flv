@@ -1,1 +1,1 @@
-show("Hello world!");
+serve("Hello world!");

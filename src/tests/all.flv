@@ -1,7 +1,7 @@
 # ==================================================
 # 1
 # ==================================================
-show("Hello world!");
+serve("Hello world!");
 
 
 # ==================================================
@@ -10,8 +10,8 @@ show("Hello world!");
 let name = "Chef";
 let age = 25;
 
-show("Name:", name);
-show("Age:", age);
+serve("Name:", name);
+serve("Age:", age);
 
 
 # ==================================================
@@ -20,11 +20,11 @@ show("Age:", age);
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-    show("The oven is hot!");
+    serve("The oven is hot!");
 } elif oven_temperature == 180 {
-    show("The oven is just right!");
+    serve("The oven is just right!");
 } else {
-    show("The oven is too cold!");
+    serve("The oven is too cold!");
 }
 
 
@@ -32,11 +32,11 @@ if oven_temperature > 180 {
 # 4
 # ==================================================
 for i in 1..5 {
-    show("Mixing... Step", i);
+    serve("Mixing... Step", i);
 }
 
 for j in 10..=1 by -3 {
-    show(j);
+    serve(j);
 }
 
 
@@ -46,13 +46,13 @@ for j in 10..=1 by -3 {
 let flour_added = 0;
 
 while flour_added < 3 {
-    show("Adding flour...");
+    serve("Adding flour...");
     flour_added = flour_added + 1;
-    show("End of iteration");
+    serve("End of iteration");
 }
 
-show("All flour has been added!");
-show("Flour added:", flour_added);
+serve("All flour has been added!");
+serve("Flour added:", flour_added);
 
 
 # ==================================================
@@ -60,16 +60,16 @@ show("Flour added:", flour_added);
 # ==================================================
 create bake_cake(temperature) {
     if temperature < 180 {
-        show("Temperature is too low to bake!");
+        serve("Temperature is too low to bake!");
         burn("Cake burned!"); # stops function execution immediately
 	} else {
-        show("Baking cake at", temperature, "degrees!");
+        serve("Baking cake at", temperature, "degrees!");
         deliver "Cake is ready!";
 	}
 }
 
 let result = bake_cake(200);
-show(result);
+serve(result);
 
 
 # ==================================================
@@ -77,9 +77,9 @@ show(result);
 # ==================================================
 # try {
 #     burn("This recipe failed!");
-#     show("This won't run!");
+#     serve("This won't run!");
 # } rescue {
-#     show("Caught an error: Recipe needs improvement.");
+#     serve("Caught an error: Recipe needs improvement.");
 # }
 
 
@@ -90,23 +90,23 @@ let dessert = "cake";
 
 check dessert {
     is "cake":
-        show("Bake the cake!");
+        serve("Bake the cake!");
     is "pie":
     is "cookie":
-        show("Prepare the oven!");
+        serve("Prepare the oven!");
         break;
     else:
-        show("Dessert not on the menu.");
+        serve("Dessert not on the menu.");
 }
 
 
 # ==================================================
 # 9
 # ==================================================
-show("What's your favorite dessert?");
+serve("What's your favorite dessert?");
 let favorite = taste;
 
-show("You chose:", favorite);
+serve("You chose:", favorite);
 
 # ==================================================
 # 10
@@ -115,10 +115,10 @@ show("You chose:", favorite);
 let stop_loop = False;
 let count = 10;
 
-show("Preparing for launch!");
+serve("Preparing for launch!");
 
 while stop_loop != True {
-    show(count);
+    serve(count);
     
     if count > 0 {
         count = count - 1;
@@ -127,7 +127,7 @@ while stop_loop != True {
     }
 }
 
-show("Blast off!");
+serve("Blast off!");
 
 
 # ==================================================
@@ -137,8 +137,8 @@ show("Blast off!");
 # garnish "output.txt" with "\nDon't forget the toppings!";
 
 # let data = gather "output.txt";
-# show("File Contents:");
-# show(data);
+# serve("File Contents:");
+# serve(data);
 
 
 # ==================================================
@@ -146,32 +146,32 @@ show("Blast off!");
 # ==================================================
 let time = 20;
 
-show("Before error.");
+serve("Before error.");
 
 if time > 15 {
     burn("Too late!", "The food got burnt!");
 }
 
-show("After error?");
+serve("After error?");
 
 
 # ==================================================
 # 13
 # ==================================================
 let a = 1;
-show(a + a);
-show(string(a) + string(a));
+serve(a + a);
+serve(string(a) + string(a));
 
 let b = "True";
 let c = "False";
-show(b == c);
-show(b != c);
+serve(b == c);
+serve(b != c);
 
 for _ in 1..=2 {
-    show("Enter a number:");
+    serve("Enter a number:");
     let user_input = int(taste);
     let positive = user_input >= 0;
-    show("Positive?", positive);
+    serve("Positive?", positive);
 }
 
-show(float("+8"));
+serve(float("+8"));

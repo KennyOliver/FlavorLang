@@ -1,15 +1,15 @@
 create factorial(n) {
-    # show("Called with n:", n);
+    # serve("Called with n:", n);
 
     if n <= 1 {
-        # show("Base case");
+        # serve("Base case");
         deliver 1;
     } else {
-        # show("Calling: factorial with n =", n);
+        # serve("Calling: factorial with n =", n);
         deliver n * factorial(n - 1);
     }
 }
 
 let n = 20;  # largest possible for 64-bit
 let result = factorial(n);
-show("Factorial of", n, "is:", result);
+serve("Factorial of", n, "is:", result);

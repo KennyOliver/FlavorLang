@@ -34,7 +34,7 @@ ASTNode *parse_statement(ParserState *state) {
                     token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
-    if (match_token(state, "show"))
+    if (match_token(state, "serve"))
         return parse_print_statement(state);
     if (match_token(state, "burn"))
         return parse_raise_error(state);
@@ -201,7 +201,7 @@ ASTNode *helper_print(ParserState *state) {
     if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
         advance_token(state); // consume the `)`
         expect_token(state, TOKEN_DELIMITER,
-                     "Expected `;` after show statement");
+                     "Expected `;` after serve statement");
         node->next = NULL;
         return node;
     }
@@ -211,7 +211,7 @@ ASTNode *helper_print(ParserState *state) {
            get_current_token(state)->type != TOKEN_EOF) {
 
         if (node->to_print.arg_count >= MAX_ARGUMENTS) {
-            parser_error("Too many arguments in show statement",
+            parser_error("Too many arguments in serve statement",
                          get_current_token(state));
         }
 
@@ -233,14 +233,15 @@ ASTNode *helper_print(ParserState *state) {
     }
 
     expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after arguments list");
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after show statement");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after `serve` statement");
     node->next = NULL;
     return node;
 }
 
 ASTNode *parse_print_statement(ParserState *state) {
     debug_print_par("Starting print statement parse\n");
-    expect_token(state, TOKEN_KEYWORD, "Expected 'show' keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected `serve` keyword");
     return helper_print(state);
 }
 
@@ -261,7 +262,7 @@ ASTNode *parse_input(ParserState *state) {
 
     node->type = AST_INPUT;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after `serve()`");
     node->next = NULL;
     return node;
 }

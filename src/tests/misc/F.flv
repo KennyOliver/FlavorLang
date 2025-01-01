@@ -1,15 +1,15 @@
 # Test case 1: Parentheses and exponentiation
 let a = (1 + 2) + (3 * 4) ** 5;
-show(a); # Expected: 248835
+serve(a); # Expected: 248835
 
 # Test case 2: Nested parentheses
 let a = (1 + (2 + (3)));
-show(a); # Expected: 6
+serve(a); # Expected: 6
 
 # Test case 3: Mixed operators
 let a = 1 + 2 * 3 - 4 / 2;
-show(a); # Expected: 5.0
+serve(a); # Expected: 5.0
 
 # Test case 4: Right-associative exponentiation
 let a = 2 ** 3 ** 2;
-show(a); # Expected: 512
+serve(a); # Expected: 512

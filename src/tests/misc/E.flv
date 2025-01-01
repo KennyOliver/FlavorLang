@@ -1,8 +1,8 @@
-show(25 ** 5);
-show(10 // 3);
-show(10 / 3);
-show(10 % 3);
+serve(25 ** 5);
+serve(10 // 3);
+serve(10 / 3);
+serve(10 % 3);
 
-show(string(int(string("123"))));
-show(int("test"));
-show(int(""));
+serve(string(int(string("123"))));
+serve(int("test"));
+serve(int(""));

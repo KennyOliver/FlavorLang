@@ -1,17 +1,17 @@
 let a = 1;
-show(a + a);
-show(string(a) + string(a));
+serve(a + a);
+serve(string(a) + string(a));
 
 let b = "True";
 let c = "False";
-show(b == c);
-show(b != c);
+serve(b == c);
+serve(b != c);
 
 for _ in 1..=2 {
-    show("Enter a number:");
+    serve("Enter a number:");
     let user_input = int(taste);
     let positive = user_input >= 0;
-    show("Positive?", positive);
+    serve("Positive?", positive);
 }
 
-show(float("+8"));
+serve(float("+8"));

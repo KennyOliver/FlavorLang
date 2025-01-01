@@ -105,7 +105,7 @@ $ make
 Create a file named **`recipe.flv`** with the following content.
 
 ```py
-show("Welcome to FlavorLang!");
+serve("Welcome to FlavorLang!");
 ```
 
 ### 3. Run the Program
@@ -204,7 +204,7 @@ Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 The simplest program to print "Hello world!".
 
 ```py
-show("Hello world!");
+serve("Hello world!");
 ```
 
 ### 2. 🍲 Defining Variables <a id="defining-variables"></a>
@@ -215,8 +215,8 @@ Use `let` to declare and initialize variables.
 let name = "Chef";
 let age = 25;
 
-show("Name:", name);
-show("Age:", age);
+serve("Name:", name);
+serve("Age:", age);
 ```
 
 ### 3. 🔄 Conditional Logic <a id="conditional-logic"></a>
@@ -227,11 +227,11 @@ Use `if`, `elif`, and `else` to control program flow.
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-	show("The oven is hot!");
+	serve("The oven is hot!");
 } elif oven_temperature == 180 {
-	show("The oven is just right!");
+	serve("The oven is just right!");
 } else {
-	show("The oven is too cold!");
+	serve("The oven is too cold!");
 }
 ```
 
@@ -241,11 +241,11 @@ Use `for` to iterate a block of code.
 
 ```py
 for i in 1..5 {
-    show("Mixing... Step", i);
+    serve("Mixing... Step", i);
 }
 
 for j in 10..=1 by -3 {
-    show(j);
+    serve(j);
 }
 ```
 
@@ -257,11 +257,11 @@ Use `while` for condition-based repetition.
 let flour_added = 0;
 
 while flour_added < 3 {
-	show("Adding flour...");
+	serve("Adding flour...");
 	let flour_added = flour_added + 1;
 }
 
-show("All flour has been added!");
+serve("All flour has been added!");
 ```
 
 ### 6. 📦 Functions with Return <a id="functions-with-return"></a>
@@ -272,16 +272,16 @@ Note that `burn` **takes precedence** over `deliver`, stopping execution immedia
 ```py
 create bake_cake(temperature) {
 	if temperature < 180 {
-		show("Temperature is too low to bake!");
+		serve("Temperature is too low to bake!");
 		burn("Cake burned!");  # stops function execution immediately
   } else {
-		show("Baking cake at", temperature, "degrees!");
+		serve("Baking cake at", temperature, "degrees!");
 		deliver "Cake is ready!";
   }
 }
 
 let result = bake_cake(200);
-show(result);
+serve(result);
 ```
 
 ### 7. 🛠️ Error Handling <a id="error-handling"></a>
@@ -291,9 +291,9 @@ Use `try` and `rescue` to handle errors.
 ```py
 try {
 	burn("This recipe failed!");
-	show("This won't run!");
+	serve("This won't run!");
 } rescue {
-	show("Caught an error: Recipe needs improvement.");
+	serve("Caught an error: Recipe needs improvement.");
 }
 ```
 
@@ -311,13 +311,13 @@ let dessert = "cake";
 
 check dessert {
 	is "cake":
-		show("Bake the cake!");
+		serve("Bake the cake!");
 	is "pie":
 	is "cookie":
-		show("Prepare the oven!");
+		serve("Prepare the oven!");
 		break;
 	else:
-		show("Dessert not on the menu.");
+		serve("Dessert not on the menu.");
 }
 ```
 
@@ -333,10 +333,10 @@ Dessert not on the menu.
 Use `taste` to accept input from the user.
 
 ```py
-show("What's your favorite dessert?");
+serve("What's your favorite dessert?");
 let favorite = taste;
 
-show("You chose:", favorite);
+serve("You chose:", favorite);
 ```
 
 ### 🔵 10. Use Booleans <a id="use-booleans"></a>
@@ -347,10 +347,10 @@ Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluat
 let stop_loop = False;
 let count = 10;
 
-show("Preparing for launch!");
+serve("Preparing for launch!");
 
 while stop_loop != True {
-    show(count);
+    serve(count);
 
     if count > 0 {
         count = count - 1;
@@ -359,7 +359,7 @@ while stop_loop != True {
     }
 }
 
-show("Blast off!");
+serve("Blast off!");
 ```
 
 ### 11. 📄 File Operations <a id="file-operations"></a>
@@ -373,8 +373,8 @@ plate "output.txt" with "Freshly baked cake ready to deliver!";
 garnish "output.txt" with "\nDon't forget the toppings!";
 
 let data = gather "output.txt";
-show("File Contents:");
-show(data);
+serve("File Contents:");
+serve(data);
 ```
 
 ### 12. ⛔️ Raise an Error <a id="raise-error"></a>
@@ -384,35 +384,35 @@ Use `burn` to raise an error and halt execution.
 ```py
 let time = 20;
 
-show("Before error.");
+serve("Before error.");
 
 if time > 15 {
 	burn("Too late!", "The food got burnt!");
 }
 
-show("After error?");
+serve("After error?");
 ```
 
 ### 13. 🔀 Casting
 
 ```py
 let a = 1;
-show(a + a);
-show(string(a) + string(a));
+serve(a + a);
+serve(string(a) + string(a));
 
 let b = "True";
 let c = "False";
-show(b == c);
-show(b != c);
+serve(b == c);
+serve(b != c);
 
 for _ in 1..=2 {
-    show("Enter a number:");
+    serve("Enter a number:");
     let user_input = int(taste);
     let positive = user_input >= 0;
-    show("Positive?", positive);
+    serve("Positive?", positive);
 }
 
-show(float("+8"));
+serve(float("+8"));
 
 ```
 
@@ -438,8 +438,8 @@ statement            ::= variable_declaration
 
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
 
-print_statement      ::= "show" expression ("," expression)* ";"   // Multiple arguments require commas
-                       | "show" expression ;  // Single argument allows no brackets
+print_statement      ::= "serve" expression ("," expression)* ";"   // Multiple arguments require commas
+                       | "serve" expression ;  // Single argument allows no brackets
 
 if_statement         ::= "if" condition block
                        ("elif" condition block)*
@@ -500,7 +500,7 @@ step                 ::= expression ;
 
 ### Overview <a id="debugging-overview"></a>
 
-In this section, `test3.flv` is used as an example to demonstrate how the --debug flag works in the Flavor interpreter. The --debug flag provides step-by-step insights into the tokenization, parsing, and execution of the script. This helps developers debug their code and understand the internal processing of statements like if, elif, else, and show.
+In this section, `test3.flv` is used as an example to demonstrate how the --debug flag works in the Flavor interpreter. The --debug flag provides step-by-step insights into the tokenization, parsing, and execution of the script. This helps developers debug their code and understand the internal processing of statements like `if`, `elif`, `else`, and `serve`.
 
 ### Example Script <a id="debugging-example-script"></a>
 
@@ -508,19 +508,19 @@ In this section, `test3.flv` is used as an example to demonstrate how the --debu
 let oven_temperature = 200;
 
 if oven_temperature > 180 {
-  show("The oven is hot!");
+  serve("The oven is hot!");
 } elif oven_temperature == 180 {
-  show("The oven is just right!");
+  serve("The oven is just right!");
 } else {
-  show("The oven is too cold!");
+  serve("The oven is too cold!");
 }
 ```
 
 - This script assigns a value to the variable oven_temperature and checks its value using conditional statements.
 - Based on the condition:
-- If the temperature is greater than 180: it shows “The oven is hot!”.
-- If the temperature equals 180: it shows “The oven is just right!”.
-- Otherwise, it shows “The oven is too cold!”.
+- If the temperature is greater than 180: it serves “The oven is hot!”.
+- If the temperature equals 180: it serves “The oven is just right!”.
+- Otherwise, it serves “The oven is too cold!”.
 
 In this case, `test3.flv` will be executed with the --debug flag to illustrate how the interpreter tokenizes, parses, and executes the script step by step.
 
@@ -554,7 +554,7 @@ The parser constructs a logical structure (AST) from the tokens, identifying blo
 ```
 [DEBUG PRS] Starting to parse block
 [DEBUG PRS] Parsing token in block: type=`0`, lexeme=`if`
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`show`
+[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
 ```
 
 Logs indicate the parsing of each token into structured blocks for execution.
@@ -578,21 +578,21 @@ The interpreter executes the script step by step:
 [DEBUG INT] Condition is true, executing branch body
 ```
 
-#### `show` in Debug Mode
+#### `serve` in Debug Mode
 
-The `show` statement is executed as part of the conditional blocks:
+The `serve` statement is executed as part of the conditional blocks:
 
 ##### 1. Tokenization
 
 ```
-[DEBUG TOK] 4     Type: `0`  Lex: `show`
+[DEBUG TOK] 4     Type: `0`  Lex: `serve`
 [DEBUG TOK]       Type: `3`  Lex: `The oven is hot!`
 ```
 
 ##### 2. Parsing
 
 ```
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`show`
+[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
 ```
 
 ##### 3. Interpretation
@@ -625,7 +625,7 @@ The oven is hot!
 
 #### Without Debugging
 
-Only the final output of the script is shown.
+Only the final output of the script is served.
 
 ```bash
 $ ./flavor tests/test3.flv
@@ -684,16 +684,16 @@ The FlavorLang lexer is responsible for breaking the input source code into fund
 
 Below are the **core** token types recognized by the lexer:
 
-| Token Type     | Examples                          | Description                                                      |
-| -------------- | --------------------------------- | ---------------------------------------------------------------- |
-| **KEYWORD**    | `show`, `create`, `deliver`, `if` | Reserved language keywords (e.g., `let`, `while`, `burn`, etc.). |
-| **IDENTIFIER** | `cake`, `temperature`             | Names for variables, functions, or parameters.                   |
-| **NUMBER**     | `42`, `200`, `3.14`               | Integer or floating-point numeric literals.                      |
-| **STRING**     | `"Hello World!"`                  | Text enclosed in double quotes.                                  |
-| **OPERATOR**   | `=`, `==`, `+`, `-`, `>=`         | Single or multi-character operators used in expressions.         |
-| **DELIMITER**  | `,`, `:`, `(`, `)`, `;`, `{`, `}` | Punctuation symbols that mark statement boundaries or grouping.  |
-| **COMMENT**    | `#`                               | Everything from `#` to the end of a line is ignored.             |
-| **EOF**        | End of input                      | Signifies that there are no more tokens to read.                 |
+| Token Type     | Examples                           | Description                                                      |
+| -------------- | ---------------------------------- | ---------------------------------------------------------------- |
+| **KEYWORD**    | `serve`, `create`, `deliver`, `if` | Reserved language keywords (e.g., `let`, `while`, `burn`, etc.). |
+| **IDENTIFIER** | `cake`, `temperature`              | Names for variables, functions, or parameters.                   |
+| **NUMBER**     | `42`, `200`, `3.14`                | Integer or floating-point numeric literals.                      |
+| **STRING**     | `"Hello World!"`                   | Text enclosed in double quotes.                                  |
+| **OPERATOR**   | `=`, `==`, `+`, `-`, `>=`          | Single or multi-character operators used in expressions.         |
+| **DELIMITER**  | `,`, `:`, `(`, `)`, `;`, `{`, `}`  | Punctuation symbols that mark statement boundaries or grouping.  |
+| **COMMENT**    | `#`                                | Everything from `#` to the end of a line is ignored.             |
+| **EOF**        | End of input                       | Signifies that there are no more tokens to read.                 |
 
 ### How the Lexer Works
 
@@ -786,7 +786,7 @@ After the lexer produces tokens, the **parser** converts them into an **Abstract
 
 4. **`parse_print_statement`**
 
-   - Reads `show` and then one or more expressions (split by `,`) until a `;`.
+   - Reads `serve` and then one or more expressions (split by `,`) until a `;`.
    - Produces an `AST_PRINT` node containing arguments.
 
 5. **`parse_expression`**
@@ -817,8 +817,9 @@ After the lexer produces tokens, the **parser** converts them into an **Abstract
 ```flv
 let x = 10;
 
-if x > 5:
-    show("Big");
+if x > 5 {
+   serve("Big");
+}
 ```
 
 - **Lexer**: Transforms this into tokens:
@@ -856,20 +857,19 @@ In FlavorLang, this means:
 - `interpret_node(...)` always returns an InterpretResult:
 - `.value` = The `LiteralValue` result of the node.
 - `.did_return` = true if a deliver statement was encountered, letting parent code know to halt further statements.
-- This approach ensures something like:
+- This approach ensures something like the following stops interpreting once `deliver 1;` is returned in the base case:
 
 ```flv
 create factorial(n) {
-    if n <= 1:
-        deliver 1;
-    else:
-        deliver n * factorial(n - 1);
+   if n <= 1 {
+      deliver 1;
+   } else {
+      deliver n * factorial(n - 1);
+   }
 }
 
 let result = factorial(3);
 ```
-
-…stops interpreting once `deliver 1;` is returned in the base case.
 
 ### Example Execution Flow
 
