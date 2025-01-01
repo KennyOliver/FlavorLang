@@ -82,16 +82,6 @@ ASTNode *parse_statement(ParserState *state) {
     return NULL;
 }
 
-bool match_token(ParserState *state, const char *lexeme) {
-    Token *token = get_current_token(state);
-    return token && strcmp(token->lexeme, lexeme) == 0;
-}
-
-Token *peek_next_token(ParserState *state) {
-    // Just look at the next token (but don’t advance)
-    return &state->tokens[state->current_token + 1];
-}
-
 ASTNode *parse_expression_statement(ParserState *state) {
     // Parse the expression (which can handle binary ops, variables, etc.)
     ASTNode *expr_node = parse_expression(state);
@@ -949,40 +939,6 @@ ASTNode *parse_function_declaration(ParserState *state) {
     }
 
     return node;
-}
-
-ASTNode *parse_argument_list(ParserState *state) {
-    // Check for empty argument list first
-    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
-        return NULL; // return NULL for empty argument list
-    }
-
-    ASTNode *head = NULL;
-    ASTNode *tail = NULL;
-
-    while (1) {
-        // Parse arguments as expressions
-        ASTNode *arg = parse_expression(state);
-
-        // Add argument to linked list
-        if (!head) {
-            head = arg;
-            tail = arg;
-        } else {
-            tail->next = arg;
-            tail = arg;
-        }
-
-        // Check for comma (indicates another argument)
-        if (get_current_token(state)->type == TOKEN_DELIMITER &&
-            strcmp(get_current_token(state)->lexeme, ",") == 0) {
-            advance_token(state); // consume `,`
-        } else {
-            break;
-        }
-    }
-
-    return head;
 }
 
 ASTNode *parse_function_call(ParserState *state) {

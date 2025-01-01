@@ -17,6 +17,8 @@ ASTNode *parse_power(ParserState *state);
 ASTNode *parse_unary(ParserState *state);
 ASTNode *parse_primary(ParserState *state);
 
+ASTNode *parse_argument_list(ParserState *state);
+
 // Helper functions for token matching
 bool match_operator(ParserState *state, const char *op);
 
@@ -25,5 +27,6 @@ ASTNode *create_binary_op_node(char *operator, ASTNode * left, ASTNode *right);
 ASTNode *create_unary_op_node(char *operator, ASTNode * operand);
 ASTNode *create_literal_node(Token *token);
 ASTNode *create_variable_node(char *name);
+ASTNode *create_function_call_node(char *name, ASTNode *args);
 
 #endif
