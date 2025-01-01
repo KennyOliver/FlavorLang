@@ -144,11 +144,6 @@ typedef struct ASTNode {
 
         // Variable
         char *variable_name;
-
-        struct {
-            char *cast_type;
-            struct ASTNode *expr;
-        } cast;
     };
 
     struct ASTNode *next;

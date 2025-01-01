@@ -286,24 +286,41 @@ bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
 }
 
 LiteralValue builtin_cast(ASTNode *node, Environment *env) {
-    char *cast_type = node->cast.cast_type;
-    if (!cast_type) {
+    if (node->type != AST_FUNCTION_CALL) {
         error_interpreter(
-            "No cast type in node provided to `builtin_cast()`.\n");
+            "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
-    ASTNode *expr = node->cast.expr;
 
-    // Evaluate the expression to be casted
+    char *cast_type = node->function_call.name;
+    if (!cast_type) {
+        error_interpreter("No cast type provided to `builtin_cast()`.\n");
+    }
+
+    ASTNode *arg_node = node->function_call.arguments;
+    if (!arg_node) {
+        error_interpreter(
+            "No expression provided for cast in `builtin_cast()`.\n");
+    }
+
+    // Ensure there's only one argument
+    if (arg_node->next != NULL) {
+        error_interpreter("`%s` cast function takes exactly one argument.\n",
+                          cast_type);
+    }
+
+    ASTNode *expr = arg_node;
+
+    // Interpret the expression to be casted
     InterpretResult expr_result = interpret_node(expr, env);
     LiteralValue original = expr_result.value;
 
-    // If the expression resulted in a return, propagate it
-    if (expr_result.did_return) {
+    // If interpreting the expression resulted in an error, propagate it
+    if (original.type == TYPE_ERROR) {
         return original;
     }
 
     LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // Initialize result
+    memset(&result, 0, sizeof(LiteralValue)); // initialize result
 
     if (strcmp(cast_type, "string") == 0) {
         result.type = TYPE_STRING;
