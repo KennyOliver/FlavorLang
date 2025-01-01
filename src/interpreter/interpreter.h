@@ -1,19 +1,17 @@
 #ifndef INTERPRETER_H
 #define INTERPRETER_H
 
-#include "../debug/debug.h"
 #include "../shared/ast_types.h"
 #include "../shared/data_types.h"
 #include "builtins.h"
 #include "interpreter_types.h"
+#include "utils.h"
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
-#include <stdarg.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 InterpretResult interpret_node(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);
@@ -31,16 +29,9 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
-ASTNode *copy_ast_node(ASTNode *node);
 LiteralValue interpret_cast(ASTNode *node, Environment *env);
 LiteralValue interpret_unary_op(ASTNode *node, Environment *env);
 LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);
-
-// Initialize the environment
-void init_environment(Environment *env);
-
-// Free the environment
-void free_environment(Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);
