@@ -4,7 +4,6 @@ LiteralValue builtin_input() {
     // Potential future place to implement prompt for user???
     //    printf("Enter your input: ");
 
-    // Read the line from stdin
     size_t buffer_size = 128;
     size_t input_length = 0;
     char *input_buffer = malloc(buffer_size);
@@ -36,14 +35,23 @@ LiteralValue builtin_input() {
     result.data.string = strdup(input_buffer);
     free(input_buffer);
 
-    // Return input string as function’s return value
     return result;
 }
 
 LiteralValue builtin_random() {
+    srand(time(NULL));
+
+    FLOAT_SIZE min = 0.0L;
+    FLOAT_SIZE max = 1.0L;
+    FLOAT_SIZE random_number =
+        min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
+
+    debug_print_int("Random number (min: %d, max: %d) generated: `%f`\n", min,
+                    max, random_number);
+
     LiteralValue result;
-    result.type = TYPE_INTEGER;
-    result.data.integer = 8;
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = random_number;
 
     return result;
 }
