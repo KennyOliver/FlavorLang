@@ -9,7 +9,7 @@ serve(b != c);
 
 for _ in 1..=2 {
     serve("Enter a number:");
-    let user_input = int(taste);
+    let user_input = int(sample);
     let positive = user_input >= 0;
     serve("Positive?", positive);
 }

@@ -38,7 +38,7 @@ ASTNode *parse_statement(ParserState *state) {
         return parse_print_statement(state);
     if (match_token(state, "burn"))
         return parse_raise_error(state);
-    if (match_token(state, "taste"))
+    if (match_token(state, "sample"))
         return parse_input(state);
     if (match_token(state, "if"))
         return parse_conditional_block(state);
@@ -253,7 +253,7 @@ ASTNode *parse_raise_error(ParserState *state) {
 }
 
 ASTNode *parse_input(ParserState *state) {
-    expect_token(state, TOKEN_KEYWORD, "Expected `taste` keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected `sample` keyword");
 
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -347,7 +347,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         advance_token(state);
         return node;
     } else if (current->type == TOKEN_KEYWORD &&
-               strcmp(current->lexeme, "taste") == 0) {
+               strcmp(current->lexeme, "sample") == 0) {
         ASTNode *node = malloc(sizeof(ASTNode));
         if (!node) {
             parser_error("Memory allocation failed", current);

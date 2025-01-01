@@ -19,7 +19,7 @@ const char *KEYWORDS[] = {
     "rescue",  // catch
     "burn",    // raise error
     "serve",   // output
-    "taste",   // input
+    "sample",  // input
     "plate",   // write
     "garnish", // append
     "gather",  // read

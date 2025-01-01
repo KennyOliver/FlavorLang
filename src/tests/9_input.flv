@@ -1,4 +1,4 @@
 serve("What's your favorite dessert?");
-let favorite = taste;
+let favorite = sample;
 
 serve("You chose:", favorite);

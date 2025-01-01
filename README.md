@@ -166,7 +166,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ✅           |
 | `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
-| `taste`   | Input from console           | Reads user input.                                                                           | ✅           |
+| `sample`  | Input from console           | Reads user input.                                                                           | ✅           |
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
 | `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |
@@ -330,11 +330,11 @@ Dessert not on the menu.
 
 ### 9. 📥 User Input <a id="user-input"></a>
 
-Use `taste` to accept input from the user.
+Use `sample` to accept input from the user.
 
 ```py
 serve("What's your favorite dessert?");
-let favorite = taste;
+let favorite = sample();
 
 serve("You chose:", favorite);
 ```
@@ -407,7 +407,7 @@ serve(b != c);
 
 for _ in 1..=2 {
     serve("Enter a number:");
-    let user_input = int(taste);
+    let user_input = int(sample());
     let positive = user_input >= 0;
     serve("Positive?", positive);
 }
@@ -461,7 +461,7 @@ switch_case          ::= "check" expression block case_clause* [ "else" block ] 
 case_clause          ::= "is" expression block
                        | "is" expression block "break" ;
 
-user_input           ::= "taste" ;
+user_input           ::= "sample" ;
 
 raise_error          ::= "burn" expression ("," expression)* ";" ;
 
