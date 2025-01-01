@@ -87,16 +87,62 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
     return result;
 }
 
-LiteralValue builtin_random() {
-    srand(time(NULL));
-
+// Built-in `random()` function with 0, 1, or 2 arguments
+LiteralValue builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L;
     FLOAT_SIZE max = 1.0L;
+    size_t arg_count = 0;
+
+    ASTNode *arg_node = node->function_call.arguments;
+    while (arg_node != NULL) {
+        if (arg_count >= 2) {
+            error_interpreter("`random()` takes at most 2 arguments.\n");
+        }
+
+        // Interpret the argument
+        InterpretResult arg_res = interpret_node(arg_node, env);
+        LiteralValue lv = arg_res.value;
+
+        // Ensure the argument is numeric
+        if (lv.type == TYPE_FLOAT) {
+            if (arg_count == 0) {
+                min = lv.data.floating_point;
+            } else if (arg_count == 1) {
+                max = lv.data.floating_point;
+            }
+        } else if (lv.type == TYPE_INTEGER) {
+            if (arg_count == 0) {
+                min = (FLOAT_SIZE)lv.data.integer;
+            } else if (arg_count == 1) {
+                max = (FLOAT_SIZE)lv.data.integer;
+            }
+        } else {
+            error_interpreter("`random()` arguments must be numeric.\n");
+        }
+
+        arg_count++;
+        arg_node = arg_node->next;
+    }
+
+    // Seed the random number generator once
+    static bool seeded = false;
+    if (!seeded) {
+        srand((unsigned int)time(NULL));
+        seeded = true;
+    }
+
+    // Swap min and max if min > max
+    if (min > max) {
+        FLOAT_SIZE temp = min;
+        min = max;
+        max = temp;
+    }
+
     FLOAT_SIZE random_number =
         min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
 
-    debug_print_int("Random number (min: %d, max: %d) generated: `%f`\n", min,
-                    max, random_number);
+    DEBUG_PRINT_FLOAT("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
+                      min, max, random_number);
 
     LiteralValue result;
     result.type = TYPE_FLOAT;
