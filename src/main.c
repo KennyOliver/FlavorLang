@@ -4,6 +4,7 @@
 #include "parser/parser.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 void parse_cli_args(int argc, char *argv[]) {
@@ -14,7 +15,24 @@ void parse_cli_args(int argc, char *argv[]) {
     }
 }
 
+void print_logo_from_file(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    if (file == NULL) {
+        perror("Error opening file");
+        return;
+    }
+
+    char buffer[256];
+    while (fgets(buffer, sizeof(buffer), file) != NULL) {
+        printf("%s", buffer);
+    }
+
+    fclose(file);
+}
+
 void print_about() {
+    print_logo_from_file("../logo/logo.txt");
+    printf("\n");
     const char *border =
         "+-------------------------------------------------+\n";
     printf("%s", border);
