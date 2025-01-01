@@ -33,6 +33,7 @@ void print_logo_from_file(const char *filename) {
 void print_about() {
     printf("\n");
     print_logo_from_file("../logo/logo.txt");
+    printf("\n");
     const char *border =
         "+-------------------------------------------------+\n";
     printf("%s", border);
