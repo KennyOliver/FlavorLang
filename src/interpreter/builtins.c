@@ -508,16 +508,52 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    FILE *fptr;
-    fptr = fopen(filepath, "r");
-    if (fptr == NULL) {
+    FILE *file = fopen(filepath, "r");
+    if (file == NULL) {
         perror("Failed to open file");
-        exit(1);
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    char file_contents[100];
-    fgets(file_contents, 100, fptr);
-    fclose(fptr);
+    size_t buffer_size = 1024;
+    size_t content_size = 0;
+
+    // Initialize string for holding all of the file's contents
+    char *file_contents = malloc(buffer_size);
+    if (file_contents == NULL) {
+        perror("Failed to allocate memory for file contents");
+        fclose(file);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    // Initialize buffer for reading each line
+    char *buffer = malloc(buffer_size);
+
+    while (fgets(buffer, buffer_size, file) != NULL) {
+        size_t line_length = strlen(buffer);
+
+        while (content_size + line_length + 1 > buffer_size) {
+            buffer_size *= 2;
+            char *temp = realloc(file_contents, buffer_size);
+
+            if (temp == NULL) {
+                perror("Failed to reallocate memory for file contents");
+                free(buffer);
+                free(file_contents);
+                fclose(file);
+                return (LiteralValue){.type = TYPE_ERROR};
+            }
+
+            file_contents = temp;
+        }
+
+        // Append buffer to file_contents
+        strcpy(file_contents + content_size, buffer);
+        debug_print_int("Read line: `%s`\n", buffer);
+        content_size += line_length;
+    }
+
+    free(buffer);
+    fclose(file);
 
     return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
 }
