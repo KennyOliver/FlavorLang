@@ -49,6 +49,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
    - [Raise an Error](#raise-error)
    - [Casting](#casting)
    - [Random Number Generation & Standard Library Functions](#random-number-generation-and-standard-library-functions)
+   - [UNIX Timestamp to ISO-8601 Date](#unix-timestamp-to-iso-date)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -415,7 +416,7 @@ for _ in 1..=2 {
 serve(float("+8"));
 ```
 
-### 14. Random Number Generation & Standard Library Functions <a href="#random-number-generation-and-standard-library-functions"></a>
+### 🎲 14. Random Number Generation & Standard Library Functions <a href="#random-number-generation-and-standard-library-functions"></a>
 
 ```py
 # Using `sample()` to get user input
@@ -435,6 +436,140 @@ for i in 1..=10 {
 
 # Using `burn()` to raise an error
 burn("This is a fatal error with code:", 1001);
+```
+
+### 🗓️ 15. UNIX Timestamp to ISO-8601 Date <a href="unix-timestamp-to-iso-date"></a>
+
+```py
+create get_days_in_month(month, days_in_february) {
+   if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+      deliver 31;
+   } elif (month == 4 || month == 6 || month == 9 || month == 11) {
+      deliver 30;
+   } elif month == 2 {
+      deliver days_in_february;
+   }
+
+   deliver 0;
+}
+
+create make_iso8601_string(year, month, day, hours, minutes, seconds) {
+   let month_string = string(month);
+   if month < 10 {
+      month_string = "0" + string(month);
+   }
+
+   let day_string = string(day);
+   if day < 10 {
+      day_string = "0" + string(day);
+   }
+
+   let hours_string = string(hours);
+   if hours < 10 {
+      hours_string = "0" + string(hours);
+   }
+
+   let minutes_string = string(minutes);
+   if minutes < 10 {
+      minutes_string = "0" + string(minutes);
+   }
+
+   let seconds_string = string(seconds);
+   if seconds < 10 {
+      seconds_string = "0" + string(seconds);
+   }
+
+   let result = string(year) + "-"
+                  + month_string + "-"
+                  + day_string + "T"
+                  + hours_string + ":"
+                  + minutes_string + ":"
+                  + seconds_string + "Z";
+
+   deliver result;
+}
+
+create unix_to_iso8601(unix_timestamp) {
+   # Constants
+   let SECONDS_IN_MINUTE = 60;
+   let SECONDS_IN_HOUR = 3600;
+   let SECONDS_IN_DAY = 86400;
+   let EPOCH_YEAR = 1970;
+
+   # Calculate total days since epoch
+   let days_since_epoch = unix_timestamp // SECONDS_IN_DAY;
+   let remaining_seconds = unix_timestamp % SECONDS_IN_DAY;
+
+   # Determine year
+   let year = EPOCH_YEAR;
+   let found_year = False;
+   let is_leap_year = False;
+   let days_in_year = 365;
+   while !found_year {
+      is_leap_year = False;
+      if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+         is_leap_year = True;
+      }
+
+      if is_leap_year {
+         days_in_year = 366;
+      } else {
+         days_in_year = 365;
+      }
+
+      if days_since_epoch < days_in_year {
+         found_year = True;
+      } else {
+         days_since_epoch = days_since_epoch - days_in_year;
+         year = year + 1;
+      }
+   }
+
+   # Determine month and day
+   is_leap_year = False;
+   if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+      is_leap_year = True;
+   }
+
+   let days_in_february = 28;
+   if is_leap_year {
+      days_in_february = 29;
+   }
+
+   let month = 1;
+   let found_month = False;
+   let days_in_month = 0;
+   while !found_month {
+      days_in_month = get_days_in_month(month, days_in_february);
+
+      if days_since_epoch < days_in_month {
+         found_month = True;
+      } else {
+         days_since_epoch = days_since_epoch - days_in_month;
+         month = month + 1;
+      }
+   }
+
+   let day = days_since_epoch + 1;
+
+   # Determine hours, minutes, and seconds
+   let hours = remaining_seconds // SECONDS_IN_HOUR;
+   remaining_seconds = remaining_seconds % SECONDS_IN_HOUR;
+   let minutes = remaining_seconds // SECONDS_IN_MINUTE;
+   let seconds = remaining_seconds % SECONDS_IN_MINUTE;
+
+   deliver make_iso8601_string(year, month, day, hours, minutes, seconds);
+}
+
+
+let result1 = unix_to_iso8601(0);
+serve(result1);  # 1970-01-01T00:00:00Z
+
+let result2 = unix_to_iso8601(86400);
+serve(result2);  # 1970-01-02T00:00:00Z
+
+let result3 = unix_to_iso8601(946730096);
+serve(result3);  # 2000-01-01T12:34:56Z
 ```
 
 </details>
