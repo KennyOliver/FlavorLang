@@ -1,0 +1,2 @@
+let random_num = random();
+serve(random_num);
