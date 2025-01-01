@@ -13,8 +13,6 @@ typedef enum {
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,
-    AST_PRINT,
-    AST_INPUT,
     AST_LITERAL,
     AST_CONDITIONAL,
     AST_UNARY_OP,
@@ -24,8 +22,7 @@ typedef enum {
     AST_SWITCH,
     AST_BREAK,
     AST_VARIABLE,
-    AST_CAST,
-    AST_ERROR
+    AST_CAST
 } ASTNodeType;
 
 // Literal Node
@@ -121,12 +118,6 @@ typedef struct ASTNode {
             char *variable_name;
             struct ASTNode *value;
         } assignment;
-
-        // Print statement
-        struct {
-            struct ASTNode **arguments;
-            size_t arg_count;
-        } to_print;
 
         // Literal
         LiteralNode literal;

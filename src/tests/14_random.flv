@@ -1,0 +1,17 @@
+# Using `sample()` to get user input
+serve("Enter your favorite number:");
+let favorite = sample();
+serve("Your favorite is:", favorite);
+
+# Using `random()` with different argument counts
+let num1 = random();              # Generates between 0.0 and 1.0
+let num2 = random(5.0);           # Generates between 0.0 and 5.0
+let num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
+serve("Random numbers:", num1, num2, num3);
+
+for i in 1..=10 {
+    serve(i, "\t->", random());
+}
+
+# Using `burn()` to raise an error
+burn("This is a fatal error with code:", 1001);

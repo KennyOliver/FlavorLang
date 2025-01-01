@@ -1,11 +1,20 @@
 #ifndef BUILTINS_H
 #define BUILTINS_H
 
+#include "../debug/debug.h"
 #include "../shared/ast_types.h"
 #include "interpreter_types.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
-LiteralValue builtin_input();
+LiteralValue builtin_input(ASTNode *node, Environment *env);
+LiteralValue builtin_random(ASTNode *node, Environment *env);
+LiteralValue builtin_output(ASTNode *node, Environment *env);
+LiteralValue builtin_error(ASTNode *node, Environment *env);
+
+// Helpers
+void print_formatted_string(const char *str);
 
 #endif

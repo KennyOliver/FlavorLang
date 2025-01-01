@@ -48,6 +48,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
    - [File Operations](#file-operations)
    - [Raise an Error](#raise-error)
    - [Casting](#casting)
+   - [Random Number Generation & Standard Library Functions](#random-number-generation-and-standard-library-functions)
 
 6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
@@ -412,7 +413,28 @@ for _ in 1..=2 {
 }
 
 serve(float("+8"));
+```
 
+### 14. Random Number Generation & Standard Library Functions <a href="#random-number-generation-and-standard-library-functions"></a>
+
+```py
+# Using `sample()` to get user input
+serve("Enter your favorite number:");
+let favorite = sample();
+serve("Your favorite is:", favorite);
+
+# Using `random()` with different argument counts
+let num1 = random();              # Generates between 0.0 and 1.0
+let num2 = random(5.0);           # Generates between 0.0 and 5.0
+let num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
+serve("Random numbers:", num1, num2, num3);
+
+for i in 1..=10 {
+    serve(i, "\t->", random());
+}
+
+# Using `burn()` to raise an error
+burn("This is a fatal error with code:", 1001);
 ```
 
 </details>
