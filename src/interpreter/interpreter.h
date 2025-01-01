@@ -4,6 +4,8 @@
 #include "../debug/debug.h"
 #include "../shared/ast_types.h"
 #include "../shared/data_types.h"
+#include "builtins.h"
+#include "interpreter_types.h"
 #include <errno.h>
 #include <limits.h>
 #include <math.h>
@@ -12,59 +14,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-typedef enum {
-    TYPE_BOOLEAN,
-    TYPE_FLOAT,
-    TYPE_INTEGER,
-    TYPE_STRING,
-    TYPE_ERROR
-} LiteralType;
-
-typedef enum { RETURN_NORMAL, RETURN_ERROR } ReturnType;
-
-typedef struct {
-    LiteralType type;
-    union {
-        char *string;
-        FLOAT_SIZE floating_point;
-        INT_SIZE integer;
-        bool boolean;
-    } data;
-} LiteralValue;
-
-typedef struct {
-    LiteralValue value;
-    bool should_return; // Flag to indicate if function should return early
-    bool is_error;      // Flag to indicate if this is an error return (burn)
-} FunctionResult;
-
-typedef struct {
-    char *variable_name;
-    LiteralValue value;
-} Variable;
-
-typedef struct {
-    char *name;
-    ASTFunctionParameter *parameters; // Linked list of parameters
-    ASTNode *body;                    // Function body
-    FunctionResult return_value;
-} Function;
-
-typedef struct {
-    Variable *variables;
-    size_t variable_count;
-    size_t capacity; // to handle dynamic resizing
-
-    Function *functions; // Array of functions
-    size_t function_count;
-    size_t function_capacity;
-} Environment;
-
-typedef struct {
-    LiteralValue value; // The result of interpreting a node
-    bool did_return; // True if this node caused a function return to bubble up
-} InterpretResult;
 
 InterpretResult interpret_node(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);

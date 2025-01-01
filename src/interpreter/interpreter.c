@@ -1304,27 +1304,48 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
+    // 1) Look for the function in the environment
     Function *func = get_function(env, node->function_call.name);
     if (!func) {
+        // If we can’t find it at all, error
         fprintf(stderr, "Error: Undefined function `%s`\n",
                 node->function_call.name);
+        exit(1);
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Create local environment
+    // 2) If it’s a built-in => call the built-in logic
+    if (func->is_builtin) {
+        if (strcmp(func->name, "sample") == 0) {
+            return builtin_sample(env);
+        } else if (strcmp(func->name, "serve") == 0) {
+            interpret_print(node, env);
+        }
+
+        // If no recognized built-in, error
+        fprintf(stderr, "Error: Unknown built-in `%s`\n", func->name);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    // 3) Otherwise, user-defined function. (Existing code)
+    // Create local environment, bind parameters, interpret AST body, etc.
+
     Environment local_env;
     init_environment(&local_env);
 
-    // Copy parent's functions
+    // Copy parent's functions so calls to other user-defined functions work
     for (size_t i = 0; i < env->function_count; i++) {
+        // NOTE: If the function is built-in or user-defined,
+        // copy them all anyway.
         Function func_copy = {.name = strdup(env->functions[i].name),
                               .parameters = copy_function_parameters(
                                   env->functions[i].parameters),
-                              .body = copy_ast_node(env->functions[i].body)};
+                              .body = copy_ast_node(env->functions[i].body),
+                              .is_builtin = env->functions[i].is_builtin};
         add_function(&local_env, func_copy);
     }
 
-    // Bind parameters
+    // Now interpret arguments & bind them
     ASTFunctionParameter *p = func->parameters;
     ASTNode *arg = node->function_call.arguments;
     while (p && arg) {
@@ -1332,41 +1353,33 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         LiteralValue arg_value = arg_res.value;
         if (arg_value.type == TYPE_ERROR) {
             free_environment(&local_env);
-            return arg_value; // or handle error
+            return arg_value;
         }
 
         Variable param_var = {.variable_name = strdup(p->parameter_name),
-                              .value = arg_res.value};
+                              .value = arg_value};
         add_variable(&local_env, param_var);
 
         p = p->next;
         arg = arg->next;
     }
 
-    // Now interpret function body
-    LiteralValue result = create_default_value(); // default 0
+    // interpret function body
+    LiteralValue result = create_default_value();
     ASTNode *stmt = func->body;
-
     while (stmt) {
         InterpretResult r = interpret_node(stmt, &local_env);
-
         if (r.did_return) {
             // Short-circuit
             free_environment(&local_env);
-            return r.value; // the literal from the return
-        }
-
-        if (r.value.type == TYPE_ERROR) {
-            free_environment(&local_env);
             return r.value;
         }
-
-        // else keep going
+        // Else keep going
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
-    return result; // if no explicit return, we return 0
+    return result; // if no explicit return => return `0` (or default)
 }
 
 // Initialize the environment
