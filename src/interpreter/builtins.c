@@ -13,6 +13,53 @@
             printf(format, __VA_ARGS__);                                       \
     } while (0)
 
+bool interpret_arguments(ASTNode *node, Environment *env, size_t max_args,
+                         ...) {
+    size_t arg_count = 0;
+    ASTNode *arg_node = node;
+    va_list args;
+    va_start(args, max_args);
+
+    while (arg_node != NULL) {
+        if (arg_count >= max_args) {
+            error_interpreter("Too many arguments.\n");
+            va_end(args);
+            return false;
+        }
+
+        // Interpret the argument
+        InterpretResult arg_res = interpret_node(arg_node, env);
+        LiteralValue lv = arg_res.value;
+
+        // Get the pointer to store the value
+        FLOAT_SIZE *arg_ptr = va_arg(args, FLOAT_SIZE *);
+
+        // Ensure the argument is numeric
+        if (lv.type == TYPE_FLOAT) {
+            *arg_ptr = lv.data.floating_point;
+        } else if (lv.type == TYPE_INTEGER) {
+            *arg_ptr = (FLOAT_SIZE)lv.data.integer;
+        } else {
+            error_interpreter("Arguments must be numeric.\n");
+            va_end(args);
+            return false;
+        }
+
+        arg_count++;
+        arg_node = arg_node->next;
+    }
+
+    va_end(args);
+
+    // Ensure the required number of arguments are provided
+    if (arg_count < max_args) {
+        error_interpreter("Too few arguments.\n");
+        return false;
+    }
+
+    return true;
+}
+
 void print_formatted_string(const char *str) {
     for (const char *p = str; *p != '\0'; p++) {
         if (*p == '\\') {
@@ -91,37 +138,11 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
 LiteralValue builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L;
     FLOAT_SIZE max = 1.0L;
-    size_t arg_count = 0;
 
-    ASTNode *arg_node = node->function_call.arguments;
-    while (arg_node != NULL) {
-        if (arg_count >= 2) {
-            error_interpreter("`random()` takes at most 2 arguments.\n");
-        }
-
-        // Interpret the argument
-        InterpretResult arg_res = interpret_node(arg_node, env);
-        LiteralValue lv = arg_res.value;
-
-        // Ensure the argument is numeric
-        if (lv.type == TYPE_FLOAT) {
-            if (arg_count == 0) {
-                min = lv.data.floating_point;
-            } else if (arg_count == 1) {
-                max = lv.data.floating_point;
-            }
-        } else if (lv.type == TYPE_INTEGER) {
-            if (arg_count == 0) {
-                min = (FLOAT_SIZE)lv.data.integer;
-            } else if (arg_count == 1) {
-                max = (FLOAT_SIZE)lv.data.integer;
-            }
-        } else {
-            error_interpreter("`random()` arguments must be numeric.\n");
-        }
-
-        arg_count++;
-        arg_node = arg_node->next;
+    if (!interpret_arguments(node->function_call.arguments, env, 2, &min,
+                             &max)) {
+        // Return an error type on failure
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
     // Seed the random number generator once
