@@ -997,6 +997,12 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
             return builtin_cast(node, env);
         } else if (strcmp(func->name, "get_time") == 0) {
             return builtin_time();
+        } else if (strcmp(func->name, "taste_file") == 0) {
+            return builtin_file_read(node, env);
+        } else if (strcmp(func->name, "plate_file") == 0) {
+            return builtin_file_write(node, env);
+        } else if (strcmp(func->name, "garnish_file") == 0) {
+            return builtin_file_append(node, env);
         }
 
         // If no recognized built-in, error

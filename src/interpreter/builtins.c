@@ -1,4 +1,3 @@
-// builtins.c
 #include "builtins.h"
 #include "../interpreter/interpreter.h"
 #include <stdio.h>
@@ -12,6 +11,98 @@
         if (debug_flag)                                                        \
             printf(format, __VA_ARGS__);                                       \
     } while (0)
+
+// Function to interpret a mix of argument types
+bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
+                         ArgumentSpec *specs) {
+    // size_t arg_count = 0;
+    ASTNode *arg_node = node;
+
+    for (size_t i = 0; i < num_args; i++) {
+        if (arg_node == NULL) {
+            error_interpreter("Too few arguments provided.\n");
+            return false;
+        }
+
+        // Interpret the current argument
+        InterpretResult arg_res = interpret_node(arg_node, env);
+        LiteralValue lv = arg_res.value;
+
+        // Reference to the current argument specification
+        ArgType expected_type = specs[i].type;
+        void *output_ptr = specs[i].out_ptr;
+
+        // Verify and assign the argument based on its expected type
+        switch (expected_type) {
+        case ARG_TYPE_INTEGER:
+            if (lv.type == TYPE_INTEGER) {
+                *((INT_SIZE *)output_ptr) = lv.data.integer;
+            } else if (lv.type == TYPE_FLOAT) {
+                *((INT_SIZE *)output_ptr) = (INT_SIZE)lv.data.floating_point;
+            } else if (lv.type == TYPE_BOOLEAN) {
+                *((INT_SIZE *)output_ptr) = lv.data.boolean ? 1 : 0;
+            } else {
+                error_interpreter("Expected integer for argument %zu.\n",
+                                  i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_FLOAT:
+            if (lv.type == TYPE_FLOAT) {
+                *((FLOAT_SIZE *)output_ptr) = lv.data.floating_point;
+            } else if (lv.type == TYPE_INTEGER) {
+                *((FLOAT_SIZE *)output_ptr) = (FLOAT_SIZE)lv.data.integer;
+            } else if (lv.type == TYPE_BOOLEAN) {
+                *((FLOAT_SIZE *)output_ptr) = lv.data.boolean ? 1.0 : 0.0;
+            } else {
+                error_interpreter("Expected float for argument %zu.\n", i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_STRING:
+            if (lv.type == TYPE_STRING) {
+                *((char **)output_ptr) = lv.data.string;
+            } else {
+                error_interpreter("Expected string for argument %zu.\n", i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_BOOLEAN:
+            if (lv.type == TYPE_BOOLEAN) {
+                *((bool *)output_ptr) = lv.data.boolean;
+            } else if (lv.type == TYPE_INTEGER) {
+                *((bool *)output_ptr) = (lv.data.integer != 0);
+            } else if (lv.type == TYPE_FLOAT) {
+                *((bool *)output_ptr) = (lv.data.floating_point != 0.0);
+            } else {
+                error_interpreter("Expected boolean for argument %zu.\n",
+                                  i + 1);
+                return false;
+            }
+            break;
+
+            // Handle additional types as needed
+
+        default:
+            error_interpreter("Unknown argument type for argument %zu.\n",
+                              i + 1);
+            return false;
+        }
+
+        // arg_count++;
+        arg_node = arg_node->next;
+    }
+
+    if (arg_node != NULL) {
+        error_interpreter("Too many arguments provided.\n");
+        return false;
+    }
+
+    return true;
+}
 
 void print_formatted_string(const char *str) {
     for (const char *p = str; *p != '\0'; p++) {
@@ -91,37 +182,16 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
 LiteralValue builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L;
     FLOAT_SIZE max = 1.0L;
-    size_t arg_count = 0;
 
-    ASTNode *arg_node = node->function_call.arguments;
-    while (arg_node != NULL) {
-        if (arg_count >= 2) {
-            error_interpreter("`random()` takes at most 2 arguments.\n");
-        }
+    ArgumentSpec specs[2];
+    specs[0].type = ARG_TYPE_FLOAT;
+    specs[0].out_ptr = &min;
+    specs[1].type = ARG_TYPE_FLOAT;
+    specs[1].out_ptr = &max;
 
-        // Interpret the argument
-        InterpretResult arg_res = interpret_node(arg_node, env);
-        LiteralValue lv = arg_res.value;
-
-        // Ensure the argument is numeric
-        if (lv.type == TYPE_FLOAT) {
-            if (arg_count == 0) {
-                min = lv.data.floating_point;
-            } else if (arg_count == 1) {
-                max = lv.data.floating_point;
-            }
-        } else if (lv.type == TYPE_INTEGER) {
-            if (arg_count == 0) {
-                min = (FLOAT_SIZE)lv.data.integer;
-            } else if (arg_count == 1) {
-                max = (FLOAT_SIZE)lv.data.integer;
-            }
-        } else {
-            error_interpreter("`random()` arguments must be numeric.\n");
-        }
-
-        arg_count++;
-        arg_node = arg_node->next;
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
+        // Return an error type on failure
+        return (LiteralValue){.type = TYPE_ERROR};
     }
 
     // Seed the random number generator once
@@ -425,4 +495,161 @@ LiteralValue builtin_time() {
 
     return (LiteralValue){.type = TYPE_INTEGER,
                           .data.integer = (INT_SIZE)current_time};
+}
+
+char *process_escape_sequences(const char *input) {
+    size_t length = strlen(input);
+    char *processed = malloc(length + 1);
+    if (!processed) {
+        perror("Failed to allocate memory for processed string");
+        return NULL;
+    }
+
+    char *dst = processed;
+    const char *src = input;
+
+    while (*src) {
+        if (*src == '\\' && *(src + 1)) {
+            src++;
+            switch (*src) {
+            case 'n':
+                *dst++ = '\n';
+                break;
+            case 't':
+                *dst++ = '\t';
+                break;
+            case '\\':
+                *dst++ = '\\';
+                break;
+            case 'r':
+                *dst++ = '\r';
+                break;
+            case '\"':
+                *dst++ = '\"';
+                break;
+            case '\'':
+                *dst++ = '\'';
+                break;
+            default:
+                *dst++ = '\\';
+                *dst++ = *src;
+                break;
+            }
+        } else {
+            *dst++ = *src;
+        }
+        src++;
+    }
+    *dst = '\0'; // NULL-terminate the string
+    return processed;
+}
+
+LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
+    char *filepath;
+
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_STRING;
+    specs[0].out_ptr = &filepath;
+
+    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)) {
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    FILE *file = fopen(filepath, "r");
+    if (file == NULL) {
+        perror("Failed to open file");
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    size_t buffer_size = 1024;
+    size_t content_size = 0;
+
+    // Initialize string for holding all of the file's contents
+    char *file_contents = malloc(buffer_size);
+    if (file_contents == NULL) {
+        perror("Failed to allocate memory for file contents");
+        fclose(file);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    // Initialize buffer for reading each line
+    char *buffer = malloc(buffer_size);
+
+    while (fgets(buffer, buffer_size, file) != NULL) {
+        size_t line_length = strlen(buffer);
+
+        while (content_size + line_length + 1 > buffer_size) {
+            buffer_size *= 2;
+            char *temp = realloc(file_contents, buffer_size);
+
+            if (temp == NULL) {
+                perror("Failed to reallocate memory for file contents");
+                free(buffer);
+                free(file_contents);
+                fclose(file);
+                return (LiteralValue){.type = TYPE_ERROR};
+            }
+
+            file_contents = temp;
+        }
+
+        // Append buffer to file_contents
+        strcpy(file_contents + content_size, buffer);
+        debug_print_int("Read line: `%s`\n", buffer);
+        content_size += line_length;
+    }
+
+    free(buffer);
+    fclose(file);
+
+    return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
+}
+
+LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
+    char *filepath;
+    char *content;
+
+    ArgumentSpec specs[2];
+    specs[0].type = ARG_TYPE_STRING;
+    specs[0].out_ptr = &filepath;
+
+    specs[1].type = ARG_TYPE_STRING;
+    specs[1].out_ptr = &content;
+
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    // Process the content to handle escape sequences
+    char *processed_content = process_escape_sequences(content);
+    if (processed_content == NULL) {
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    FILE *file = fopen(filepath, append ? "a" : "w");
+    if (file == NULL) {
+        perror("Failed to open file for writing");
+        free(processed_content);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    if (fputs(processed_content, file) == EOF) {
+        perror("Failed to write to file");
+        free(processed_content);
+        fclose(file);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    free(processed_content);
+    fclose(file);
+
+    return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
+}
+
+LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+    return helper_file_writer(node, env, false);
+}
+
+LiteralValue builtin_file_append(ASTNode *node, Environment *env) {
+    return helper_file_writer(node, env, true);
 }
