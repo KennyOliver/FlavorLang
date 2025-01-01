@@ -414,3 +414,15 @@ LiteralValue builtin_cast(ASTNode *node, Environment *env) {
 
     return result;
 }
+
+LiteralValue builtin_time() {
+    time_t current_time = time(NULL);
+
+    if (current_time == -1) {
+        error_interpreter("Failed to get the current time\n");
+        exit(1);
+    }
+
+    return (LiteralValue){.type = TYPE_INTEGER,
+                          .data.integer = (INT_SIZE)current_time};
+}
