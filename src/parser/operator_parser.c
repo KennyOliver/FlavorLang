@@ -1,5 +1,3 @@
-// operator_parser.c
-
 #include "operator_parser.h"
 #include "../debug/debug.h"
 #include <ctype.h>
@@ -134,7 +132,7 @@ ASTNode *parse_unary(ParserState *state) {
     return parse_primary(state);
 }
 
-// Primary Expressions: literals, variables, parentheses
+// Primary Expressions: literals, variables, function calls, parentheses
 ASTNode *parse_primary(ParserState *state) {
     Token *current = get_current_token(state);
 
@@ -145,10 +143,54 @@ ASTNode *parse_primary(ParserState *state) {
         return node;
     }
 
-    if (current->type == TOKEN_IDENTIFIER) {
-        ASTNode *node = create_variable_node(current->lexeme);
-        advance_token(state);
+    if (current->type == TOKEN_FUNCTION_NAME) {
+        // Parse function call
+        char *func_name = strdup(current->lexeme);
+        if (!func_name) {
+            parser_error("Memory allocation failed for function name", current);
+        }
+        advance_token(state); // Consume function name
+
+        expect_token(state, TOKEN_PAREN_OPEN,
+                     "Expected '(' after function name");
+
+        ASTNode *args = parse_argument_list(state);
+
+        expect_token(state, TOKEN_PAREN_CLOSE,
+                     "Expected ')' after function arguments");
+
+        ASTNode *node = create_function_call_node(func_name, args);
         return node;
+    }
+
+    if (current->type == TOKEN_IDENTIFIER) {
+        // Check if identifier is followed by '(' indicating a function call
+        Token *next = peek_next_token(state);
+        if (next && next->type == TOKEN_PAREN_OPEN) {
+            // It's a function call
+            char *func_name = strdup(current->lexeme);
+            if (!func_name) {
+                parser_error("Memory allocation failed for function name",
+                             current);
+            }
+            advance_token(state); // Consume function name
+
+            expect_token(state, TOKEN_PAREN_OPEN,
+                         "Expected '(' after function name");
+
+            ASTNode *args = parse_argument_list(state);
+
+            expect_token(state, TOKEN_PAREN_CLOSE,
+                         "Expected ')' after function arguments");
+
+            ASTNode *node = create_function_call_node(func_name, args);
+            return node;
+        } else {
+            // It's a variable
+            ASTNode *node = create_variable_node(current->lexeme);
+            advance_token(state);
+            return node;
+        }
     }
 
     if (current->type == TOKEN_PAREN_OPEN) {
@@ -160,6 +202,40 @@ ASTNode *parse_primary(ParserState *state) {
 
     parser_error("Expected expression", current);
     return NULL; // unreachable
+}
+
+ASTNode *parse_argument_list(ParserState *state) {
+    // Check for empty argument list first
+    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
+        return NULL; // return NULL for empty argument list
+    }
+
+    ASTNode *head = NULL;
+    ASTNode *tail = NULL;
+
+    while (1) {
+        // Parse arguments as expressions
+        ASTNode *arg = parse_operator_expression(state);
+
+        // Add argument to linked list
+        if (!head) {
+            head = arg;
+            tail = arg;
+        } else {
+            tail->next = arg;
+            tail = arg;
+        }
+
+        // Check for comma (indicates another argument)
+        if (get_current_token(state)->type == TOKEN_DELIMITER &&
+            strcmp(get_current_token(state)->lexeme, ",") == 0) {
+            advance_token(state); // consume `,`
+        } else {
+            break;
+        }
+    }
+
+    return head;
 }
 
 // Helper function to match specific operators
@@ -240,6 +316,19 @@ ASTNode *create_variable_node(char *name) {
     }
     node->type = AST_VARIABLE;
     node->variable_name = strdup(name);
+    node->next = NULL;
+    return node;
+}
+
+// Create a function call node
+ASTNode *create_function_call_node(char *name, ASTNode *args) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for function call node", NULL);
+    }
+    node->type = AST_FUNCTION_CALL;
+    node->function_call.name = name;
+    node->function_call.arguments = args;
     node->next = NULL;
     return node;
 }

@@ -1,4 +1,4 @@
-show("What's your favorite dessert?");
-let favorite = taste;
+serve("What's your favorite dessert?");
+let favorite = sample();
 
-show("You chose:", favorite);
+serve("You chose:", favorite);

@@ -18,11 +18,10 @@ const char *KEYWORDS[] = {
     "try",     // try
     "rescue",  // catch
     "burn",    // raise error
-    "show",    // output
-    "taste",   // input
-    "plate",   // write
-    "garnish", // append
-    "gather",  // read
+    "serve",   // output
+    "plate",   // write file
+    "garnish", // append file
+    "taste",   // read file
     "recipe",  // import
     "True",    // Boolean True
     "False",   // Boolean False

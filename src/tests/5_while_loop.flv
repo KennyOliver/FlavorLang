@@ -1,10 +1,10 @@
 let flour_added = 0;
 
 while flour_added < 3 {
-    show("Adding flour...");
+    serve("Adding flour...");
     flour_added = flour_added + 1;
-    show("End of iteration");
+    serve("End of iteration");
 }
 
-show("All flour has been added!");
-show("Flour added:", flour_added);
+serve("All flour has been added!");
+serve("Flour added:", flour_added);

@@ -1,13 +1,13 @@
 for i in 1..5 {
-    show("Mixing... Step", i);
+    serve("Mixing... Step", i);
 }
 
 for j in 10..=1 by -3 {
-    show(j);
+    serve(j);
 }
 
 
 # Invalid loop - interpreter throws an error
 # for j in 10..=1 by 2 {
-#     show(j);
+#     serve(j);
 # }

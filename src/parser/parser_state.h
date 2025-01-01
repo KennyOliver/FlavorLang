@@ -22,6 +22,8 @@ Token *get_current_token(ParserState *state);
 void advance_token(ParserState *state);
 void expect_token(ParserState *state, TokenType type,
                   const char *error_message);
+bool match_token(ParserState *state, const char *lexeme);
+Token *peek_next_token(ParserState *state);
 
 // Error handling
 void parser_error(const char *message, Token *token);

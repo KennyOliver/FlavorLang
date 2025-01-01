@@ -1,6 +1,6 @@
 try {
     burn("This recipe failed!");
-    show("This won't run!");
+    serve("This won't run!");
 } rescue {
-    show("Caught an error: Recipe needs improvement.");
+    serve("Caught an error: Recipe needs improvement.");
 }

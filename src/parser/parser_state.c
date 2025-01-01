@@ -36,6 +36,16 @@ void expect_token(ParserState *state, TokenType expected,
     advance_token(state);
 }
 
+bool match_token(ParserState *state, const char *lexeme) {
+    Token *token = get_current_token(state);
+    return token && strcmp(token->lexeme, lexeme) == 0;
+}
+
+Token *peek_next_token(ParserState *state) {
+    // Just look at the next token (but don’t advance)
+    return &state->tokens[state->current_token + 1];
+}
+
 void parser_error(const char *message, Token *token) {
     if (token) {
         fprintf(stderr, "Parser Error [Line %d]: %s (found \"%s\")\n",

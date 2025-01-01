@@ -34,12 +34,10 @@ ASTNode *parse_statement(ParserState *state) {
                     token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
-    if (match_token(state, "show"))
+    if (match_token(state, "serve"))
         return parse_print_statement(state);
     if (match_token(state, "burn"))
         return parse_raise_error(state);
-    if (match_token(state, "taste"))
-        return parse_input(state);
     if (match_token(state, "if"))
         return parse_conditional_block(state);
     if (match_token(state, "while"))
@@ -80,16 +78,6 @@ ASTNode *parse_statement(ParserState *state) {
     // If none of the above, raise an error
     parser_error("Unexpected token at start of statement", token);
     return NULL;
-}
-
-bool match_token(ParserState *state, const char *lexeme) {
-    Token *token = get_current_token(state);
-    return token && strcmp(token->lexeme, lexeme) == 0;
-}
-
-Token *peek_next_token(ParserState *state) {
-    // Just look at the next token (but don’t advance)
-    return &state->tokens[state->current_token + 1];
 }
 
 ASTNode *parse_expression_statement(ParserState *state) {
@@ -201,7 +189,7 @@ ASTNode *helper_print(ParserState *state) {
     if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
         advance_token(state); // consume the `)`
         expect_token(state, TOKEN_DELIMITER,
-                     "Expected `;` after show statement");
+                     "Expected `;` after serve statement");
         node->next = NULL;
         return node;
     }
@@ -211,7 +199,7 @@ ASTNode *helper_print(ParserState *state) {
            get_current_token(state)->type != TOKEN_EOF) {
 
         if (node->to_print.arg_count >= MAX_ARGUMENTS) {
-            parser_error("Too many arguments in show statement",
+            parser_error("Too many arguments in serve statement",
                          get_current_token(state));
         }
 
@@ -221,8 +209,8 @@ ASTNode *helper_print(ParserState *state) {
 
         // Check for comma or closing parenthesis
         Token *current = get_current_token(state);
-        debug_print_par("[DEBUG PRS] Current Token: Type=%d, Lexeme=`%s`\n",
-                        current->type, current->lexeme);
+        debug_print_par("Current Token: Type=%d, Lexeme=`%s`\n", current->type,
+                        current->lexeme);
         if (current->type == TOKEN_DELIMITER &&
             strcmp(current->lexeme, ",") == 0) {
             advance_token(state); // consume the comma
@@ -233,14 +221,15 @@ ASTNode *helper_print(ParserState *state) {
     }
 
     expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after arguments list");
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after show statement");
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after `serve` statement");
     node->next = NULL;
     return node;
 }
 
 ASTNode *parse_print_statement(ParserState *state) {
     debug_print_par("Starting print statement parse\n");
-    expect_token(state, TOKEN_KEYWORD, "Expected 'show' keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected `serve` keyword");
     return helper_print(state);
 }
 
@@ -252,7 +241,7 @@ ASTNode *parse_raise_error(ParserState *state) {
 }
 
 ASTNode *parse_input(ParserState *state) {
-    expect_token(state, TOKEN_KEYWORD, "Expected `taste` keyword");
+    expect_token(state, TOKEN_KEYWORD, "Expected `sample` keyword");
 
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -261,7 +250,7 @@ ASTNode *parse_input(ParserState *state) {
 
     node->type = AST_INPUT;
 
-    expect_token(state, TOKEN_DELIMITER, "Expected ';' after show statement");
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after `sample()`");
     node->next = NULL;
     return node;
 }
@@ -341,18 +330,6 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
 
         node->type = AST_VARIABLE;
         node->variable_name = strdup(current->lexeme);
-        node->next = NULL;
-
-        advance_token(state);
-        return node;
-    } else if (current->type == TOKEN_KEYWORD &&
-               strcmp(current->lexeme, "taste") == 0) {
-        ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node) {
-            parser_error("Memory allocation failed", current);
-        }
-
-        node->type = AST_INPUT;
         node->next = NULL;
 
         advance_token(state);
@@ -948,40 +925,6 @@ ASTNode *parse_function_declaration(ParserState *state) {
     }
 
     return node;
-}
-
-ASTNode *parse_argument_list(ParserState *state) {
-    // Check for empty argument list first
-    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
-        return NULL; // return NULL for empty argument list
-    }
-
-    ASTNode *head = NULL;
-    ASTNode *tail = NULL;
-
-    while (1) {
-        // Parse arguments as expressions
-        ASTNode *arg = parse_expression(state);
-
-        // Add argument to linked list
-        if (!head) {
-            head = arg;
-            tail = arg;
-        } else {
-            tail->next = arg;
-            tail = arg;
-        }
-
-        // Check for comma (indicates another argument)
-        if (get_current_token(state)->type == TOKEN_DELIMITER &&
-            strcmp(get_current_token(state)->lexeme, ",") == 0) {
-            advance_token(state); // consume `,`
-        } else {
-            break;
-        }
-    }
-
-    return head;
 }
 
 ASTNode *parse_function_call(ParserState *state) {
