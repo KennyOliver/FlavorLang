@@ -1111,6 +1111,8 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
             return builtin_input();
         } else if (strcmp(func->name, "serve") == 0) {
             interpret_print(node, env);
+        } else if (strcmp(func->name, "random") == 0) {
+            return builtin_random();
         }
 
         // If no recognized built-in, error

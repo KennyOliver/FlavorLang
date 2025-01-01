@@ -39,3 +39,11 @@ LiteralValue builtin_input() {
     // Return input string as function’s return value
     return result;
 }
+
+LiteralValue builtin_random() {
+    LiteralValue result;
+    result.type = TYPE_INTEGER;
+    result.data.integer = 8;
+
+    return result;
+}

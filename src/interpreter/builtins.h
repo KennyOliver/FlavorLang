@@ -7,5 +7,6 @@
 #include <string.h>
 
 LiteralValue builtin_input();
+LiteralValue builtin_random();
 
 #endif
