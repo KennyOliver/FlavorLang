@@ -991,6 +991,10 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
             return builtin_error(node, env);
         } else if (strcmp(func->name, "random") == 0) {
             return builtin_random(node, env);
+        } else if (strcmp(func->name, "string") == 0 ||
+                   strcmp(func->name, "int") == 0 ||
+                   strcmp(func->name, "float") == 0) {
+            return builtin_cast(node, env);
         }
 
         // If no recognized built-in, error

@@ -31,9 +31,36 @@ void init_environment(Environment *env) {
         error_interpreter("Failed to allocate memory for functions.\n");
     }
 
+    // `string()`
+    Function string_func;
+    memset(&string_func, 0, sizeof(Function)); // zero out for safety
+    string_func.name = strdup("string");
+    string_func.parameters = NULL;
+    string_func.body = NULL;
+    string_func.is_builtin = true;
+    add_function(env, string_func);
+
+    // `float()`
+    Function float_func;
+    memset(&float_func, 0, sizeof(Function));
+    float_func.name = strdup("float");
+    float_func.parameters = NULL;
+    float_func.body = NULL;
+    float_func.is_builtin = true;
+    add_function(env, float_func);
+
+    // `int()`
+    Function int_func;
+    memset(&int_func, 0, sizeof(Function));
+    int_func.name = strdup("int");
+    int_func.parameters = NULL;
+    int_func.body = NULL;
+    int_func.is_builtin = true;
+    add_function(env, int_func);
+
     // `sample()`
     Function sample_func;
-    memset(&sample_func, 0, sizeof(Function)); // zero out for safety
+    memset(&sample_func, 0, sizeof(Function));
     sample_func.name = strdup("sample");
     sample_func.parameters = NULL;
     sample_func.body = NULL;
