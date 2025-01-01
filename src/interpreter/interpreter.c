@@ -69,8 +69,8 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_INPUT: {
         debug_print_int("\tMatched: `AST_INPUT`\n");
-        Variable v = interpret_input(env);
-        return make_result(v.value, false);
+        LiteralValue v = builtin_input();
+        return make_result(v, false);
     }
 
     case AST_CONDITIONAL: {
@@ -707,60 +707,6 @@ Variable *allocate_variable(Environment *env, const char *name) {
     return &env->variables[env->variable_count - 1];
 }
 
-Variable interpret_input(Environment *env) {
-    size_t buffer_size = 128;
-    size_t input_length = 0;
-    char *input_buffer = malloc(buffer_size);
-    if (!input_buffer) {
-        fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
-        // Return an empty or error `Variable`
-        Variable error_var = {.value.type = TYPE_ERROR};
-        return error_var;
-    }
-
-    // Read input
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) {
-        if (input_length + 1 >= buffer_size) {
-            buffer_size *= 2;
-            char *new_buffer = realloc(input_buffer, buffer_size);
-            if (!new_buffer) {
-                fprintf(
-                    stderr,
-                    "Error: Failed to reallocate memory for input buffer.\n");
-                free(input_buffer);
-                // Return an empty or error `Variable`
-                Variable error_var = {.value.type = TYPE_ERROR};
-                return error_var;
-            }
-            input_buffer = new_buffer;
-        }
-        input_buffer[input_length++] = c;
-    }
-    input_buffer[input_length] = '\0';
-
-    debug_print_int("Read input: `%s`\n", input_buffer);
-
-    // Allocate variable
-    Variable *var = allocate_variable(env, "input_value");
-    if (!var) {
-        fprintf(stderr, "Error: Failed to create variable for input.\n");
-        free(input_buffer);
-        // Return an empty or error `Variable`
-        Variable error_var = {.value.type = TYPE_ERROR};
-        return error_var;
-    }
-
-    var->value.type = TYPE_STRING;
-    var->value.data.string = strdup(input_buffer);
-
-    debug_print_int("Stored value: `%s`\n", var->value.data.string);
-
-    free(input_buffer);
-
-    return *var;
-}
-
 InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` called\n");
     if (!node) {
@@ -1195,17 +1141,26 @@ ASTNode *copy_ast_node(ASTNode *node) {
 }
 
 void add_function(Environment *env, Function func) {
-    // Step 1: Ensure `functions` is initialized if not already done
+    // Check if this function name already exists in env
+    for (size_t i = 0; i < env->function_count; i++) {
+        if (strcmp(env->functions[i].name, func.name) == 0) {
+            // We already have this function, so just skip
+            // or optionally do an "update" logic if you prefer.
+            debug_print_int("Skipping re-add of function `%s`\n", func.name);
+            return;
+        }
+    }
+
+    // Ensure `functions` is initialized if not ...
     if (!env->functions && env->function_capacity == 0) {
-        env->functions =
-            calloc(4, sizeof(Function)); // initialize with capacity
+        env->functions = calloc(4, sizeof(Function));
         if (!env->functions) {
             error_interpreter("Initial allocation for functions failed.\n");
         }
         env->function_capacity = 4;
     }
 
-    // Step 2: Resize `functions` array if necessary
+    // Resize if needed
     if (env->function_count == env->function_capacity) {
         size_t new_capacity = env->function_capacity * 2;
         Function *new_functions =
@@ -1217,23 +1172,19 @@ void add_function(Environment *env, Function func) {
         env->function_capacity = new_capacity;
     }
 
-    // Step 3: Verify `func.name` is valid
     if (!func.name) {
         error_interpreter("Function name is `NULL` or invalid.\n");
     }
 
-    // Step 4: Create a deep copy of the function being added
+    // Create a deep copy
     Function *stored_func = &env->functions[env->function_count++];
-    stored_func->parameters = copy_function_parameters(
-        func.parameters); // Create a copy of parameters
-    stored_func->body =
-        copy_ast_node(func.body); // Still assuming shared ownership of the body
-                                  // (might need a copy if modified)
+    stored_func->parameters = copy_function_parameters(func.parameters);
+    stored_func->body = copy_ast_node(func.body);
+    stored_func->is_builtin = func.is_builtin;
 
-    // Step 5: Safely duplicate the function name
-    stored_func->name = strdup(func.name); // allocate memory for name
+    stored_func->name = strdup(func.name);
     if (!stored_func->name) {
-        free(stored_func); // Free partially allocated function on error
+        free(stored_func);
         error_interpreter("Memory allocation failed for function name.\n");
     }
 
@@ -1317,7 +1268,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
     // 2) If it’s a built-in => call the built-in logic
     if (func->is_builtin) {
         if (strcmp(func->name, "sample") == 0) {
-            return builtin_sample(env);
+            return builtin_input();
         } else if (strcmp(func->name, "serve") == 0) {
             interpret_print(node, env);
         }
@@ -1393,6 +1344,17 @@ void init_environment(Environment *env) {
     env->function_count = 0;
     env->function_capacity = 10;
     env->functions = malloc(env->function_capacity * sizeof(Function));
+
+    // Create & register built-in `sample()`
+    Function sample_func;
+    memset(&sample_func, 0, sizeof(Function)); // zero out for safety
+
+    sample_func.name = strdup("sample");
+    sample_func.parameters = NULL;
+    sample_func.body = NULL;
+    sample_func.is_builtin = true;
+
+    add_function(env, sample_func);
 }
 
 // Free the environment
