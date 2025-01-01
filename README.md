@@ -169,7 +169,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `sample`  | Input from console           | Reads user input.                                                                           | ✅           |
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
-| `gather`  | Read from file               | Reads data from a file.                                                                     | ❌           |
+| `taste`   | Read from file               | Reads data from a file.                                                                     | ❌           |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
 
 ---
@@ -366,13 +366,12 @@ serve("Blast off!");
 
 - `Plate`: Write to a file.
 - `Garnish`: Append to a file.
-- `Gather`: Read from a file.
+- `taste`: Read from a file.
 
 ```py
-plate "output.txt" with "Freshly baked cake ready to deliver!";
-garnish "output.txt" with "\nDon't forget the toppings!";
-
-let data = gather "output.txt";
+plate("output.txt", "Freshly baked cake ready to deliver!");
+garnish("output.txt", "\nDon't forget the toppings!");
+let data = taste("output.txt");
 serve("File Contents:");
 serve(data);
 ```
@@ -454,7 +453,7 @@ error_handling       ::= "try" block "rescue" block ;
 
 file_operation       ::= "plate" STRING "with" expression
                        | "garnish" STRING "with" expression
-                       | "gather" STRING ;
+                       | "taste" STRING ;
 
 switch_case          ::= "check" expression block case_clause* [ "else" block ] ;
 

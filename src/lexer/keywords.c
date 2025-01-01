@@ -20,9 +20,9 @@ const char *KEYWORDS[] = {
     "burn",    // raise error
     "serve",   // output
     "sample",  // input
-    "plate",   // write
-    "garnish", // append
-    "gather",  // read
+    "plate",   // write file
+    "garnish", // append file
+    "taste",   // read file
     "recipe",  // import
     "True",    // Boolean True
     "False",   // Boolean False
