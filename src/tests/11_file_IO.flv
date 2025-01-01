@@ -1,7 +1,7 @@
 let filepath = "./tests/output.txt";
 
-# plate_file(filepath, "Freshly baked cake ready to deliver!");
-# garnish_file(filepath, "\nDon't forget the toppings!");
+plate_file(filepath, "Freshly baked cake ready to deliver!");
+garnish_file(filepath, "\nDon't forget the toppings!");
 
 let data = taste_file(filepath);
 serve("File Contents:");
