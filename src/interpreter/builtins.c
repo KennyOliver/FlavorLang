@@ -287,7 +287,7 @@ bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
 
 LiteralValue builtin_cast(ASTNode *node, Environment *env) {
     char *cast_type = node->cast.cast_type;
-    if (cast_type) {
+    if (!cast_type) {
         error_interpreter(
             "No cast type in node provided to `builtin_cast()`.\n");
     }
