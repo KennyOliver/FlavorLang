@@ -3,6 +3,14 @@
 #include "lexer/lexer.h"
 #include "parser/parser.h"
 
+void parse_cli_args(int argc, char *argv[]) {
+    for (int i = 1; i < argc; i++) {
+        if (strcmp(argv[i], "--debug") == 0) {
+            debug_flag = true;
+        }
+    }
+}
+
 int main(int argc, char **argv) {
     if (argc < 2) {
         fprintf(stderr, "Usage: `%s <file.flv>`\n", argv[0]);
