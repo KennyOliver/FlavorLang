@@ -10,30 +10,29 @@ create get_days_in_month(month, days_in_february) {
     deliver 0;
 }
 
-
 create make_iso8601_string(year, month, day, hours, minutes, seconds) {
     let month_string = string(month);
-    if month < 9 {
+    if month < 10 {
         month_string = "0" + string(month);
     }
     
     let day_string = string(day);
-    if day < 9 {
+    if day < 10 {
         day_string = "0" + string(day);
     }
 
     let hours_string = string(hours);
-    if hours < 9 {
+    if hours < 10 {
         hours_string = "0" + string(hours);
     }
 
     let minutes_string = string(minutes);
-    if minutes < 9 {
+    if minutes < 10 {
         minutes_string = "0" + string(minutes);
     }
 
     let seconds_string = string(seconds);
-    if seconds < 9 {
+    if seconds < 10 {
         seconds_string = "0" + string(seconds);
     }
 
@@ -46,7 +45,6 @@ create make_iso8601_string(year, month, day, hours, minutes, seconds) {
 
     deliver result;
 }
-
 
 create unix_to_iso8601(unix_timestamp) {
     # Constants
@@ -65,10 +63,15 @@ create unix_to_iso8601(unix_timestamp) {
     let is_leap_year = False;
     let days_in_year = 365;
     while !found_year {
-        is_leap_year = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
-        
+        is_leap_year = False;
+        if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+            is_leap_year = True;
+        }
+
         if is_leap_year {
             days_in_year = 366;
+        } else {
+            days_in_year = 365;
         }
 
         if days_since_epoch < days_in_year {
@@ -80,7 +83,11 @@ create unix_to_iso8601(unix_timestamp) {
     }
 
     # Determine month and day
-    is_leap_year = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+    is_leap_year = False;
+    if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
+        is_leap_year = True;
+    }
+
     let days_in_february = 28;
     if is_leap_year {
         days_in_february = 29;
@@ -104,16 +111,19 @@ create unix_to_iso8601(unix_timestamp) {
 
     # Determine hours, minutes, and seconds
     let hours = remaining_seconds // SECONDS_IN_HOUR;
-    serve("hours:", hours);
     remaining_seconds = remaining_seconds % SECONDS_IN_HOUR;
     let minutes = remaining_seconds // SECONDS_IN_MINUTE;
-    serve("minutes:", minutes);
     let seconds = remaining_seconds % SECONDS_IN_MINUTE;
-    serve("seconds:", seconds);
 
     deliver make_iso8601_string(year, month, day, hours, minutes, seconds);
 }
 
 
-let result = unix_to_iso8601(946730096);
-serve(result);
+let result1 = unix_to_iso8601(0);
+serve(result1);  # 1970-01-01T00:00:00Z
+
+let result2 = unix_to_iso8601(86400);
+serve(result2);  # 1970-01-02T00:00:00Z
+
+let result3 = unix_to_iso8601(946730096);
+serve(result3);  # 2000-01-01T12:34:56Z
