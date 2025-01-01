@@ -1,6 +1,6 @@
 #include "builtins.h"
 
-LiteralValue builtin_sample() {
+LiteralValue builtin_input() {
     // Potential future place to implement prompt for user???
     //    printf("Enter your input: ");
 

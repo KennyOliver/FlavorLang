@@ -6,6 +6,6 @@
 #include <stdio.h>
 #include <string.h>
 
-LiteralValue builtin_sample();
+LiteralValue builtin_input();
 
 #endif
