@@ -997,6 +997,8 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
             return builtin_cast(node, env);
         } else if (strcmp(func->name, "get_time") == 0) {
             return builtin_time();
+        } else if (strcmp(func->name, "taste_file") == 0) {
+            return builtin_file_read(node, env);
         }
 
         // If no recognized built-in, error

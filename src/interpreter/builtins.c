@@ -1,4 +1,3 @@
-// builtins.c
 #include "builtins.h"
 #include "../interpreter/interpreter.h"
 #include <stdio.h>
@@ -13,47 +12,92 @@
             printf(format, __VA_ARGS__);                                       \
     } while (0)
 
-bool interpret_arguments(ASTNode *node, Environment *env, size_t max_args,
-                         ...) {
-    size_t arg_count = 0;
+// Function to interpret a mix of argument types
+bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
+                         ArgumentSpec *specs) {
+    // size_t arg_count = 0;
     ASTNode *arg_node = node;
-    va_list args;
-    va_start(args, max_args);
 
-    while (arg_node != NULL) {
-        if (arg_count >= max_args) {
-            error_interpreter("Too many arguments.\n");
-            va_end(args);
+    for (size_t i = 0; i < num_args; i++) {
+        if (arg_node == NULL) {
+            error_interpreter("Too few arguments provided.\n");
             return false;
         }
 
-        // Interpret the argument
+        // Interpret the current argument
         InterpretResult arg_res = interpret_node(arg_node, env);
         LiteralValue lv = arg_res.value;
 
-        // Get the pointer to store the value
-        FLOAT_SIZE *arg_ptr = va_arg(args, FLOAT_SIZE *);
+        // Reference to the current argument specification
+        ArgType expected_type = specs[i].type;
+        void *output_ptr = specs[i].out_ptr;
 
-        // Ensure the argument is numeric
-        if (lv.type == TYPE_FLOAT) {
-            *arg_ptr = lv.data.floating_point;
-        } else if (lv.type == TYPE_INTEGER) {
-            *arg_ptr = (FLOAT_SIZE)lv.data.integer;
-        } else {
-            error_interpreter("Arguments must be numeric.\n");
-            va_end(args);
+        // Verify and assign the argument based on its expected type
+        switch (expected_type) {
+        case ARG_TYPE_INTEGER:
+            if (lv.type == TYPE_INTEGER) {
+                *((INT_SIZE *)output_ptr) = lv.data.integer;
+            } else if (lv.type == TYPE_FLOAT) {
+                *((INT_SIZE *)output_ptr) = (INT_SIZE)lv.data.floating_point;
+            } else if (lv.type == TYPE_BOOLEAN) {
+                *((INT_SIZE *)output_ptr) = lv.data.boolean ? 1 : 0;
+            } else {
+                error_interpreter("Expected integer for argument %zu.\n",
+                                  i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_FLOAT:
+            if (lv.type == TYPE_FLOAT) {
+                *((FLOAT_SIZE *)output_ptr) = lv.data.floating_point;
+            } else if (lv.type == TYPE_INTEGER) {
+                *((FLOAT_SIZE *)output_ptr) = (FLOAT_SIZE)lv.data.integer;
+            } else if (lv.type == TYPE_BOOLEAN) {
+                *((FLOAT_SIZE *)output_ptr) = lv.data.boolean ? 1.0 : 0.0;
+            } else {
+                error_interpreter("Expected float for argument %zu.\n", i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_STRING:
+            if (lv.type == TYPE_STRING) {
+                *((char **)output_ptr) = lv.data.string;
+            } else {
+                error_interpreter("Expected string for argument %zu.\n", i + 1);
+                return false;
+            }
+            break;
+
+        case ARG_TYPE_BOOLEAN:
+            if (lv.type == TYPE_BOOLEAN) {
+                *((bool *)output_ptr) = lv.data.boolean;
+            } else if (lv.type == TYPE_INTEGER) {
+                *((bool *)output_ptr) = (lv.data.integer != 0);
+            } else if (lv.type == TYPE_FLOAT) {
+                *((bool *)output_ptr) = (lv.data.floating_point != 0.0);
+            } else {
+                error_interpreter("Expected boolean for argument %zu.\n",
+                                  i + 1);
+                return false;
+            }
+            break;
+
+            // Handle additional types as needed
+
+        default:
+            error_interpreter("Unknown argument type for argument %zu.\n",
+                              i + 1);
             return false;
         }
 
-        arg_count++;
+        // arg_count++;
         arg_node = arg_node->next;
     }
 
-    va_end(args);
-
-    // Ensure the required number of arguments are provided
-    if (arg_count < max_args) {
-        error_interpreter("Too few arguments.\n");
+    if (arg_node != NULL) {
+        error_interpreter("Too many arguments provided.\n");
         return false;
     }
 
@@ -139,8 +183,13 @@ LiteralValue builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L;
     FLOAT_SIZE max = 1.0L;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, &min,
-                             &max)) {
+    ArgumentSpec specs[2];
+    specs[0].type = ARG_TYPE_FLOAT;
+    specs[0].out_ptr = &min;
+    specs[1].type = ARG_TYPE_FLOAT;
+    specs[1].out_ptr = &max;
+
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
         // Return an error type on failure
         return (LiteralValue){.type = TYPE_ERROR};
     }
@@ -446,4 +495,18 @@ LiteralValue builtin_time() {
 
     return (LiteralValue){.type = TYPE_INTEGER,
                           .data.integer = (INT_SIZE)current_time};
+}
+
+LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
+    char *filepath;
+
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_STRING;
+    specs[0].out_ptr = &filepath;
+
+    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)) {
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    return (LiteralValue){.type = TYPE_STRING, .data.string = "test"};
 }
