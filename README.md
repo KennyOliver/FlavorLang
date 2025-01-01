@@ -371,9 +371,12 @@ serve("Blast off!");
 - `taste`: Read from a file.
 
 ```py
-plate("output.txt", "Freshly baked cake ready to deliver!");
-garnish("output.txt", "\nDon't forget the toppings!");
-let data = taste("output.txt");
+let filepath = "./tests/output.txt";
+
+plate_file(filepath, "Freshly baked cake ready to deliver!");
+garnish_file(filepath, "\nDon't forget the toppings!");
+
+let data = taste_file(filepath);
 serve("File Contents:");
 serve(data);
 ```
