@@ -50,7 +50,7 @@
       "patterns": [
         {
           "name": "entity.name.function.flavorlang",
-          "match": "\\b(serve|burn|deliver|sample|plate|garnish|taste|create|check|rescue|string|int|float|get_time)\\b(?=\\()"
+          "match": "\\b(serve|burn|deliver|sample|plate_file|garnish_file|taste_file|create|check|rescue|string|int|float|get_time)\\b(?=\\()"
         }
       ]
     },
