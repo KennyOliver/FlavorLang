@@ -1,0 +1,116 @@
+create get_days_in_month(month, days_in_february) {
+    if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
+        deliver 31;
+    } elif (month == 4 || month == 6 || month == 9 || month == 11) {
+        deliver 30;
+    } elif month == 2 {
+        deliver days_in_february;
+    }
+
+    deliver 0;
+}
+
+
+create make_iso8601_string(year, month, day, hours, minutes, seconds) {
+    let month_string = month;
+    if month < 9 {
+        month_string = "0" + string(month);
+    }
+    
+    let day_string = day;
+    if day < 9 {
+        day_string = "0" + string(day);
+    }
+
+    let hours_string = hours;
+    if hours < 9 {
+        hours_string = "0" + string(hours);
+    }
+
+    let minutes_string = minutes;
+    if minutes < 9 {
+        minutes_string = "0" + string(minutes);
+    }
+
+    let seconds_string = seconds;
+    if seconds < 9 {
+        seconds_string = "0" + string(seconds);
+    }
+
+    let result = string(year) + "-"
+                    + month_string + "-"
+                    + day_string + "T"
+                    + hours_string + ":"
+                    + minutes_string + ":"
+                    + seconds_string + "Z";
+
+    deliver "";
+}
+
+
+create unix_to_iso8601(unix_timestamp) {
+    # Constants
+    let SECONDS_IN_MINUTE = 60;
+    let SECONDS_IN_HOUR = 3600;
+    let SECONDS_IN_DAY = 86400;
+    let EPOCH_YEAR = 1970;
+
+    # Calculate total days since epoch
+    let days_since_epoch = unix_timestamp // SECONDS_IN_DAY;
+    let remaining_seconds = unix_timestamp % SECONDS_IN_DAY;
+
+    # Determine year
+    let year = EPOCH_YEAR;
+    let found_year = False;
+    let is_leap_year = False;
+    let days_in_year = 365;
+    while !found_year {
+        is_leap_year = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+        
+        if is_leap_year {
+            days_in_year = 366;
+        }
+
+        if days_since_epoch < days_in_year {
+            found_year = True;
+        } else {
+            days_since_epoch = days_since_epoch - days_in_year;
+            year = year + 1;
+        }
+    }
+
+    # Determine month and day
+    is_leap_year = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
+    let days_in_february = 28;
+    if is_leap_year {
+        days_in_february = 29;
+    }
+
+    let month = 1;
+    let found_month = False;
+    let days_in_month = 0;
+    while !found_month {
+        days_in_month = get_days_in_month(month, days_in_february);
+
+        if days_since_epoch < days_in_month {
+            found_month = True;
+        } else {
+            days_since_epoch = days_since_epoch - days_in_month;
+            month = month + 1;
+        }
+    }
+
+    let day = days_since_epoch + 1;
+
+    # Determine hours, minutes, and seconds
+    let hours = remaining_seconds // SECONDS_IN_HOUR;
+    remaining_seconds = remaining_seconds % SECONDS_IN_HOUR;
+    let minutes = remaining_seconds // SECONDS_IN_MINUTE;
+    let seconds = remaining_seconds % SECONDS_IN_MINUTE;
+
+    deliver make_iso8601_string(year, month, day, hours, minutes, seconds);
+}
+
+
+let result = unix_to_iso8601(20);
+serve(result);
