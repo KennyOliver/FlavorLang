@@ -497,6 +497,53 @@ LiteralValue builtin_time() {
                           .data.integer = (INT_SIZE)current_time};
 }
 
+char *process_escape_sequences(const char *input) {
+    size_t length = strlen(input);
+    char *processed = malloc(length + 1);
+    if (!processed) {
+        perror("Failed to allocate memory for processed string");
+        return NULL;
+    }
+
+    char *dst = processed;
+    const char *src = input;
+
+    while (*src) {
+        if (*src == '\\' && *(src + 1)) {
+            src++;
+            switch (*src) {
+            case 'n':
+                *dst++ = '\n';
+                break;
+            case 't':
+                *dst++ = '\t';
+                break;
+            case '\\':
+                *dst++ = '\\';
+                break;
+            case 'r':
+                *dst++ = '\r';
+                break;
+            case '\"':
+                *dst++ = '\"';
+                break;
+            case '\'':
+                *dst++ = '\'';
+                break;
+            default:
+                *dst++ = '\\';
+                *dst++ = *src;
+                break;
+            }
+        } else {
+            *dst++ = *src;
+        }
+        src++;
+    }
+    *dst = '\0'; // NULL-terminate the string
+    return processed;
+}
+
 LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     char *filepath;
 
@@ -558,7 +605,7 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
 }
 
-LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
     char *filepath;
     char *content;
 
@@ -573,51 +620,36 @@ LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    FILE *file = fopen(filepath, "w");
-    if (file == NULL) {
-        perror("Failed to open file for writing");
+    // Process the content to handle escape sequences
+    char *processed_content = process_escape_sequences(content);
+    if (processed_content == NULL) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    if (fputs(content, file) == EOF) {
+    FILE *file = fopen(filepath, append ? "a" : "w");
+    if (file == NULL) {
+        perror("Failed to open file for writing");
+        free(processed_content);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    if (fputs(processed_content, file) == EOF) {
         perror("Failed to write to file");
+        free(processed_content);
         fclose(file);
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
+    free(processed_content);
     fclose(file);
 
     return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
 }
 
+LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+    return helper_file_writer(node, env, false);
+}
+
 LiteralValue builtin_file_append(ASTNode *node, Environment *env) {
-    char *filepath;
-    char *content;
-
-    ArgumentSpec specs[2];
-    specs[0].type = ARG_TYPE_STRING;
-    specs[0].out_ptr = &filepath;
-
-    specs[1].type = ARG_TYPE_STRING;
-    specs[1].out_ptr = &content;
-
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    FILE *file = fopen(filepath, "a");
-    if (file == NULL) {
-        perror("Failed to open file for writing");
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    if (fputs(content, file) == EOF) {
-        perror("Failed to write to file");
-        fclose(file);
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    fclose(file);
-
-    return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
+    return helper_file_writer(node, env, true);
 }
