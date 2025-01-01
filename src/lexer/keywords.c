@@ -17,8 +17,6 @@ const char *KEYWORDS[] = {
     "deliver", // return
     "try",     // try
     "rescue",  // catch
-    "burn",    // raise error
-    "serve",   // output
     "plate",   // write file
     "garnish", // append file
     "taste",   // read file

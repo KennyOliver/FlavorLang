@@ -9,7 +9,12 @@
 #include <string.h>
 #include <time.h>
 
-LiteralValue builtin_input();
-LiteralValue builtin_random();
+LiteralValue builtin_input(ASTNode *node, Environment *env);
+LiteralValue builtin_random(ASTNode *node, Environment *env);
+LiteralValue builtin_output(ASTNode *node, Environment *env);
+LiteralValue builtin_error(ASTNode *node, Environment *env);
+
+// Helpers
+void print_formatted_string(const char *str);
 
 #endif

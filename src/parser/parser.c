@@ -34,10 +34,6 @@ ASTNode *parse_statement(ParserState *state) {
                     token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
-    if (match_token(state, "serve"))
-        return parse_print_statement(state);
-    if (match_token(state, "burn"))
-        return parse_raise_error(state);
     if (match_token(state, "if"))
         return parse_conditional_block(state);
     if (match_token(state, "while"))
@@ -164,94 +160,6 @@ ASTNode *parse_variable_assignment(ParserState *state) {
                  "Expected `;` after variable assignment");
     debug_print_par("Consumed `;` after variable assignment\n");
 
-    return node;
-}
-
-ASTNode *helper_print(ParserState *state) {
-    // Create print node
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-
-    node->type = AST_PRINT;
-    node->to_print.arguments = malloc(sizeof(ASTNode *) * MAX_ARGUMENTS);
-    if (!node->to_print.arguments) {
-        free(node);
-        parser_error("Memory allocation failed for arguments array",
-                     get_current_token(state));
-    }
-    node->to_print.arg_count = 0;
-
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` before arguments list");
-
-    // Handle empty argument list
-    if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
-        advance_token(state); // consume the `)`
-        expect_token(state, TOKEN_DELIMITER,
-                     "Expected `;` after serve statement");
-        node->next = NULL;
-        return node;
-    }
-
-    // Parse arguments
-    while (get_current_token(state)->type != TOKEN_PAREN_CLOSE &&
-           get_current_token(state)->type != TOKEN_EOF) {
-
-        if (node->to_print.arg_count >= MAX_ARGUMENTS) {
-            parser_error("Too many arguments in serve statement",
-                         get_current_token(state));
-        }
-
-        // Parse the argument
-        ASTNode *arg = parse_expression(state);
-        node->to_print.arguments[node->to_print.arg_count++] = arg;
-
-        // Check for comma or closing parenthesis
-        Token *current = get_current_token(state);
-        debug_print_par("Current Token: Type=%d, Lexeme=`%s`\n", current->type,
-                        current->lexeme);
-        if (current->type == TOKEN_DELIMITER &&
-            strcmp(current->lexeme, ",") == 0) {
-            advance_token(state); // consume the comma
-        } else if (current->type != TOKEN_PAREN_CLOSE) {
-            parser_error("Expected `,` or `)` in arguments list",
-                         get_current_token(state));
-        }
-    }
-
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after arguments list");
-    expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after `serve` statement");
-    node->next = NULL;
-    return node;
-}
-
-ASTNode *parse_print_statement(ParserState *state) {
-    debug_print_par("Starting print statement parse\n");
-    expect_token(state, TOKEN_KEYWORD, "Expected `serve` keyword");
-    return helper_print(state);
-}
-
-ASTNode *parse_raise_error(ParserState *state) {
-    expect_token(state, TOKEN_KEYWORD, "Expected `burn` keyword");
-    ASTNode *node = helper_print(state);
-    node->type = AST_ERROR;
-    return node;
-}
-
-ASTNode *parse_input(ParserState *state) {
-    expect_token(state, TOKEN_KEYWORD, "Expected `sample` keyword");
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-
-    node->type = AST_INPUT;
-
-    expect_token(state, TOKEN_DELIMITER, "Expected `;` after `sample()`");
-    node->next = NULL;
     return node;
 }
 
@@ -973,17 +881,6 @@ void free_ast(ASTNode *node) {
         ASTNode *next = node->next;
 
         switch (node->type) {
-        case AST_PRINT:
-        case AST_ERROR:
-            for (size_t i = 0; i < node->to_print.arg_count; i++) {
-                free_ast(node->to_print.arguments[i]);
-            }
-            free(node->to_print.arguments);
-            break;
-
-        case AST_INPUT:
-            // No cleanup needed!
-            break;
 
         case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
@@ -1195,27 +1092,6 @@ void print_ast(ASTNode *node, int depth) {
             }
             break;
 
-        case AST_PRINT:
-            printf("Print Statement:\n");
-            if (node->to_print.arguments != NULL &&
-                node->to_print.arg_count > 0) {
-                for (size_t i = 0; i < node->to_print.arg_count; i++) {
-                    print_indentation(depth + 1);
-                    printf("Argument %zu:\n", i + 1);
-                    print_ast(node->to_print.arguments[i], depth + 2);
-                }
-            } else {
-                print_indentation(depth + 1);
-                printf("Arguments: None\n");
-            }
-            break;
-
-        case AST_INPUT:
-            printf("Input Statement:\n");
-            print_indentation(depth + 1);
-            printf("Variable: %s\n", node->variable_name);
-            break;
-
         case AST_LITERAL:
             printf("Literal: ");
             switch (node->literal.type) {
@@ -1335,10 +1211,6 @@ void print_ast(ASTNode *node, int depth) {
         case AST_CAST:
             printf("Cast: `%s`\n", node->cast.cast_type);
             print_ast(node->cast.expr, depth + 1);
-            break;
-
-        case AST_ERROR:
-            printf("Error Node\n");
             break;
 
         default:

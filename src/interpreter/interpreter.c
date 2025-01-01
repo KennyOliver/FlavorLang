@@ -48,17 +48,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_BINARY_OP`\n");
         return make_result(interpret_binary_op(node, env), false);
 
-    case AST_PRINT:
-        debug_print_int("\tMatched: `AST_PRINT`\n");
-        interpret_print(node, env);
-        return make_result(create_default_value(), false);
-
-    case AST_INPUT: {
-        debug_print_int("\tMatched: `AST_INPUT`\n");
-        LiteralValue v = builtin_input();
-        return make_result(v, false);
-    }
-
     case AST_CONDITIONAL: {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
         return interpret_conditional(node, env);
@@ -113,12 +102,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_SWITCH: {
         debug_print_int("\tMatched: `AST_SWITCH`\n");
         interpret_switch(node, env);
-        return make_result(create_default_value(), false);
-    }
-
-    case AST_ERROR: {
-        debug_print_int("\tMatched: `AST_ERROR`\n");
-        interpret_raise_error(node, env);
         return make_result(create_default_value(), false);
     }
 
@@ -569,106 +552,6 @@ void add_variable(Environment *env, Variable var) {
     env->variable_count++;
 }
 
-void print_formatted_string(const char *str) {
-    for (const char *p = str; *p != '\0'; p++) {
-        if (*p == '\\') {
-            p++; // look at the next character
-            switch (*p) {
-            case 'n':
-                putchar('\n');
-                break;
-            case 't':
-                putchar('\t');
-                break;
-            case '\\':
-                putchar('\\');
-                break;
-            case '"':
-                putchar('"');
-                break;
-            default:
-                putchar('\\'); // print the backslash
-                putchar(*p);   // print the unrecognized character that follows
-                break;
-            }
-        } else {
-            putchar(*p); // print non-escape characters as-is
-        }
-    }
-}
-
-void interpret_print(ASTNode *node, Environment *env) {
-    debug_print_int("`interpret_print()`\n");
-
-    for (size_t i = 0; i < node->to_print.arg_count; i++) {
-        ASTNode *arg = node->to_print.arguments[i];
-        InterpretResult r = interpret_node(arg, env);
-        LiteralValue lv = r.value;
-
-        switch (lv.type) {
-        case TYPE_FLOAT:
-            if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
-                printf("%.1Lf", lv.data.floating_point);
-            } else {
-                printf("%Lg", lv.data.floating_point);
-            }
-            break;
-        case TYPE_INTEGER:
-            printf("%lld", lv.data.integer);
-            break;
-        case TYPE_STRING:
-            print_formatted_string(lv.data.string);
-            break;
-        case TYPE_BOOLEAN:
-            printf("%s", lv.data.boolean ? "True" : "False");
-            break;
-        case TYPE_ERROR:
-            fprintf(stderr, "Error: Invalid literal type.\n");
-            break;
-        default:
-            fprintf(stderr, "Error: Unknown literal type.\n");
-            break;
-        }
-        printf(" "); // space for padding
-    }
-    printf("\n");
-}
-
-void interpret_raise_error(ASTNode *node, Environment *env) {
-    int divider_length = 50;
-    char *error_banner = "  !!! ERROR RAISED !!!  ";
-    int error_banner_length = (divider_length - strlen(error_banner)) / 2 - 1;
-
-    printf("\x1B[31m");
-    printf("\x1B[01m");
-
-    printf("<");
-    for (int i = 1; i < divider_length; i++) {
-        printf("=");
-    }
-    printf(">\n\n ");
-    for (int i = 0; i < error_banner_length; i++) {
-        printf("~");
-    }
-    printf("%s", error_banner);
-    for (int i = 0; i < error_banner_length; i++) {
-        printf("~");
-    }
-    printf(" \n\n");
-
-    interpret_print(node, env);
-
-    printf("\n<");
-    for (int i = 1; i < divider_length; i++) {
-        printf("=");
-    }
-    printf(">\n");
-
-    printf("\x1B[0m");
-
-    exit(1);
-}
-
 Variable *allocate_variable(Environment *env, const char *name) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
@@ -1095,7 +978,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // 1) Look for the function in the environment
+    // Look for the function in the environment
     Function *func = get_function(env, node->function_call.name);
     if (!func) {
         // If we can’t find it at all, error
@@ -1105,14 +988,16 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // 2) If it’s a built-in => call the built-in logic
+    // If it’s a built-in => call the built-in logic
     if (func->is_builtin) {
         if (strcmp(func->name, "sample") == 0) {
-            return builtin_input();
+            return builtin_input(node, env);
         } else if (strcmp(func->name, "serve") == 0) {
-            interpret_print(node, env);
+            return builtin_output(node, env);
+        } else if (strcmp(func->name, "burn") == 0) {
+            return builtin_error(node, env);
         } else if (strcmp(func->name, "random") == 0) {
-            return builtin_random();
+            return builtin_random(node, env);
         }
 
         // If no recognized built-in, error
@@ -1120,7 +1005,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // 3) Otherwise, user-defined function. (Existing code)
+    // Otherwise, user-defined function.
     // Create local environment, bind parameters, interpret AST body, etc.
 
     Environment local_env;

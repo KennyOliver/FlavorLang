@@ -19,27 +19,53 @@ void init_environment(Environment *env) {
     env->variable_count = 0;
     env->capacity = 10;
     env->variables = malloc(env->capacity * sizeof(Variable));
+    if (!env->variables) {
+        error_interpreter("Failed to allocate memory for variables.\n");
+    }
 
     // Add function initialization
     env->function_count = 0;
     env->function_capacity = 10;
     env->functions = malloc(env->function_capacity * sizeof(Function));
+    if (!env->functions) {
+        error_interpreter("Failed to allocate memory for functions.\n");
+    }
 
-    // Create & register built-in `sample()`
+    // `sample()`
     Function sample_func;
     memset(&sample_func, 0, sizeof(Function)); // zero out for safety
-
     sample_func.name = strdup("sample");
     sample_func.parameters = NULL;
     sample_func.body = NULL;
     sample_func.is_builtin = true;
-
-    sample_func.name = strdup("random");
-    sample_func.parameters = NULL;
-    sample_func.body = NULL;
-    sample_func.is_builtin = true;
-
     add_function(env, sample_func);
+
+    // `serve()`
+    Function serve_func;
+    memset(&serve_func, 0, sizeof(Function));
+    serve_func.name = strdup("serve");
+    serve_func.parameters = NULL;
+    serve_func.body = NULL;
+    serve_func.is_builtin = true;
+    add_function(env, serve_func);
+
+    // `burn()`
+    Function burn_func;
+    memset(&burn_func, 0, sizeof(Function));
+    burn_func.name = strdup("burn");
+    burn_func.parameters = NULL;
+    burn_func.body = NULL;
+    burn_func.is_builtin = true;
+    add_function(env, burn_func);
+
+    // `random()`
+    Function random_func;
+    memset(&random_func, 0, sizeof(Function));
+    random_func.name = strdup("random");
+    random_func.parameters = NULL;
+    random_func.body = NULL;
+    random_func.is_builtin = true;
+    add_function(env, random_func);
 }
 
 void free_environment(Environment *env) {
