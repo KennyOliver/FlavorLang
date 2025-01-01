@@ -557,4 +557,35 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
 
     return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
 }
+
+LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+    char *filepath;
+    char *content;
+
+    ArgumentSpec specs[2];
+    specs[0].type = ARG_TYPE_STRING;
+    specs[0].out_ptr = &filepath;
+
+    specs[1].type = ARG_TYPE_STRING;
+    specs[1].out_ptr = &content;
+
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    FILE *file = fopen(filepath, "w");
+    if (file == NULL) {
+        perror("Failed to open file for writing");
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    if (fputs(content, file) == EOF) {
+        perror("Failed to write to file");
+        fclose(file);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    fclose(file);
+
+    return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
 }

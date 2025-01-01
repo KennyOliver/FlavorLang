@@ -28,6 +28,7 @@ LiteralValue builtin_error(ASTNode *node, Environment *env);
 LiteralValue builtin_cast(ASTNode *node, Environment *env);
 LiteralValue builtin_time();
 LiteralValue builtin_file_read(ASTNode *node, Environment *env);
+LiteralValue builtin_file_write(ASTNode *node, Environment *env);
 
 // Helpers
 bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
