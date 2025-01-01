@@ -1,30 +1,16 @@
 #include "debug.h"
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdarg.h>
 
 bool debug_flag = false;
 
-void parse_cli_args(int argc, char *argv[])
-{
-    for (int i = 1; i < argc; i++)
-    {
-        if (strcmp(argv[i], "--debug") == 0)
-        {
-            debug_flag = true;
-        }
-    }
-}
-
-void debug_print(DebugMode debug_mode, const char *format, ...)
-{
-    if (debug_flag)
-    {
+void debug_print(DebugMode debug_mode, const char *format, ...) {
+    if (debug_flag) {
         const char *color;
         const char *mode_name;
 
-        switch (debug_mode)
-        {
+        switch (debug_mode) {
         case LEXER:
             color = "\033[38;5;202m"; // orange
             mode_name = "TOK";
@@ -43,12 +29,9 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
         }
 
         // Print the debug header with color and mode
-        if (strcmp(mode_name, "UNK") == 0)
-        {
+        if (strcmp(mode_name, "UNK") == 0) {
             printf("%s[DEBUG]%s ", color, "\033[0m");
-        }
-        else
-        {
+        } else {
             printf("%s[DEBUG %s]%s ", color, mode_name, "\033[0m");
         }
 
@@ -63,10 +46,8 @@ void debug_print(DebugMode debug_mode, const char *format, ...)
     }
 }
 
-void debug_print_basic(const char *format, ...)
-{
-    if (debug_flag)
-    {
+void debug_print_basic(const char *format, ...) {
+    if (debug_flag) {
         va_list args;
         va_start(args, format);
 
@@ -80,10 +61,8 @@ void debug_print_basic(const char *format, ...)
     }
 }
 
-void debug_print_lex(const char *format, ...)
-{
-    if (debug_flag)
-    {
+void debug_print_lex(const char *format, ...) {
+    if (debug_flag) {
         va_list args;
         va_start(args, format);
 
@@ -97,10 +76,8 @@ void debug_print_lex(const char *format, ...)
     }
 }
 
-void debug_print_par(const char *format, ...)
-{
-    if (debug_flag)
-    {
+void debug_print_par(const char *format, ...) {
+    if (debug_flag) {
         va_list args;
         va_start(args, format);
 
@@ -114,10 +91,8 @@ void debug_print_par(const char *format, ...)
     }
 }
 
-void debug_print_int(const char *format, ...)
-{
-    if (debug_flag)
-    {
+void debug_print_int(const char *format, ...) {
+    if (debug_flag) {
         va_list args;
         va_start(args, format);
 

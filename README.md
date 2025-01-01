@@ -884,3 +884,11 @@ For x = 5 + 3:
 
 - Checks for undefined variables, invalid operator usage, division by zero, etc.
 - On error, prints a message and calls exit(1).
+
+---
+
+## License
+
+This project is licensed under the Apache 2.0 License &mdash; see the [LICENSE](./LICENSE) file for details.
+
+&copy; 2024-2025 Kenneth Oliver. All rights reserved.
