@@ -508,5 +508,17 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    return (LiteralValue){.type = TYPE_STRING, .data.string = "test"};
+    FILE *fptr;
+    fptr = fopen(filepath, "r");
+    if (fptr == NULL) {
+        perror("Failed to open file");
+        exit(1);
+    }
+
+    char file_contents[100];
+    fgets(file_contents, 100, fptr);
+    fclose(fptr);
+
+    return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
+}
 }
