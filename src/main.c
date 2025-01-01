@@ -15,11 +15,18 @@ void parse_cli_args(int argc, char *argv[]) {
 }
 
 void print_about() {
-    printf("FlavorLang Interpreter\n");
-    printf("Copyright (c) 2024-2025, Kenneth Oliver. All rights reserved.\n");
-    printf("Licensed under the Apache License, Version 2.0.\n");
-    printf("Visit https://github.com/KennyOliver/FlavorLang for more "
-           "information.\n");
+    const char *border =
+        "+-------------------------------------------------+\n";
+    printf("%s", border);
+    printf("| FlavorLang                                      |\n");
+    printf("%s", border);
+    printf("| Copyright (c) 2024-2025, Kenneth Oliver.        |\n");
+    printf("| All rights reserved.                            |\n");
+    printf("%s", border);
+    printf("| Licensed under the Apache License, Version 2.0. |\n");
+    printf("| Visit https://github.com/KennyOliver/FlavorLang |\n");
+    printf("| for more information.                           |\n");
+    printf("%s", border);
 }
 
 int main(int argc, char **argv) {
