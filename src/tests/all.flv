@@ -133,11 +133,11 @@ serve("Blast off!");
 # ==================================================
 # 11
 # ==================================================
-plate("output.txt", "Freshly baked cake ready to deliver!");
-garnish("output.txt", "\nDon't forget the toppings!");
-let data = taste("output.txt");
-serve("File Contents:");
-serve(data);
+# plate("output.txt", "Freshly baked cake ready to deliver!");
+# garnish("output.txt", "\nDon't forget the toppings!");
+# let data = taste("output.txt");
+# serve("File Contents:");
+# serve(data);
 
 
 # ==================================================
