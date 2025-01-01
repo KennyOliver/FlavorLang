@@ -21,8 +21,7 @@ typedef enum {
     AST_FOR_LOOP,
     AST_SWITCH,
     AST_BREAK,
-    AST_VARIABLE,
-    AST_CAST
+    AST_VARIABLE
 } ASTNodeType;
 
 // Literal Node
@@ -145,11 +144,6 @@ typedef struct ASTNode {
 
         // Variable
         char *variable_name;
-
-        struct {
-            char *cast_type;
-            struct ASTNode *expr;
-        } cast;
     };
 
     struct ASTNode *next;
