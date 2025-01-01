@@ -2,6 +2,9 @@
 #include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
 void parse_cli_args(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
@@ -11,7 +14,22 @@ void parse_cli_args(int argc, char *argv[]) {
     }
 }
 
+void print_about() {
+    printf("FlavorLang Interpreter\n");
+    printf("Copyright (c) 2024-2025, Kenneth Oliver. All rights reserved.\n");
+    printf("Licensed under the Apache License, Version 2.0.\n");
+    printf("Visit https://github.com/KennyOliver/FlavorLang for more "
+           "information.\n");
+}
+
 int main(int argc, char **argv) {
+    // Check for `--about` flag
+    if (argc == 2 && strcmp(argv[1], "--about") == 0) {
+        print_about();
+        return 0; // Exit after printing "about" info
+    }
+
+    // Validate input file arguments
     if (argc < 2) {
         fprintf(stderr, "Usage: `%s <file.flv>`\n", argv[0]);
         fprintf(stderr, "Reason: no `.flv` source file was provided\n");
