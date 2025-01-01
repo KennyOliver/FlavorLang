@@ -14,6 +14,26 @@ void error_interpreter(const char *format, ...) {
     exit(1);
 }
 
+void initialize_builtin_function(Environment *env, const char *name) {
+    Function func;
+    memset(&func, 0, sizeof(Function)); // zero out for safety
+    func.name = strdup(name);
+    func.parameters = NULL;
+    func.body = NULL;
+    func.is_builtin = true;
+    add_function(env, func);
+}
+
+void initialize_all_builtin_functions(Environment *env) {
+    const char *builtin_functions[] = {"string", "float", "int",   "sample",
+                                       "serve",  "burn",  "random"};
+
+    for (size_t i = 0;
+         i < sizeof(builtin_functions) / sizeof(builtin_functions[0]); i++) {
+        initialize_builtin_function(env, builtin_functions[i]);
+    }
+}
+
 void init_environment(Environment *env) {
     // Existing variable initialization
     env->variable_count = 0;
@@ -31,68 +51,7 @@ void init_environment(Environment *env) {
         error_interpreter("Failed to allocate memory for functions.\n");
     }
 
-    // `string()`
-    Function string_func;
-    memset(&string_func, 0, sizeof(Function)); // zero out for safety
-    string_func.name = strdup("string");
-    string_func.parameters = NULL;
-    string_func.body = NULL;
-    string_func.is_builtin = true;
-    add_function(env, string_func);
-
-    // `float()`
-    Function float_func;
-    memset(&float_func, 0, sizeof(Function));
-    float_func.name = strdup("float");
-    float_func.parameters = NULL;
-    float_func.body = NULL;
-    float_func.is_builtin = true;
-    add_function(env, float_func);
-
-    // `int()`
-    Function int_func;
-    memset(&int_func, 0, sizeof(Function));
-    int_func.name = strdup("int");
-    int_func.parameters = NULL;
-    int_func.body = NULL;
-    int_func.is_builtin = true;
-    add_function(env, int_func);
-
-    // `sample()`
-    Function sample_func;
-    memset(&sample_func, 0, sizeof(Function));
-    sample_func.name = strdup("sample");
-    sample_func.parameters = NULL;
-    sample_func.body = NULL;
-    sample_func.is_builtin = true;
-    add_function(env, sample_func);
-
-    // `serve()`
-    Function serve_func;
-    memset(&serve_func, 0, sizeof(Function));
-    serve_func.name = strdup("serve");
-    serve_func.parameters = NULL;
-    serve_func.body = NULL;
-    serve_func.is_builtin = true;
-    add_function(env, serve_func);
-
-    // `burn()`
-    Function burn_func;
-    memset(&burn_func, 0, sizeof(Function));
-    burn_func.name = strdup("burn");
-    burn_func.parameters = NULL;
-    burn_func.body = NULL;
-    burn_func.is_builtin = true;
-    add_function(env, burn_func);
-
-    // `random()`
-    Function random_func;
-    memset(&random_func, 0, sizeof(Function));
-    random_func.name = strdup("random");
-    random_func.parameters = NULL;
-    random_func.body = NULL;
-    random_func.is_builtin = true;
-    add_function(env, random_func);
+    initialize_all_builtin_functions(env);
 }
 
 void free_environment(Environment *env) {
