@@ -211,8 +211,8 @@ ASTNode *helper_print(ParserState *state) {
 
         // Check for comma or closing parenthesis
         Token *current = get_current_token(state);
-        debug_print_par("[DEBUG PRS] Current Token: Type=%d, Lexeme=`%s`\n",
-                        current->type, current->lexeme);
+        debug_print_par("Current Token: Type=%d, Lexeme=`%s`\n", current->type,
+                        current->lexeme);
         if (current->type == TOKEN_DELIMITER &&
             strcmp(current->lexeme, ",") == 0) {
             advance_token(state); // consume the comma
