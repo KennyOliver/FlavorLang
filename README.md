@@ -176,8 +176,6 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-##
-
 <details>
 <summary>
    <h2>
