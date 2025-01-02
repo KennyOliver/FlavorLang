@@ -152,3 +152,11 @@ Run this to enable debugging for `test3.flv`.
 ```bash
 $ ./flavor tests/test3.flv --debug
 ```
+
+---
+
+## License
+
+This project is licensed under the Apache 2.0 License &mdash; see the [LICENSE](../LICENSE) file for details.
+
+&copy; 2024-2025 Kenneth Oliver. All rights reserved.
