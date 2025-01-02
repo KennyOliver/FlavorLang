@@ -163,7 +163,10 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="ebnf"></a>
+## Extended Backus-Naur Form (EBNF) of FlavorLang's Syntax <a id="ebnf"></a>
+
+<details>
+<summary><b>EBNF Syntax</b></summary>
 
 ```ebnf
 program              ::= statement* ;
@@ -254,6 +257,8 @@ range                ::= expression range_operator expression ;
 
 step                 ::= expression ;
 ```
+
+</details>
 
 ---
 
