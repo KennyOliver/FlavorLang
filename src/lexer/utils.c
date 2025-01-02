@@ -1,4 +1,4 @@
-#include "lexer_utils.h"
+#include "utils.h"
 #include "../debug/debug.h"
 #include <ctype.h>
 #include <stdlib.h>

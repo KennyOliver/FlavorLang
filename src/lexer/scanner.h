@@ -3,7 +3,7 @@
 
 #include "../shared/token_types.h"
 #include "keywords.h"
-#include "lexer_utils.h"
+#include "utils.h"
 #include <stdbool.h>
 #include <string.h>
 

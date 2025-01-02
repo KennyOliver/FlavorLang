@@ -1,5 +1,5 @@
-#ifndef LEXER_UTILS_H
-#define LEXER_UTILS_H
+#ifndef UTILS_H
+#define UTILS_H
 
 #include "../shared/token_types.h"
 
