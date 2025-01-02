@@ -1,5 +1,5 @@
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef PARSER_UTILS_H
+#define PARSER_UTILS_H
 
 #include "../debug/debug.h"
 #include "../shared/ast_types.h"
