@@ -32,7 +32,7 @@ const size_t KEYWORDS_COUNT =
 
 const char *OPERATORS[] = {
     "=", "==", "!=", "+",  "-",  "*",   "**", "/",  "//", "%",
-    "<", ">",  ">=", "<=", "..", "..=", "&&", "||", "~",  NULL // sentinel value
+    "<", ">",  ">=", "<=", "..", "..=", "&&", "||", "!",  NULL // sentinel value
 };
 
 const size_t OPERATORS_COUNT =
