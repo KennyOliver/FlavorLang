@@ -6,7 +6,7 @@ void free_ast(ASTNode *node) {
 
         switch (node->type) {
 
-        case AST_VARIABLE:
+        case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
             free_ast(node->assignment.value);
             break;
@@ -126,7 +126,7 @@ void print_ast(ASTNode *node, int depth) {
         print_indentation(depth);
 
         switch (node->type) {
-        case AST_VARIABLE:
+        case AST_ASSIGNMENT:
             printf("Assignment:\n");
             print_indentation(depth + 1);
             printf("Variable: `%s`\n", node->assignment.variable_name);

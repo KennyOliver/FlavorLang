@@ -54,7 +54,7 @@ let result = factorial(3);
 
 For `x = 5 + 3`:
 
-1. `interpret_node(AST_VARIABLE)` → calls `interpret_assignment()`.
+1. `interpret_node(AST_ASSIGNMENT)` → calls `interpret_assignment()`.
 2. `interpret_node(RHS: AST_BINARY_OP)` → calls `interpret_binary_op()`.
 3. `interpret_node(left=5)` returns `5`; similarly `right=3` returns `3`.
 4. After `5 + 3 = 8`, store `x = 8` in the environment.

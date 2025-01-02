@@ -98,7 +98,7 @@ ASTNode *parse_variable_declaration(ParserState *state) {
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-    node->type = AST_VARIABLE;
+    node->type = AST_ASSIGNMENT;
 
     // Create a deep copy of the variable name
     if (name && name->lexeme) {
@@ -142,7 +142,7 @@ ASTNode *parse_variable_assignment(ParserState *state) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
 
-    node->type = AST_VARIABLE;
+    node->type = AST_ASSIGNMENT;
     node->assignment.variable_name = strdup(name->lexeme);
     node->assignment.value = value_node;
     node->next = NULL;
