@@ -90,3 +90,11 @@ Below are the **core** token types recognized by the lexer:
 - **Additional Operators**: E.g., `!=`, `++`, or typed operators if the language evolves.
 - **Better Error Recovery**: Instead of immediate exit, attempt to skip malformed input.
 - **Performance Tweaks**: For very large .flv files, more efficient reading and token building.
+
+---
+
+## License
+
+This project is licensed under the Apache 2.0 License &mdash; see the [LICENSE](../LICENSE) file for details.
+
+&copy; 2024-2025 Kenneth Oliver. All rights reserved.
