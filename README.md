@@ -94,8 +94,6 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### 1. Install the Compiler
 
-Clone the repository and build the project.
-
 ```bash
 $ git clone https://github.com/KennyOliver/FlavorLang.git
 $ cd src
@@ -104,23 +102,17 @@ $ make
 
 ### 2. Write Your First Recipe
 
-Create a file named **`recipe.flv`** with the following content.
-
 ```py
+# recipe.flv
+
 serve("Welcome to FlavorLang!");
 ```
 
 ### 3. Run the Program
 
-Use the flavor command to execute your program.
-
-```bash
+```
 $ ./flavor recipe.flv
-```
 
-You should see:
-
-```
 Welcome to FlavorLang!
 ```
 
