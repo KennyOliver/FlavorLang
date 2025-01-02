@@ -111,10 +111,8 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Syntax Keywords
-
 <details>
-<summary><b>Syntax Keywords table</b></summary>
+<summary><h2>Syntax Keywords</h2></summary>
 
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
@@ -154,12 +152,26 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       |
 | `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. |
 
-### Explanation
+<details>
 
-- **string**: In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
-- **float**: The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
-- **integer**: The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
-- **boolean**: Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
+<summary><h3>Explanation</h3></summary>
+
+- **string**:
+
+  In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
+
+- **float**:
+
+  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
+
+- **integer**:
+
+  The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
+
+- **boolean**:
+
+  Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
+  </details>
 
 ---
 
