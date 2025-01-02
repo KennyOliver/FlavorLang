@@ -41,7 +41,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 8. [Debugging](docs/debugging.md)
 
-9. [VS Code Syntax Highlighter Extension](#vs-code-syntax-highlighter-extension)
+9. [Install Syntax Highlighter Extension](#extension)
 
 10. [Lexer](docs/lexer.md)
 
@@ -176,10 +176,14 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Extended Backus-Naur Form (EBNF) of FlavorLang's Syntax <a id="ebnf"></a>
+##
 
 <details>
-<summary><b>EBNF Syntax</b></summary>
+<summary>
+   <h2>
+      <a id="ebnf">Extended Backus-Naur Form (EBNF) of FlavorLang's Syntax</a>
+   </h2>
+</summary>
 
 ```ebnf
 program              ::= statement* ;
@@ -275,9 +279,12 @@ step                 ::= expression ;
 
 ---
 
-## VS Code Syntax Highlighter Extension
-
-## Install the VS Code Syntax Highlighter for FlavorLang
+<details>
+<summary>
+   <h2>
+      <a id="extension">Install the VS Code Syntax Highlighter</a>
+   </h2>
+</summary>
 
 ### 1. Build the Extension
 
@@ -301,6 +308,8 @@ npx vsce package
 - Open VS Code.
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on Mac) and select _`Extensions: Install from VSIX…`_.
 - Select the generated `.vsix` file within the `vscode-extension` folder.
+
+</details>
 
 ---
 
