@@ -25,66 +25,38 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ## 📖 Table of Contents
 
-1. [Quick Start](#quick-start)
+1. [🌶️ Why FlavorLang?](#why-flavorlang)
 
-2. [Execution Flags & Behaviors](#execution-flags--behaviors)
+2. [⚡ Quick Start](#quick-start)
 
-3. [Syntax Keywords](#syntax-keywords)
+3. [🚀 Execution Flags & Behaviors](#execution-flags--behaviors)
 
-4. [Data Types](#data-types)
+4. [Syntax Keywords](#syntax-keywords)
 
-5. [Syntax Examples](#syntax-examples)
+5. [Data Types](#data-types)
 
-   - [Hello World](#hello-world)
-   - [Defining Variables](#defining-variables)
-   - [Conditional Logic](#conditional-logic)
-   - [For Loop](#for-loop)
-   - [While Loop](#while-loop)
-   - [Functions with Return](#functions-with-return)
-   - [Error Handling](#error-handling)
-   - [Switch-Case Logic](#switch-case-logic)
-   - [User Input](#user-input)
-   - [Use Booleans](#use-booleans)
-   - [File Operations](#file-operations)
-   - [Raise an Error](#raise-error)
-   - [Casting](#casting)
-   - [Random Number Generation & Standard Library Functions](#random-number-generation-and-standard-library-functions)
-   - [UNIX Timestamp to ISO-8601 Date](#unix-timestamp-to-iso-date)
+6. [Syntax Examples](docs/syntax_examples.md)
 
-6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
+7. [Extended Backus-Naur Form (EBNF)](#ebnf)
 
-7. [Why FlavorLang?](#why-flavorlang)
+8. [Debugging](docs/debugging.md)
 
-8. [Debugging](#debugging)
+9. [Install Syntax Highlighter Extension](#extension)
 
-   - [Overview](#debugging-overview)
-   - [Example Script](#debugging-example-script)
-   - [Debug Output Breakdown](#debugging-debug-output-breakdown)
-   - [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
+10. [Lexer](docs/lexer.md)
 
-9. [VS Code Syntax Highlighter Extension](#vs-code-syntax-highlighter-extension)
+11. [Parser](docs/parser.md)
 
-10. [Lexer](#lexer)
+12. [Interpreter](docs/interpreter.md)
 
-- [Overview](#lexer-overview)
-- [How the Lexer Works](#how-the-lexer-works)
-- [Debugging Tokens](#debugging-tokens)
-- [Error Handling](#lexer-error-handling)
-- [Future Enhancements](#future-enhancements)
+---
 
-11. [Parser](#parser)
+## 🌶️ Why FlavorLang? <a id="why-flavorlang"></a>
 
-    - [Key Structures](#key-structures)
-    - [Main Parsing Functions](#main-parsing-functions)
-    - [Supporting Functions](#supporting-functions)
-    - [Error Handling](#error-handling)
-    - [Workflow Example](#workflow-example)
-
-12. [Interpreter](#interpreter)
-
-    - [Main Interpreter Functions](#Main-Interpreter-Functions)
-    - [Summary of Steps](#Summary-of-Steps)
-    - [Example Execution Flow](#Example-Execution-Flow)
+- **Unique & Fun**: Express your programs like recipes!
+- **Flexible Execution**: File extensions and flags allow customized program behavior.
+- **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with `--debug` mode.
 
 ---
 
@@ -94,33 +66,25 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### 1. Install the Compiler
 
-Clone the repository and build the project.
-
 ```bash
 $ git clone https://github.com/KennyOliver/FlavorLang.git
-$ cd FlavorLang
+$ cd src
 $ make
 ```
 
 ### 2. Write Your First Recipe
 
-Create a file named **`recipe.flv`** with the following content.
-
 ```py
+# recipe.flv
+
 serve("Welcome to FlavorLang!");
 ```
 
 ### 3. Run the Program
 
-Use the flavor command to execute your program.
-
-```bash
+```
 $ ./flavor recipe.flv
-```
 
-You should see:
-
-```
 Welcome to FlavorLang!
 ```
 
@@ -141,13 +105,15 @@ This will print detailed information about the tokenization and parsing process.
 ```bash
 $ ./flavor recipe.flv          # Default execution
 $ ./flavor recipe.flv --debug  # Debug mode
+$ ./flavor recipe.flv --about  # About FlavorLang
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
 
 ---
 
-## Syntax Keywords
+<details>
+<summary><h2>Syntax Keywords</h2></summary>
 
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
@@ -167,422 +133,55 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ✅           |
-| `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
+| `serve`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
 | `sample`  | Input from console           | Reads user input.                                                                           | ✅           |
-| `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
-| `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
-| `taste`   | Read from file               | Reads data from a file.                                                                     | ❌           |
+| `plate`   | Write to file                | Writes data to a file.                                                                      | ✅           |
+| `garnish` | Append to file               | Appends data to a file.                                                                     | ✅           |
+| `taste`   | Read from file               | Reads data from a file.                                                                     | ✅           |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
-
----
-
-## Data Types
-
-| Data Type | Syntax Example    | Capacity/Range                                                                                     | Implemented? |
-| --------- | ----------------- | -------------------------------------------------------------------------------------------------- | ------------ |
-| `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.        | ✅           |
-| `float`   | `3.14`            | `FLOAT_SIZE` (long double, 64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932.     | ✅           |
-| `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       | ✅           |
-| `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. | ✅           |
-
-### Explanation
-
-- **string**: In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
-- **float**: The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
-- **integer**: The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
-- **boolean**: Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
-
----
-
-## 🍳 Syntax Examples <a id="syntax-examples"></a>
-
-Below are examples showcasing the unique (& fun) syntax of FlavorLang. They give a taste of the cooking-inspired syntax.
-
-<details>
-<summary>Expand to see examples</summary>
-
-### 1. 👋 Hello World <a id="hello-world"></a>
-
-The simplest program to print "Hello world!".
-
-```py
-serve("Hello world!");
-```
-
-### 2. 🍲 Defining Variables <a id="defining-variables"></a>
-
-Use `let` to declare and initialize variables.
-
-```py
-let name = "Chef";
-let age = 25;
-
-serve("Name:", name);
-serve("Age:", age);
-```
-
-### 3. 🔄 Conditional Logic <a id="conditional-logic"></a>
-
-Use `if`, `elif`, and `else` to control program flow.
-
-```py
-let oven_temperature = 200;
-
-if oven_temperature > 180 {
-	serve("The oven is hot!");
-} elif oven_temperature == 180 {
-	serve("The oven is just right!");
-} else {
-	serve("The oven is too cold!");
-}
-```
-
-### 4. 🔁 For Loop <a id="for-loop"></a>
-
-Use `for` to iterate a block of code.
-
-```py
-for i in 1..5 {
-    serve("Mixing... Step", i);
-}
-
-for j in 10..=1 by -3 {
-    serve(j);
-}
-```
-
-### 5. 🔄 While Loop <a id="while-loop"></a>
-
-Use `while` for condition-based repetition.
-
-```py
-let flour_added = 0;
-
-while flour_added < 3 {
-	serve("Adding flour...");
-	let flour_added = flour_added + 1;
-}
-
-serve("All flour has been added!");
-```
-
-### 6. 📦 Functions with Return <a id="functions-with-return"></a>
-
-Use `create` to define functions and `deliver` to return values.
-Note that `burn` **takes precedence** over `deliver`, stopping execution immediately.
-
-```py
-create bake_cake(temperature) {
-	if temperature < 180 {
-		serve("Temperature is too low to bake!");
-		burn("Cake burned!");  # stops function execution immediately
-  } else {
-		serve("Baking cake at", temperature, "degrees!");
-		deliver "Cake is ready!";
-  }
-}
-
-let result = bake_cake(200);
-serve(result);
-```
-
-### 7. 🛠️ Error Handling <a id="error-handling"></a>
-
-Use `try` and `rescue` to handle errors.
-
-```py
-try {
-	burn("This recipe failed!");
-	serve("This won't run!");
-} rescue {
-	serve("Caught an error: Recipe needs improvement.");
-}
-```
-
-### 8. 🔎 Switch-Case Logic <a id="switch-case-logic"></a>
-
-The `check`-`is` syntax in FlavorLang provides an intuitive way to match multiple conditions with beginner-friendly behavior inspired by Python & Go.
-
-- `check` evaluates a value, is matches cases, and else handles unmatched values.
-- **Fallthrough**: Cases fall through by default **unless explicitly stopped** with `break`. This ensures clarity and flexibility for beginners.
-
-#### Example
-
-```py
-let dessert = "cake";
-
-check dessert {
-	is "cake":
-		serve("Bake the cake!");
-	is "pie":
-	is "cookie":
-		serve("Prepare the oven!");
-		break;
-	else:
-		serve("Dessert not on the menu.");
-}
-```
-
-#### Output
-
-```
-Bake the cake!
-Dessert not on the menu.
-```
-
-### 9. 📥 User Input <a id="user-input"></a>
-
-Use `sample` to accept input from the user.
-
-```py
-serve("What's your favorite dessert?");
-let favorite = sample();
-
-serve("You chose:", favorite);
-```
-
-### 🔵 10. Use Booleans <a id="use-booleans"></a>
-
-Booleans in FlavorLang, `True` and `False`, can be used to create flags, evaluate conditionals, and more.
-
-```py
-let stop_loop = False;
-let count = 10;
-
-serve("Preparing for launch!");
-
-while stop_loop != True {
-    serve(count);
-
-    if count > 0 {
-        count = count - 1;
-    } else {
-        stop_loop = True;
-    }
-}
-
-serve("Blast off!");
-```
-
-### 11. 📄 File Operations <a id="file-operations"></a>
-
-- `Plate`: Write to a file.
-- `Garnish`: Append to a file.
-- `taste`: Read from a file.
-
-```py
-let filepath = "./tests/output.txt";
-
-plate_file(filepath, "Freshly baked cake ready to deliver!");
-garnish_file(filepath, "\nDon't forget the toppings!");
-
-let data = taste_file(filepath);
-serve("File Contents:");
-serve(data);
-```
-
-### 12. ⛔️ Raise an Error <a id="raise-error"></a>
-
-Use `burn` to raise an error and halt execution.
-
-```py
-let time = 20;
-
-serve("Before error.");
-
-if time > 15 {
-	burn("Too late!", "The food got burnt!");
-}
-
-serve("After error?");
-```
-
-### 13. 🔀 Casting
-
-```py
-let a = 1;
-serve(a + a);
-serve(string(a) + string(a));
-
-let b = "True";
-let c = "False";
-serve(b == c);
-serve(b != c);
-
-for _ in 1..=2 {
-    serve("Enter a number:");
-    let user_input = int(sample());
-    let positive = user_input >= 0;
-    serve("Positive?", positive);
-}
-
-serve(float("+8"));
-```
-
-### 🎲 14. Random Number Generation & Standard Library Functions <a href="#random-number-generation-and-standard-library-functions"></a>
-
-```py
-# Using `sample()` to get user input
-serve("Enter your favorite number:");
-let favorite = sample();
-serve("Your favorite is:", favorite);
-
-# Using `random()` with different argument counts
-let num1 = random();              # Generates between 0.0 and 1.0
-let num2 = random(5.0);           # Generates between 0.0 and 5.0
-let num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
-serve("Random numbers:", num1, num2, num3);
-
-for i in 1..=10 {
-    serve(i, "\t->", random());
-}
-
-# Using `burn()` to raise an error
-burn("This is a fatal error with code:", 1001);
-```
-
-### 🗓️ 15. UNIX Timestamp to ISO-8601 Date <a href="unix-timestamp-to-iso-date"></a>
-
-```py
-create get_days_in_month(month, days_in_february) {
-   if (month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-      deliver 31;
-   } elif (month == 4 || month == 6 || month == 9 || month == 11) {
-      deliver 30;
-   } elif month == 2 {
-      deliver days_in_february;
-   }
-
-   deliver 0;
-}
-
-create make_iso8601_string(year, month, day, hours, minutes, seconds) {
-   let month_string = string(month);
-   if month < 10 {
-      month_string = "0" + string(month);
-   }
-
-   let day_string = string(day);
-   if day < 10 {
-      day_string = "0" + string(day);
-   }
-
-   let hours_string = string(hours);
-   if hours < 10 {
-      hours_string = "0" + string(hours);
-   }
-
-   let minutes_string = string(minutes);
-   if minutes < 10 {
-      minutes_string = "0" + string(minutes);
-   }
-
-   let seconds_string = string(seconds);
-   if seconds < 10 {
-      seconds_string = "0" + string(seconds);
-   }
-
-   let result = string(year) + "-"
-                  + month_string + "-"
-                  + day_string + "T"
-                  + hours_string + ":"
-                  + minutes_string + ":"
-                  + seconds_string + "Z";
-
-   deliver result;
-}
-
-create unix_to_iso8601(unix_timestamp) {
-   # Constants
-   let SECONDS_IN_MINUTE = 60;
-   let SECONDS_IN_HOUR = 3600;
-   let SECONDS_IN_DAY = 86400;
-   let EPOCH_YEAR = 1970;
-
-   # Calculate total days since epoch
-   let days_since_epoch = unix_timestamp // SECONDS_IN_DAY;
-   let remaining_seconds = unix_timestamp % SECONDS_IN_DAY;
-
-   # Determine year
-   let year = EPOCH_YEAR;
-   let found_year = False;
-   let is_leap_year = False;
-   let days_in_year = 365;
-   while !found_year {
-      is_leap_year = False;
-      if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
-         is_leap_year = True;
-      }
-
-      if is_leap_year {
-         days_in_year = 366;
-      } else {
-         days_in_year = 365;
-      }
-
-      if days_since_epoch < days_in_year {
-         found_year = True;
-      } else {
-         days_since_epoch = days_since_epoch - days_in_year;
-         year = year + 1;
-      }
-   }
-
-   # Determine month and day
-   is_leap_year = False;
-   if (year % 4 == 0 && year % 100 != 0) || year % 400 == 0 {
-      is_leap_year = True;
-   }
-
-   let days_in_february = 28;
-   if is_leap_year {
-      days_in_february = 29;
-   }
-
-   let month = 1;
-   let found_month = False;
-   let days_in_month = 0;
-   while !found_month {
-      days_in_month = get_days_in_month(month, days_in_february);
-
-      if days_since_epoch < days_in_month {
-         found_month = True;
-      } else {
-         days_since_epoch = days_since_epoch - days_in_month;
-         month = month + 1;
-      }
-   }
-
-   let day = days_since_epoch + 1;
-
-   # Determine hours, minutes, and seconds
-   let hours = remaining_seconds // SECONDS_IN_HOUR;
-   remaining_seconds = remaining_seconds % SECONDS_IN_HOUR;
-   let minutes = remaining_seconds // SECONDS_IN_MINUTE;
-   let seconds = remaining_seconds % SECONDS_IN_MINUTE;
-
-   deliver make_iso8601_string(year, month, day, hours, minutes, seconds);
-}
-
-
-let result1 = unix_to_iso8601(0);
-serve(result1);  # 1970-01-01T00:00:00Z
-
-let result2 = unix_to_iso8601(86400);
-serve(result2);  # 1970-01-02T00:00:00Z
-
-let result3 = unix_to_iso8601(946730096);
-serve(result3);  # 2000-01-01T12:34:56Z
-
-let result3 = unix_to_iso8601(get_time());
-serve(result3);  # Dependent on current time
-```
 
 </details>
 
 ---
 
-## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
+## Data Types
+
+| Data Type | Syntax Example    | Capacity/Range                                                                                     |
+| --------- | ----------------- | -------------------------------------------------------------------------------------------------- |
+| `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.        |
+| `float`   | `3.14`            | `FLOAT_SIZE` (long double, 64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932.     |
+| `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       |
+| `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. |
+
+<details>
+
+<summary><h3>Explanation</h3></summary>
+
+- **string**:
+
+  In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
+
+- **float**:
+
+  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
+
+- **integer**:
+
+  The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
+
+- **boolean**:
+
+  Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
+  </details>
+
+---
+
+<details>
+<summary>
+   <h2>
+      <a id="ebnf">Extended Backus-Naur Form (EBNF) of FlavorLang's Syntax</a>
+   </h2>
+</summary>
 
 ```ebnf
 program              ::= statement* ;
@@ -596,12 +195,14 @@ statement            ::= variable_declaration
                        | file_operation
                        | switch_case
                        | user_input
+                       | random_statement
+                       | type_casting
+                       | return_statement
                        | raise_error ;
 
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
 
-print_statement      ::= "serve" expression ("," expression)* ";"   // Multiple arguments require commas
-                       | "serve" expression ;  // Single argument allows no brackets
+print_statement      ::= "serve" expression ("," expression)* ";" ;
 
 if_statement         ::= "if" condition block
                        ("elif" condition block)*
@@ -610,20 +211,28 @@ if_statement         ::= "if" condition block
 loop_statement       ::= "while" condition block
                        | "for" IDENTIFIER "in" range [ "by" step ] block ;
 
-function_definition  ::= "create" IDENTIFIER "with" parameter_list block ;
+function_definition  ::= "create" IDENTIFIER parameter_list block ;
 
 error_handling       ::= "try" block "rescue" block ;
 
-file_operation       ::= "plate" STRING "with" expression
-                       | "garnish" STRING "with" expression
-                       | "taste" STRING ;
+file_operation       ::= "plate" STRING "," expression ";"
+                       | "garnish" STRING "," expression ";"
+                       | "taste" STRING ";" ;
 
 switch_case          ::= "check" expression block case_clause* [ "else" block ] ;
 
-case_clause          ::= "is" expression block
-                       | "is" expression block "break" ;
+case_clause          ::= "is" expression ":" block
+                       | "is" expression ":" block "break" ";" ;
 
-user_input           ::= "sample" ;
+user_input           ::= "sample" "(" ")" ";" ;
+
+random_statement     ::= "random" "(" [expression ["," expression]] ")" ;
+
+type_casting         ::= "string" "(" expression ")"
+                       | "int" "(" expression ")"
+                       | "float" "(" expression ")" ;
+
+return_statement     ::= "deliver" expression ";" ;
 
 raise_error          ::= "burn" expression ("," expression)* ";" ;
 
@@ -631,421 +240,74 @@ block                ::= "{" statement+ "}" ;
 
 condition            ::= expression comparison_operator expression ;
 
-expression           ::= NUMBER | STRING | IDENTIFIER | boolean | "(" expression math_operator expression ")" ;
+expression           ::= NUMBER
+                       | STRING
+                       | IDENTIFIER
+                       | boolean
+                       | math_expression
+                       | function_call
+                       | random_statement ;
+
+math_expression      ::= "(" expression math_operator expression ")" ;
+
+function_call        ::= IDENTIFIER "(" [expression ("," expression)*] ")" ;
 
 boolean              ::= "True" | "False" ;
 
 comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 
-math_operator        ::= "+" | "-" | "*" | "/" ;
+math_operator        ::= "+" | "-" | "*" | "**" | "/" | "//" | "%" ;
 
-parameter_list       ::= IDENTIFIER ("," IDENTIFIER)* ;
+logical_operator     ::= "&&" | "||" ;
 
-range                ::= expression ".." expression
-                       | expression "..=" expression ;
+bitwise_operator     ::= "~" ;
+
+assignment_operator  ::= "=" ;
+
+range_operator       ::= ".." | "..=" ;
+
+parameter_list       ::= "(" [IDENTIFIER ("," IDENTIFIER)*] ")" ;
+
+range                ::= expression range_operator expression ;
 
 step                 ::= expression ;
 ```
 
----
-
-## Why FlavorLang? <a id="why-flavorlang"></a>
-
-- **Unique & Fun**: Express your programs like recipes!
-- **Flexible Execution**: File extensions and flags allow customized program behavior.
-- **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
-- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
+</details>
 
 ---
 
-## Debugging
-
-### Overview <a id="debugging-overview"></a>
-
-In this section, `test3.flv` is used as an example to demonstrate how the --debug flag works in the Flavor interpreter. The --debug flag provides step-by-step insights into the tokenization, parsing, and execution of the script. This helps developers debug their code and understand the internal processing of statements like `if`, `elif`, `else`, and `serve`.
-
-### Example Script <a id="debugging-example-script"></a>
-
-```
-let oven_temperature = 200;
-
-if oven_temperature > 180 {
-  serve("The oven is hot!");
-} elif oven_temperature == 180 {
-  serve("The oven is just right!");
-} else {
-  serve("The oven is too cold!");
-}
-```
-
-- This script assigns a value to the variable oven_temperature and checks its value using conditional statements.
-- Based on the condition:
-- If the temperature is greater than 180: it serves “The oven is hot!”.
-- If the temperature equals 180: it serves “The oven is just right!”.
-- Otherwise, it serves “The oven is too cold!”.
-
-In this case, `test3.flv` will be executed with the --debug flag to illustrate how the interpreter tokenizes, parses, and executes the script step by step.
-
-### Debug Output Breakdown <a id="debugging-debug-output-breakdown"></a>
-
-This detailed output helps track variable values, condition evaluations, and the flow of execution, which can be extremely useful for understanding how the interpreter processes and executes your script.
-
-#### 1. Tokenization
-
-The lexer splits the script into tokens. Each line in the script generates tokens for variable declarations, conditions, and outputs.
-
-Example:
-
-```
-[DEBUG TOK] 1     Type: `0`  Lex: `let`
-[DEBUG TOK]       Type: `1`  Lex: `oven_temperature`
-[DEBUG TOK]       Type: `4`  Lex: `=`
-[DEBUG TOK]       Type: `2`  Lex: `200`
-[DEBUG TOK]       Type: `5`  Lex: `;`
-```
-
-- **Type**: Describes the kind of token (e.g., keyword, operator, literal).
-- **Lex**: The content of the token.
-
-#### 2. Parsing
-
-The parser constructs a logical structure (AST) from the tokens, identifying blocks and conditions.
-
-##### Example
-
-```
-[DEBUG PRS] Starting to parse block
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`if`
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
-```
-
-Logs indicate the parsing of each token into structured blocks for execution.
-
-#### 3. Interpretation
-
-The interpreter executes the script step by step:
-
-- Assigns values to variables.
-- Evaluates conditional statements.
-- Executes corresponding branches.
-
-##### Example
-
-```
-[DEBUG INT] Matched: `AST_CONDITIONAL`
-[DEBUG INT] `interpret_conditional()` called
-[DEBUG INT] Evaluating `if`/`elif` branch
-[DEBUG INT] Binary operation `200.000000 > 180.000000`
-[DEBUG INT] Condition evaluated to: `1.000000`
-[DEBUG INT] Condition is true, executing branch body
-```
-
-#### `serve` in Debug Mode
-
-The `serve` statement is executed as part of the conditional blocks:
-
-##### 1. Tokenization
-
-```
-[DEBUG TOK] 4     Type: `0`  Lex: `serve`
-[DEBUG TOK]       Type: `3`  Lex: `The oven is hot!`
-```
-
-##### 2. Parsing
-
-```
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
-```
-
-##### 3. Interpretation
-
-This:
-
-```
-[DEBUG INT] Matched: `AST_PRINT`
-[DEBUG INT] `interpret_print()`
-```
-
-Displays this message:
-
-```
-The oven is hot!
-```
-
-### Output With and Without Debugging <a id="debugging-output-with-and-without-debugging"></a>
-
-#### With Debugging (--debug)
-
-Full debug logs for each stage are printed.
-
-```bash
-$ ./flavor tests/test3.flv --debug
-[DEBUG TOK] ...
-[DEBUG INT] ...
-The oven is hot!
-```
-
-#### Without Debugging
-
-Only the final output of the script is served.
-
-```bash
-$ ./flavor tests/test3.flv
-The oven is hot!
-```
-
-#### Running with Debugging
-
-Run this to enable debugging for `test3.flv`.
-
-```bash
-$ ./flavor tests/test3.flv --debug
-```
-
----
-
-## VS Code Syntax Highlighter Extension
-
-## Install the VS Code Syntax Highlighter for FlavorLang
+<details>
+<summary>
+   <h2>
+      <a id="extension">Install the VS Code Syntax Highlighter</a>
+   </h2>
+</summary>
 
 ### 1. Build the Extension
 
-- Navigate to the `vscode-extension` folder and install dependencies:
+Navigate to the `vscode-extension` folder and install dependencies:
 
-  ```bash
-  cd vscode-extension
-  npm install
-  ```
+```bash
+cd vscode-extension
+npm install
+```
 
 ### 2. Package the Extension
 
-- Use vsce (Visual Studio Code Extension Manager) to create the `.vsix` package:
+Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
 
-  ```bash
-  npx vsce package
-  ```
-
-This generates a `.vsix` file in the vscode-extension folder.
+```bash
+npx vsce package
+```
 
 ### 3. Install in VS Code
 
 - Open VS Code.
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on Mac) and select _`Extensions: Install from VSIX…`_.
-- Select the generated `.vsix` file.
+- Select the generated `.vsix` file within the `vscode-extension` folder.
 
-Open a `.flv` file in VS Code.
-You should see custom syntax highlighting for FlavorLang!
-
----
-
-## Lexer <a id="lexer"></a>
-
-The FlavorLang lexer is responsible for breaking the input source code into fundamental components, called **tokens**. These tokens then serve as the input for the parser, enabling FlavorLang to interpret and execute your code.
-
-### Overview <a id="lexer-overview"></a>
-
-Below are the **core** token types recognized by the lexer:
-
-| Token Type     | Examples                           | Description                                                      |
-| -------------- | ---------------------------------- | ---------------------------------------------------------------- |
-| **KEYWORD**    | `serve`, `create`, `deliver`, `if` | Reserved language keywords (e.g., `let`, `while`, `burn`, etc.). |
-| **IDENTIFIER** | `cake`, `temperature`              | Names for variables, functions, or parameters.                   |
-| **NUMBER**     | `42`, `200`, `3.14`                | Integer or floating-point numeric literals.                      |
-| **STRING**     | `"Hello World!"`                   | Text enclosed in double quotes.                                  |
-| **OPERATOR**   | `=`, `==`, `+`, `-`, `>=`          | Single or multi-character operators used in expressions.         |
-| **DELIMITER**  | `,`, `:`, `(`, `)`, `;`, `{`, `}`  | Punctuation symbols that mark statement boundaries or grouping.  |
-| **COMMENT**    | `#`                                | Everything from `#` to the end of a line is ignored.             |
-| **EOF**        | End of input                       | Signifies that there are no more tokens to read.                 |
-
-### How the Lexer Works
-
-1. **Input & Initialization**
-
-   - The lexer reads the entire file into a string.
-   - It creates a token buffer (dynamic array) that grows as needed.
-
-2. **Character Classification**
-
-   - **Whitespace** is skipped, incrementing `line` if `\n`.
-   - **Comments** begin with `#` and continue until end of line.
-   - **Numbers** are sequences of digits (`0-9`), optionally including one decimal point.
-   - **Strings** are enclosed in double quotes (`"`), supporting multiple characters.
-   - **Identifiers or Keywords** are alphanumeric sequences that either match a keyword (e.g., `let`) or become `IDENTIFIER`.
-   - **Operators** (e.g. `=`, `==`, `>=`) may be single or multi-character.
-   - **Delimiters** (e.g. `,`, `;`, `(`) are tokenized in a straightforward manner.
-
-3. **Token Construction**
-
-   - Each recognized piece of text is turned into a token:
-     - **Type**: The token kind (keyword, number, operator, etc.).
-     - **Lexeme**: The exact substring from the source code.
-     - **Line Number**: The line on which the token appears.
-
-4. **End of File**
-   - After scanning all characters, the lexer appends a `TOKEN_EOF` to signify there are no more tokens.
-
-#### Tokenizing Key Constructs
-
-- **Comments**: Start at `#` and continue until `\n`. The lexer ignores them entirely.
-- **Numbers**: If digits are encountered, they may form either an `INTEGER` or `FLOAT` if a decimal point is found.
-- **Strings**: Start and end with `"`. Unterminated strings trigger an error.
-- **Identifiers/Keywords**: Any valid identifier start (letter or `_`) followed by letters/digits forms an identifier, and it’s cross-checked against a keywords list to decide if it’s `KEYWORD`.
-- **Operators**: Single (`+`, `-`, `=`) or multi-character (`==`, `>=`, `<=`) operators.
-- **Delimiters**: For punctuation like `,`, `(`, `)`, `;`, the lexer directly appends a token.
-
-### Debugging Tokens <a id="debugging-tokens"></a>
-
-- Use the `--debug` flag to print all generated tokens (with their types, lexemes, and line numbers). This helps diagnose lexical issues quickly.
-
-#### Example Debug Output
-
-```
-[Line 1] Token Type: KEYWORD | Lexeme: let
-[Line 1] Token Type: IDENTIFIER | Lexeme: x
-[Line 1] Token Type: OPERATOR | Lexeme: =
-[Line 1] Token Type: INTEGER | Lexeme: 10
-...
-```
-
-### Error Handling <a id="lexer-error-handling"></a>
-
-- **Unexpected Characters**: If the lexer encounters an unrecognized symbol, it raises an error and terminates.
-- **Unterminated Strings**: If a `"` is opened and never closed, the lexer reports an error with the line number.
-- **Memory Allocation Failures**: If resizing or token creation fails, the lexer exits.
-
-### Future Enhancements <a id="future-enhancements"></a>
-
-- **Additional Operators**: E.g., `!=`, `++`, or typed operators if the language evolves.
-- **Better Error Recovery**: Instead of immediate exit, attempt to skip malformed input.
-- **Performance Tweaks**: For very large .flv files, more efficient reading and token building.
-
----
-
-## Parser
-
-After the lexer produces tokens, the **parser** converts them into an **Abstract Syntax Tree (AST)** that represents the logical structure of the program.
-
-### Key Structures
-
-- **`ASTNode`**: The building block of the AST, representing statements, expressions, loops, etc.
-- **`ParserState`**: Tracks current token index, plus optional flags (e.g. `in_function_body`) for controlling parse flow.
-- **`Token`**: The lexical units from the lexer.
-
-### Main Parsing Functions
-
-1. **`parse_program`**
-
-   - Initializes parser state, loops until `TOKEN_EOF`, and delegates each statement to the correct parse function.
-
-2. **`parse_variable_declaration`**
-
-   - Parses `let x = <expression>;`
-   - Produces an `AST_ASSIGNMENT` node with `variable_name` and the parsed `value`.
-
-3. **`parse_variable_assignment`**
-
-   - Parses direct assignments like `x = 20;`.
-
-4. **`parse_print_statement`**
-
-   - Reads `serve` and then one or more expressions (split by `,`) until a `;`.
-   - Produces an `AST_PRINT` node containing arguments.
-
-5. **`parse_expression`**
-
-   - Recursively parses numeric or string expressions (including binary operators).
-   - Results in `AST_BINARY_OP` nodes (like `x + 5`).
-
-6. **`parse_conditional_block`**
-
-   - Handles `if`, `elif`, `else`.
-   - Creates `AST_CONDITIONAL` with a condition and body, plus chained else branches.
-
-7. **`parse_while_block`**
-
-   - For `while <condition>:`, builds an `AST_LOOP` node referencing the loop body.
-
-8. **`parse_block`**
-   - Repeatedly parses statements until a block terminator (like `}` or an `else`) is reached.
-   - Builds a linked list of statements.
-
-### Error Handling
-
-- **`parser_error(...)`**: Raises a fatal error if a token is unexpected or a semicolon is missing, etc.
-- **`expect_token(...)`**: Ensures the next token is exactly what we want, or raises an error.
-
-### Example
-
-```flv
-let x = 10;
-
-if x > 5 {
-   serve("Big");
-}
-```
-
-- **Lexer**: Transforms this into tokens:
-
-  [`TOKEN_KEYWORD(let)`, `TOKEN_IDENTIFIER(x)`, `TOKEN_OPERATOR(=)`, `TOKEN_INTEGER(10)`, `TOKEN_DELIMITER(;)`, `TOKEN_KEYWORD(if)`, ...]
-
-- **Parser**: Produces an AST where:
-  - `AST_ASSIGNMENT` (`x = 10`)
-  - `AST_CONDITIONA` (`if x > 5`) → body: `AST_PRINT("Big")`
-
----
-
-## Interpreter
-
-The interpreter takes the AST and executes it.
-In FlavorLang, this means:
-
-1. Evaluating Expressions
-2. Assigning / Retrieving Variables
-3. Managing Conditionals & Loops
-4. Handling Function Calls
-5. Printing & Error Handling
-
-### Main Interpreter Functions
-
-- interpret_node(...): The primary function that returns an `InterpretResult`, containing a LiteralValue plus a did_return flag indicating if a function return (deliver) occurred.
-- `interpret_assignment(...)`: Assigns values to variables in the environment.
-- `interpret_binary_op(...)`: Applies arithmetic or comparison operators to numeric or string values.
-- `interpret_conditional(...)`: Runs `if`/`elif`/`else` logic, short-circuiting if a `deliver` statement is hit.
-- `interpret_while_loop(...)`: Evaluates a loop’s condition repeatedly, stopping if `did_return` is set or condition is false.
-- `interpret_function_call(...)`: Creates a local environment for function parameters, executes the function body, and handles the final return value.
-
-### Flow Control with InterpretResult
-
-- `interpret_node(...)` always returns an InterpretResult:
-- `.value` = The `LiteralValue` result of the node.
-- `.did_return` = true if a deliver statement was encountered, letting parent code know to halt further statements.
-- This approach ensures something like the following stops interpreting once `deliver 1;` is returned in the base case:
-
-```flv
-create factorial(n) {
-   if n <= 1 {
-      deliver 1;
-   } else {
-      deliver n * factorial(n - 1);
-   }
-}
-
-let result = factorial(3);
-```
-
-### Example Execution Flow
-
-For x = 5 + 3:
-
-1. interpret_node(AST_ASSIGNMENT) → calls interpret_assignment().
-2. interpret_node(RHS: AST_BINARY_OP) → calls interpret_binary_op().
-3. interpret_node(left=5) returns 5; similarly right=3 returns 3.
-4. After 5 + 3 = 8, store x = 8 in the environment.
-
-### Error Handling
-
-- Checks for undefined variables, invalid operator usage, division by zero, etc.
-- On error, prints a message and calls exit(1).
+</details>
 
 ---
 
