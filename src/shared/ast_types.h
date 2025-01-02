@@ -21,6 +21,7 @@ typedef enum {
     AST_FOR_LOOP,
     AST_SWITCH,
     AST_BREAK,
+    AST_TERNARY,
     AST_VARIABLE
 } ASTNodeType;
 
@@ -108,6 +109,13 @@ typedef struct {
     struct ASTNode *return_data;
 } ASTFunctionCall;
 
+// AST Ternary
+typedef struct {
+    struct ASTNode *condition;
+    struct ASTNode *true_expr;
+    struct ASTNode *false_expr;
+} ASTTernary;
+
 // AST Node Structure
 typedef struct ASTNode {
     ASTNodeType type;
@@ -141,6 +149,9 @@ typedef struct ASTNode {
 
         // Function
         ASTFunctionCall function_call;
+
+        // Ternary
+        ASTTernary ternary;
 
         // Variable
         char *variable_name;
