@@ -63,6 +63,12 @@ void free_ast(ASTNode *node) {
             // No cleanup needed!
             break;
 
+        case AST_TERNARY:
+            free_ast(node->ternary.condition);
+            free_ast(node->ternary.true_expr);
+            free_ast(node->ternary.false_expr);
+            break;
+
         case AST_SWITCH:
             if (node->switch_case.expression) {
                 free_ast(node->switch_case.expression);
