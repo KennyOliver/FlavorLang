@@ -159,7 +159,7 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
     }
 
     // Handle single-character operators
-    if (strchr("=<>!+-*/%.", first_char)) {
+    if (strchr("=<>!+-*/%.?", first_char)) {
         char *lexeme = strndup(&state->source[state->pos], 1);
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);
@@ -168,5 +168,6 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
     } else {
         fprintf(stderr, "Error: Unknown operator or invalid character `%d`\n",
                 state->line);
+        exit(1);
     }
 }
