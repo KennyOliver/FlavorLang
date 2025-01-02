@@ -37,7 +37,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 6. [Syntax Examples](docs/syntax_examples.md)
 
-7. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
+7. [Extended Backus-Naur Form (EBNF)](#ebnf)
 
 8. [Debugging](docs/debugging.md)
 
@@ -56,7 +56,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 - **Unique & Fun**: Express your programs like recipes!
 - **Flexible Execution**: File extensions and flags allow customized program behavior.
 - **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
-- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with `--debug` mode.
 
 ---
 
@@ -163,7 +163,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="extended-backus-naur-form-ebnf-of-flavorlang-syntax"></a>
+## Extended Backus-Naur Form (EBNF) of FlavorLang Syntax <a id="ebnf"></a>
 
 ```ebnf
 program              ::= statement* ;
@@ -177,12 +177,14 @@ statement            ::= variable_declaration
                        | file_operation
                        | switch_case
                        | user_input
+                       | random_statement
+                       | type_casting
+                       | return_statement
                        | raise_error ;
 
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
 
-print_statement      ::= "serve" expression ("," expression)* ";"   // Multiple arguments require commas
-                       | "serve" expression ;  // Single argument allows no brackets
+print_statement      ::= "serve" expression ("," expression)* ";" ;
 
 if_statement         ::= "if" condition block
                        ("elif" condition block)*
@@ -191,20 +193,28 @@ if_statement         ::= "if" condition block
 loop_statement       ::= "while" condition block
                        | "for" IDENTIFIER "in" range [ "by" step ] block ;
 
-function_definition  ::= "create" IDENTIFIER "with" parameter_list block ;
+function_definition  ::= "create" IDENTIFIER parameter_list block ;
 
 error_handling       ::= "try" block "rescue" block ;
 
-file_operation       ::= "plate" STRING "with" expression
-                       | "garnish" STRING "with" expression
-                       | "taste" STRING ;
+file_operation       ::= "plate" STRING "," expression ";"
+                       | "garnish" STRING "," expression ";"
+                       | "taste" STRING ";" ;
 
 switch_case          ::= "check" expression block case_clause* [ "else" block ] ;
 
-case_clause          ::= "is" expression block
-                       | "is" expression block "break" ;
+case_clause          ::= "is" expression ":" block
+                       | "is" expression ":" block "break" ";" ;
 
-user_input           ::= "sample" ;
+user_input           ::= "sample" "(" ")" ";" ;
+
+random_statement     ::= "random" "(" [expression ["," expression]] ")" ;
+
+type_casting         ::= "string" "(" expression ")"
+                       | "int" "(" expression ")"
+                       | "float" "(" expression ")" ;
+
+return_statement     ::= "deliver" expression ";" ;
 
 raise_error          ::= "burn" expression ("," expression)* ";" ;
 
@@ -212,18 +222,35 @@ block                ::= "{" statement+ "}" ;
 
 condition            ::= expression comparison_operator expression ;
 
-expression           ::= NUMBER | STRING | IDENTIFIER | boolean | "(" expression math_operator expression ")" ;
+expression           ::= NUMBER
+                       | STRING
+                       | IDENTIFIER
+                       | boolean
+                       | math_expression
+                       | function_call
+                       | random_statement ;
+
+math_expression      ::= "(" expression math_operator expression ")" ;
+
+function_call        ::= IDENTIFIER "(" [expression ("," expression)*] ")" ;
 
 boolean              ::= "True" | "False" ;
 
 comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
 
-math_operator        ::= "+" | "-" | "*" | "/" ;
+math_operator        ::= "+" | "-" | "*" | "**" | "/" | "//" | "%" ;
 
-parameter_list       ::= IDENTIFIER ("," IDENTIFIER)* ;
+logical_operator     ::= "&&" | "||" ;
 
-range                ::= expression ".." expression
-                       | expression "..=" expression ;
+bitwise_operator     ::= "~" ;
+
+assignment_operator  ::= "=" ;
+
+range_operator       ::= ".." | "..=" ;
+
+parameter_list       ::= "(" [IDENTIFIER ("," IDENTIFIER)*] ")" ;
+
+range                ::= expression range_operator expression ;
 
 step                 ::= expression ;
 ```
