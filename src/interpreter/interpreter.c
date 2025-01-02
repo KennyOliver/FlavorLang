@@ -13,17 +13,19 @@ LiteralValue create_default_value() {
 }
 
 // A helper to wrap `LiteralValue` in `InterpretResult`
-static InterpretResult make_result(LiteralValue val, bool did_return) {
+static InterpretResult make_result(LiteralValue val, bool did_return,
+                                   bool did_break) {
     InterpretResult r;
     r.value = val;
     r.did_return = did_return;
+    r.did_break = did_break;
     return r;
 }
 
 InterpretResult interpret_node(ASTNode *node, Environment *env) {
     if (!node) {
         fprintf(stderr, "Error: Attempt to interpret NULL node\n");
-        return make_result((LiteralValue){.type = TYPE_ERROR}, false);
+        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
     }
 
     debug_print_int("`interpret_node()` called\n");
@@ -31,22 +33,22 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     switch (node->type) {
     case AST_LITERAL:
         debug_print_int("\tMatched: `AST_LITERAL`\n");
-        return make_result(interpret_literal(node), false);
+        return make_result(interpret_literal(node), false, false);
 
     case AST_ASSIGNMENT:
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
-        return make_result(interpret_assignment(node, env), false);
+        return make_result(interpret_assignment(node, env), false, false);
 
     case AST_UNARY_OP:
         debug_print_int("\tMatched: `AST_UNARY_OP`\n");
         {
             LiteralValue unary_result = interpret_unary_op(node, env);
-            return make_result(unary_result, false);
+            return make_result(unary_result, false, false);
         }
 
     case AST_BINARY_OP:
         debug_print_int("\tMatched: `AST_BINARY_OP`\n");
-        return make_result(interpret_binary_op(node, env), false);
+        return make_result(interpret_binary_op(node, env), false, false);
 
     case AST_CONDITIONAL: {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
@@ -57,14 +59,14 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
         // interpret_function_call(...) returns a LiteralValue
         LiteralValue fc_val = interpret_function_call(node, env);
-        return make_result(fc_val, false);
+        return make_result(fc_val, false, false);
     }
 
     case AST_FUNCTION_DECLARATION: {
         debug_print_int("\tMatched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
         // again, no direct return from a function declaration
-        return make_result(create_default_value(), false);
+        return make_result(create_default_value(), false, false);
     }
 
     case AST_FUNCTION_RETURN: {
@@ -78,36 +80,40 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
                             : 0);
 
         // Return this value, but also set did_return = true
-        return make_result(return_value, true);
+        return make_result(return_value, true, false);
     }
 
     case AST_WHILE_LOOP: {
         debug_print_int("\tMatched: `AST_WHILE_LOOP`\n");
         interpret_while_loop(node, env);
-        return make_result(create_default_value(), false);
+        return make_result(create_default_value(), false, false);
     }
 
     case AST_FOR_LOOP: {
         debug_print_int("\tMatched: `AST_FOR_LOOP`\n");
         LiteralValue for_loop = interpret_for_loop(node, env);
-        return make_result(for_loop, false);
+        return make_result(for_loop, false, false);
     }
 
     case AST_VARIABLE: {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
         LiteralValue var_val = interpret_variable(node, env);
-        return make_result(var_val, false);
+        return make_result(var_val, false, false);
     }
 
     case AST_SWITCH: {
         debug_print_int("\tMatched: `AST_SWITCH`\n");
         interpret_switch(node, env);
-        return make_result(create_default_value(), false);
+        return make_result(create_default_value(), false, false);
     }
+
+    case AST_BREAK:
+        debug_print_int("\tMatched: `AST_BREAK`\n");
+        return make_result(create_default_value(), false, true);
 
     default:
         error_interpreter("Unsupported `ASTNode` type.\n");
-        return make_result(create_default_value(),
+        return make_result(create_default_value(), false,
                            false); // keep compiler happy
     }
 }
@@ -573,7 +579,7 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` called\n");
     if (!node) {
         // Error
-        return make_result((LiteralValue){.type = TYPE_ERROR}, false);
+        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
     }
 
     ASTNode *current_branch = node;
@@ -593,7 +599,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                 cond_res.value.type != TYPE_BOOLEAN) {
                 fprintf(stderr, "Error: Condition expression must be boolean "
                                 "or integer.\n");
-                return make_result((LiteralValue){.type = TYPE_ERROR}, false);
+                return make_result((LiteralValue){.type = TYPE_ERROR}, false,
+                                   false);
             }
 
             bool condition_true = false;
@@ -641,29 +648,27 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` completed\n");
 
     // Return a default value if no conditions met
-    return make_result(create_default_value(), false);
+    return make_result(create_default_value(), false, false);
 }
 
 void interpret_while_loop(ASTNode *node, Environment *env) {
-    debug_print_int("`interpret_while_loop()` called\n");
-
     ASTNode *condition = node->while_loop.condition;
     ASTNode *body = node->while_loop.body;
 
     while (1) {
+        // Check condition
         InterpretResult cond_r = interpret_node(condition, env);
         if (cond_r.did_return) {
-            // Bubble up immediately
+            // If a return bubbled up, stop everything
             return;
         }
-
-        // Check for valid condition types
-        if (cond_r.value.type != TYPE_INTEGER &&
-            cond_r.value.type != TYPE_BOOLEAN) {
-            fprintf(stderr, "While condition must be boolean or integer\n");
-            return;
+        // Also check if a break bubbled up from condition (unlikely, but
+        // possible)
+        if (cond_r.did_break) {
+            break;
         }
 
+        // Evaluate condition as boolean/integer
         bool condition_true = false;
         if (cond_r.value.type == TYPE_BOOLEAN) {
             condition_true = cond_r.value.data.boolean;
@@ -671,24 +676,29 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
             condition_true = (cond_r.value.data.integer != 0);
         }
 
-        if (condition_true) {
-            // Interpret the loop body
-            ASTNode *current = body;
-            while (current) {
-                InterpretResult body_r = interpret_node(current, env);
-                if (body_r.did_return) {
-                    // Bubble up
-                    return;
-                }
-                current = current->next;
-            }
-        } else {
-            // Exit loop if condition is false
+        // Exit if condition is false
+        if (!condition_true) {
             break;
         }
-    }
 
-    debug_print_int("`interpret_while_loop()` completed\n");
+        // Interpret the loop body
+        ASTNode *current = body;
+        while (current) {
+            InterpretResult body_r = interpret_node(current, env);
+
+            // If there's a return, propagate it up
+            if (body_r.did_return) {
+                return;
+            }
+            // If there's a break, break out of the while
+            if (body_r.did_break) {
+                // break the while
+                return;
+            }
+
+            current = current->next;
+        }
+    }
 }
 
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
@@ -809,12 +819,11 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
             error_interpreter("Loop variable `%s` must be numeric\n", loop_var);
         }
 
-        // Check loop condition
+        // Check if condition is still valid
         bool condition = is_ascending ? (inclusive ? (current_val <= end_val)
                                                    : (current_val < end_val))
                                       : (inclusive ? (current_val >= end_val)
                                                    : (current_val > end_val));
-
         if (!condition) {
             break;
         }
@@ -824,8 +833,12 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         while (current_stmt) {
             InterpretResult res = interpret_node(current_stmt, env);
             if (res.did_return) {
-                // Propagate return if encountered
                 return res.value;
+            }
+            if (res.did_break) {
+                // break out of the for loop
+                // just exit interpret_for_loop entirely
+                return create_default_value();
             }
             current_stmt = current_stmt->next;
         }
