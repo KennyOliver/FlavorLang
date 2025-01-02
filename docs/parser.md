@@ -28,7 +28,7 @@ After the lexer produces tokens, the **parser** converts them into an **Abstract
 2. **`parse_variable_declaration`**
 
    - Parses `let x = <expression>;`
-   - Produces an `AST_ASSIGNMENT` node with `variable_name` and the parsed `value`.
+   - Produces an `AST_VARIABLE` node with `variable_name` and the parsed `value`.
 
 3. **`parse_variable_assignment`**
 
@@ -77,7 +77,7 @@ if x > 5 {
   [`TOKEN_KEYWORD(let)`, `TOKEN_IDENTIFIER(x)`, `TOKEN_OPERATOR(=)`, `TOKEN_INTEGER(10)`, `TOKEN_DELIMITER(;)`, `TOKEN_KEYWORD(if)`, ...]
 
 - **Parser**: Produces an AST where:
-  - `AST_ASSIGNMENT` (`x = 10`)
+  - `AST_VARIABLE` (`x = 10`)
   - `AST_CONDITIONA` (`if x > 5`) → body: `AST_PRINT("Big")`
 
 ---

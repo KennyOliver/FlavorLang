@@ -9,7 +9,7 @@
 
 // AST Node Types
 typedef enum {
-    AST_ASSIGNMENT,
+    AST_VARIABLE,
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,

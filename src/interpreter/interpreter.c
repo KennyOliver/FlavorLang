@@ -35,8 +35,8 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_LITERAL`\n");
         return make_result(interpret_literal(node), false, false);
 
-    case AST_ASSIGNMENT:
-        debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
+    case AST_VARIABLE:
+        debug_print_int("\tMatched: `AST_VARIABLE`\n");
         return make_result(interpret_assignment(node, env), false, false);
 
     case AST_UNARY_OP:
