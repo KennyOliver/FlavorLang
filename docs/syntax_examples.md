@@ -6,21 +6,21 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 
 ## Table of Contents
 
-- [Hello World](#1)
-- [Defining Variables](#2)
-- [Conditional Logic](#3)
-- [For Loop](#4)
-- [While Loop](#5)
-- [Functions with Return](#6)
-- [Error Handling](#7)
-- [Switch-Case Logic](#8)
-- [User Input](#9)
-- [Use Booleans](#10)
-- [File Operations](#11)
-- [Raise an Error](#12)
-- [Casting](#13)
-- [Random Number Generation & Standard Library Functions](#14)
-- [UNIX Timestamp to ISO-8601 Date](#15)
+1. [Hello World](#1)
+2. [Defining Variables](#2)
+3. [Conditional Logic](#3)
+4. [For Loop](#4)
+5. [While Loop](#5)
+6. [Functions with Return](#6)
+7. [Error Handling](#7)
+8. [Switch-Case Logic](#8)
+9. [User Input](#9)
+10. [Use Booleans](#10)
+11. [File Operations](#11)
+12. [Raise an Error](#12)
+13. [Casting](#13)
+14. [Random Number Generation & Standard Library Functions](#14)
+15. [UNIX Timestamp to ISO-8601 Date](#15)
 
 ---
 
