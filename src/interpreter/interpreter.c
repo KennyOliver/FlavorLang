@@ -111,6 +111,10 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_BREAK`\n");
         return make_result(create_default_value(), false, true);
 
+    case AST_TERNARY:
+        debug_print_int("\tMatched: `AST_TERNARY`\n");
+        return interpret_ternary(node, env);
+
     default:
         error_interpreter("Unsupported `ASTNode` type.\n");
         return make_result(create_default_value(), false,
@@ -1076,4 +1080,33 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
 
     free_environment(&local_env);
     return result; // if no explicit return => return `0` (or default)
+}
+
+InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_TERNARY) {
+        error_interpreter("Invalid ternary operation node.\n");
+    }
+
+    InterpretResult cond_res = interpret_node(node->ternary.condition, env);
+    if (cond_res.did_return || cond_res.did_break) {
+        return cond_res;
+    }
+
+    bool is_true = false;
+    if (cond_res.value.type == TYPE_BOOLEAN) {
+        is_true = cond_res.value.data.boolean;
+    } else if (cond_res.value.type == TYPE_INTEGER) {
+        is_true = (cond_res.value.data.integer != 0);
+    } else {
+        error_interpreter("Ternary condition must be boolean or integer.\n");
+    }
+
+    if (is_true) {
+        InterpretResult true_res = interpret_node(node->ternary.true_expr, env);
+        return true_res;
+    } else {
+        InterpretResult false_res =
+            interpret_node(node->ternary.false_expr, env);
+        return false_res;
+    }
 }

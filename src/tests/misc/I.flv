@@ -1,0 +1,10 @@
+let a = 5;
+serve("Enter a number:");
+let b = int(sample());
+let c = b > a ? 5 : b;
+serve(c);
+
+let f = False;
+let t = True;
+f ? serve(1) : serve(2);
+t ? serve(3) : serve(4);

@@ -1,7 +1,10 @@
 #ifndef LEXER_UTILS_H
 #define LEXER_UTILS_H
 
+#include "../debug/debug.h"
 #include "../shared/token_types.h"
+#include <ctype.h>
+#include <stdlib.h>
 
 // Token management functions
 

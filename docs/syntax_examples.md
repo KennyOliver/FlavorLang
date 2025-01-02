@@ -20,7 +20,8 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 12. [Raise an Error](#12)
 13. [Casting](#13)
 14. [Random Number Generation & Standard Library Functions](#14)
-15. [UNIX Timestamp to ISO-8601 Date](#15)
+15. [Get Current Year with `get_time()`](#15)
+16. [Ternary Operator](#16)
 
 ---
 
@@ -264,7 +265,7 @@ for i in 1..=10 {
 burn("This is a fatal error with code:", 1001);
 ```
 
-### 🗓️ 15. Get Current Year <a id="15"></a>
+### 🗓️ 15. Get Current Year with `get_time()` <a id="15"></a>
 
 ```py
 create get_year_from_unix(timestamp) {
@@ -292,6 +293,20 @@ create get_year_from_unix(timestamp) {
 }
 
 serve(get_year_from_unix(get_time()));
+```
+
+### 🧮 16. Ternary Operator <a id="16"></a>
+
+```py
+create check_even_odd(num) {
+    deliver num % 2 == 0 ? "Even" : "Odd";
+}
+
+for _ in 1..=5 {
+    serve("Enter a number:");
+    let input = int(sample());
+    serve(check_even_odd(input));
+}
 ```
 
 ---

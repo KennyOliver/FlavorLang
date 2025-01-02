@@ -20,18 +20,15 @@ LiteralValue interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
 Variable *get_variable(Environment *env, const char *variable_name);
 void add_variable(Environment *env, Variable var);
-void interpret_print(ASTNode *node, Environment *env);
-void interpret_raise_error(ASTNode *node, Environment *env);
-Variable interpret_input(Environment *env);
 InterpretResult interpret_conditional(ASTNode *node, Environment *env);
 void interpret_while_loop(ASTNode *node, Environment *env);
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env);
 void interpret_switch(ASTNode *node, Environment *env);
 void interpret_function_declaration(ASTNode *node, Environment *env);
 LiteralValue interpret_function_call(ASTNode *node, Environment *env);
-LiteralValue interpret_cast(ASTNode *node, Environment *env);
 LiteralValue interpret_unary_op(ASTNode *node, Environment *env);
 LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);
+InterpretResult interpret_ternary(ASTNode *node, Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);

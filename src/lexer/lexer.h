@@ -3,8 +3,8 @@
 
 #include "../shared/token_types.h"
 #include "keywords.h"
-#include "lexer_utils.h"
 #include "scanner.h"
+#include "utils.h"
 #include <string.h>
 
 #define INITIAL_TOKEN_CAPACITY 1024

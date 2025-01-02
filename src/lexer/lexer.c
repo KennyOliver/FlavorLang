@@ -80,13 +80,13 @@ Token *tokenize(const char *source) {
         }
 
         // Operator
-        if (strchr("=+-*/<>!.%&|", c)) {
+        if (strchr("=+-*/<>!.%&|?:", c)) {
             scan_operator(&state, &tokens, &token_count, &capacity);
             continue;
         }
 
         // Delimiters
-        if (strchr(",:;(){}", c)) {
+        if (strchr(",;(){}", c)) {
             if (c == '(') {
                 // Peek previous token to check if it's an identifier for
                 // function call
