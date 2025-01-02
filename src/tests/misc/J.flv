@@ -1,8 +1,8 @@
-let variable = 5;
-const constant = 5;
+let v = 5;
+const c = 5;
 
-variable = -5;
-serve(variable);
+v = -5;
+serve(v);
 
-constant = -5;
-serve(variable);
+c = -5;
+serve(c);
