@@ -291,6 +291,19 @@ void print_ast(ASTNode *node, int depth) {
             printf("Break Statement\n");
             break;
 
+        case AST_TERNARY:
+            printf("Ternary Operation:\n");
+            print_indentation(depth + 1);
+            printf("Condition:\n");
+            print_ast(node->ternary.condition, depth + 2);
+            print_indentation(depth + 1);
+            printf("True Expression:\n");
+            print_ast(node->ternary.true_expr, depth + 2);
+            print_indentation(depth + 1);
+            printf("False Expression:\n");
+            print_ast(node->ternary.false_expr, depth + 2);
+            break;
+
         case AST_VARIABLE:
             printf("Variable: `%s`\n", node->variable_name);
             break;
