@@ -27,13 +27,15 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 1. [Quick Start](#quick-start)
 
-2. [Execution Flags & Behaviors](#execution-flags--behaviors)
+2. [Why FlavorLang?](#why-flavorlang)
 
-3. [Syntax Keywords](#syntax-keywords)
+3. [Execution Flags & Behaviors](#execution-flags--behaviors)
 
-4. [Data Types](#data-types)
+4. [Syntax Keywords](#syntax-keywords)
 
-5. [Syntax Examples](#syntax-examples)
+5. [Data Types](#data-types)
+
+6. [Syntax Examples](#syntax-examples)
 
    - [Hello World](#hello-world)
    - [Defining Variables](#defining-variables)
@@ -51,9 +53,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
    - [Random Number Generation & Standard Library Functions](#random-number-generation-and-standard-library-functions)
    - [UNIX Timestamp to ISO-8601 Date](#unix-timestamp-to-iso-date)
 
-6. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
-
-7. [Why FlavorLang?](#why-flavorlang)
+7. [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf-of-flavorlang-syntax)
 
 8. [Debugging](#debugging)
 
@@ -66,11 +66,11 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 10. [Lexer](#lexer)
 
-- [Overview](#lexer-overview)
-- [How the Lexer Works](#how-the-lexer-works)
-- [Debugging Tokens](#debugging-tokens)
-- [Error Handling](#lexer-error-handling)
-- [Future Enhancements](#future-enhancements)
+    - [Overview](#lexer-overview)
+    - [How the Lexer Works](#how-the-lexer-works)
+    - [Debugging Tokens](#debugging-tokens)
+    - [Error Handling](#lexer-error-handling)
+    - [Future Enhancements](#future-enhancements)
 
 11. [Parser](#parser)
 
@@ -125,6 +125,15 @@ $ ./flavor recipe.flv --debug
 ```
 
 This will print detailed information about the tokenization and parsing process.
+
+---
+
+## Why FlavorLang? <a id="why-flavorlang"></a>
+
+- **Unique & Fun**: Express your programs like recipes!
+- **Flexible Execution**: File extensions and flags allow customized program behavior.
+- **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
+- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
 
 ---
 
@@ -643,15 +652,6 @@ range                ::= expression ".." expression
 
 step                 ::= expression ;
 ```
-
----
-
-## Why FlavorLang? <a id="why-flavorlang"></a>
-
-- **Unique & Fun**: Express your programs like recipes!
-- **Flexible Execution**: File extensions and flags allow customized program behavior.
-- **Readable Syntax**: Keywords like add, mix, cook, and deliver make code approachable and enjoyable.
-- **Debug-Friendly**: Easily trace and test your code step-by-step with `--chef` mode.
 
 ---
 
