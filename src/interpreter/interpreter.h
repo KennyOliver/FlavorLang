@@ -32,6 +32,7 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env);
 LiteralValue interpret_cast(ASTNode *node, Environment *env);
 LiteralValue interpret_unary_op(ASTNode *node, Environment *env);
 LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);
+InterpretResult interpret_ternary(ASTNode *node, Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);
