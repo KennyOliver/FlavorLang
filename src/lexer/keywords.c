@@ -2,7 +2,8 @@
 #include <string.h>
 
 const char *KEYWORDS[] = {
-    "let",     // let
+    "let",     // variable declaration
+    "const",   // constant declaration
     "if",      // if
     "elif",    // else if
     "else",    // else
