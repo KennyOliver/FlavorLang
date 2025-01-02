@@ -98,7 +98,7 @@ Clone the repository and build the project.
 
 ```bash
 $ git clone https://github.com/KennyOliver/FlavorLang.git
-$ cd FlavorLang
+$ cd src
 $ make
 ```
 
@@ -149,6 +149,9 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ## Syntax Keywords
 
+<details>
+<summary><b>Syntax Keywords table</b></summary>
+
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
 | `let`     | Define variables             | Declares and initializes variables.                                                         | ✅           |
@@ -167,12 +170,14 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ✅           |
-| `scran`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
+| `serve`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
 | `sample`  | Input from console           | Reads user input.                                                                           | ✅           |
-| `plate`   | Write to file                | Writes data to a file.                                                                      | ❌           |
-| `garnish` | Append to file               | Appends data to a file.                                                                     | ❌           |
-| `taste`   | Read from file               | Reads data from a file.                                                                     | ❌           |
+| `plate`   | Write to file                | Writes data to a file.                                                                      | ✅           |
+| `garnish` | Append to file               | Appends data to a file.                                                                     | ✅           |
+| `taste`   | Read from file               | Reads data from a file.                                                                     | ✅           |
 | `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
+
+</details>
 
 ---
 
