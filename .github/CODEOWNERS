@@ -5,6 +5,8 @@
 /docs/ @KennyOliver
 /src/ @KennyOliver
 /tests/ @KennyOliver
+/logo/ @KennyOliver
+/vscode-extension/ @KennyOliver
 
 # Global ownership (fallback for everything not explicitly defined above)
 
