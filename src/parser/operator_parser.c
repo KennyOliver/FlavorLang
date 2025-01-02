@@ -9,7 +9,42 @@
 
 // Implementation of the main expression parser
 ASTNode *parse_operator_expression(ParserState *state) {
-    return parse_logical(state);
+    return parse_ternary(state);
+}
+
+// Ternary Operations: <expression> ? <value> : <value>
+ASTNode *parse_ternary(ParserState *state) {
+    // First, parse "condition" using the next higher-precedence function
+    ASTNode *condition = parse_logical(state);
+
+    Token *current = get_current_token(state);
+    if (current->type == TOKEN_OPERATOR && strcmp(current->lexeme, "?") == 0) {
+        advance_token(state); // consume `?`
+
+        // Recursively parse expression for `True` branch (allows for nesting)
+        ASTNode *true_expr = parse_ternary(state);
+
+        expect_token(state, TOKEN_OPERATOR,
+                     "Expected `:` in ternary expression");
+
+        // Recursively parse expression for `False` branch
+        ASTNode *false_expr = parse_ternary(state);
+
+        ASTNode *ternary_node = malloc(sizeof(ASTNode));
+        if (!ternary_node) {
+            parser_error("Memory allocation failed for ternary node", current);
+        }
+        ternary_node->type = AST_TERNARY;
+        ternary_node->ternary.condition = condition;
+        ternary_node->ternary.true_expr = true_expr;
+        ternary_node->ternary.false_expr = false_expr;
+        ternary_node->next = NULL;
+
+        return ternary_node;
+    }
+
+    // If there’s no `?`, just return condition `ASTNode` (no ternary)
+    return condition;
 }
 
 // Logical Operators: &&, ||

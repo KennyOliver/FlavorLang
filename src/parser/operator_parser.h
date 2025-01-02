@@ -7,8 +7,9 @@
 // Parse an expression with operator precedence
 ASTNode *parse_operator_expression(ParserState *state);
 
-// Function declarations for each precedence level
+// Function declarations for each precedence level (in order of precedence)
 ASTNode *parse_logical(ParserState *state);
+ASTNode *parse_ternary(ParserState *state);
 ASTNode *parse_equality(ParserState *state);
 ASTNode *parse_comparison(ParserState *state);
 ASTNode *parse_term(ParserState *state);
