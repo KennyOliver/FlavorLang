@@ -281,31 +281,26 @@ step                 ::= expression ;
 
 ### 1. Build the Extension
 
-- Navigate to the `vscode-extension` folder and install dependencies:
+Navigate to the `vscode-extension` folder and install dependencies:
 
-  ```bash
-  cd vscode-extension
-  npm install
-  ```
+```bash
+cd vscode-extension
+npm install
+```
 
 ### 2. Package the Extension
 
-- Use vsce (Visual Studio Code Extension Manager) to create the `.vsix` package:
+Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
 
-  ```bash
-  npx vsce package
-  ```
-
-This generates a `.vsix` file in the vscode-extension folder.
+```bash
+npx vsce package
+```
 
 ### 3. Install in VS Code
 
 - Open VS Code.
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on Mac) and select _`Extensions: Install from VSIX…`_.
-- Select the generated `.vsix` file.
-
-Open a `.flv` file in VS Code.
-You should see custom syntax highlighting for FlavorLang!
+- Select the generated `.vsix` file within the `vscode-extension` folder.
 
 ---
 
