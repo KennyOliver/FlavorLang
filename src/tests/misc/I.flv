@@ -1,0 +1,3 @@
+let a = 5;
+let b = sample();
+let c = b > a ? 5 : b;
