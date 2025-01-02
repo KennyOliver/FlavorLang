@@ -52,7 +52,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_CONDITIONAL: {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
-        return interpret_conditional(node, env);
+        InterpretResult cond_res = interpret_conditional(node, env);
+        if (cond_res.did_return || cond_res.did_break) {
+            return cond_res;
+        }
+        return make_result(cond_res.value, false, false);
     }
 
     case AST_FUNCTION_CALL: {
@@ -65,7 +69,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_FUNCTION_DECLARATION: {
         debug_print_int("\tMatched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
-        // again, no direct return from a function declaration
+        // No direct return from a function declaration
         return make_result(create_default_value(), false, false);
     }
 
@@ -85,8 +89,8 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_WHILE_LOOP: {
         debug_print_int("\tMatched: `AST_WHILE_LOOP`\n");
-        interpret_while_loop(node, env);
-        return make_result(create_default_value(), false, false);
+        InterpretResult loop_res = interpret_while_loop(node, env);
+        return loop_res;
     }
 
     case AST_FOR_LOOP: {
@@ -103,8 +107,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_SWITCH: {
         debug_print_int("\tMatched: `AST_SWITCH`\n");
-        interpret_switch(node, env);
-        return make_result(create_default_value(), false, false);
+        InterpretResult switch_res = interpret_switch(node, env);
+        if (switch_res.did_return || switch_res.did_break) {
+            return switch_res;
+        }
+        return make_result(switch_res.value, false, false);
     }
 
     case AST_BREAK:
@@ -113,7 +120,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_TERNARY:
         debug_print_int("\tMatched: `AST_TERNARY`\n");
-        return interpret_ternary(node, env);
+        return interpret_ternary(node, env); // Delegate to helper
 
     default:
         error_interpreter("Unsupported `ASTNode` type.\n");
@@ -593,7 +600,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
         if (current_branch->conditional.condition) {
             InterpretResult cond_res =
                 interpret_node(current_branch->conditional.condition, env);
-            if (cond_res.did_return) {
+
+            if (cond_res.did_return || cond_res.did_break) {
                 // Bubble up immediately
                 return cond_res;
             }
@@ -619,7 +627,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
-                    if (body_res.did_return) {
+
+                    if (body_res.did_return || body_res.did_break) {
                         return body_res;
                     }
                     cs = cs->next;
@@ -635,7 +644,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                 ASTNode *cs = current_branch->conditional.body;
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
-                    if (body_res.did_return) {
+
+                    if (body_res.did_return || body_res.did_break) {
                         return body_res;
                     }
                     cs = cs->next;
@@ -655,21 +665,16 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
-void interpret_while_loop(ASTNode *node, Environment *env) {
+InterpretResult interpret_while_loop(ASTNode *node, Environment *env) {
     ASTNode *condition = node->while_loop.condition;
     ASTNode *body = node->while_loop.body;
 
     while (1) {
         // Check condition
         InterpretResult cond_r = interpret_node(condition, env);
-        if (cond_r.did_return) {
-            // If a return bubbled up, stop everything
-            return;
-        }
-        // Also check if a break bubbled up from condition (unlikely, but
-        // possible)
-        if (cond_r.did_break) {
-            break;
+        if (cond_r.did_return || cond_r.did_break) {
+            // Propagate break or return upwards
+            return cond_r;
         }
 
         // Evaluate condition as boolean/integer
@@ -690,19 +695,16 @@ void interpret_while_loop(ASTNode *node, Environment *env) {
         while (current) {
             InterpretResult body_r = interpret_node(current, env);
 
-            // If there's a return, propagate it up
-            if (body_r.did_return) {
-                return;
-            }
-            // If there's a break, break out of the while
-            if (body_r.did_break) {
-                // break the while
-                return;
+            // If there's a return or break, propagate it up
+            if (body_r.did_return || body_r.did_break) {
+                return body_r;
             }
 
             current = current->next;
         }
     }
+
+    return make_result(create_default_value(), false, false);
 }
 
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
@@ -859,7 +861,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     return create_default_value();
 }
 
-void interpret_switch(ASTNode *node, Environment *env) {
+InterpretResult interpret_switch(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_switch()`\n");
 
     // Evaluate the switch expression
@@ -869,22 +871,28 @@ void interpret_switch(ASTNode *node, Environment *env) {
     debug_print_int("Switch expression evaluated\n");
 
     ASTCaseNode *current_case = node->switch_case.cases;
-    bool break_encountered = false;
 
-    while (current_case && !break_encountered) {
+    while (current_case) {
         if (current_case->condition == NULL) {
             // `else` case
             debug_print_int("Executing `else` case\n");
             ASTNode *current_statement = current_case->body;
-            while (current_statement && !break_encountered) {
+            while (current_statement) {
                 if (current_statement->type == AST_BREAK) {
-                    break_encountered = true;
-                    break;
+                    // Return InterpretResult with did_break = true
+                    debug_print_int("Break encountered in else case\n");
+                    return make_result(create_default_value(), false, true);
                 }
-                // `interpret_node(...)` returning `InterpretResult`
-                interpret_node(current_statement, env);
+                // Interpret the statement
+                InterpretResult stmt_res =
+                    interpret_node(current_statement, env);
+                if (stmt_res.did_return || stmt_res.did_break) {
+                    // Propagate the flags upwards
+                    return stmt_res;
+                }
                 current_statement = current_statement->next;
             }
+            // After else, no more cases to execute
             break;
         } else {
             // Evaluate the case condition
@@ -915,15 +923,23 @@ void interpret_switch(ASTNode *node, Environment *env) {
                 debug_print_int("Match found, executing case body\n");
 
                 ASTNode *current_statement = current_case->body;
-                while (current_statement && !break_encountered) {
+                while (current_statement) {
                     if (current_statement->type == AST_BREAK) {
-                        break_encountered = true;
-                        break;
+                        // Return InterpretResult with did_break = true
+                        debug_print_int("Break encountered in matched case\n");
+                        return make_result(create_default_value(), false, true);
                     }
-                    interpret_node(current_statement, env);
+                    // Interpret the statement
+                    InterpretResult stmt_res =
+                        interpret_node(current_statement, env);
+                    if (stmt_res.did_return || stmt_res.did_break) {
+                        // Propagate the flags upwards
+                        return stmt_res;
+                    }
                     current_statement = current_statement->next;
                 }
-                // If break_encountered, break
+                // After matched case, no more cases to execute
+                break;
             }
         }
 
@@ -931,6 +947,9 @@ void interpret_switch(ASTNode *node, Environment *env) {
     }
 
     debug_print_int("Switch statement interpretation complete\n");
+
+    // Return a default value, no break or return encountered
+    return make_result(create_default_value(), false, false);
 }
 
 void interpret_function_declaration(ASTNode *node, Environment *env) {
