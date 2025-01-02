@@ -105,6 +105,7 @@ This will print detailed information about the tokenization and parsing process.
 ```bash
 $ ./flavor recipe.flv          # Default execution
 $ ./flavor recipe.flv --debug  # Debug mode
+$ ./flavor recipe.flv --about  # About FlavorLang
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
