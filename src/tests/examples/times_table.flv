@@ -1,0 +1,35 @@
+create format_num(num) {
+    if num < 10 {
+        deliver "  " + string(num);
+    } elif num < 100 {
+        deliver " " + string(num);
+    }
+
+    deliver num;
+}
+
+
+create times_table(num) {
+    let table = "";
+
+    for i in 1..=num {
+        let row = "";
+
+        for j in 1..=num {
+            let cell_data = i * j;
+            cell_data = string(format_num(cell_data));
+            row = row + cell_data + " ";
+        }
+
+        table = table + row + "\n";
+    }
+
+    deliver table;
+}
+
+
+serve("Times table generator");
+serve("Enter number:");
+let user_request = int(sample());
+
+serve(times_table(user_request));
