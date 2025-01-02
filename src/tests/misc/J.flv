@@ -1,0 +1,8 @@
+let variable = 5;
+const constant = 5;
+
+variable = -5;
+serve(variable);
+
+constant = -5;
+serve(variable);
