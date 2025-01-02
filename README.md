@@ -25,6 +25,8 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ## 📖 Table of Contents
 
+### `README.md`
+
 1. [🌶️ Why FlavorLang?](#why-flavorlang)
 
 2. [⚡ Quick Start](#quick-start)
@@ -35,13 +37,15 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 5. [Data Types](#data-types)
 
-6. [Syntax Examples](docs/syntax_examples.md)
+6. [Extended Backus-Naur Form (EBNF)](#ebnf)
 
-7. [Extended Backus-Naur Form (EBNF)](#ebnf)
+7. [Install Syntax Highlighter Extension](#extension)
 
-8. [Debugging](docs/debugging.md)
+### `docs/`
 
-9. [Install Syntax Highlighter Extension](#extension)
+8. [Syntax Examples](docs/syntax_examples.md)
+
+9. [Debugging](docs/debugging.md)
 
 10. [Lexer](docs/lexer.md)
 
