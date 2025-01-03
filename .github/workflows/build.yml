@@ -51,30 +51,30 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             cat <<EOF > install.sh
-            #!/bin/bash
+#!/bin/bash
 
-            # Set execute permissions
-            chmod +x flavorlang-macos-latest
+# Set execute permissions
+chmod +x flavorlang-macos-latest
 
-            # Move to /usr/local/bin for easier access
-            sudo mv flavorlang-macos-latest /usr/local/bin/
+# Move to /usr/local/bin for easier access
+sudo mv flavorlang-macos-latest /usr/local/bin/
 
-            # Run the executable
-            flavorlang-macos-latest --about
-            EOF
+# Run the executable
+flavorlang-macos-latest --about
+EOF
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             cat <<EOF > install.sh
-            #!/bin/bash
+#!/bin/bash
 
-            # Set execute permissions
-            chmod +x flavorlang-ubuntu-latest
+# Set execute permissions
+chmod +x flavorlang-ubuntu-latest
 
-            # Move to /usr/local/bin for easier access
-            sudo mv flavorlang-ubuntu-latest /usr/local/bin/
+# Move to /usr/local/bin for easier access
+sudo mv flavorlang-ubuntu-latest /usr/local/bin/
 
-            # Run the executable
-            flavorlang-ubuntu-latest --about
-            EOF
+# Run the executable
+flavorlang-ubuntu-latest --about
+EOF
           fi
           chmod +x install.sh
 
