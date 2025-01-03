@@ -185,7 +185,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ✅           |
 | `is`      | Case clause                  | Defines a case inside `check`.                                                              | ✅           |
 | `break`   | Exit control flow            | Stops execution of further cases in `check` and exits the current flow.                     | ✅           |
-| `create`  | Define a function            | createares a reusable block of logic.                                                       | ✅           |
+| `create`  | Define a function            | Creates a reusable block of logic.                                                          | ✅           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ✅           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
