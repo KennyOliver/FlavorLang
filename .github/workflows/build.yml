@@ -34,6 +34,8 @@ jobs:
           npm audit fix --force || true
           npx @vscode/vsce package
           mv *.vsix flavorlang-extension-${{ matrix.os }}.vsix
+          # Move the VSIX to the root directory
+          mv flavorlang-extension-${{ matrix.os }}.vsix ../
 
       - name: Build FlavorLang interpreter
         working-directory: src
@@ -44,7 +46,7 @@ jobs:
 
       # Make interpreter executable
       - name: Make interpreter executable
-        run: chmod +x src/flavorlang-${{ matrix.os }}
+        run: chmod +x flavorlang-${{ matrix.os }}
 
       # Copy the appropriate install.sh script
       - name: Copy install.sh
