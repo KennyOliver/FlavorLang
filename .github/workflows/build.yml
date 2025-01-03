@@ -116,7 +116,7 @@ jobs:
 
       # Step 5: Create Release and Upload Assets
       - name: Create Release and Upload Assets
-        uses: ncipollo/release-action@v1.10.1
+        uses: ncipollo/release-action@v1.14.0
         with:
           tag: ${{ github.event.release.tag_name }}
           name: ${{ github.event.release.name }}
