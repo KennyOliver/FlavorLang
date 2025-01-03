@@ -4,12 +4,12 @@
 set -e
 
 # Set execute permissions
-chmod +x flavorlang
+chmod +x flavor
 
 # Move to /usr/local/bin for easier access
-echo "Moving flavorlang to /usr/local/bin/"
-sudo mv flavorlang /usr/local/bin/
+echo "Moving flavor to /usr/local/bin/"
+sudo mv flavor /usr/local/bin/
 
 # Run the executable
 echo "Running FlavorLang interpreter..."
-flavorlang --about
+flavor --about
