@@ -2,7 +2,8 @@
 #include <string.h>
 
 const char *KEYWORDS[] = {
-    "let",     // let
+    "let",     // variable declaration
+    "const",   // constant declaration
     "if",      // if
     "elif",    // else if
     "else",    // else
@@ -31,7 +32,7 @@ const size_t KEYWORDS_COUNT =
 
 const char *OPERATORS[] = {
     "=", "==", "!=", "+",  "-",  "*",   "**", "/",  "//", "%",
-    "<", ">",  ">=", "<=", "..", "..=", "&&", "||", "~",  NULL // sentinel value
+    "<", ">",  ">=", "<=", "..", "..=", "&&", "||", "!",  NULL // sentinel value
 };
 
 const size_t OPERATORS_COUNT =

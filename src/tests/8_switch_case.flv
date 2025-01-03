@@ -1,4 +1,4 @@
-let dessert = "cake";
+const dessert = "cake";
 
 check dessert {
     is "cake":

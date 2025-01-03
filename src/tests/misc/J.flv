@@ -1,0 +1,8 @@
+let v = 5;
+const c = 5;
+
+v = -5;
+serve(v);
+
+c = -5;
+serve(c);

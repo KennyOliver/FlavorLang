@@ -1,4 +1,4 @@
-let time = 20;
+const time = 20;
 
 serve("Before error.");
 

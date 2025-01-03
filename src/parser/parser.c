@@ -34,6 +34,8 @@ ASTNode *parse_statement(ParserState *state) {
                     token->lexeme);
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
+    if (match_token(state, "const"))
+        return parse_constant_declaration(state);
     if (match_token(state, "if"))
         return parse_conditional_block(state);
     if (match_token(state, "while"))
@@ -84,42 +86,63 @@ ASTNode *parse_expression_statement(ParserState *state) {
     return expr_node;
 }
 
-ASTNode *parse_variable_declaration(ParserState *state) {
-    debug_print_par("Starting variable declaration parse\n");
-    expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
+ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
+    if (type == AST_CONSTANT) {
+        debug_print_par("Starting constant declaration parse\n");
+        expect_token(state, TOKEN_KEYWORD, "Expected `const` keyword");
+    } else {
+        debug_print_par("Starting variable declaration parse\n");
+        expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
+    }
 
-    // Parse variable name
+    // Parse variable/constant name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
-
-    // Expect '=' operator
-    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+    if (type == AST_CONSTANT) {
+        expect_token(state, TOKEN_IDENTIFIER, "Expected constant name");
+        expect_token(state, TOKEN_OPERATOR, "Expected `=` after constant name");
+    } else {
+        expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
+        expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+    }
 
     // Create AST node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
-    node->type = AST_ASSIGNMENT;
+    node->type = type;
 
-    // Create a deep copy of the variable name
+    // Create a deep copy of the variable/constant name
     if (name && name->lexeme) {
         node->assignment.variable_name = strdup(name->lexeme);
         if (!node->assignment.variable_name) {
-            parser_error("Memory allocation failed for variable name", name);
+            parser_error(AST_CONSTANT
+                             ? "Memory allocation failed for constant name"
+                             : "Memory allocation failed for variable name",
+                         name);
         }
     } else {
-        parser_error("Invalid variable name token", name);
+        parser_error(AST_CONSTANT ? "Invalid constant name token"
+                                  : "Invalid variable name token",
+                     name);
     }
 
-    // Parse the value as an expression (which can handle both simple literals
-    // and complex expressions with operators)
     node->assignment.value = parse_expression(state);
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after variable declaration");
+                 AST_CONSTANT ? "Expected `;` after constant declaration"
+                              : "Expected `;` after variable declaration");
+
     return node;
+}
+
+ASTNode *parse_variable_declaration(ParserState *state) {
+    return parse_declaration(state, AST_ASSIGNMENT);
+}
+
+ASTNode *parse_constant_declaration(ParserState *state) {
+    return parse_declaration(state, AST_CONSTANT);
 }
 
 ASTNode *parse_variable_assignment(ParserState *state) {
@@ -537,7 +560,7 @@ ASTNode *parse_case_body(ParserState *state) {
     while (1) {
         Token *current = get_current_token(state);
 
-        // Stop parsing the body if we encounter 'is', 'else', or '}'
+        // Stop parsing the body if we encounter `is`, `else`, or `}`
         if ((current->type == TOKEN_KEYWORD &&
              (strcmp(current->lexeme, "is") == 0 ||
               strcmp(current->lexeme, "else") == 0)) ||
@@ -579,7 +602,7 @@ ASTNode *parse_switch_block(ParserState *state) {
 
     // Expect `{`
     expect_token(state, TOKEN_BRACE_OPEN,
-                 "Expected '{' after check expression");
+                 "Expected `{` after check expression");
 
     // Initialize cases list
     node->switch_case.cases = NULL;
@@ -597,12 +620,12 @@ ASTNode *parse_switch_block(ParserState *state) {
         // Handle `is` clauses
         if (current->type == TOKEN_KEYWORD &&
             strcmp(current->lexeme, "is") == 0) {
-            advance_token(state); // Consume 'is'
+            advance_token(state); // consume `is`
 
             // Parse condition expression
             ASTNode *condition = parse_expression(state);
             expect_token(state, TOKEN_DELIMITER,
-                         "Expected ':' after case value");
+                         "Expected `:` after case value");
 
             // Collect all consecutive `is` clauses
             // allowing multiple `is` conditions to share the same body
@@ -625,12 +648,12 @@ ASTNode *parse_switch_block(ParserState *state) {
                 Token *next = get_current_token(state);
                 if (next->type == TOKEN_KEYWORD &&
                     strcmp(next->lexeme, "is") == 0) {
-                    advance_token(state); // Consume 'is'
+                    advance_token(state); // consume `is`
 
                     // Parse next condition
                     ASTNode *next_condition = parse_expression(state);
                     expect_token(state, TOKEN_DELIMITER,
-                                 "Expected ':' after case value");
+                                 "Expected `:` after case value");
 
                     // Create new case node
                     ASTCaseNode *new_case = malloc(sizeof(ASTCaseNode));
@@ -653,10 +676,10 @@ ASTNode *parse_switch_block(ParserState *state) {
             ASTNode *body = NULL;
             Token *body_start = get_current_token(state);
             if (body_start->type == TOKEN_BRACE_OPEN) {
-                advance_token(state); // Consume '{'
+                advance_token(state); // Consume `{`
                 body = parse_block(state);
                 expect_token(state, TOKEN_BRACE_CLOSE,
-                             "Expected '}' after case body");
+                             "Expected `}` after case body");
             } else {
                 // Parse multiple statements as the shared body
                 body = parse_case_body(state);
@@ -681,19 +704,19 @@ ASTNode *parse_switch_block(ParserState *state) {
         // Handle `else` clause
         else if (current->type == TOKEN_KEYWORD &&
                  strcmp(current->lexeme, "else") == 0) {
-            advance_token(state); // Consume 'else'
+            advance_token(state); // consume `else`
 
             // Parse `:` delimiter
-            expect_token(state, TOKEN_DELIMITER, "Expected ':' after `else`");
+            expect_token(state, TOKEN_DELIMITER, "Expected `:` after `else`");
 
             // Parse the body of `else`
             ASTNode *body = NULL;
             Token *body_start = get_current_token(state);
             if (body_start->type == TOKEN_BRACE_OPEN) {
-                advance_token(state); // Consume '{'
+                advance_token(state); // consume `{`
                 body = parse_block(state);
                 expect_token(state, TOKEN_BRACE_CLOSE,
-                             "Expected '}' after else body");
+                             "Expected `}` after else body");
             } else {
                 // Parse multiple statements as the body
                 body = parse_case_body(state);
@@ -706,7 +729,7 @@ ASTNode *parse_switch_block(ParserState *state) {
             if (!default_case) {
                 parser_error("Memory allocation failed", current);
             }
-            default_case->condition = NULL; // No condition for `else`
+            default_case->condition = NULL; // no condition for `else`
             default_case->body = body;
             default_case->next = NULL;
 
@@ -720,12 +743,13 @@ ASTNode *parse_switch_block(ParserState *state) {
 
             break; // `else` is always the last case
         } else {
-            break; // No more cases
+            // No more cases
+            break;
         }
     }
 
     // Expect the closing `}` of the entire `check` block
-    expect_token(state, TOKEN_BRACE_CLOSE, "Expected '}' to close check block");
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to close check block");
 
     return node;
 }
@@ -852,12 +876,12 @@ ASTNode *parse_function_call(ParserState *state) {
     node->function_call.arguments = NULL;
 
     // Parse arguments (if any)
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected '(' after function name");
+    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after function name");
 
     // Parse argument list (which can now be empty)
     node->function_call.arguments = parse_argument_list(state);
 
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected ')' after argument list");
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
 
     node->next = NULL;
     return node;

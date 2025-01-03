@@ -7,17 +7,17 @@ serve("Hello world!");
 # ==================================================
 # 2
 # ==================================================
-let name = "Chef";
-let age = 25;
+const name = "Hello, " + "world!" + " :)";
+const age = 25;
 
-serve("Name:", name);
+serve(name);
 serve("Age:", age);
 
 
 # ==================================================
 # 3
 # ==================================================
-let oven_temperature = 200;
+const oven_temperature = 200;
 
 if oven_temperature > 180 {
     serve("The oven is hot!");
@@ -68,7 +68,7 @@ create bake_cake(temperature) {
 	}
 }
 
-let result = bake_cake(200);
+const result = bake_cake(200);
 serve(result);
 
 
@@ -86,7 +86,7 @@ serve(result);
 # ==================================================
 # 8
 # ==================================================
-let dessert = "cake";
+const dessert = "cake";
 
 check dessert {
     is "cake":
@@ -104,7 +104,7 @@ check dessert {
 # 9
 # ==================================================
 serve("What's your favorite dessert?");
-let favorite = sample();
+const favorite = sample();
 
 serve("You chose:", favorite);
 
@@ -133,12 +133,12 @@ serve("Blast off!");
 # ==================================================
 # 11
 # ==================================================
-let filepath = "./tests/output.txt";
+const filepath = "./tests/output.txt";
 
 plate_file(filepath, "Freshly baked cake ready to deliver!");
 garnish_file(filepath, "\nDon't forget the toppings!");
 
-let data = taste_file(filepath);
+const data = taste_file(filepath);
 serve("File Contents:");
 serve(data);
 
@@ -146,7 +146,7 @@ serve(data);
 # ==================================================
 # 12
 # ==================================================
-let time = 20;
+const time = 20;
 
 serve("Before error.");
 
@@ -160,12 +160,12 @@ serve("After error?");
 # ==================================================
 # 13
 # ==================================================
-let a = 1;
+const a = 1;
 serve(a + a);
 serve(string(a) + string(a));
 
-let b = "True";
-let c = "False";
+const b = "True";
+const c = "False";
 serve(b == c);
 serve(b != c);
 
@@ -177,6 +177,10 @@ for _ in 1..=2 {
 }
 
 serve(float("+8"));
+serve(int(True));
+serve(float(True));
+serve(int(False));
+serve(float(False));
 
 
 # ==================================================
@@ -184,13 +188,13 @@ serve(float("+8"));
 # ==================================================
 # Using `sample()` to get user input
 serve("Enter your favorite number:");
-let favorite = sample();
+const favorite = sample();
 serve("Your favorite is:", favorite);
 
 # Using `random()` with different argument counts
-let num1 = random();              # Generates between 0.0 and 1.0
-let num2 = random(5.0);           # Generates between 0.0 and 5.0
-let num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
+const num1 = random();              # Generates between 0.0 and 1.0
+const num2 = random(5.0);           # Generates between 0.0 and 5.0
+const num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
 serve("Random numbers:", num1, num2, num3);
 
 for i in 1..=10 {
