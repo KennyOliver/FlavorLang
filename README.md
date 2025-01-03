@@ -139,7 +139,7 @@ serve("Welcome to FlavorLang!");
 ### 3. Run the Program
 
 ```
-$ ./flavor recipe.flv
+$ flavor recipe.flv
 
 Welcome to FlavorLang!
 ```
@@ -149,7 +149,7 @@ Welcome to FlavorLang!
 Enable debug mode to inspect tokens and execution flow.
 
 ```bash
-$ ./flavor recipe.flv --debug
+$ flavor recipe.flv --debug
 ```
 
 This will print detailed information about the tokenization and parsing process.
@@ -159,9 +159,9 @@ This will print detailed information about the tokenization and parsing process.
 ## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
-$ ./flavor recipe.flv          # Default execution
-$ ./flavor recipe.flv --debug  # Debug mode
-$ ./flavor recipe.flv --about  # About FlavorLang
+$ flavor recipe.flv          # Default execution
+$ flavor recipe.flv --debug  # Debug mode
+$ flavor --about  # About FlavorLang
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
