@@ -70,10 +70,62 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### 1. Install the Compiler
 
+<details>
+<summary>
+   <h4>Make it yourself</h4>
+</summary>
+
 ```bash
 $ git clone https://github.com/KennyOliver/FlavorLang.git
 $ cd src
 $ make
+```
+
+</details>
+
+#### For macOS Users
+
+##### 1. Download & Extract the ZIP
+
+[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+
+##### 2. Run the Install Script
+
+<!-- chmod +x install.sh -->
+
+```bash
+./install.sh
+```
+
+##### 3. Handle macOS Security Prompt (If Any)
+
+- If macOS prompts a security warning, navigate to <kbd>System Preferences</kbd> > <kbd>Security & Privacy</kbd> > <kbd>General</kbd>.
+- Click "Open Anyway" for `flavor`.
+
+##### 4. Verify Installation
+
+```bash
+flavor --about
+```
+
+#### For Ubuntu Users
+
+##### 1. Download & Extract the ZIP
+
+[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+
+##### 2. Run the Install Script
+
+<!-- chmod +x install.sh -->
+
+```bash
+./install.sh
+```
+
+##### 3. Verify Installation
+
+```bash
+flavor --about
 ```
 
 ### 2. Write Your First Recipe
