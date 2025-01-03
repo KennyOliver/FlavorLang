@@ -104,7 +104,7 @@ check dessert {
 # 9
 # ==================================================
 serve("What's your favorite dessert?");
-let favorite = sample();
+const favorite = sample();
 
 serve("You chose:", favorite);
 
