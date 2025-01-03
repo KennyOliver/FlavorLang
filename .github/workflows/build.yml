@@ -42,6 +42,10 @@ jobs:
       - name: Rename FlavorLang interpreter
         run: mv src/flavor src/flavorlang-${{ matrix.os }}
 
+      # **New Step: Make Interpreter Executable**
+      - name: Make interpreter executable
+        run: chmod +x src/flavorlang-${{ matrix.os }}
+
       # Upload artifacts separately for clarity
       - name: Upload VS Code extension
         uses: actions/upload-artifact@v4
