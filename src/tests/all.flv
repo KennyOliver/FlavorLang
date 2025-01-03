@@ -177,6 +177,10 @@ for _ in 1..=2 {
 }
 
 serve(float("+8"));
+serve(int(True));
+serve(float(True));
+serve(int(False));
+serve(float(False));
 
 
 # ==================================================
