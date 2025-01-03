@@ -42,22 +42,53 @@ jobs:
       - name: Rename FlavorLang interpreter
         run: mv src/flavor src/flavorlang-${{ matrix.os }}
 
-      # **New Step: Make Interpreter Executable**
+      # Make interpreter executable
       - name: Make interpreter executable
         run: chmod +x src/flavorlang-${{ matrix.os }}
 
-      # Upload artifacts separately for clarity
-      - name: Upload VS Code extension
-        uses: actions/upload-artifact@v4
-        with:
-          name: vscode-extension-${{ matrix.os }}
-          path: vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
+      # Create install.sh script
+      - name: Create install.sh
+        run: |
+          if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            cat <<EOF > install.sh
+            #!/bin/bash
 
-      - name: Upload interpreter
+            # Set execute permissions
+            chmod +x flavorlang-macos-latest
+
+            # Move to /usr/local/bin for easier access
+            sudo mv flavorlang-macos-latest /usr/local/bin/
+
+            # Run the executable
+            flavorlang-macos-latest --about
+            EOF
+                      elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+                        cat <<EOF > install.sh
+            #!/bin/bash
+
+            # Set execute permissions
+            chmod +x flavorlang-ubuntu-latest
+
+            # Move to /usr/local/bin for easier access
+            sudo mv flavorlang-ubuntu-latest /usr/local/bin/
+
+            # Run the executable
+            flavorlang-ubuntu-latest --about
+            EOF
+                      fi
+                      chmod +x install.sh
+
+      # Package interpreter, VSIX, and install.sh into a ZIP
+      - name: Package release assets
+        run: |
+          zip -r flavorlang-${{ matrix.os }}.zip flavorlang-${{ matrix.os }} flavorlang-extension-${{ matrix.os }}.vsix install.sh
+
+      # Upload the ZIP as an artifact
+      - name: Upload release package
         uses: actions/upload-artifact@v4
         with:
-          name: interpreter-${{ matrix.os }}
-          path: src/flavorlang-${{ matrix.os }}
+          name: flavorlang-${{ matrix.os }}
+          path: flavorlang-${{ matrix.os }}.zip
 
   release:
     name: Attach Artifacts to Release
@@ -71,7 +102,7 @@ jobs:
         with:
           path: ./artifacts
 
-      # Debug step to see file structure
+      # Debug step to verify file structure
       - name: Debug file structure
         run: |
           echo "Contents of artifacts directory:"
@@ -84,5 +115,5 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./artifacts/**/flavorlang-extension-*.vsix
-            ./artifacts/**/flavorlang-*-latest
+            ./artifacts/**/flavorlang-ubuntu-latest.zip
+            ./artifacts/**/flavorlang-macos-latest.zip
