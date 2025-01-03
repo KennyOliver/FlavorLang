@@ -560,7 +560,7 @@ ASTNode *parse_case_body(ParserState *state) {
     while (1) {
         Token *current = get_current_token(state);
 
-        // Stop parsing the body if we encounter `is`, `else`, or `}`
+        // Stop parsing the body if any of `is`, `else`, or `}` get encountered
         if ((current->type == TOKEN_KEYWORD &&
              (strcmp(current->lexeme, "is") == 0 ||
               strcmp(current->lexeme, "else") == 0)) ||
@@ -593,6 +593,9 @@ ASTNode *parse_switch_block(ParserState *state) {
     }
 
     node->type = AST_SWITCH;
+    node->switch_case.expression = NULL;
+    node->switch_case.cases = NULL;
+    node->next = NULL;
 
     // Handle `check` keyword
     expect_token(state, TOKEN_KEYWORD, "Expected `check` keyword");
@@ -605,7 +608,6 @@ ASTNode *parse_switch_block(ParserState *state) {
                  "Expected `{` after check expression");
 
     // Initialize cases list
-    node->switch_case.cases = NULL;
     ASTCaseNode *last_case = NULL;
 
     while (1) {
@@ -624,116 +626,44 @@ ASTNode *parse_switch_block(ParserState *state) {
 
             // Parse condition expression
             ASTNode *condition = parse_expression(state);
-            expect_token(state, TOKEN_DELIMITER,
-                         "Expected `:` after case value");
+            expect_token(state, TOKEN_COLON, "Expected `:` after case value");
 
-            // Collect all consecutive `is` clauses
-            // allowing multiple `is` conditions to share the same body
-            ASTCaseNode *temp_head = NULL;
-            ASTCaseNode *temp_tail = NULL;
-
-            // Add the first condition
+            // Create a new case node
             ASTCaseNode *case_node = malloc(sizeof(ASTCaseNode));
             if (!case_node) {
-                parser_error("Memory allocation failed", current);
+                parser_error("Memory allocation failed for ASTCaseNode",
+                             current);
             }
             case_node->condition = condition;
-            case_node->body = NULL; // To be assigned after parsing the body
+            case_node->body = parse_case_body(state); // Parse unique body
             case_node->next = NULL;
 
-            temp_head = temp_tail = case_node;
-
-            // Check for additional `is` clauses
-            while (1) {
-                Token *next = get_current_token(state);
-                if (next->type == TOKEN_KEYWORD &&
-                    strcmp(next->lexeme, "is") == 0) {
-                    advance_token(state); // consume `is`
-
-                    // Parse next condition
-                    ASTNode *next_condition = parse_expression(state);
-                    expect_token(state, TOKEN_DELIMITER,
-                                 "Expected `:` after case value");
-
-                    // Create new case node
-                    ASTCaseNode *new_case = malloc(sizeof(ASTCaseNode));
-                    if (!new_case) {
-                        parser_error("Memory allocation failed", next);
-                    }
-                    new_case->condition = next_condition;
-                    new_case->body = NULL;
-                    new_case->next = NULL;
-
-                    // Add to temporary list
-                    temp_tail->next = new_case;
-                    temp_tail = new_case;
-                } else {
-                    break; // No more `is` clauses
-                }
-            }
-
-            // Now, parse the shared body
-            ASTNode *body = NULL;
-            Token *body_start = get_current_token(state);
-            if (body_start->type == TOKEN_BRACE_OPEN) {
-                advance_token(state); // Consume `{`
-                body = parse_block(state);
-                expect_token(state, TOKEN_BRACE_CLOSE,
-                             "Expected `}` after case body");
+            // Append to the cases list
+            if (!node->switch_case.cases) {
+                node->switch_case.cases = case_node;
             } else {
-                // Parse multiple statements as the shared body
-                body = parse_case_body(state);
-                // No need to expect a delimiter here since parse_case_body
-                // stops appropriately
+                last_case->next = case_node;
             }
-
-            // Assign the same body to all collected `is` cases
-            ASTCaseNode *temp_case = temp_head;
-            while (temp_case) {
-                temp_case->body = body;
-                // Link to the main cases list
-                if (!node->switch_case.cases) {
-                    node->switch_case.cases = temp_case;
-                } else {
-                    last_case->next = temp_case;
-                }
-                last_case = temp_case;
-                temp_case = temp_case->next;
-            }
+            last_case = case_node;
         }
         // Handle `else` clause
         else if (current->type == TOKEN_KEYWORD &&
                  strcmp(current->lexeme, "else") == 0) {
             advance_token(state); // consume `else`
 
-            // Parse `:` delimiter
-            expect_token(state, TOKEN_DELIMITER, "Expected `:` after `else`");
-
-            // Parse the body of `else`
-            ASTNode *body = NULL;
-            Token *body_start = get_current_token(state);
-            if (body_start->type == TOKEN_BRACE_OPEN) {
-                advance_token(state); // consume `{`
-                body = parse_block(state);
-                expect_token(state, TOKEN_BRACE_CLOSE,
-                             "Expected `}` after else body");
-            } else {
-                // Parse multiple statements as the body
-                body = parse_case_body(state);
-                // No need to expect a delimiter here since `parse_case_body`
-                // stops appropriately
-            }
+            expect_token(state, TOKEN_COLON, "Expected `:` after `else`");
 
             // Create the default case node
             ASTCaseNode *default_case = malloc(sizeof(ASTCaseNode));
             if (!default_case) {
-                parser_error("Memory allocation failed", current);
+                parser_error("Memory allocation failed for default ASTCaseNode",
+                             current);
             }
-            default_case->condition = NULL; // no condition for `else`
-            default_case->body = body;
+            default_case->condition = NULL; // No condition for `else`
+            default_case->body = parse_case_body(state); // Parse unique body
             default_case->next = NULL;
 
-            // Add to cases list
+            // Append to the cases list
             if (!node->switch_case.cases) {
                 node->switch_case.cases = default_case;
             } else {

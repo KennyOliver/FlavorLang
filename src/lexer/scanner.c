@@ -134,6 +134,13 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
     char third_char =
         state->pos < state->length - 2 ? state->source[state->pos + 2] : '\0';
 
+    if (first_char == ':') {
+        append_token(tokens, token_count, capacity, TOKEN_COLON, ":",
+                     state->line);
+        state->pos++;
+        return;
+    }
+
     // Check for two-character & three-character operators
     if (second_char != '\0') {
         if ((first_char == '=' && second_char == '=') || // ==
@@ -159,15 +166,16 @@ void scan_operator(ScannerState *state, Token **tokens, size_t *token_count,
     }
 
     // Handle single-character operators
-    if (strchr("=<>!+-*/%.?:", first_char)) {
-        char *lexeme = strndup(&state->source[state->pos], 1);
+    if (strchr("=<>!+-*/%.?", first_char)) {
+        char lexeme[2] = {first_char, '\0'};
         append_token(tokens, token_count, capacity, TOKEN_OPERATOR, lexeme,
                      state->line);
-        free(lexeme);
         state->pos++;
     } else {
-        fprintf(stderr, "Error: Unknown operator or invalid character `%d`\n",
-                state->line);
+        fprintf(
+            stderr,
+            "Error: Unknown operator or invalid character `%c` on line %d\n",
+            first_char, state->line);
         exit(1);
     }
 }

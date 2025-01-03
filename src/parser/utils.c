@@ -25,7 +25,7 @@ void free_ast(ASTNode *node) {
 
         case AST_UNARY_OP:
             free(node->unary_op.operator);
-            free(node->unary_op.operand);
+            free_ast(node->unary_op.operand);
             break;
 
         case AST_BINARY_OP:
@@ -54,10 +54,8 @@ void free_ast(ASTNode *node) {
 
         case AST_FUNCTION_DECLARATION:
         case AST_FUNCTION_CALL:
-            free(node->function_call.parameters);
-            free(node->function_call.arguments);
-            free(node->function_call.body);
-            free(node->function_call.return_data);
+            free(node->function_call.name);
+            free_ast(node->function_call.arguments);
             break;
 
         case AST_BREAK:
