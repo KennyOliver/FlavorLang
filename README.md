@@ -81,6 +81,11 @@ $ cd src
 $ make
 ```
 
+> [!Note]
+>
+> Unless you move `flavor` to `/usr/local/bin/`,
+> you'll have to use `./flavor` for commands with relative file paths.
+
 </details>
 
 #### For macOS Users
@@ -139,7 +144,7 @@ serve("Welcome to FlavorLang!");
 ### 3. Run the Program
 
 ```
-$ ./flavor recipe.flv
+$ flavor recipe.flv
 
 Welcome to FlavorLang!
 ```
@@ -149,7 +154,7 @@ Welcome to FlavorLang!
 Enable debug mode to inspect tokens and execution flow.
 
 ```bash
-$ ./flavor recipe.flv --debug
+$ flavor recipe.flv --debug
 ```
 
 This will print detailed information about the tokenization and parsing process.
@@ -159,9 +164,9 @@ This will print detailed information about the tokenization and parsing process.
 ## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
-$ ./flavor recipe.flv          # Default execution
-$ ./flavor recipe.flv --debug  # Debug mode
-$ ./flavor recipe.flv --about  # About FlavorLang
+$ flavor recipe.flv          # Default execution
+$ flavor recipe.flv --debug  # Debug mode
+$ flavor --about  # About FlavorLang
 ```
 
 The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
@@ -185,7 +190,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          | ✅           |
 | `is`      | Case clause                  | Defines a case inside `check`.                                                              | ✅           |
 | `break`   | Exit control flow            | Stops execution of further cases in `check` and exits the current flow.                     | ✅           |
-| `create`  | Define a function            | createares a reusable block of logic.                                                       | ✅           |
+| `create`  | Define a function            | Creates a reusable block of logic.                                                          | ✅           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ✅           |
 | `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
 | `crumbs`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
@@ -203,12 +208,12 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ## Data Types
 
-| Data Type | Syntax Example    | Capacity/Range                                                                                     |
-| --------- | ----------------- | -------------------------------------------------------------------------------------------------- |
-| `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.        |
-| `float`   | `3.14`            | `FLOAT_SIZE` (long double, 64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932.     |
-| `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       |
-| `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. |
+| Data Type | Capacity/Range                                                       |
+| --------- | -------------------------------------------------------------------- |
+| `string`  | Dependent on system memory & encoding (e.g., UTF-8).                 |
+| `float`   | (64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932. |
+| `integer` | (64-bit): ±9e18 (quintillion).                                       |
+| `boolean` | `1` for `True`, `0` for `False`. Typically stored as 1 byte.         |
 
 <details>
 

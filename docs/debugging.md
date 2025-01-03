@@ -130,7 +130,7 @@ The oven is hot!
 Full debug logs for each stage are printed.
 
 ```bash
-$ ./flavor tests/test3.flv --debug
+$ flavor tests/test3.flv --debug
 [DEBUG TOK] ...
 [DEBUG INT] ...
 The oven is hot!
@@ -141,7 +141,7 @@ The oven is hot!
 Only the final output of the script is served.
 
 ```bash
-$ ./flavor tests/test3.flv
+$ flavor tests/test3.flv
 The oven is hot!
 ```
 
@@ -150,7 +150,7 @@ The oven is hot!
 Run this to enable debugging for `test3.flv`.
 
 ```bash
-$ ./flavor tests/test3.flv --debug
+$ flavor tests/test3.flv --debug
 ```
 
 ---
