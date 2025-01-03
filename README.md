@@ -81,6 +81,11 @@ $ cd src
 $ make
 ```
 
+> [!Note]
+>
+> Unless you move `flavor` to `/usr/local/bin/`,
+> you'll have to use `./flavor` for commands with relative file paths.
+
 </details>
 
 #### For macOS Users
