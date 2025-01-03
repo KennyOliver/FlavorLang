@@ -22,6 +22,7 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 14. [Random Number Generation & Standard Library Functions](#14)
 15. [Get Current Year with `get_time()`](#15)
 16. [Ternary Operator](#16)
+17. [Nested Function Application](#17)
 
 ---
 
@@ -306,6 +307,25 @@ for _ in 1..=5 {
     let input = int(sample());
     serve(check_even_odd(input));
 }
+```
+
+### 17. 🪺 Nested Function Application <a id="17"></a>
+
+```py
+create times_2(x) {
+    deliver x * 2;
+}
+
+create times_3(x) {
+    deliver x * 3;
+}
+
+create test(num, func_a, func_b) {
+    deliver func_b(func_a(func_b(num)));
+}
+
+let a = test(10, times_2, times_3); # 180
+serve(a);
 ```
 
 ---

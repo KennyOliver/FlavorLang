@@ -551,6 +551,11 @@ Variable *get_variable(Environment *env, const char *variable_name) {
                 debug_print_int("Variable found: `%s` with value `%s`\n",
                                 variable_name,
                                 env->variables[i].value.data.string);
+            } else if (env->variables[i].value.type == TYPE_FUNCTION) {
+                debug_print_int(
+                    "Variable found: `%s` with function reference `%s`\n",
+                    variable_name,
+                    env->variables[i].value.data.function_ptr->name);
             }
             return &env->variables[i];
         }
@@ -575,6 +580,7 @@ void add_variable(Environment *env, Variable var) {
                 env->variables[i].value.data.string) {
                 free(env->variables[i].value.data.string);
             }
+
             env->variables[i].value = var.value;
             env->variables[i].is_constant = var.is_constant;
             return;
@@ -597,13 +603,24 @@ void add_variable(Environment *env, Variable var) {
     // Copy variable name and value
     env->variables[env->variable_count].variable_name =
         strdup(var.variable_name);
+    if (!env->variables[env->variable_count].variable_name) {
+        error_interpreter("Memory allocation failed for variable name `%s`.\n",
+                          var.variable_name);
+    }
+
+    // Deep copy based on type
     if (var.value.type == TYPE_STRING) {
         env->variables[env->variable_count].value.type = TYPE_STRING;
         env->variables[env->variable_count].value.data.string =
             strdup(var.value.data.string);
+    } else if (var.value.type == TYPE_FUNCTION) {
+        env->variables[env->variable_count].value.type = TYPE_FUNCTION;
+        env->variables[env->variable_count].value.data.function_ptr =
+            var.value.data.function_ptr;
     } else {
         env->variables[env->variable_count].value = var.value;
     }
+
     env->variables[env->variable_count].is_constant = var.is_constant;
     env->variable_count++;
 }
@@ -998,6 +1015,85 @@ InterpretResult interpret_switch(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
+LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
+                                        Environment *env) {
+    debug_print_int("Calling user-defined function: `%s`\n", func_ref->name);
+
+    // 1) Create a new local environment
+    Environment local_env;
+    init_environment(&local_env);
+
+    // 2) Copy global functions into the local environment
+    //    This ensures that nested function calls can access global functions
+    for (size_t i = 0; i < env->function_count; i++) {
+        Function *global_func = &env->functions[i];
+
+        // Deep copy the function
+        Function func_copy = {
+            .name = strdup(global_func->name),
+            .parameters = copy_function_parameters(global_func->parameters),
+            .body = copy_ast_node(global_func->body),
+            .is_builtin = global_func->is_builtin};
+
+        add_function(&local_env, func_copy);
+    }
+
+    // 3) Bind function parameters with arguments
+    ASTFunctionParameter *param = func_ref->parameters;
+    ASTNode *arg = call_node->function_call.arguments;
+
+    while (param && arg) {
+        InterpretResult arg_res = interpret_node(arg, env);
+        LiteralValue arg_value = arg_res.value;
+
+        if (arg_value.type == TYPE_ERROR) {
+            free_environment(&local_env);
+            return arg_value;
+        }
+
+        // Bind the argument to the parameter in the local environment
+        Variable param_var = {.variable_name = strdup(param->parameter_name),
+                              .value = arg_value,
+                              .is_constant = false};
+        add_variable(&local_env, param_var);
+
+        param = param->next;
+        arg = arg->next;
+    }
+
+    // 4) Check for argument count mismatch
+    if (param || arg) {
+        fprintf(stderr,
+                "Error: Argument count mismatch when calling function `%s`\n",
+                func_ref->name);
+        free_environment(&local_env);
+        return (LiteralValue){.type = TYPE_ERROR};
+    }
+
+    // 5) Interpret the function body
+    ASTNode *stmt = func_ref->body;
+    LiteralValue result = create_default_value();
+    while (stmt) {
+        InterpretResult r = interpret_node(stmt, &local_env);
+        if (r.did_return) {
+            result = r.value;
+            break;
+        }
+        if (r.did_break) {
+            fprintf(stderr,
+                    "Error: 'break' statement outside of loop or switch.\n");
+            free_environment(&local_env);
+            return (LiteralValue){.type = TYPE_ERROR};
+        }
+        stmt = stmt->next;
+    }
+
+    free_environment(&local_env);
+
+    // If no explicit return, return default value (e.g., 0)
+    return result;
+}
+
 void interpret_function_declaration(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_function_declaration()` called\n");
 
@@ -1040,9 +1136,22 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
 
     Function func = {.name = strdup(node->function_call.name),
                      .parameters = param_list,
-                     .body = node->function_call.body};
+                     .body = node->function_call.body,
+                     .is_builtin = false};
 
     add_function(env, func);
+
+    // Also add the function as a variable holding its reference
+    LiteralValue func_ref = {.type = TYPE_FUNCTION,
+                             // Point to the last added function
+                             .data.function_ptr =
+                                 &env->functions[env->function_count - 1]};
+
+    Variable var = {.variable_name = strdup(func.name),
+                    .value = func_ref,
+                    .is_constant = false};
+
+    add_variable(env, var);
 }
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
@@ -1053,12 +1162,21 @@ LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
         return (LiteralValue){.type = TYPE_ERROR};
     }
 
-    // Look for the function in the environment
-    Function *func = get_function(env, node->function_call.name);
+    const char *func_name = node->function_call.name;
+
+    // 1. Check if the function name is a variable holding a function reference
+    Variable *func_var = get_variable(env, func_name);
+    if (func_var && func_var->value.type == TYPE_FUNCTION) {
+        Function *func_ref = func_var->value.data.function_ptr;
+        // Call the function using the helper
+        return call_user_defined_function(func_ref, node, env);
+    }
+
+    // 2. Else, check if it's a built-in or globally defined function
+    Function *func = get_function(env, func_name);
     if (!func) {
-        // If we can’t find it at all, error
-        fprintf(stderr, "Error: Undefined function `%s`\n",
-                node->function_call.name);
+        // Function not found
+        fprintf(stderr, "Error: Undefined function `%s`\n", func_name);
         exit(1);
         return (LiteralValue){.type = TYPE_ERROR};
     }

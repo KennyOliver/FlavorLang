@@ -253,25 +253,29 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         node->next = NULL;
         advance_token(state);
         return node;
-    } else if (current->type == TOKEN_IDENTIFIER) {
-        ASTNode *node = malloc(sizeof(ASTNode));
-        if (!node) {
-            parser_error("Memory allocation failed", current);
+    } else if (current->type == TOKEN_FUNCTION_NAME ||
+               current->type == TOKEN_IDENTIFIER) {
+        // Check if `(` indicates a call
+        Token *next = peek_next_token(state);
+        if (next && next->type == TOKEN_PAREN_OPEN) {
+            // It's a call
+            ASTNode *node = parse_function_call(state);
+            return node;
+        } else {
+            // It's just a variable (or a function reference used as a variable)
+            ASTNode *node = create_variable_node(current->lexeme);
+            advance_token(state);
+            return node;
         }
-
-        node->type = AST_VARIABLE;
-        node->variable_name = strdup(current->lexeme);
-        node->next = NULL;
-
-        advance_token(state);
-        return node;
-    } else if (current->type == TOKEN_FUNCTION_NAME) {
-        ASTNode *node = parse_function_call(state);
+    } else if (current->type == TOKEN_PAREN_OPEN) {
+        advance_token(state); // consume `(`
+        ASTNode *node = parse_operator_expression(state);
+        expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
         return node;
     }
 
     parser_error("Expected literal or identifier", current);
-    return NULL;
+    return NULL; // unreachable
 }
 
 ASTNode *parse_expression(ParserState *state) {
@@ -790,9 +794,11 @@ ASTNode *parse_function_declaration(ParserState *state) {
 }
 
 ASTNode *parse_function_call(ParserState *state) {
-    // Parse function name
     Token *name = get_current_token(state);
-    expect_token(state, TOKEN_FUNCTION_NAME, "Expected function name");
+
+    if (name->type != TOKEN_FUNCTION_NAME && name->type != TOKEN_IDENTIFIER) {
+        parser_error("Expected a function reference or identifier", name);
+    }
 
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
@@ -800,17 +806,15 @@ ASTNode *parse_function_call(ParserState *state) {
     }
     node->type = AST_FUNCTION_CALL;
     debug_print_par("AST_FUNCTION_CALL: %s\n", name->lexeme);
-    node->function_call.name = strdup(name->lexeme);
 
-    // Initialize arguments to NULL
+    node->function_call.name = strdup(name->lexeme);
     node->function_call.arguments = NULL;
+
+    advance_token(state);
 
     // Parse arguments (if any)
     expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after function name");
-
-    // Parse argument list (which can now be empty)
     node->function_call.arguments = parse_argument_list(state);
-
     expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
 
     node->next = NULL;
