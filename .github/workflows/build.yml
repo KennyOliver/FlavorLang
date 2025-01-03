@@ -63,7 +63,7 @@ jobs:
             flavorlang-macos-latest --about
             EOF
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-                        cat <<EOF > install.sh
+            cat <<EOF > install.sh
             #!/bin/bash
 
             # Set execute permissions
@@ -75,8 +75,8 @@ jobs:
             # Run the executable
             flavorlang-ubuntu-latest --about
             EOF
-                      fi
-                      chmod +x install.sh
+          fi
+          chmod +x install.sh
 
       # Package interpreter, VSIX, and install.sh into a ZIP
       - name: Package release assets
