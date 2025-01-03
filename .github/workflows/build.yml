@@ -64,6 +64,9 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
 
+    # Only run for release events
+    if: ${{ github.event_name == 'release' }}
+
     steps:
       # Step 1: Checkout the repo
       - name: Checkout repository
