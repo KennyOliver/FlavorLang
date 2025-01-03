@@ -38,10 +38,10 @@ serve("Hello world!");
 Use `let` to declare and initialize variables.
 
 ```py
-let name = "Chef";
-let age = 25;
+const name = "Hello, " + "world!" + " :)";
+const age = 25;
 
-serve("Name:", name);
+serve(name);
 serve("Age:", age);
 ```
 
@@ -50,7 +50,7 @@ serve("Age:", age);
 Use `if`, `elif`, and `else` to control program flow.
 
 ```py
-let oven_temperature = 200;
+const oven_temperature = 200;
 
 if oven_temperature > 180 {
     serve("The oven is hot!");
@@ -106,7 +106,7 @@ create bake_cake(temperature) {
   }
 }
 
-let result = bake_cake(200);
+const result = bake_cake(200);
 serve(result);
 ```
 
@@ -133,7 +133,7 @@ The `check`-`is` syntax in FlavorLang provides an intuitive way to match multipl
 #### Example
 
 ```py
-let dessert = "cake";
+const dessert = "cake";
 
 check dessert {
     is "cake":
@@ -195,12 +195,12 @@ serve("Blast off!");
 - `taste`: Read from a file.
 
 ```py
-let filepath = "./tests/output.txt";
+const filepath = "./tests/output.txt";
 
 plate_file(filepath, "Freshly baked cake ready to deliver!");
 garnish_file(filepath, "\nDon't forget the toppings!");
 
-let data = taste_file(filepath);
+const data = taste_file(filepath);
 serve("File Contents:");
 serve(data);
 ```
@@ -210,7 +210,7 @@ serve(data);
 Use `burn` to raise an error and halt execution.
 
 ```py
-let time = 20;
+const time = 20;
 
 serve("Before error.");
 
@@ -224,12 +224,12 @@ serve("After error?");
 ### 13. 🔀 Casting <a id="13"></a>
 
 ```py
-let a = 1;
+const a = 1;
 serve(a + a);
 serve(string(a) + string(a));
 
-let b = "True";
-let c = "False";
+const b = "True";
+const c = "False";
 serve(b == c);
 serve(b != c);
 
@@ -248,19 +248,18 @@ serve(float("+8"));
 ```py
 # Using `sample()` to get user input
 serve("Enter your favorite number:");
-let favorite = sample();
+const favorite = sample();
 serve("Your favorite is:", favorite);
 
 # Using `random()` with different argument counts
-let num1 = random();              # Generates between 0.0 and 1.0
-let num2 = random(5.0);           # Generates between 0.0 and 5.0
-let num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
+const num1 = random();              # Generates between 0.0 and 1.0
+const num2 = random(5.0);           # Generates between 0.0 and 5.0
+const num3 = random(10.0, 20.0);    # Generates between 10.0 and 20.0
 serve("Random numbers:", num1, num2, num3);
 
 for i in 1..=10 {
     serve(i, "\t->", random());
 }
-
 # Using `burn()` to raise an error
 burn("This is a fatal error with code:", 1001);
 ```
