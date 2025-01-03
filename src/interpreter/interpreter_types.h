@@ -1,11 +1,17 @@
 #ifndef INTERPRETER_TYPES_H
 #define INTERPRETER_TYPES_H
 
+// Forward declarations
+struct ASTFunctionParameter;
+struct ASTNode;
+struct Function;
+
 typedef enum {
     TYPE_BOOLEAN,
     TYPE_FLOAT,
     TYPE_INTEGER,
     TYPE_STRING,
+    TYPE_FUNCTION,
     TYPE_ERROR
 } LiteralType;
 
@@ -18,6 +24,7 @@ typedef struct {
         FLOAT_SIZE floating_point;
         INT_SIZE integer;
         bool boolean;
+        struct Function *function_ptr;
     } data;
 } LiteralValue;
 
@@ -33,7 +40,7 @@ typedef struct {
     bool is_constant;
 } Variable;
 
-typedef struct {
+typedef struct Function {
     char *name;
     ASTFunctionParameter *parameters; // Linked list of parameters
     ASTNode *body;                    // Function body

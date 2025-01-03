@@ -551,6 +551,11 @@ Variable *get_variable(Environment *env, const char *variable_name) {
                 debug_print_int("Variable found: `%s` with value `%s`\n",
                                 variable_name,
                                 env->variables[i].value.data.string);
+            } else if (env->variables[i].value.type == TYPE_FUNCTION) {
+                debug_print_int(
+                    "Variable found: `%s` with function reference `%s`\n",
+                    variable_name,
+                    env->variables[i].value.data.function_ptr->name);
             }
             return &env->variables[i];
         }
@@ -575,6 +580,7 @@ void add_variable(Environment *env, Variable var) {
                 env->variables[i].value.data.string) {
                 free(env->variables[i].value.data.string);
             }
+
             env->variables[i].value = var.value;
             env->variables[i].is_constant = var.is_constant;
             return;
@@ -597,13 +603,24 @@ void add_variable(Environment *env, Variable var) {
     // Copy variable name and value
     env->variables[env->variable_count].variable_name =
         strdup(var.variable_name);
+    if (!env->variables[env->variable_count].variable_name) {
+        error_interpreter("Memory allocation failed for variable name `%s`.\n",
+                          var.variable_name);
+    }
+
+    // Deep copy based on type
     if (var.value.type == TYPE_STRING) {
         env->variables[env->variable_count].value.type = TYPE_STRING;
         env->variables[env->variable_count].value.data.string =
             strdup(var.value.data.string);
+    } else if (var.value.type == TYPE_FUNCTION) {
+        env->variables[env->variable_count].value.type = TYPE_FUNCTION;
+        env->variables[env->variable_count].value.data.function_ptr =
+            var.value.data.function_ptr;
     } else {
         env->variables[env->variable_count].value = var.value;
     }
+
     env->variables[env->variable_count].is_constant = var.is_constant;
     env->variable_count++;
 }
@@ -1040,9 +1057,22 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
 
     Function func = {.name = strdup(node->function_call.name),
                      .parameters = param_list,
-                     .body = node->function_call.body};
+                     .body = node->function_call.body,
+                     .is_builtin = false};
 
     add_function(env, func);
+
+    // Also add the function as a variable holding its reference
+    LiteralValue func_ref = {.type = TYPE_FUNCTION,
+                             // Point to the last added function
+                             .data.function_ptr =
+                                 &env->functions[env->function_count - 1]};
+
+    Variable var = {.variable_name = strdup(func.name),
+                    .value = func_ref,
+                    .is_constant = false};
+
+    add_variable(env, var);
 }
 
 LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
