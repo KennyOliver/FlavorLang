@@ -25,7 +25,7 @@ void free_ast(ASTNode *node) {
 
         case AST_UNARY_OP:
             free(node->unary_op.operator);
-            free(node->unary_op.operand);
+            free_ast(node->unary_op.operand);
             break;
 
         case AST_BINARY_OP:
