@@ -27,7 +27,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # even versions are designated as stable
+          node-version: 20 # Even versions are designated as stable
 
       # Step 3: Install dependencies and build VS Code extension
       - name: Build VS Code extension
