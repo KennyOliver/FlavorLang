@@ -30,6 +30,7 @@ typedef struct {
 typedef struct {
     char *variable_name;
     LiteralValue value;
+    bool is_constant;
 } Variable;
 
 typedef struct {

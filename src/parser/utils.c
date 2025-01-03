@@ -314,6 +314,10 @@ void print_ast(ASTNode *node, int depth) {
             printf("Variable: `%s`\n", node->variable_name);
             break;
 
+        case AST_CONSTANT:
+            printf("Constant: `%s`\n", node->variable_name);
+            break;
+
         default:
             printf("Unknown Node Type: `%d`\n", node->type);
         }

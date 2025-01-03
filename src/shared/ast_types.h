@@ -22,7 +22,8 @@ typedef enum {
     AST_SWITCH,
     AST_BREAK,
     AST_TERNARY,
-    AST_VARIABLE
+    AST_VARIABLE,
+    AST_CONSTANT
 } ASTNodeType;
 
 // Literal Node
