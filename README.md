@@ -122,6 +122,7 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 | Keyword   | Usage                        | Description                                                                                 | Implemented? |
 | --------- | ---------------------------- | ------------------------------------------------------------------------------------------- | ------------ |
 | `let`     | Define variables             | Declares and initializes variables.                                                         | ✅           |
+| `const`   | Define constants             | Declares and initializes constants.                                                         | ✅           |
 | `if`      | Conditional logic            | Executes code only if a condition is true.                                                  | ✅           |
 | `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.                                           | ✅           |
 | `else`    | Conditional fallback         | Executes code if any prior `if`/`is` conditions are false.                                  | ✅           |
