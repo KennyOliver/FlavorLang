@@ -37,7 +37,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_ASSIGNMENT:
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
-        return make_result(interpret_assignment(node, env), false, false);
+        return interpret_assignment(node, env);
 
     case AST_UNARY_OP:
         debug_print_int("\tMatched: `AST_UNARY_OP`\n");
@@ -103,6 +103,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
         LiteralValue var_val = interpret_variable(node, env);
         return make_result(var_val, false, false);
+    }
+
+    case AST_CONSTANT: {
+        debug_print_int("\tMatched: `AST_CONSTANT`\n");
+        return interpret_constant(node, env);
     }
 
     case AST_SWITCH: {
@@ -182,25 +187,91 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env) {
     return var->value;
 }
 
-LiteralValue interpret_assignment(ASTNode *node, Environment *env) {
+// void print_literal_value(LiteralValue val) {
+//     switch (val.type) {
+//     case TYPE_INTEGER:
+//         printf("%lld", val.data.integer);
+//         break;
+//     case TYPE_FLOAT:
+//         printf("%Lf", val.data.floating_point);
+//         break;
+//     case TYPE_STRING:
+//         printf("\"%s\"", val.data.string);
+//         break;
+//     case TYPE_BOOLEAN:
+//         printf(val.data.boolean ? "True" : "False");
+//         break;
+//     default:
+//         printf("Unknown");
+//     }
+// }
+
+InterpretResult interpret_constant(ASTNode *node, Environment *env) {
+    if (node->type != AST_CONSTANT) {
+        fprintf(stderr, "Error: Invalid node type for constant declaration.\n");
+        exit(1);
+    }
+
+    // Extract the constant name and value
+    char *const_name = node->assignment.variable_name;
+    InterpretResult value_res = interpret_node(node->assignment.value, env);
+    LiteralValue const_value = value_res.value;
+
+    // Check if the constant already exists
+    Variable *existing_var = get_variable(env, const_name);
+    if (existing_var) {
+        fprintf(stderr, "Error: Constant `%s` is already defined.\n",
+                const_name);
+        return make_result(create_default_value(), false, false);
+    }
+
+    // Add the constant to the environment
+    Variable new_var = {
+        .variable_name = strdup(const_name),
+        .value = const_value,
+        .is_constant = true // Mark as constant
+    };
+    add_variable(env, new_var);
+
+    // debug_print_int("Added constant: `%s` with value `", const_name);
+    // print_literal_value(
+    //     const_value); // Ensure this function is correctly implemented
+    // debug_print_int("`\n");
+
+    return make_result(const_value, false, false);
+}
+
+InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     if (!node->assignment.variable_name) {
         debug_print_int("Assignment variable name missing for node type: %d\n",
                         node->type);
-        return (LiteralValue){.type = TYPE_ERROR};
+        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
     }
 
     // Evaluate the right-hand side
     InterpretResult assign_r = interpret_node(node->assignment.value, env);
-    // If the RHS triggered a return, we’re ignoring it for assignment, but you
-    // could handle it
+
+    // If the RHS triggered a return or break, propagate it
+    if (assign_r.did_return || assign_r.did_break) {
+        return assign_r;
+    }
+
     LiteralValue new_value = assign_r.value;
 
     // Add or update variable
-    Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
-                        .value = new_value};
+    Variable new_var = {
+        .variable_name = strdup(node->assignment.variable_name),
+        .value = new_value,
+        .is_constant = false // 'let' declarations are not constants
+    };
     add_variable(env, new_var);
 
-    return new_value;
+    // debug_print_int("Assignment: Variable `%s` set to `",
+    //                 node->assignment.variable_name);
+    // print_literal_value(new_value);
+    // printf("`\n");
+
+    return make_result(new_value, false, false);
 }
 
 LiteralValue handle_string_concatenation(LiteralValue left,
@@ -521,15 +592,24 @@ void add_variable(Environment *env, Variable var) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, var.variable_name) == 0) {
+            // If existing variable is a constant, prevent re-assignment
+            if (env->variables[i].is_constant) {
+                fprintf(stderr, "Error: Cannot reassign to constant `%s`.\n",
+                        var.variable_name);
+                return;
+            }
+
             // Update the value of the existing variable
             if (env->variables[i].value.type == TYPE_STRING &&
                 env->variables[i].value.data.string) {
-                free(env->variables[i]
-                         .value.data.string); // Free existing string memory
+                free(env->variables[i].value.data.string);
             }
             env->variables[i].value = var.value;
+            env->variables[i].is_constant = var.is_constant;
 
-            debug_print_int("Updated variable: `%s`\n", var.variable_name);
+            // debug_print_int("Updated variable: `%s` to `",
+            // var.variable_name); print_literal_value(var.value);
+            // printf("`\n");
             return;
         }
     }
@@ -557,8 +637,11 @@ void add_variable(Environment *env, Variable var) {
     } else {
         env->variables[env->variable_count].value = var.value;
     }
+    env->variables[env->variable_count].is_constant = var.is_constant;
 
-    debug_print_int("Added variable: `%s`\n", var.variable_name);
+    // debug_print_int("Added variable: `%s` with value `", var.variable_name);
+    // print_literal_value(var.value);
+    // printf("`\n");
     env->variable_count++;
 }
 

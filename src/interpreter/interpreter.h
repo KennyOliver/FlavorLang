@@ -16,10 +16,9 @@
 InterpretResult interpret_node(ASTNode *node, Environment *env);
 LiteralValue interpret_literal(ASTNode *node);
 LiteralValue interpret_variable(ASTNode *node, Environment *env);
-LiteralValue interpret_assignment(ASTNode *node, Environment *env);
+InterpretResult interpret_constant(ASTNode *node, Environment *env);
+InterpretResult interpret_assignment(ASTNode *node, Environment *env);
 LiteralValue interpret_binary_op(ASTNode *node, Environment *env);
-Variable *get_variable(Environment *env, const char *variable_name);
-void add_variable(Environment *env, Variable var);
 InterpretResult interpret_conditional(ASTNode *node, Environment *env);
 InterpretResult interpret_while_loop(ASTNode *node, Environment *env);
 LiteralValue interpret_for_loop(ASTNode *node, Environment *env);
@@ -32,5 +31,9 @@ InterpretResult interpret_ternary(ASTNode *node, Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);
+
+// Helpers
+Variable *get_variable(Environment *env, const char *variable_name);
+void add_variable(Environment *env, Variable var);
 
 #endif
