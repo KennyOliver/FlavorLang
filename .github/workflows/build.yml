@@ -41,7 +41,7 @@ jobs:
       - name: Upload VS Code extension package
         uses: actions/upload-artifact@v4
         with:
-          name: flavorlang-extension-${{ matrix.os }}
+          name: vscode-extension-${{ matrix.os }}
           path: vscode-extension/*.vsix
 
       # Step 5: Build FlavorLang interpreter
