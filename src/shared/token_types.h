@@ -22,6 +22,7 @@ typedef enum {
     TOKEN_PAREN_CLOSE,
     TOKEN_BRACE_OPEN,
     TOKEN_BRACE_CLOSE,
+    TOKEN_COLON,
     TOKEN_EOF
 } TokenType;
 
