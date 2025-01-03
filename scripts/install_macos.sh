@@ -3,10 +3,6 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Rename file to flavorlang
-echo "Renaming flavorlang-macos-latest to flavorlang"
-mv flavorlang-macos-latest flavorlang
-
 # Set execute permissions
 chmod +x flavorlang
 

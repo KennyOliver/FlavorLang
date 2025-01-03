@@ -3,10 +3,6 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Rename file to flavorlang
-echo "Renaming flavorlang-ubuntu-latest to flavorlang"
-mv flavorlang-ubuntu-latest flavorlang
-
 # Set execute permissions
 chmod +x flavorlang
 
