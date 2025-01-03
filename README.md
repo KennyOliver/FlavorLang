@@ -203,12 +203,12 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ## Data Types
 
-| Data Type | Syntax Example    | Capacity/Range                                                                                     |
-| --------- | ----------------- | -------------------------------------------------------------------------------------------------- |
-| `string`  | `"Hello, world!"` | Size depends on system memory and encoding (e.g., UTF-8). Null-terminated, variable length.        |
-| `float`   | `3.14`            | `FLOAT_SIZE` (long double, 64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932.     |
-| `integer` | `42`              | `INT_SIZE` (long long int, 64-bit): −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.       |
-| `boolean` | `True` / `False`  | `1` for `True`, `0` for `False`. Typically stored as 1 byte, though this can vary by architecture. |
+| Data Type | Capacity/Range                                                       |
+| --------- | -------------------------------------------------------------------- |
+| `string`  | Dependent on system memory & encoding (e.g., UTF-8).                 |
+| `float`   | (64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932. |
+| `integer` | (64-bit): ±9e18 (quintillion).                                       |
+| `boolean` | `1` for `True`, `0` for `False`. Typically stored as 1 byte.         |
 
 <details>
 
