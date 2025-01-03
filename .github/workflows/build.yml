@@ -27,7 +27,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20 # Even versions are designated as stable
+          node-version: 20 # even versions are designated as stable
 
       # Step 3: Install dependencies and build VS Code extension
       - name: Build VS Code extension
@@ -53,14 +53,16 @@ jobs:
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
+
+      # Step 7: Rename FlavorLang interpreter
       - name: Rename FlavorLang interpreter
         run: mv src/flavor src/flavorlang-${{ matrix.os }}
 
-      # Step 7: Debug the interpreter file
+      # Step 8: Debug the interpreter file
       - name: Debug Interpreter File
         run: ls -la src/
 
-      # Step 8: Save the interpreter executable as an artifact
+      # Step 9: Save the interpreter executable as an artifact
       - name: Upload FlavorLang interpreter executable
         uses: actions/upload-artifact@v4
         with:
@@ -70,12 +72,7 @@ jobs:
   release:
     name: Attach Built Artifacts to Release
     needs: build
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-
-    # Only run for release events
+    runs-on: ubuntu-latest # Single runner to handle all uploads
     if: ${{ github.event_name == 'release' }}
 
     steps:
@@ -83,48 +80,49 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Debug upload URL
-      - name: Debug upload URL
-        run: |
-          echo "Upload URL: ${{ github.event.release.upload_url }}"
-
-      # Step 3: Download build artifacts
-      - name: Download VSIX artifact
+      # Step 2: Download build artifacts for Ubuntu
+      - name: Download VSIX artifact (Ubuntu)
         uses: actions/download-artifact@v4
         with:
-          name: flavorlang-extension-${{ matrix.os }}
+          name: flavorlang-extension-ubuntu-latest
           path: vscode-extension
 
-      - name: Download interpreter artifact
+      - name: Download interpreter artifact (Ubuntu)
         uses: actions/download-artifact@v4
         with:
-          name: flavorlang-interpreter-${{ matrix.os }}
+          name: flavorlang-interpreter-ubuntu-latest
+          path: flavorlang
+
+      # Step 3: Download build artifacts for macOS
+      - name: Download VSIX artifact (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: flavorlang-extension-macos-latest
+          path: vscode-extension
+
+      - name: Download interpreter artifact (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: flavorlang-interpreter-macos-latest
           path: flavorlang
 
       # Step 4: Debug downloaded files
       - name: Debug Downloaded Artifacts
         run: |
-          echo "VSIX contents:" && ls -la vscode-extension/
-          echo "Interpreter contents:" && ls -la flavorlang/
+          echo "VSIX contents (Ubuntu):" && ls -la vscode-extension/
+          echo "Interpreter contents (Ubuntu):" && ls -la flavorlang/
+          echo "VSIX contents (macOS):" && ls -la vscode-extension/
+          echo "Interpreter contents (macOS):" && ls -la flavorlang/
 
-      # Step 5: Upload VSIX to release
-      - name: Upload VSIX to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Step 5: Create Release and Upload Assets
+      - name: Create Release and Upload Assets
+        uses: ncipollo/release-action@v1.10.1
         with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
-          asset_name: flavorlang-extension-${{ matrix.os }}.vsix
-          asset_content_type: application/octet-stream
-
-      # Step 6: Upload interpreter to release
-      - name: Upload interpreter to release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: flavorlang/flavorlang-${{ matrix.os }}
-          asset_name: flavorlang-${{ matrix.os }}
-          asset_content_type: application/octet-stream
+          tag: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          files: |
+            vscode-extension/flavorlang-extension-ubuntu-latest.vsix
+            flavorlang/flavorlang-ubuntu-latest
+            vscode-extension/flavorlang-extension-macos-latest.vsix
+            flavorlang/flavorlang-macos-latest
+          token: ${{ secrets.GITHUB_TOKEN }}
