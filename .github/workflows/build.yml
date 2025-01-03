@@ -91,6 +91,8 @@ jobs:
       # Step 3: Upload VSIX to release
       - name: Upload VSIX to release
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
@@ -100,6 +102,8 @@ jobs:
       # Step 4: Upload interpreter to release
       - name: Upload interpreter to release
         uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
           asset_path: flavorlang/flavorlang-${{ matrix.os }}
