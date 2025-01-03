@@ -187,25 +187,6 @@ LiteralValue interpret_variable(ASTNode *node, Environment *env) {
     return var->value;
 }
 
-// void print_literal_value(LiteralValue val) {
-//     switch (val.type) {
-//     case TYPE_INTEGER:
-//         printf("%lld", val.data.integer);
-//         break;
-//     case TYPE_FLOAT:
-//         printf("%Lf", val.data.floating_point);
-//         break;
-//     case TYPE_STRING:
-//         printf("\"%s\"", val.data.string);
-//         break;
-//     case TYPE_BOOLEAN:
-//         printf(val.data.boolean ? "True" : "False");
-//         break;
-//     default:
-//         printf("Unknown");
-//     }
-// }
-
 InterpretResult interpret_constant(ASTNode *node, Environment *env) {
     if (node->type != AST_CONSTANT) {
         fprintf(stderr, "Error: Invalid node type for constant declaration.\n");
@@ -232,11 +213,6 @@ InterpretResult interpret_constant(ASTNode *node, Environment *env) {
         .is_constant = true // Mark as constant
     };
     add_variable(env, new_var);
-
-    // debug_print_int("Added constant: `%s` with value `", const_name);
-    // print_literal_value(
-    //     const_value); // Ensure this function is correctly implemented
-    // debug_print_int("`\n");
 
     return make_result(const_value, false, false);
 }
@@ -265,11 +241,6 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         .is_constant = false // 'let' declarations are not constants
     };
     add_variable(env, new_var);
-
-    // debug_print_int("Assignment: Variable `%s` set to `",
-    //                 node->assignment.variable_name);
-    // print_literal_value(new_value);
-    // printf("`\n");
 
     return make_result(new_value, false, false);
 }
@@ -606,10 +577,6 @@ void add_variable(Environment *env, Variable var) {
             }
             env->variables[i].value = var.value;
             env->variables[i].is_constant = var.is_constant;
-
-            // debug_print_int("Updated variable: `%s` to `",
-            // var.variable_name); print_literal_value(var.value);
-            // printf("`\n");
             return;
         }
     }
@@ -638,10 +605,6 @@ void add_variable(Environment *env, Variable var) {
         env->variables[env->variable_count].value = var.value;
     }
     env->variables[env->variable_count].is_constant = var.is_constant;
-
-    // debug_print_int("Added variable: `%s` with value `", var.variable_name);
-    // print_literal_value(var.value);
-    // printf("`\n");
     env->variable_count++;
 }
 
