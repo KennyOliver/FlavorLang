@@ -38,21 +38,29 @@ jobs:
           npx @vscode/vsce package
           mv *.vsix flavorlang-extension-${{ matrix.os }}.vsix
 
-      # Step 4: Save the renamed VSIX file as an artifact
+      # Step 4: Debug the VSIX file
+      - name: Debug VSIX file
+        run: ls -la vscode-extension/
+
+      # Step 5: Save the renamed VSIX file as an artifact
       - name: Upload VS Code extension package
         uses: actions/upload-artifact@v4
         with:
           name: flavorlang-extension-${{ matrix.os }}
           path: vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
 
-      # Step 5: Build FlavorLang interpreter
+      # Step 6: Build FlavorLang interpreter
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
       - name: Rename FlavorLang interpreter
         run: mv src/flavor src/flavorlang-${{ matrix.os }}
 
-      # Step 6: Save the interpreter executable as an artifact
+      # Step 7: Debug the interpreter file
+      - name: Debug Interpreter File
+        run: ls -la src/
+
+      # Step 8: Save the interpreter executable as an artifact
       - name: Upload FlavorLang interpreter executable
         uses: actions/upload-artifact@v4
         with:
@@ -75,7 +83,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Download build artifacts
+      # Step 2: Debug upload URL
+      - name: Debug upload URL
+        run: |
+          echo "Upload URL: ${{ github.event.release.upload_url }}"
+
+      # Step 3: Download build artifacts
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
         with:
@@ -88,7 +101,13 @@ jobs:
           name: flavorlang-interpreter-${{ matrix.os }}
           path: flavorlang
 
-      # Step 3: Upload VSIX to release
+      # Step 4: Debug downloaded files
+      - name: Debug Downloaded Artifacts
+        run: |
+          echo "VSIX contents:" && ls -la vscode-extension/
+          echo "Interpreter contents:" && ls -la flavorlang/
+
+      # Step 5: Upload VSIX to release
       - name: Upload VSIX to release
         uses: actions/upload-release-asset@v1
         env:
@@ -99,7 +118,7 @@ jobs:
           asset_name: flavorlang-extension-${{ matrix.os }}.vsix
           asset_content_type: application/octet-stream
 
-      # Step 4: Upload interpreter to release
+      # Step 6: Upload interpreter to release
       - name: Upload interpreter to release
         uses: actions/upload-release-asset@v1
         env:
