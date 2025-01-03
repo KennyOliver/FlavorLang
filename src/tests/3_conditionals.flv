@@ -1,4 +1,4 @@
-let oven_temperature = 200;
+const oven_temperature = 200;
 
 if oven_temperature > 180 {
     serve("The oven is hot!");

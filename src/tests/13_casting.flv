@@ -1,15 +1,15 @@
-let a = 1;
+const a = 1;
 serve(a + a);
 serve(string(a) + string(a));
 
-let b = "True";
-let c = "False";
+const b = "True";
+const c = "False";
 serve(b == c);
 serve(b != c);
 
 for _ in 1..=2 {
     serve("Enter a number:");
-    let user_input = int(sample);
+    let user_input = int(sample());
     let positive = user_input >= 0;
     serve("Positive?", positive);
 }
