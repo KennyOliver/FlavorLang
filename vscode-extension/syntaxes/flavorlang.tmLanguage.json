@@ -38,7 +38,7 @@
       "patterns": [
         {
           "name": "keyword.control.flavorlang",
-          "match": "\\b(let|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|break|continue)\\b"
+          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|break|continue)\\b"
         },
         {
           "name": "keyword.other.flavorlang",
