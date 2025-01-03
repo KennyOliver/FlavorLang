@@ -624,11 +624,9 @@ ASTNode *parse_switch_block(ParserState *state) {
 
             // Parse condition expression
             ASTNode *condition = parse_expression(state);
-            expect_token(state, TOKEN_DELIMITER,
-                         "Expected `:` after case value");
+            expect_token(state, TOKEN_COLON, "Expected `:` after case value");
 
             // Collect all consecutive `is` clauses
-            // allowing multiple `is` conditions to share the same body
             ASTCaseNode *temp_head = NULL;
             ASTCaseNode *temp_tail = NULL;
 
@@ -652,7 +650,7 @@ ASTNode *parse_switch_block(ParserState *state) {
 
                     // Parse next condition
                     ASTNode *next_condition = parse_expression(state);
-                    expect_token(state, TOKEN_DELIMITER,
+                    expect_token(state, TOKEN_COLON,
                                  "Expected `:` after case value");
 
                     // Create new case node
@@ -706,8 +704,7 @@ ASTNode *parse_switch_block(ParserState *state) {
                  strcmp(current->lexeme, "else") == 0) {
             advance_token(state); // consume `else`
 
-            // Parse `:` delimiter
-            expect_token(state, TOKEN_DELIMITER, "Expected `:` after `else`");
+            expect_token(state, TOKEN_COLON, "Expected `:` after `else`");
 
             // Parse the body of `else`
             ASTNode *body = NULL;
