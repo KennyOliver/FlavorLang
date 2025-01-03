@@ -1,4 +1,4 @@
-name: Build and Release FlavorLang
+name: Build & Release FlavorLang
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    name: Build FlavorLang and VS Code Extension
+    name: Build FlavorLang & VS Code Extension
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
