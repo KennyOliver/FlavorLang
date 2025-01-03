@@ -47,6 +47,7 @@ void free_ast(ASTNode *node) {
             free_ast(node->for_loop.body);
             break;
 
+        case AST_CONSTANT:
         case AST_VARIABLE:
             free(node->variable_name);
             break;
