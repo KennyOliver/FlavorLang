@@ -15,6 +15,7 @@ void print_ast(ASTNode *node, int depth);
 // Statement parsing
 ASTNode *parse_statement(ParserState *state);
 ASTNode *parse_variable_declaration(ParserState *state);
+ASTNode *parse_constant_declaration(ParserState *state);
 ASTNode *parse_variable_assignment(ParserState *state);
 ASTNode *parse_conditional_block(ParserState *state);
 ASTNode *parse_while_loop(ParserState *state);
@@ -31,6 +32,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
 // Helper functions
+ASTNode *parse_declaration(ParserState *state, ASTNodeType type);
 bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
 ASTNode *parse_expression_statement(ParserState *state);
