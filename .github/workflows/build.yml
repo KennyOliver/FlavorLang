@@ -8,7 +8,7 @@ on:
     branches:
       - main
   release:
-    types: [created] # Only trigger on initial release creation
+    types: [created]
 
 jobs:
   build:
@@ -19,17 +19,14 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      # Step 1: Checkout the repo
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js (for VS Code extension)
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # Step 3: Install dependencies and build VS Code extension
       - name: Build VS Code extension
         working-directory: vscode-extension
         run: |
@@ -38,23 +35,25 @@ jobs:
           npx @vscode/vsce package
           mv *.vsix flavorlang-extension-${{ matrix.os }}.vsix
 
-      # Step 4: Build FlavorLang interpreter
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
 
-      # Step 5: Rename FlavorLang interpreter
       - name: Rename FlavorLang interpreter
         run: mv src/flavor src/flavorlang-${{ matrix.os }}
 
-      # Step 6: Upload artifacts for release job
-      - name: Upload artifacts
+      # Upload artifacts separately for clarity
+      - name: Upload VS Code extension
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{ matrix.os }}
-          path: |
-            vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
-            src/flavorlang-${{ matrix.os }}
+          name: vscode-extension-${{ matrix.os }}
+          path: vscode-extension/flavorlang-extension-${{ matrix.os }}.vsix
+
+      - name: Upload interpreter
+        uses: actions/upload-artifact@v4
+        with:
+          name: interpreter-${{ matrix.os }}
+          path: src/flavorlang-${{ matrix.os }}
 
   release:
     name: Attach Artifacts to Release
@@ -63,19 +62,23 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Download all artifacts
-      - name: Download artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
-          merge-multiple: true
 
-      # Step 2: Upload artifacts to release
+      # Debug step to see file structure
+      - name: Debug file structure
+        run: |
+          echo "Contents of artifacts directory:"
+          ls -R ./artifacts
+          find ./artifacts -type f
+
       - name: Upload release artifacts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            ./artifacts/flavorlang-extension-*.vsix
-            ./artifacts/flavorlang-*
+            ./artifacts/**/flavorlang-extension-*.vsix
+            ./artifacts/**/flavorlang-*-latest
