@@ -76,8 +76,8 @@ jobs:
       - name: Download VSIX artifact
         uses: actions/download-artifact@v4
         with:
-          name: flavorlang-extension-${{ matrix.os }}
-          path: flavorlang-extension
+          name: vscode-extension-${{ matrix.os }}
+          path: vscode-extension
 
       - name: Download interpreter artifact
         uses: actions/download-artifact@v4
@@ -90,8 +90,8 @@ jobs:
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: flavorlang-extension/*.vsix
-          asset_name: flavorlang-extension-${{ matrix.os }}.vsix
+          asset_path: vscode-extension/*.vsix
+          asset_name: vscode-extension-${{ matrix.os }}.vsix
           asset_content_type: application/octet-stream
 
       # Step 4: Upload interpreter to release
