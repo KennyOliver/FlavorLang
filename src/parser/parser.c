@@ -834,8 +834,6 @@ ASTNode *parse_function_call(ParserState *state) {
     node->function_call.name = strdup(name->lexeme);
     node->function_call.arguments = NULL;
 
-    advance_token(state); // move past the function name
-
     // Parse arguments (if any)
     expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after function name");
     node->function_call.arguments = parse_argument_list(state);
