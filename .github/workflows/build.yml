@@ -46,37 +46,14 @@ jobs:
       - name: Make interpreter executable
         run: chmod +x src/flavorlang-${{ matrix.os }}
 
-      # Create install.sh script
-      - name: Create install.sh
+      # Copy the appropriate install.sh script
+      - name: Copy install.sh
         run: |
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            cat <<EOF > install.sh
-#!/bin/bash
-
-# Set execute permissions
-chmod +x flavorlang-macos-latest
-
-# Move to /usr/local/bin for easier access
-sudo mv flavorlang-macos-latest /usr/local/bin/
-
-# Run the executable
-flavorlang-macos-latest --about
-EOF
+            cp scripts/install_macos.sh install.sh
           elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            cat <<EOF > install.sh
-#!/bin/bash
-
-# Set execute permissions
-chmod +x flavorlang-ubuntu-latest
-
-# Move to /usr/local/bin for easier access
-sudo mv flavorlang-ubuntu-latest /usr/local/bin/
-
-# Run the executable
-flavorlang-ubuntu-latest --about
-EOF
+            cp scripts/install_ubuntu.sh install.sh
           fi
-          chmod +x install.sh
 
       # Package interpreter, VSIX, and install.sh into a ZIP
       - name: Package release assets
