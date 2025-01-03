@@ -62,7 +62,7 @@ jobs:
             # Run the executable
             flavorlang-macos-latest --about
             EOF
-                      elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
                         cat <<EOF > install.sh
             #!/bin/bash
 
