@@ -80,55 +80,40 @@ void free_parameter_list(ASTFunctionParameter *head) {
     }
 }
 
-ASTFunctionParameter *
-copy_function_parameters(ASTFunctionParameter *param_list) {
-    if (param_list == NULL) {
-        // No parameters to copy
+ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params) {
+    if (!params)
         return NULL;
-    }
 
-    ASTFunctionParameter *new_head = NULL;
-    ASTFunctionParameter *new_tail = NULL;
+    ASTFunctionParameter *new_params = NULL;
+    ASTFunctionParameter *tail = NULL;
 
-    while (param_list != NULL) {
-        // Allocate memory for the new parameter
+    while (params) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
-        if (new_param == NULL) {
-            // Clean up all previously allocated nodes
-            free_parameter_list(new_head);
-            error_interpreter("Memory allocation failed for new parameter\n");
+        if (!new_param) {
+            error_interpreter(
+                "Memory allocation failed for function parameter copy.\n");
         }
 
-        // Duplicate parameter name, ensuring it is not NULL
-        if (param_list->parameter_name) {
-            new_param->parameter_name = strdup(param_list->parameter_name);
-            if (new_param->parameter_name == NULL) {
-                free(new_param); // free the current node
-                free_parameter_list(
-                    new_head); // clean up previously allocated nodes
-                error_interpreter(
-                    "Memory allocation failed for parameter name\n");
-            }
-        } else {
-            new_param->parameter_name = NULL;
+        new_param->parameter_name = strdup(params->parameter_name);
+        if (!new_param->parameter_name) {
+            free(new_param);
+            error_interpreter(
+                "Memory allocation failed for parameter name copy.\n");
         }
 
-        // Initialize the `next` pointer to NULL
         new_param->next = NULL;
 
-        // Add the new parameter to the linked list
-        if (new_head == NULL) {
-            new_head = new_param; // Set as head if it's the first node
+        if (!new_params) {
+            new_params = tail = new_param;
         } else {
-            new_tail->next = new_param; // Attach to the end of the list
+            tail->next = new_param;
+            tail = new_param;
         }
-        new_tail = new_param; // Update the tail pointer
 
-        // Move to the next parameter in the source list
-        param_list = param_list->next;
+        params = params->next;
     }
 
-    return new_head;
+    return new_params;
 }
 
 ASTNode *copy_ast_node(ASTNode *node) {
