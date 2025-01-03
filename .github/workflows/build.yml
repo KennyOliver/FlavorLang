@@ -2,28 +2,24 @@ name: Build & Release FlavorLang
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   pull_request:
-    branches:
-      - main
+    branches: [main]
   release:
     types: [created]
 
 jobs:
   build:
-    name: Build FlavorLang & VS Code Extension
+    name: Build FlavorLang
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
 
@@ -33,62 +29,51 @@ jobs:
           npm ci
           npm audit fix --force || true
           npx @vscode/vsce package
-          mv *.vsix flavorlang-extension-${{ matrix.os }}.vsix
-          # Move the VSIX to the root directory
-          mv flavorlang-extension-${{ matrix.os }}.vsix ../
 
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
 
-      - name: Rename FlavorLang interpreter
-        run: mv src/flavor src/flavorlang-${{ matrix.os }}
-
-      # Make interpreter executable
-      - name: Make interpreter executable
-        run: chmod +x flavorlang-${{ matrix.os }}
-
-      # Copy the appropriate install.sh script
-      - name: Copy install.sh
+      - name: Prepare release package
         run: |
+          # Create staging directory
+          mkdir -p staging
+
+          # Copy and rename files
+          cp vscode-extension/*.vsix staging/flavorlang-extension-${{ matrix.os }}.vsix
+          cp src/flavor staging/flavor
+          chmod +x staging/flavor
+
+          # Copy appropriate install script
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            cp scripts/install_macos.sh install.sh
-          elif [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
-            cp scripts/install_ubuntu.sh install.sh
+            cp scripts/install_macos.sh staging/install.sh
+          else
+            cp scripts/install_ubuntu.sh staging/install.sh
           fi
+          chmod +x staging/install.sh
 
-      # Package interpreter, VSIX, and install.sh into a ZIP
-      - name: Package release assets
-        run: |
-          zip -r flavorlang-${{ matrix.os }}.zip flavorlang-${{ matrix.os }} flavorlang-extension-${{ matrix.os }}.vsix install.sh
+          # Create ZIP
+          cd staging
+          zip -r ../flavorlang-${{ matrix.os }}.zip ./*
 
-      # Upload the ZIP as an artifact
-      - name: Upload release package
+      - name: Upload package
         uses: actions/upload-artifact@v4
         with:
           name: flavorlang-${{ matrix.os }}
           path: flavorlang-${{ matrix.os }}.zip
 
   release:
-    name: Attach Artifacts to Release
     needs: build
     if: github.event_name == 'release'
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      # Debug step to verify file structure
-      - name: Debug file structure
-        run: |
-          echo "Contents of artifacts directory:"
-          ls -R ./artifacts
-          find ./artifacts -type f
-
-      - name: Upload release artifacts
+      - name: Upload to release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v1
