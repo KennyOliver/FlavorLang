@@ -559,8 +559,9 @@ InterpretResult builtin_file_read(ASTNode *node, Environment *env) {
     specs[0].type = ARG_TYPE_STRING;
     specs[0].out_ptr = &filepath;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)
-             .is_error) {
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
         LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
@@ -631,8 +632,9 @@ InterpretResult helper_file_writer(ASTNode *node, Environment *env,
     specs[1].type = ARG_TYPE_STRING;
     specs[1].out_ptr = &content;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)
-             .is_error) {
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 2, specs);
+    if (args_res.is_error) {
         LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
