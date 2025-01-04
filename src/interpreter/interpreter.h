@@ -37,6 +37,7 @@ InterpretResult interpret_try(ASTNode *node, Environment *env);
 void interpret_program(ASTNode *program, Environment *env);
 
 // Helpers
+LiteralValue create_default_value(void);
 Variable *get_variable(Environment *env, const char *variable_name);
 InterpretResult add_variable(Environment *env, Variable var);
 ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params);

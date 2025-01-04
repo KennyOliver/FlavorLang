@@ -27,7 +27,7 @@ InterpretResult builtin_random(ASTNode *node, Environment *env);
 InterpretResult builtin_output(ASTNode *node, Environment *env);
 InterpretResult builtin_error(ASTNode *node, Environment *env);
 InterpretResult builtin_cast(ASTNode *node, Environment *env);
-InterpretResult builtin_time();
+InterpretResult builtin_time(void);
 InterpretResult builtin_file_read(ASTNode *node, Environment *env);
 InterpretResult builtin_file_write(ASTNode *node, Environment *env);
 InterpretResult builtin_file_append(ASTNode *node, Environment *env);

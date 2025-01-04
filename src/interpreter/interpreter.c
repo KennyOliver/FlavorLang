@@ -1,7 +1,7 @@
 #include "interpreter.h"
 
 // Helper function to create a default LiteralValue (zero number)
-LiteralValue create_default_value() {
+LiteralValue create_default_value(void) {
     LiteralValue value = {
         .type = TYPE_INTEGER,
         .data = {

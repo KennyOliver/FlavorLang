@@ -492,7 +492,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     return result_res;
 }
 
-InterpretResult builtin_time() {
+InterpretResult builtin_time(void) {
     time_t current_time = time(NULL);
 
     if (current_time == -1) {
