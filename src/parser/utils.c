@@ -59,6 +59,11 @@ void free_ast(ASTNode *node) {
             break;
 
         case AST_FUNCTION_DECLARATION:
+            free(node->function_declaration.name);
+            free_ast(node->function_declaration.body);
+            free_ast(node->function_declaration.parameters);
+            break;
+
         case AST_FUNCTION_CALL:
             free(node->function_call.name);
             free_ast(node->function_call.arguments);
