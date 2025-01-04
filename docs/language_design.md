@@ -79,10 +79,12 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 program              ::= statement* ;
 
 statement            ::= variable_declaration
+                       | constant_declaration
                        | print_statement
                        | if_statement
                        | loop_statement
                        | function_definition
+                       | function_call
                        | error_handling
                        | file_operation
                        | switch_case
@@ -90,9 +92,12 @@ statement            ::= variable_declaration
                        | random_statement
                        | type_casting
                        | return_statement
-                       | raise_error ;
+                       | raise_error
+                       | array_operation
+                       | comment ;
 
 variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
+constant_declaration ::= "const" IDENTIFIER "=" expression ";" ;
 
 print_statement      ::= "serve" expression ("," expression)* ";" ;
 
@@ -101,32 +106,46 @@ if_statement         ::= "if" condition block
                        ("else" block)? ;
 
 loop_statement       ::= "while" condition block
-                       | "for" IDENTIFIER "in" range [ "by" step ] block ;
+                       | "for" IDENTIFIER "in" range [ "by" step ] block
+                       | "for" "_" "in" range block ;
 
 function_definition  ::= "create" IDENTIFIER parameter_list block ;
 
+function_call        ::= IDENTIFIER "(" [expression ("," expression)*] ")" ;
+
 error_handling       ::= "try" block "rescue" block ;
 
-file_operation       ::= "plate" STRING "," expression ";"
-                       | "garnish" STRING "," expression ";"
-                       | "taste" STRING ";" ;
+file_operation       ::= "plate_file" "(" STRING "," expression ")" ";"
+                       | "garnish_file" "(" STRING "," expression ")" ";"
+                       | "taste_file" "(" STRING ")" ";" ;
 
-switch_case          ::= "check" expression block case_clause* [ "else" block ] ;
+switch_case          ::= "check" expression "{" case_clause* [ "else" ":" block ] "}" ;
 
 case_clause          ::= "is" expression ":" block
-                       | "is" expression ":" block "break" ";" ;
+                       | "is" expression (":" block "break" ";")? ;
 
 user_input           ::= "sample" "(" ")" ";" ;
 
-random_statement     ::= "random" "(" [expression ["," expression]] ")" ;
+random_statement     ::= "random" "(" [expression ["," expression]] ")" ";" ;
 
-type_casting         ::= "string" "(" expression ")"
-                       | "int" "(" expression ")"
-                       | "float" "(" expression ")" ;
+type_casting         ::= "string" "(" expression ")" ";"
+                       | "int" "(" expression ")" ";"
+                       | "float" "(" expression ")" ";" ;
 
 return_statement     ::= "deliver" expression ";" ;
 
 raise_error          ::= "burn" expression ("," expression)* ";" ;
+
+array_operation      ::= IDENTIFIER "[" expression "]"                # Access
+                       | IDENTIFIER "[" range "]"                     # Slicing
+                       | IDENTIFIER "." function_call                 # Array methods
+                       | "length" "(" IDENTIFIER ")"                  # Length
+                       | "index_of" "(" IDENTIFIER "," expression ")" # Index lookup
+                       | "contains" "(" IDENTIFIER "," expression ")" # Containment
+                       | "append" "(" IDENTIFIER "," expression ")"   # Append
+                       | "prepend" "(" IDENTIFIER "," expression ")"  # Prepend
+                       | "insert" "(" IDENTIFIER "," expression "," expression ")" # Insert
+                       | IDENTIFIER "+" IDENTIFIER ";" ;              # Concatenation
 
 block                ::= "{" statement+ "}" ;
 
@@ -136,13 +155,14 @@ expression           ::= NUMBER
                        | STRING
                        | IDENTIFIER
                        | boolean
+                       | array_expression
                        | math_expression
                        | function_call
                        | random_statement ;
 
-math_expression      ::= "(" expression math_operator expression ")" ;
+array_expression     ::= "[" [expression ("," expression)*] "]" ;
 
-function_call        ::= IDENTIFIER "(" [expression ("," expression)*] ")" ;
+math_expression      ::= expression math_operator expression ;
 
 boolean              ::= "True" | "False" ;
 
@@ -152,17 +172,17 @@ math_operator        ::= "+" | "-" | "*" | "**" | "/" | "//" | "%" ;
 
 logical_operator     ::= "&&" | "||" ;
 
-bitwise_operator     ::= "~" ;
+range_operator       ::= ".." | "..=" ;
 
 assignment_operator  ::= "=" ;
-
-range_operator       ::= ".." | "..=" ;
 
 parameter_list       ::= "(" [IDENTIFIER ("," IDENTIFIER)*] ")" ;
 
 range                ::= expression range_operator expression ;
 
 step                 ::= expression ;
+
+comment              ::= "#" .* ;
 ```
 
 ---
