@@ -23,7 +23,7 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env);
 InterpretResult interpret_while_loop(ASTNode *node, Environment *env);
 InterpretResult interpret_for_loop(ASTNode *node, Environment *env);
 InterpretResult interpret_switch(ASTNode *node, Environment *env);
-void interpret_function_declaration(ASTNode *node, Environment *env);
+InterpretResult interpret_function_declaration(ASTNode *node, Environment *env);
 InterpretResult interpret_function_call(ASTNode *node, Environment *env);
 InterpretResult interpret_unary_op(ASTNode *node, Environment *env);
 LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);

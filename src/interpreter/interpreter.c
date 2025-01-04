@@ -24,7 +24,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     switch (node->type) {
     case AST_LITERAL:
         debug_print_int("\tMatched: `AST_LITERAL`\n");
-        result = make_result(interpret_literal(node), false, false);
+        result = interpret_literal(node);
         break;
 
     case AST_ASSIGNMENT:
@@ -145,7 +145,7 @@ void interpret_program(ASTNode *program, Environment *env) {
     }
 }
 
-LiteralValue interpret_literal(ASTNode *node) {
+InterpretResult interpret_literal(ASTNode *node) {
     LiteralValue value;
     debug_print_int("Interpreting literal value...\n");
     debug_print_int("Literal type: %d\n", node->literal.type);
@@ -181,7 +181,7 @@ LiteralValue interpret_literal(ASTNode *node) {
         break;
     }
 
-    return value;
+    return make_result(value, false, false);
 }
 
 InterpretResult interpret_variable(ASTNode *node, Environment *env) {
@@ -250,8 +250,19 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     return make_result(new_value, false, false);
 }
 
-LiteralValue handle_string_concatenation(LiteralValue left,
-                                         LiteralValue right) {
+InterpretResult handle_string_concatenation(InterpretResult left_res,
+                                            InterpretResult right_res) {
+    // Check for errors in operands
+    if (left_res.is_error) {
+        return left_res;
+    }
+    if (right_res.is_error) {
+        return right_res;
+    }
+
+    LiteralValue left = left_res.value;
+    LiteralValue right = right_res.value;
+
     LiteralValue result;
     result.type = TYPE_STRING;
 
@@ -276,7 +287,7 @@ LiteralValue handle_string_concatenation(LiteralValue left,
 
     char *new_string = malloc(new_size);
     if (!new_string) {
-        error_interpreter(
+        return raise_error(
             "Memory allocation failed for string concatenation.\n");
     }
 
@@ -285,7 +296,7 @@ LiteralValue handle_string_concatenation(LiteralValue left,
            right.type == TYPE_STRING ? right.data.string : num_str2);
     result.data.string = new_string;
 
-    return result;
+    return make_result(result, false, false);
 }
 
 LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
@@ -368,9 +379,20 @@ InterpretResult interpret_unary_op(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
-LiteralValue evaluate_operator(const char *op, LiteralValue left,
-                               LiteralValue right) {
+InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
+                                  InterpretResult right_res) {
     debug_print_int("Operator: `%s`\n", op);
+
+    // Check for errors in operands
+    if (left_res.is_error) {
+        return left_res;
+    }
+    if (right_res.is_error) {
+        return right_res;
+    }
+
+    LiteralValue left = left_res.value;
+    LiteralValue right = right_res.value;
 
     LiteralValue result;
     memset(&result, 0, sizeof(LiteralValue)); // Initialize result
@@ -378,18 +400,15 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
     // Handle string concatenation with "+" operator
     if (strcmp(op, "+") == 0 &&
         (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
-        return handle_string_concatenation(left, right);
+        return handle_string_concatenation(left_res, right_res);
     }
 
     // Handle logical AND and OR
     if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
         // Ensure both operands are boolean
         if (left.type != TYPE_BOOLEAN || right.type != TYPE_BOOLEAN) {
-            LiteralValue error_val;
-            error_val.type = TYPE_ERROR;
-            error_val.data.string = strdup(
+            return raise_error(
                 "Logical operators `&&` and `||` require boolean operands.\n");
-            return error_val;
         }
 
         result.type = TYPE_BOOLEAN;
@@ -400,20 +419,19 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
             result.data.boolean = left.data.boolean || right.data.boolean;
         }
 
-        return result;
+        return make_result(result, false, false);
     }
 
     // Get numeric values for arithmetic and comparison
-    FLOAT_SIZE left_value = 0.0, right_value = 0.0;
+    double left_value = 0.0, right_value = 0.0;
     if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
         left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                               : (FLOAT_SIZE)left.data.integer;
-        right_value = (right.type == TYPE_FLOAT)
-                          ? right.data.floating_point
-                          : (FLOAT_SIZE)right.data.integer;
+                                               : (double)left.data.integer;
+        right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
+                                                 : (double)right.data.integer;
     } else {
-        left_value = (FLOAT_SIZE)left.data.integer;
-        right_value = (FLOAT_SIZE)right.data.integer;
+        left_value = (double)left.data.integer;
+        right_value = (double)right.data.integer;
     }
 
     // Determine result type based on operands
@@ -441,19 +459,13 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
             result.data.integer = (INT_SIZE)(left_value - right_value);
     } else if (strcmp(op, "/") == 0) {
         if (right_value == 0) {
-            LiteralValue error_val;
-            error_val.type = TYPE_ERROR;
-            error_val.data.string = strdup("Division by zero\n");
-            return error_val;
+            return raise_error("Division by zero\n");
         }
         result.type = TYPE_FLOAT;
         result.data.floating_point = left_value / right_value;
     } else if (strcmp(op, "//") == 0) {
         if (right_value == 0) {
-            LiteralValue error_val;
-            error_val.type = TYPE_ERROR;
-            error_val.data.string = strdup("Floor division by zero\n");
-            return error_val;
+            return raise_error("Floor division by zero\n");
         }
         if (result.type == TYPE_FLOAT)
             result.data.floating_point = floor(left_value / right_value);
@@ -461,10 +473,7 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
             result.data.integer = (INT_SIZE)(left_value / right_value);
     } else if (strcmp(op, "%") == 0) {
         if (right_value == 0) {
-            LiteralValue error_val;
-            error_val.type = TYPE_ERROR;
-            error_val.data.string = strdup("Modulo by zero\n");
-            return error_val;
+            return raise_error("Modulo by zero\n");
         }
         if (result.type == TYPE_FLOAT) {
             result.data.floating_point = fmod(left_value, right_value);
@@ -496,13 +505,10 @@ LiteralValue evaluate_operator(const char *op, LiteralValue left,
         result.type = TYPE_BOOLEAN;
         result.data.boolean = (left_value != right_value);
     } else {
-        LiteralValue error_val;
-        error_val.type = TYPE_ERROR;
-        error_val.data.string = strdup("Unknown operator");
-        return error_val;
+        return raise_error("Unknown operator");
     }
 
-    return result;
+    return make_result(result, false, false);
 }
 
 int get_operator_precedence(const char *op) {
@@ -537,36 +543,22 @@ InterpretResult interpret_binary_op(ASTNode *node, Environment *env) {
     if (left_r.is_error) {
         return left_r;
     }
-    LiteralValue left = left_r.value;
 
     // Interpret right operand
     InterpretResult right_r = interpret_node(node->binary_op.right, env);
     if (right_r.is_error) {
         return right_r;
     }
-    LiteralValue right = right_r.value;
 
     // Evaluate based on operator
     const char *op = node->binary_op.operator;
 
-    LiteralValue op_val = evaluate_operator(op, left, right);
-
-    if (op_val.type == TYPE_ERROR) {
-        InterpretResult res;
-        res.value = op_val;
-        res.did_return = false;
-        res.did_break = false;
-        res.is_error = true;
-        return res;
+    InterpretResult op_res = evaluate_operator(op, left_r, right_r);
+    if (op_res.is_error) {
+        return op_res;
     }
 
-    // Return the operation result
-    InterpretResult res;
-    res.value = op_val;
-    res.did_return = false;
-    res.did_break = false;
-    res.is_error = false;
-    return res;
+    return make_result(op_res.value, false, false);
 }
 
 Variable *get_variable(Environment *env, const char *variable_name) {
@@ -908,8 +900,20 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     // Assign or update loop variable in the environment
     Variable *var = get_variable(env, loop_var);
     if (!var) {
-        // Variable does not exist; create it
-        var = allocate_variable(env, loop_var);
+        // Allocate variable and handle InterpretResult
+        InterpretResult var_res = allocate_variable(env, loop_var);
+        if (var_res.is_error) {
+            return var_res; // Propagate the error
+        }
+
+        // Retrieve the newly allocated variable
+        var = get_variable(env, loop_var);
+        if (!var) {
+            return raise_error(
+                "Failed to allocate and retrieve variable `%s`.\n", loop_var);
+        }
+
+        // Initialize the loop variable with the start value
         if (start_res.value.type == TYPE_FLOAT) {
             var->value.type = TYPE_FLOAT;
             var->value.data.floating_point = start_val;
@@ -1297,7 +1301,9 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         LiteralValue arg_value = arg_res.value;
         if (arg_value.type == TYPE_ERROR) {
             free_environment(&local_env);
-            return arg_value;
+            InterpretResult err_res = make_result(arg_value, false, false);
+            err_res.is_error = true;
+            return err_res;
         }
 
         Variable param_var = {.variable_name = strdup(p->parameter_name),
@@ -1316,7 +1322,7 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         if (r.did_return) {
             // Short-circuit
             free_environment(&local_env);
-            return r.value;
+            return r;
         }
         // Else keep going
         stmt = stmt->next;
