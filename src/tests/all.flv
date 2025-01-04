@@ -234,3 +234,35 @@ create get_year_from_unix(timestamp) {
 
 serve(get_year_from_unix(get_time()));
 
+
+# ==================================================
+# 16
+# ==================================================
+create check_even_odd(num) {
+    deliver num % 2 == 0 ? "Even" : "Odd";
+}
+
+for _ in 1..=5 {
+    serve("Enter a number:");
+    let input = int(sample());
+    serve(check_even_odd(input));
+}
+
+
+# ==================================================
+# 17
+# ==================================================
+create times_2(x) {
+    deliver x * 2;
+}
+
+create times_3(x) {
+    deliver x * 3;
+}
+
+create test(num, func_a, func_b) {
+    deliver func_b(func_a(func_b(num)));
+}
+
+let a = test(10, times_2, times_3); # 180
+serve(a);
