@@ -12,16 +12,6 @@ LiteralValue create_default_value() {
     return value;
 }
 
-// A helper to wrap `LiteralValue` in `InterpretResult`
-static InterpretResult make_result(LiteralValue val, bool did_return,
-                                   bool did_break) {
-    InterpretResult r;
-    r.value = val;
-    r.did_return = did_return;
-    r.did_break = did_break;
-    return r;
-}
-
 InterpretResult interpret_node(ASTNode *node, Environment *env) {
     if (!node) {
         return make_result(create_default_value(), false, false);
@@ -102,13 +92,9 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_VARIABLE: {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
-        LiteralValue var_val = interpret_variable(node, env);
-        if (var_val.type == TYPE_ERROR) {
-            result = make_result(var_val, false, false);
-            result.is_error = true;
-        } else {
-            result = make_result(var_val, false, false);
-        }
+        // Replace LiteralValue with InterpretResult
+        InterpretResult var_res = interpret_variable(node, env);
+        result = var_res;
         break;
     }
 
@@ -140,9 +126,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         break;
 
     default:
-        error_interpreter("Unsupported `ASTNode` type.\n");
-        result = make_result(create_default_value(), false, false);
-        break;
+        return raise_error("Unsupported `ASTNode` type.\n");
     }
 
     return result;
@@ -191,8 +175,12 @@ LiteralValue interpret_literal(ASTNode *node) {
                         value.data.boolean ? "True" : "False");
         break;
     default:
-        error_interpreter("Unsupported literal type.\n");
+        // Let `interpret_node` handle unsupported literals
+        value.type = TYPE_ERROR;
+        value.data.string = strdup("Unsupported literal type.\n");
+        break;
     }
+
     return value;
 }
 
@@ -610,15 +598,14 @@ Variable *get_variable(Environment *env, const char *variable_name) {
     return NULL;
 }
 
-void add_variable(Environment *env, Variable var) {
+InterpretResult add_variable(Environment *env, Variable var) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, var.variable_name) == 0) {
             // If existing variable is a constant, prevent re-assignment
             if (env->variables[i].is_constant) {
-                fprintf(stderr, "Error: Cannot reassign to constant `%s`.\n",
-                        var.variable_name);
-                return;
+                return raise_error("Error: Cannot reassign to constant `%s`.\n",
+                                   var.variable_name);
             }
 
             // Update the value of the existing variable
@@ -629,29 +616,31 @@ void add_variable(Environment *env, Variable var) {
 
             env->variables[i].value = var.value;
             env->variables[i].is_constant = var.is_constant;
-            return;
+            return make_result(var.value, false, false);
         }
     }
 
     // Add a new variable
     if (env->variable_count == env->capacity) {
         // Resize the variables array if necessary
-        env->capacity = env->capacity ? env->capacity * 2 : 4;
-        env->variables =
-            realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables) {
-            error_interpreter(
+        size_t new_capacity = env->capacity ? env->capacity * 2 : 4;
+        Variable *new_variables =
+            realloc(env->variables, new_capacity * sizeof(Variable));
+        if (!new_variables) {
+            return raise_error(
                 "Memory allocation failed while adding variable `%s`.\n",
                 var.variable_name);
         }
+        env->variables = new_variables;
+        env->capacity = new_capacity;
     }
 
     // Copy variable name and value
     env->variables[env->variable_count].variable_name =
         strdup(var.variable_name);
     if (!env->variables[env->variable_count].variable_name) {
-        error_interpreter("Memory allocation failed for variable name `%s`.\n",
-                          var.variable_name);
+        return raise_error("Memory allocation failed for variable name `%s`.\n",
+                           var.variable_name);
     }
 
     // Deep copy based on type
@@ -659,6 +648,11 @@ void add_variable(Environment *env, Variable var) {
         env->variables[env->variable_count].value.type = TYPE_STRING;
         env->variables[env->variable_count].value.data.string =
             strdup(var.value.data.string);
+        if (!env->variables[env->variable_count].value.data.string) {
+            return raise_error(
+                "Memory allocation failed for string variable `%s`.\n",
+                var.variable_name);
+        }
     } else if (var.value.type == TYPE_FUNCTION) {
         env->variables[env->variable_count].value.type = TYPE_FUNCTION;
         env->variables[env->variable_count].value.data.function_ptr =
@@ -669,30 +663,43 @@ void add_variable(Environment *env, Variable var) {
 
     env->variables[env->variable_count].is_constant = var.is_constant;
     env->variable_count++;
+
+    return make_result(var.value, false, false);
 }
 
-Variable *allocate_variable(Environment *env, const char *name) {
+InterpretResult allocate_variable(Environment *env, const char *name) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, name) == 0) {
-            return &env->variables[i]; // return existing variable
+            return make_result(env->variables[i].value, false, false);
         }
     }
 
     // If the variable doesn't exist, allocate it in memory
     if (env->variable_count == env->capacity) {
-        env->capacity *= 2;
-        env->variables =
-            realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables) {
-            error_interpreter("Memory allocation failed.\n");
+        size_t new_capacity = env->capacity ? env->capacity * 2 : 4;
+        Variable *new_variables =
+            realloc(env->variables, new_capacity * sizeof(Variable));
+        if (!new_variables) {
+            return raise_error("Memory allocation failed.\n");
         }
+        env->variables = new_variables;
+        env->capacity = new_capacity;
     }
 
     env->variables[env->variable_count].variable_name = strdup(name);
+    if (!env->variables[env->variable_count].variable_name) {
+        return raise_error("Memory allocation failed for variable name `%s`.\n",
+                           name);
+    }
+
+    // Initialize the variable with default value
+    env->variables[env->variable_count].value = create_default_value();
+    env->variables[env->variable_count].is_constant = false;
     env->variable_count++;
 
-    return &env->variables[env->variable_count - 1];
+    Variable *var = &env->variables[env->variable_count - 1];
+    return make_result(var->value, false, false);
 }
 
 InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
@@ -818,9 +825,9 @@ InterpretResult interpret_while_loop(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
-LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
+InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     if (node->type != AST_FOR_LOOP) {
-        error_interpreter(
+        return raise_error(
             "`interpret_for_loop` called with non-`for`-loop `ASTNode`\n");
     }
 
@@ -834,13 +841,13 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Evaluate start and end expressions
     InterpretResult start_res = interpret_node(start_expr, env);
-    if (start_res.value.type == TYPE_ERROR) {
-        return start_res.value;
+    if (start_res.is_error) {
+        return start_res;
     }
 
     InterpretResult end_res = interpret_node(end_expr, env);
-    if (end_res.value.type == TYPE_ERROR) {
-        return end_res.value;
+    if (end_res.is_error) {
+        return end_res;
     }
 
     // Determine start & end as floats for flexibility
@@ -850,7 +857,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     } else if (start_res.value.type == TYPE_INTEGER) {
         start_val = (FLOAT_SIZE)start_res.value.data.integer;
     } else {
-        error_interpreter("Start expression in `for` loop must be numeric\n");
+        return raise_error("Start expression in `for` loop must be numeric\n");
     }
 
     if (end_res.value.type == TYPE_FLOAT) {
@@ -858,15 +865,15 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     } else if (end_res.value.type == TYPE_INTEGER) {
         end_val = (FLOAT_SIZE)end_res.value.data.integer;
     } else {
-        error_interpreter("End expression in `for` loop must be numeric\n");
+        return raise_error("End expression in `for` loop must be numeric\n");
     }
 
     // Evaluate step expression if present
     double step = 1.0; // default
     if (step_expr) {
         InterpretResult step_res = interpret_node(step_expr, env);
-        if (step_res.value.type == TYPE_ERROR) {
-            return step_res.value;
+        if (step_res.is_error) {
+            return step_res;
         }
 
         if (step_res.value.type == TYPE_FLOAT) {
@@ -874,7 +881,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         } else if (step_res.value.type == TYPE_INTEGER) {
             step = (FLOAT_SIZE)step_res.value.data.integer;
         } else {
-            error_interpreter(
+            return raise_error(
                 "Step expression in `for` loop must be numeric\n");
         }
     } else {
@@ -888,14 +895,14 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Validate step to prevent infinite loops
     if (step < 1e-9 && step > -1e-9) {
-        error_interpreter("Step value cannot be zero in `for` loop\n");
+        return raise_error("Step value cannot be zero in `for` loop\n");
     }
 
     // Validate step to check if step is in correct direction
     if ((start_val < end_val && step < 0) ||
         (start_val > end_val && step > 0)) {
-        error_interpreter("Step value is in the wrong direction for the "
-                          "specified range of the `for` loop\n");
+        return raise_error("Step value is in the wrong direction for the "
+                           "specified range of the `for` loop\n");
     }
 
     // Assign or update loop variable in the environment
@@ -933,31 +940,32 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         } else if (var->value.type == TYPE_INTEGER) {
             current_val = (FLOAT_SIZE)var->value.data.integer;
         } else {
-            error_interpreter("Loop variable `%s` must be numeric\n", loop_var);
+            return raise_error("Loop variable `%s` must be numeric\n",
+                               loop_var);
         }
 
         // Check if condition is still valid
-        bool condition = is_ascending ? (inclusive ? (current_val <= end_val)
-                                                   : (current_val < end_val))
-                                      : (inclusive ? (current_val >= end_val)
-                                                   : (current_val > end_val));
-        if (!condition) {
+        bool condition_true = false;
+        if (is_ascending) {
+            condition_true =
+                inclusive ? (current_val <= end_val) : (current_val < end_val);
+        } else {
+            condition_true =
+                inclusive ? (current_val >= end_val) : (current_val > end_val);
+        }
+
+        if (!condition_true) {
             break;
         }
 
-        // Execute loop body
-        ASTNode *current_stmt = body;
-        while (current_stmt) {
-            InterpretResult res = interpret_node(current_stmt, env);
-            if (res.did_return) {
-                return res.value;
+        // Interpret the loop body
+        ASTNode *current = body;
+        while (current) {
+            InterpretResult body_res = interpret_node(current, env);
+            if (body_res.did_return || body_res.did_break) {
+                return body_res;
             }
-            if (res.did_break) {
-                // break out of the for loop
-                // just exit interpret_for_loop entirely
-                return create_default_value();
-            }
-            current_stmt = current_stmt->next;
+            current = current->next;
         }
 
         // Update loop variable
@@ -969,7 +977,7 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
     }
 
     // Loops do not return values
-    return create_default_value();
+    return make_result(create_default_value(), false, false);
 }
 
 InterpretResult interpret_switch(ASTNode *node, Environment *env) {
@@ -1063,8 +1071,9 @@ InterpretResult interpret_switch(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
-LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
-                                        Environment *env) {
+InterpretResult call_user_defined_function(Function *func_ref,
+                                           ASTNode *call_node,
+                                           Environment *env) {
     debug_print_int("Calling user-defined function: `%s`\n", func_ref->name);
 
     // 1) Create a new local environment
@@ -1072,7 +1081,6 @@ LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
     init_environment(&local_env);
 
     // 2) Copy global functions into the local environment
-    //    This ensures that nested function calls can access global functions
     for (size_t i = 0; i < env->function_count; i++) {
         Function *global_func = &env->functions[i];
 
@@ -1092,12 +1100,12 @@ LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
 
     while (param && arg) {
         InterpretResult arg_res = interpret_node(arg, env);
-        LiteralValue arg_value = arg_res.value;
-
-        if (arg_value.type == TYPE_ERROR) {
+        if (arg_res.is_error) {
             free_environment(&local_env);
-            return arg_value;
+            return arg_res;
         }
+
+        LiteralValue arg_value = arg_res.value;
 
         // Bind the argument to the parameter in the local environment
         Variable param_var = {.variable_name = strdup(param->parameter_name),
@@ -1111,27 +1119,31 @@ LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
 
     // 4) Check for argument count mismatch
     if (param || arg) {
-        fprintf(stderr,
-                "Error: Argument count mismatch when calling function `%s`\n",
-                func_ref->name);
         free_environment(&local_env);
-        return (LiteralValue){.type = TYPE_ERROR};
+        return raise_error(
+            "Error: Argument count mismatch when calling function `%s`\n",
+            func_ref->name);
     }
 
     // 5) Interpret the function body
     ASTNode *stmt = func_ref->body;
-    LiteralValue result = create_default_value();
+    InterpretResult func_res =
+        make_result(create_default_value(), false, false);
+
     while (stmt) {
         InterpretResult r = interpret_node(stmt, &local_env);
         if (r.did_return) {
-            result = r.value;
+            func_res = r;
             break;
         }
         if (r.did_break) {
-            fprintf(stderr,
-                    "Error: 'break' statement outside of loop or switch.\n");
             free_environment(&local_env);
-            return (LiteralValue){.type = TYPE_ERROR};
+            return raise_error(
+                "Error: 'break' statement outside of loop or switch.\n");
+        }
+        if (r.is_error) {
+            free_environment(&local_env);
+            return r;
         }
         stmt = stmt->next;
     }
@@ -1139,7 +1151,7 @@ LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
     free_environment(&local_env);
 
     // If no explicit return, return default value (e.g., 0)
-    return result;
+    return func_res;
 }
 
 void interpret_function_declaration(ASTNode *node, Environment *env) {
@@ -1216,15 +1228,9 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     if (func_var && func_var->value.type == TYPE_FUNCTION) {
         Function *func_ref = func_var->value.data.function_ptr;
         // Call the user-defined function
-        LiteralValue func_result =
+        InterpretResult func_res =
             call_user_defined_function(func_ref, node, env);
-        // Wrap the LiteralValue in InterpretResult
-        InterpretResult res;
-        res.value = func_result;
-        res.did_return = false;
-        res.did_break = false;
-        res.is_error = (func_result.type == TYPE_ERROR);
-        return res;
+        return func_res;
     }
 
     // 2. Else, check if it's a built-in or globally defined function
@@ -1238,56 +1244,25 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     if (func->is_builtin) {
         InterpretResult builtin_res = {0};
         if (strcmp(func->name, "sample") == 0) {
-            builtin_res = make_result(builtin_input(node, env), false, false);
+            builtin_res = builtin_input(node, env);
         } else if (strcmp(func->name, "serve") == 0) {
-            builtin_res = make_result(builtin_output(node, env), false, false);
+            builtin_res = builtin_output(node, env);
         } else if (strcmp(func->name, "burn") == 0) {
             builtin_res = builtin_error(node, env);
         } else if (strcmp(func->name, "random") == 0) {
-            LiteralValue rand_val = builtin_random(node, env);
-            if (rand_val.type == TYPE_ERROR) {
-                builtin_res = make_result(rand_val, false, false);
-                builtin_res.is_error = true;
-            } else {
-                builtin_res = make_result(rand_val, false, false);
-            }
+            builtin_res = builtin_random(node, env);
         } else if (strcmp(func->name, "string") == 0 ||
                    strcmp(func->name, "int") == 0 ||
                    strcmp(func->name, "float") == 0) {
-            LiteralValue cast_val = builtin_cast(node, env);
-            if (cast_val.type == TYPE_ERROR) {
-                builtin_res = make_result(cast_val, false, false);
-                builtin_res.is_error = true;
-            } else {
-                builtin_res = make_result(cast_val, false, false);
-            }
+            builtin_res = builtin_cast(node, env);
         } else if (strcmp(func->name, "get_time") == 0) {
-            LiteralValue time_val = builtin_time();
-            builtin_res = make_result(time_val, false, false);
+            builtin_res = builtin_time();
         } else if (strcmp(func->name, "taste_file") == 0) {
-            LiteralValue read_val = builtin_file_read(node, env);
-            if (read_val.type == TYPE_ERROR) {
-                builtin_res = make_result(read_val, false, false);
-                builtin_res.is_error = true;
-            } else {
-                builtin_res = make_result(read_val, false, false);
-            }
+            builtin_res = builtin_file_read(node, env);
         } else if (strcmp(func->name, "plate_file") == 0) {
-            LiteralValue write_val = builtin_file_write(node, env);
-            if (write_val.type == TYPE_ERROR) {
-                builtin_res = make_result(write_val, false, false);
-                builtin_res.is_error = true;
-            } else {
-                builtin_res = make_result(write_val, false, false);
-            }
+            builtin_res = builtin_file_write(node, env);
         } else if (strcmp(func->name, "garnish_file") == 0) {
-            LiteralValue append_val = builtin_file_append(node, env);
-            if (append_val.type == TYPE_ERROR) {
-                builtin_res = make_result(append_val, false, false);
-                builtin_res.is_error = true;
-            } else {
-                builtin_res = make_result(append_val, false, false);
-            }
+            builtin_res = builtin_file_append(node, env);
         } else {
             // Unknown built-in
             return raise_error("Unknown built-in function `%s`\n", func->name);
@@ -1350,19 +1325,16 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     free_environment(&local_env);
 
     // If no explicit return, return default value (i.e., `0`)
-    InterpretResult default_res =
-        make_result(create_default_value(), false, false);
-    default_res.is_error = false;
-    return default_res;
+    return make_result(create_default_value(), false, false);
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
     if (!node || node->type != AST_TERNARY) {
-        error_interpreter("Invalid ternary operation node.\n");
+        return raise_error("Invalid ternary operation node.\n");
     }
 
     InterpretResult cond_res = interpret_node(node->ternary.condition, env);
-    if (cond_res.did_return || cond_res.did_break) {
+    if (cond_res.is_error || cond_res.did_return || cond_res.did_break) {
         return cond_res;
     }
 
@@ -1372,7 +1344,7 @@ InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
     } else if (cond_res.value.type == TYPE_INTEGER) {
         is_true = (cond_res.value.data.integer != 0);
     } else {
-        error_interpreter("Ternary condition must be boolean or integer.\n");
+        return raise_error("Ternary condition must be boolean or integer.\n");
     }
 
     if (is_true) {
@@ -1390,7 +1362,7 @@ InterpretResult interpret_try(ASTNode *node, Environment *env) {
         return raise_error("Invalid AST node for try block.");
     }
 
-    InterpretResult result = {0};
+    InterpretResult result = make_result(create_default_value(), false, false);
     bool exception_occurred = false;
     LiteralValue exception_value = create_default_value();
 

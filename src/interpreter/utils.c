@@ -213,3 +213,13 @@ Function *get_function(Environment *env, const char *name) {
     }
     return NULL;
 }
+
+// A helper to wrap `LiteralValue` in `InterpretResult`
+static InterpretResult make_result(LiteralValue val, bool did_return,
+                                   bool did_break) {
+    InterpretResult r;
+    r.value = val;
+    r.did_return = did_return;
+    r.did_break = did_break;
+    return r;
+}

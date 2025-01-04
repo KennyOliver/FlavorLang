@@ -490,16 +490,17 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     return result_res;
 }
 
-LiteralValue builtin_time() {
+InterpretResult builtin_time() {
     time_t current_time = time(NULL);
 
     if (current_time == -1) {
-        error_interpreter("Failed to get the current time\n");
-        exit(1);
+        return raise_error("Failed to get the current time\n");
     }
 
-    return (LiteralValue){.type = TYPE_INTEGER,
-                          .data.integer = (INT_SIZE)current_time};
+    LiteralValue time_val = {.type = TYPE_INTEGER,
+                             .data.integer = (INT_SIZE)current_time};
+
+    return make_result(time_val, false, false);
 }
 
 char *process_escape_sequences(const char *input) {

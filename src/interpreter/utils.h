@@ -23,4 +23,6 @@ ASTNode *copy_ast_node(ASTNode *node);
 void add_function(Environment *env, Function func);
 Function *get_function(Environment *env, const char *name);
 
+InterpretResult make_result(LiteralValue val, bool did_return, bool did_break);
+
 #endif
