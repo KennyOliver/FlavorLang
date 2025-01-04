@@ -50,6 +50,8 @@ ASTNode *parse_statement(ParserState *state) {
         return parse_break_statement(state);
     if (match_token(state, "deliver"))
         return parse_function_return(state);
+    if (match_token(state, "try"))
+        return parse_try_block(state);
 
     // Handle function calls
     if (token->type == TOKEN_FUNCTION_NAME) {
@@ -819,4 +821,97 @@ ASTNode *parse_function_call(ParserState *state) {
 
     node->next = NULL;
     return node;
+}
+
+ASTNode *parse_try_block(ParserState *state) {
+    expect_token(state, TOKEN_KEYWORD, "Expected `try` keyword");
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` to start try block");
+
+    // Parse `try` block statements
+    ASTNode *try_body = parse_block(state);
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to end try block");
+
+    // Initialize try structure
+    ASTTry try_block = {0};
+    try_block.try_block = try_body;
+    try_block.catch_blocks = NULL;  // initialize `rescue` (catch) blocks
+    try_block.finally_block = NULL; // initialize finish block
+
+    // Parse optional `catch` blocks
+    while (match_token(state, "rescue")) {
+        ASTCatchNode *catch = parse_catch_block(state);
+        if (!try_block.catch_blocks) {
+            try_block.catch_blocks = catch;
+        } else {
+            // For future: Handle multiple `rescue` (catch) blocks
+            ASTCatchNode *last = try_block.catch_blocks;
+            while (last->next) {
+                last = last->next;
+            }
+            last->next = catch;
+        }
+    }
+
+    // Parse optional `finish` block
+    if (match_token(state, "finish")) {
+        ASTNode *finally_body = parse_finally_block(state);
+        try_block.finally_block = finally_body;
+    }
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for `try` block",
+                     get_current_token(state));
+    }
+    node->type = AST_TRY;
+    node->try_block = try_block;
+    node->next = NULL;
+
+    return node;
+}
+
+ASTCatchNode *parse_catch_block(ParserState *state) {
+    expect_token(state, TOKEN_KEYWORD, "Expected `rescue` keyword");
+
+    // Optional: Parse error object variable
+    char *error_var = NULL;
+    Token *current = get_current_token(state);
+    if (current->type == TOKEN_PAREN_OPEN) {
+        advance_token(state); // consume `(`
+        Token *var_token = get_current_token(state);
+        if (var_token->type == TOKEN_IDENTIFIER) {
+            error_var = strdup(var_token->lexeme);
+            if (!error_var) {
+                parser_error("Memory allocation failed for error variable name",
+                             var_token);
+            }
+            advance_token(state); // consume variable name
+        }
+        expect_token(state, TOKEN_PAREN_CLOSE,
+                     "Expected `)` after error variable");
+    }
+
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` to start rescue block");
+
+    // Parse `rescue` (catch) block statements
+    ASTNode *catch_body = parse_block(state);
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to end rescue block");
+
+    ASTCatchNode *catch_node = malloc(sizeof(ASTCatchNode));
+    if (!catch_node) {
+        parser_error("Memory allocation failed for rescue block", current);
+    }
+    catch_node->error_variable = error_var;
+    catch_node->body = catch_body;
+    catch_node->next = NULL;
+
+    return catch_node;
+}
+
+ASTNode *parse_finally_block(ParserState *state) {
+    expect_token(state, TOKEN_KEYWORD, "Expected `finish` keyword");
+    expect_token(state, TOKEN_BRACE_OPEN, "Expected `{` to start finish block");
+    ASTNode *finally_body = parse_block(state);
+    expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to end finish block");
+    return finally_body;
 }

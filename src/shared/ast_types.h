@@ -153,9 +153,10 @@ typedef struct ASTNode {
         ASTForLoop for_loop;           // For loop
         ASTFunctionCall function_call; // Function
         ASTTernary ternary;            // Ternary
-        ASTTry try_block;              // Try block
-        ASTCatchNode catch_block;      // Catch block
-        ASTNode finally_block;         // Finally block
+
+        ASTTry try_block; // Try Block
+        // ASTCatchNode *catch_block;     // Rescue Block
+        // struct ASTNode *finally_block; // Finish Block
 
         // Variable
         char *variable_name;

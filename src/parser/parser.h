@@ -25,6 +25,9 @@ ASTNode *parse_switch_block(ParserState *state);
 ASTNode *parse_function_declaration(ParserState *state);
 ASTNode *parse_function_call(ParserState *state);
 ASTNode *parse_function_return(ParserState *state);
+ASTNode *parse_try_block(ParserState *state);
+ASTCatchNode *parse_catch_block(ParserState *state);
+ASTNode *parse_finally_block(ParserState *state);
 
 // Expression parsing
 ASTNode *parse_expression(ParserState *state);
