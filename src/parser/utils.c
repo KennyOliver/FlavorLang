@@ -98,11 +98,41 @@ void free_ast(ASTNode *node) {
         }
 
         case AST_TRY:
+            // Free try block
+            if (node->try_block.try_block) {
+                free_ast(node->try_block.try_block);
+            }
+
+            // Free all catch blocks
+            if (node->try_block.catch_blocks) {
+                ASTCatchNode *catch_node = node->try_block.catch_blocks;
+
+                while (catch_node) {
+                    ASTCatchNode *next_catch = catch_node->next;
+
+                    // Free the error variable (if allocated)
+                    if (catch_node->error_variable) {
+                        free(catch_node->error_variable);
+                    }
+
+                    // Free the body of the catch block
+                    if (catch_node->body) {
+                        free_ast(catch_node->body);
+                    }
+
+                    free(catch_node);
+                    catch_node = next_catch;
+                }
+            }
+
+            // Free finally block
+            if (node->try_block.finally_block) {
+                free_ast(node->try_block.finally_block);
+            }
             break;
 
+        // Already handled by `AST_TRY`
         case AST_CATCH:
-            break;
-
         case AST_FINALLY:
             break;
 
