@@ -69,6 +69,10 @@ void free_ast(ASTNode *node) {
             free_ast(node->function_call.arguments);
             break;
 
+        case AST_FUNCTION_RETURN:
+            free_ast(node->function_return.return_data);
+            break;
+
         case AST_BREAK:
             // No cleanup needed!
             break;
