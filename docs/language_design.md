@@ -46,12 +46,12 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 ## Data Types
 
-| Data Type | Capacity/Range                                                       |
-| --------- | -------------------------------------------------------------------- |
-| `string`  | Dependent on system memory & encoding (e.g., UTF-8).                 |
-| `float`   | (64-bit to 128-bit): Platform-dependent, typically up to ±1.1E±4932. |
-| `integer` | (64-bit): ±9e18 (quintillion).                                       |
-| `boolean` | `1` for `True`, `0` for `False`. Typically stored as 1 byte.         |
+| Data Type | Capacity/Range                         |
+| --------- | -------------------------------------- |
+| `string`  | Dependent on system memory & encoding. |
+| `float`   | 64-bit – 128-bit: Up to `±1.1E±4932`.  |
+| `integer` | 64-bit: `±9e18` (quintillion).         |
+| `boolean` | `1` for `True`, `0` for `False`.       |
 
 ### Explanation
 
@@ -61,11 +61,11 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 - **float**:
 
-  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to ±1.1E±4932 on 128-bit implementations.
+  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to `±1.1E±4932` on 128-bit implementations.
 
 - **integer**:
 
-  The `INT_SIZE` type is a `long long int` with a range from −9,223,372,036,854,775,808 to 9,223,372,036,854,775,807, suitable for large integer values.
+  The `INT_SIZE` type is a `long long int` with a range from `−9,223,372,036,854,775,808` to `9,223,372,036,854,775,807`, suitable for large integer values.
 
 - **boolean**:
 
