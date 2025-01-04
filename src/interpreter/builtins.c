@@ -262,7 +262,7 @@ LiteralValue builtin_output(ASTNode *node, Environment *env) {
 }
 
 // Built-in `burn()` function to raise errors
-LiteralValue builtin_error(ASTNode *node, Environment *env) {
+InterpretResult builtin_error(ASTNode *node, Environment *env) {
     ASTNode *arg_node = node->function_call.arguments;
     char error_message[512] = "Error raised by burn(): ";
 
@@ -298,7 +298,7 @@ LiteralValue builtin_error(ASTNode *node, Environment *env) {
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
         default:
-            strncat(error_message, "Unknown literal type in b`urn()`.",
+            strncat(error_message, "Unknown literal type in `burn()`.",
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
         }
@@ -311,9 +311,8 @@ LiteralValue builtin_error(ASTNode *node, Environment *env) {
         arg_node = arg_node->next;
     }
 
-    error_interpreter(error_message);
-
-    return (LiteralValue){.type = TYPE_ERROR}; // keep compiler happy
+    // Propagate the exception
+    return raise_error("%s", error_message);
 }
 
 bool is_valid_int(const char *str, INT_SIZE *out_value) {

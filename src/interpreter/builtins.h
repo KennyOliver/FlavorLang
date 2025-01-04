@@ -24,7 +24,7 @@ typedef struct {
 LiteralValue builtin_input(ASTNode *node, Environment *env);
 LiteralValue builtin_random(ASTNode *node, Environment *env);
 LiteralValue builtin_output(ASTNode *node, Environment *env);
-LiteralValue builtin_error(ASTNode *node, Environment *env);
+InterpretResult builtin_error(ASTNode *node, Environment *env);
 LiteralValue builtin_cast(ASTNode *node, Environment *env);
 LiteralValue builtin_time();
 LiteralValue builtin_file_read(ASTNode *node, Environment *env);
