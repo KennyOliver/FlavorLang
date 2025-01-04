@@ -117,10 +117,20 @@ Use `try` and `rescue` to handle errors.
 
 ```py
 try {
+    serve("This will run!");
     burn("This recipe failed!");
     serve("This won't run!");
 } rescue {
     serve("Caught an error: Recipe needs improvement.");
+}
+
+try {
+    int("abc");
+    serve("This won't run!");
+} rescue {
+    serve("Runtime error: Can't cast string `abc` to int.");
+} finish {
+    serve("This always executes!");
 }
 ```
 
