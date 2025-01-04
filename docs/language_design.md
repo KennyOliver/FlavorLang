@@ -6,11 +6,11 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 ## Table of Contents
 
-4. [Syntax Keywords](#syntax-keywords)
+1. [Syntax Keywords](#syntax-keywords)
 
-5. [Data Types](#data-types)
+2. [Data Types](#data-types)
 
-6. [Extended Backus-Naur Form (EBNF)](#ebnf)
+3. [Extended Backus-Naur Form (EBNF)](#ebnf)
 
 ---
 
