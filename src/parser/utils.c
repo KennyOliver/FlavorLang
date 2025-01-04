@@ -59,29 +59,14 @@ void free_ast(ASTNode *node) {
             break;
 
         case AST_FUNCTION_DECLARATION:
-            if (debug_flag) {
-                printf("free_ast: freeing function declaration `%s`\n",
-                       node->function_declaration.name);
-            }
-
             free(node->function_declaration.name);
-
-            // Free function body recursively
-            free_ast(node->function_declaration.body);
+            free_ast(node->function_declaration
+                         .body); // free function body recursively
 
             // Free the function parameters
             ASTFunctionParameter *param = node->function_declaration.parameters;
             while (param) {
                 ASTFunctionParameter *next = param->next;
-
-                if (debug_flag) {
-                    printf("Freeing function_declaration.parameters: freeing "
-                           "parameter `%s` "
-                           "at %p\n",
-                           param->parameter_name,
-                           (void *)param->parameter_name);
-                }
-
                 free(param->parameter_name);
                 free(param);
                 param = next;
