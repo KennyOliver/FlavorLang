@@ -1,4 +1,5 @@
 try {
+    serve("This will run!");
     burn("This recipe failed!");
     serve("This won't run!");
 } rescue {
