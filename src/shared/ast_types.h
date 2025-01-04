@@ -23,7 +23,10 @@ typedef enum {
     AST_BREAK,
     AST_TERNARY,
     AST_VARIABLE,
-    AST_CONSTANT
+    AST_CONSTANT,
+    AST_TRY,
+    AST_RESCUE,
+    AST_FINISH
 } ASTNodeType;
 
 // Literal Node
@@ -117,6 +120,20 @@ typedef struct {
     struct ASTNode *false_expr;
 } ASTTernary;
 
+// AST Rescue Node (optional error object)
+typedef struct ASTCatchNode {
+    char *error_variable; // Optional: Variable name to hold the error object
+    struct ASTNode *body; // Body of the rescue block
+    struct ASTCatchNode *next; // For multiple rescue clauses (future feature)
+} ASTCatchNode;
+
+// AST Try Node
+typedef struct {
+    struct ASTNode *try_block;     // Code within the try block
+    ASTCatchNode *catch_blocks;    // Linked list of rescue blocks
+    struct ASTNode *finally_block; // Optional finish block
+} ASTTry;
+
 // AST Node Structure
 typedef struct ASTNode {
     ASTNodeType type;
@@ -127,32 +144,18 @@ typedef struct ASTNode {
             struct ASTNode *value;
         } assignment;
 
-        // Literal
-        LiteralNode literal;
-
-        // Unary operation
-        ASTUnaryOp unary_op;
-
-        // Binary operation
-        ASTBinaryOp binary_op;
-
-        // Conditional
-        ASTConditional conditional;
-
-        // Switch
-        ASTSwitch switch_case;
-
-        // While loop
-        ASTWhileLoop while_loop;
-
-        // For loop
-        ASTForLoop for_loop;
-
-        // Function
-        ASTFunctionCall function_call;
-
-        // Ternary
-        ASTTernary ternary;
+        LiteralNode literal;           // Literal
+        ASTUnaryOp unary_op;           // Unary operation
+        ASTBinaryOp binary_op;         // Binary operation
+        ASTConditional conditional;    // Conditional
+        ASTSwitch switch_case;         // Switch
+        ASTWhileLoop while_loop;       // While loop
+        ASTForLoop for_loop;           // For loop
+        ASTFunctionCall function_call; // Function
+        ASTTernary ternary;            // Ternary
+        ASTTry try_block;              // Try block
+        ASTCatchNode catch_block;      // Catch block
+        ASTNode finally_block;         // Finally block
 
         // Variable
         char *variable_name;
