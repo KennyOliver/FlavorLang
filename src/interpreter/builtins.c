@@ -188,9 +188,9 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     specs[1].type = ARG_TYPE_FLOAT;
     specs[1].out_ptr = &max;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)
-             .is_error) {
-        // Return an error type on failure
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 2, specs);
+    if (args_res.is_error) {
         LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
