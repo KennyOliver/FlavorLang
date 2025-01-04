@@ -4,11 +4,13 @@ InterpretResult raise_error(const char *format, ...) {
     char error_message[1024];
     va_list args;
     va_start(args, format);
-    printf("\033[31m"); // red text color
-    printf("Error: ");
+
+    // Format the error message into the buffer
     vsnprintf(error_message, sizeof(error_message), format, args);
-    printf("\033[0m\n"); // reset text color
     va_end(args);
+
+    // Print "Error:" in red, followed by the formatted error message
+    printf("\033[31mError: %s\033[0m\n", error_message);
 
     // Create an error LiteralValue
     LiteralValue error_value;
