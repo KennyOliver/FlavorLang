@@ -59,9 +59,10 @@ typedef struct {
 } Environment;
 
 typedef struct {
-    LiteralValue value; // The result of interpreting a node
+    LiteralValue value; // Result of interpreting a node
     bool did_return; // True if this node caused a function return to bubble up
-    bool did_break;
+    bool did_break;  // True if this node caused a loop break to bubble up
+    bool is_error;   // True if this node caused an error
 } InterpretResult;
 
 #endif
