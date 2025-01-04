@@ -5,6 +5,9 @@ void free_ast(ASTNode *node) {
         ASTNode *next = node->next;
 
         switch (node->type) {
+            printf("free_ast: freeing AST var_name at %p -> '%s'\n",
+                   (void *)node->assignment.variable_name,
+                   node->assignment.variable_name);
 
         case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
