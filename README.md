@@ -33,7 +33,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 3. [🚀 Execution Flags & Behaviors](#execution-flags--behaviors)
 
-4. [Install Syntax Highlighter Extension](#extension)
+4. [🎨 Install Syntax Highlighter Extension](#extension)
 
 ### `docs/`
 
@@ -164,14 +164,25 @@ The `--debug` flag is really useful for understanding how FlavorLang is executin
 
 ---
 
-<details>
-<summary>
-   <h2>
-      <a id="extension">Install the VS Code Syntax Highlighter</a>
-   </h2>
-</summary>
+## 🎨 Install the VS Code Syntax Highlighter <a id="extension"></a>
 
-### 1. Build the Extension
+### Installation Instructions
+
+#### 1. Download & Extract the ZIP
+
+[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+
+#### 2. Open VS Code and Navigate to the Extensions Tab
+
+#### 3. Click the <kbd>...</kbd> Menu and Select <kbd>Install from VSIX...</kbd>
+
+#### 4. Select the File in Finder or your File Explorer
+
+#### 5. Restart your Extensions via the Popup Notification
+
+### Make it Yourself
+
+#### 1. Build the Extension
 
 Navigate to the `vscode-extension` folder and install dependencies:
 
@@ -180,7 +191,7 @@ cd vscode-extension
 npm install
 ```
 
-### 2. Package the Extension
+#### 2. Package the Extension
 
 Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
 
@@ -188,13 +199,12 @@ Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
 npx vsce package
 ```
 
-### 3. Install in VS Code
+#### 3. Install in VS Code
 
 - Open VS Code.
 - Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>&#8984;</kbd>+<kbd>&#8679;</kbd>+<kbd>P</kbd> on macOS) and select _`Extensions: Install from VSIX…`_.
 - Select the generated `.vsix` file within the `vscode-extension` folder.
-
-</details>
+- Restart your extensions via the popup notificaiton.
 
 ---
 
