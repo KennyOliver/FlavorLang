@@ -86,11 +86,22 @@ void free_environment(Environment *env) {
     // Free variables
     for (size_t i = 0; i < env->variable_count; i++) {
         free(env->variables[i].variable_name);
+        printf("free_env: freeing env var_name at %p -> '%s'\n",
+               (void *)env->variables[i].variable_name,
+               env->variables[i].variable_name);
     }
     free(env->variables);
 
-    // Free functions
+    // Free functions with complete cleanup
     for (size_t i = 0; i < env->function_count; i++) {
+        // Free the parameters linked list
+        free_parameter_list(env->functions[i].parameters);
+
+        // Free the function body AST (only if they're NOT builtin)
+        if (!env->functions[i].is_builtin && env->functions[i].body) {
+            free(env->functions[i].body);
+        }
+
         free(env->functions[i].name);
     }
     free(env->functions);
