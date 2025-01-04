@@ -13,19 +13,21 @@
     } while (0)
 
 // Function to interpret a mix of argument types
-bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
-                         ArgumentSpec *specs) {
-    // size_t arg_count = 0;
+InterpretResult interpret_arguments(ASTNode *node, Environment *env,
+                                    size_t num_args, ArgumentSpec *specs) {
     ASTNode *arg_node = node;
 
     for (size_t i = 0; i < num_args; i++) {
         if (arg_node == NULL) {
-            error_interpreter("Too few arguments provided.\n");
-            return false;
+            return raise_error("Too few arguments provided.\n");
         }
 
         // Interpret the current argument
         InterpretResult arg_res = interpret_node(arg_node, env);
+        if (arg_res.is_error) {
+            // Propagate the error
+            return arg_res;
+        }
         LiteralValue lv = arg_res.value;
 
         // Reference to the current argument specification
@@ -42,9 +44,8 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_BOOLEAN) {
                 *((INT_SIZE *)output_ptr) = lv.data.boolean ? 1 : 0;
             } else {
-                error_interpreter("Expected integer for argument %zu.\n",
-                                  i + 1);
-                return false;
+                return raise_error("Expected integer for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
@@ -56,8 +57,7 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_BOOLEAN) {
                 *((FLOAT_SIZE *)output_ptr) = lv.data.boolean ? 1.0 : 0.0;
             } else {
-                error_interpreter("Expected float for argument %zu.\n", i + 1);
-                return false;
+                return raise_error("Expected float for argument %zu.\n", i + 1);
             }
             break;
 
@@ -65,8 +65,8 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             if (lv.type == TYPE_STRING) {
                 *((char **)output_ptr) = lv.data.string;
             } else {
-                error_interpreter("Expected string for argument %zu.\n", i + 1);
-                return false;
+                return raise_error("Expected string for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
@@ -78,30 +78,26 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_FLOAT) {
                 *((bool *)output_ptr) = (lv.data.floating_point != 0.0);
             } else {
-                error_interpreter("Expected boolean for argument %zu.\n",
-                                  i + 1);
-                return false;
+                return raise_error("Expected boolean for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
-            // Handle additional types as needed
-
         default:
-            error_interpreter("Unknown argument type for argument %zu.\n",
-                              i + 1);
-            return false;
+            return raise_error("Unknown argument type for argument %zu.\n",
+                               i + 1);
         }
 
-        // arg_count++;
         arg_node = arg_node->next;
     }
 
     if (arg_node != NULL) {
-        error_interpreter("Too many arguments provided.\n");
-        return false;
+        return raise_error("Too many arguments provided.\n");
     }
 
-    return true;
+    // Indicate success
+    LiteralValue success_val = {.type = TYPE_BOOLEAN, .data.boolean = true};
+    return make_result(success_val, false, false);
 }
 
 void print_formatted_string(const char *str) {
@@ -133,7 +129,7 @@ void print_formatted_string(const char *str) {
 }
 
 // Built-in `input()` function
-LiteralValue builtin_input(ASTNode *node, Environment *env) {
+InterpretResult builtin_input(ASTNode *node, Environment *env) {
     (void)node; // Unused parameter, suppress compiler warning
     (void)env;  // Unused parameter
 
@@ -142,7 +138,8 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
     char *input_buffer = malloc(buffer_size);
     if (!input_buffer) {
         fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     int c;
@@ -155,7 +152,8 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
                     stderr,
                     "Error: Failed to reallocate memory for input buffer.\n");
                 free(input_buffer);
-                return (LiteralValue){.type = TYPE_ERROR};
+                LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+                return make_result(lv, false, false);
             }
             input_buffer = new_buffer;
         }
@@ -170,16 +168,17 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
 
     if (!result.data.string) {
         fprintf(stderr, "Error: Failed to duplicate input string.\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     DEBUG_PRINT_FLOAT("Input received: `%s`\n", result.data.string);
 
-    return result;
+    return make_result(result, false, false);
 }
 
 // Built-in `random()` function with 0, 1, or 2 arguments
-LiteralValue builtin_random(ASTNode *node, Environment *env) {
+InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L;
     FLOAT_SIZE max = 1.0L;
 
@@ -189,9 +188,11 @@ LiteralValue builtin_random(ASTNode *node, Environment *env) {
     specs[1].type = ARG_TYPE_FLOAT;
     specs[1].out_ptr = &max;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)
+             .is_error) {
         // Return an error type on failure
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     // Seed the random number generator once
@@ -218,11 +219,11 @@ LiteralValue builtin_random(ASTNode *node, Environment *env) {
     result.type = TYPE_FLOAT;
     result.data.floating_point = random_number;
 
-    return result;
+    return make_result(result, false, false);
 }
 
 // Built-in `serve()` function for printing
-LiteralValue builtin_output(ASTNode *node, Environment *env) {
+InterpretResult builtin_output(ASTNode *node, Environment *env) {
     ASTNode *arg_node = node->function_call.arguments;
     while (arg_node != NULL) {
         InterpretResult r = interpret_node(arg_node, env);
@@ -257,8 +258,9 @@ LiteralValue builtin_output(ASTNode *node, Environment *env) {
     }
     printf("\n");
 
-    return (LiteralValue){.type = TYPE_INTEGER,
-                          .data.integer = 0}; // Return 0 as default
+    LiteralValue lv = {.type = TYPE_INTEGER,
+                       .data.integer = 0}; // Return 0 as default
+    return make_result(lv, false, false);
 }
 
 // Built-in `burn()` function to raise errors
@@ -550,21 +552,24 @@ char *process_escape_sequences(const char *input) {
     return processed;
 }
 
-LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_read(ASTNode *node, Environment *env) {
     char *filepath;
 
     ArgumentSpec specs[1];
     specs[0].type = ARG_TYPE_STRING;
     specs[0].out_ptr = &filepath;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)) {
-        return (LiteralValue){.type = TYPE_ERROR};
+    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)
+             .is_error) {
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     FILE *file = fopen(filepath, "r");
     if (file == NULL) {
         perror("Failed to open file");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     size_t buffer_size = 1024;
@@ -575,7 +580,8 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     if (file_contents == NULL) {
         perror("Failed to allocate memory for file contents");
         fclose(file);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     // Initialize buffer for reading each line
@@ -593,7 +599,8 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
                 free(buffer);
                 free(file_contents);
                 fclose(file);
-                return (LiteralValue){.type = TYPE_ERROR};
+                LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+                return make_result(lv, false, false);
             }
 
             file_contents = temp;
@@ -608,10 +615,12 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     free(buffer);
     fclose(file);
 
-    return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
+    LiteralValue lv = {.type = TYPE_STRING, .data.string = file_contents};
+    return make_result(lv, false, false);
 }
 
-LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
+InterpretResult helper_file_writer(ASTNode *node, Environment *env,
+                                   bool append) {
     char *filepath;
     char *content;
 
@@ -622,40 +631,46 @@ LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
     specs[1].type = ARG_TYPE_STRING;
     specs[1].out_ptr = &content;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
-        return (LiteralValue){.type = TYPE_ERROR};
+    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)
+             .is_error) {
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     // Process the content to handle escape sequences
     char *processed_content = process_escape_sequences(content);
     if (processed_content == NULL) {
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     FILE *file = fopen(filepath, append ? "a" : "w");
     if (file == NULL) {
         perror("Failed to open file for writing");
         free(processed_content);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     if (fputs(processed_content, file) == EOF) {
         perror("Failed to write to file");
         free(processed_content);
         fclose(file);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     free(processed_content);
     fclose(file);
 
-    return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
+    LiteralValue lv = {.type = TYPE_BOOLEAN, .data.boolean = true};
+    return make_result(lv, false, false);
 }
 
-LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_write(ASTNode *node, Environment *env) {
     return helper_file_writer(node, env, false);
 }
 
-LiteralValue builtin_file_append(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_append(ASTNode *node, Environment *env) {
     return helper_file_writer(node, env, true);
 }
