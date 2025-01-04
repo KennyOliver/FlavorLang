@@ -1,17 +1,31 @@
 #include "utils.h"
 
-void error_interpreter(const char *format, ...) {
+InterpretResult raise_error(const char *format, ...) {
+    char error_message[1024];
     va_list args;
     va_start(args, format);
-
     printf("\033[31m"); // red text color
     printf("Error: ");
-    vprintf(format, args);
+    vsnprintf(error_message, sizeof(error_message), format, args);
     printf("\033[0m\n"); // reset text color
-
     va_end(args);
-    fflush(stdout);
-    exit(1);
+
+    // Create an error LiteralValue
+    LiteralValue error_value;
+    error_value.type = TYPE_ERROR;
+    error_value.data.string = strdup(error_message);
+
+    if (!error_value.data.string) {
+        fprintf(stderr,
+                "Error: Failed to allocate memory for error message.\n");
+        exit(1);
+    }
+
+    InterpretResult res = {.value = error_value,
+                           .did_return = false,
+                           .did_break = false,
+                           .is_error = true};
+    return res;
 }
 
 void initialize_builtin_function(Environment *env, const char *name) {

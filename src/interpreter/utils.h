@@ -14,7 +14,7 @@ void init_environment(Environment *env);
 // Free the environment
 void free_environment(Environment *env);
 
-void error_interpreter(const char *format, ...);
+InterpretResult raise_error(const char *format, ...);
 
 void free_parameter_list(ASTFunctionParameter *head);
 ASTFunctionParameter *
