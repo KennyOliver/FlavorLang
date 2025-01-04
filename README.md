@@ -66,24 +66,6 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### 1. Install the Compiler
 
-<details>
-<summary>
-   <h4>Make it yourself</h4>
-</summary>
-
-```bash
-$ git clone https://github.com/KennyOliver/FlavorLang.git
-$ cd src
-$ make
-```
-
-> [!Note]
->
-> Unless you move `flavor` to `/usr/local/bin/`,
-> you'll have to use `./flavor` for commands with relative file paths.
-
-</details>
-
 #### For macOS Users
 
 ##### 1. Download & Extract the ZIP
@@ -101,7 +83,7 @@ $ make
 ##### 3. Handle macOS Security Prompt (If Any)
 
 - If macOS prompts a security warning, navigate to <kbd>System Preferences</kbd> > <kbd>Security & Privacy</kbd> > <kbd>General</kbd>.
-- Click "Open Anyway" for `flavor`.
+- Click <kbd>Open Anyway</kbd> for `flavor`.
 
 ##### 4. Verify Installation
 
@@ -128,6 +110,19 @@ flavor --about
 ```bash
 flavor --about
 ```
+
+#### Make it Yourself
+
+```bash
+$ git clone https://github.com/KennyOliver/FlavorLang.git
+$ cd src
+$ make
+```
+
+> [!Note]
+>
+> Unless you move `flavor` to `/usr/local/bin/`,
+> you'll have to use `./flavor` for commands with relative file paths.
 
 ### 2. Write Your First Recipe
 
@@ -196,7 +191,7 @@ npx vsce package
 ### 3. Install in VS Code
 
 - Open VS Code.
-- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>Cmd</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> on Mac) and select _`Extensions: Install from VSIX…`_.
+- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>&#8984;</kbd>+<kbd>&#8679;</kbd>+<kbd>P</kbd> on macOS) and select _`Extensions: Install from VSIX…`_.
 - Select the generated `.vsix` file within the `vscode-extension` folder.
 
 </details>
