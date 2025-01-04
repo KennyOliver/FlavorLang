@@ -294,8 +294,7 @@ ASTNode *parse_function_return(ParserState *state) {
     }
 
     node->type = AST_FUNCTION_RETURN;
-    // node->function_call.return_data = parse_expression(state);
-    node->assignment.value = parse_expression(state);
+    node->function_call.return_data = parse_expression(state);
 
     node->next = NULL;
     expect_token(state, TOKEN_DELIMITER,

@@ -64,15 +64,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     }
 
     case AST_FUNCTION_RETURN: {
-        debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
-        // Extract the return value
         InterpretResult return_res =
-            interpret_node(node->assignment.value, env);
+            interpret_node(node->function_call.return_data, env);
         if (return_res.is_error) {
-            // Propagate the error
             return return_res;
         }
-        // Set the did_return flag
         return_res.did_return = true;
         return return_res;
     }
