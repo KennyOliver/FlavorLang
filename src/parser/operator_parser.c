@@ -361,7 +361,7 @@ ASTNode *create_function_call_node(char *name, ASTNode *args) {
         parser_error("Memory allocation failed for function call node", NULL);
     }
     node->type = AST_FUNCTION_CALL;
-    node->function_call.name = name;
+    node->function_call.name = strdup(name);
     node->function_call.arguments = args;
     node->next = NULL;
     return node;

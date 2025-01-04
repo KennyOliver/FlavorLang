@@ -192,7 +192,7 @@ InterpretResult interpret_constant(ASTNode *node, Environment *env) {
     }
 
     // Extract the constant name and value
-    char *const_name = node->assignment.variable_name;
+    char *const_name = strdup(node->assignment.variable_name);
     InterpretResult value_res = interpret_node(node->assignment.value, env);
     LiteralValue const_value = value_res.value;
 
