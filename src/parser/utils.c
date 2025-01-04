@@ -68,7 +68,7 @@ void free_ast(ASTNode *node) {
             free_ast(node->ternary.false_expr);
             break;
 
-        case AST_SWITCH:
+        case AST_SWITCH: {
             if (node->switch_case.expression) {
                 free_ast(node->switch_case.expression);
             }
@@ -94,6 +94,16 @@ void free_ast(ASTNode *node) {
                 }
             }
 
+            break;
+        }
+
+        case AST_TRY:
+            break;
+
+        case AST_CATCH:
+            break;
+
+        case AST_FINALLY:
             break;
 
         default:

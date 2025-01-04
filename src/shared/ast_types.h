@@ -25,8 +25,8 @@ typedef enum {
     AST_VARIABLE,
     AST_CONSTANT,
     AST_TRY,
-    AST_RESCUE,
-    AST_FINISH
+    AST_CATCH,
+    AST_FINALLY
 } ASTNodeType;
 
 // Literal Node
