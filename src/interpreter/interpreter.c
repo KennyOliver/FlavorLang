@@ -701,7 +701,6 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
         return raise_error("Invalid conditional node.");
     }
 
-    InterpretResult result = {0};
     bool condition_met = false;
 
     ASTNode *current_branch = node;
@@ -1158,7 +1157,8 @@ InterpretResult call_user_defined_function(Function *func_ref,
     return func_res;
 }
 
-void interpret_function_declaration(ASTNode *node, Environment *env) {
+InterpretResult interpret_function_declaration(ASTNode *node,
+                                               Environment *env) {
     debug_print_int("`interpret_function_declaration()` called\n");
 
     if (!node || !node->function_call.name) {
@@ -1315,7 +1315,6 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     }
 
     // interpret function body
-    LiteralValue result = create_default_value();
     ASTNode *stmt = func->body;
     while (stmt) {
         InterpretResult r = interpret_node(stmt, &local_env);

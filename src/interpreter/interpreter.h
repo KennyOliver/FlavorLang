@@ -31,13 +31,14 @@ InterpretResult interpret_ternary(ASTNode *node, Environment *env);
 InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,
                                            Environment *env);
+InterpretResult interpret_try(ASTNode *node, Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);
 
 // Helpers
 Variable *get_variable(Environment *env, const char *variable_name);
-void add_variable(Environment *env, Variable var);
+InterpretResult add_variable(Environment *env, Variable var);
 ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params);
 
 #endif
