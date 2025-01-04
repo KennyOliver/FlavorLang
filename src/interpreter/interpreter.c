@@ -372,6 +372,14 @@ InterpretResult interpret_unary_op(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
+// Helper function to check if a type is numeric
+bool is_numeric_type(LiteralType type) {
+    return type == TYPE_INTEGER || type == TYPE_FLOAT;
+}
+
+// Helper function to check if a type is boolean
+bool is_boolean_type(LiteralType type) { return type == TYPE_BOOLEAN; }
+
 InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
                                   InterpretResult right_res) {
     debug_print_int("Operator: `%s`\n", op);
@@ -399,7 +407,7 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
     // Handle logical AND and OR
     if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
         // Ensure both operands are boolean
-        if (left.type != TYPE_BOOLEAN || right.type != TYPE_BOOLEAN) {
+        if (!is_boolean_type(left.type) || !is_boolean_type(right.type)) {
             return raise_error(
                 "Logical operators `&&` and `||` require boolean operands.\n");
         }
@@ -415,93 +423,120 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
         return make_result(result, false, false);
     }
 
-    // Get numeric values for arithmetic and comparison
-    double left_value = 0.0, right_value = 0.0;
-    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-        left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                               : (double)left.data.integer;
-        right_value = (right.type == TYPE_FLOAT) ? right.data.floating_point
-                                                 : (double)right.data.integer;
-    } else {
-        left_value = (double)left.data.integer;
-        right_value = (double)right.data.integer;
+    // **New Type Validation for Numeric Operators**
+    // List of operators that require numeric operands
+    const char *numeric_operators[] = {"*", "+", "-",  "/",  "//", "%", "**",
+                                       "<", ">", "<=", ">=", "==", "!="};
+    size_t num_numeric_ops =
+        sizeof(numeric_operators) / sizeof(numeric_operators[0]);
+
+    bool is_numeric_op = false;
+    for (size_t i = 0; i < num_numeric_ops; ++i) {
+        if (strcmp(op, numeric_operators[i]) == 0) {
+            is_numeric_op = true;
+            break;
+        }
     }
 
-    // Determine result type based on operands
-    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-        result.type = TYPE_FLOAT;
-    } else {
-        result.type = TYPE_INTEGER;
-    }
+    if (is_numeric_op) {
+        // Ensure both operands are numeric
+        if (!is_numeric_type(left.type) || !is_numeric_type(right.type)) {
+            return raise_error("Operator `%s` requires numeric operands.\n",
+                               op);
+        }
 
-    // Handle operators
-    if (strcmp(op, "*") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value * right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value * right_value);
-    } else if (strcmp(op, "+") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value + right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value + right_value);
-    } else if (strcmp(op, "-") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value - right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value - right_value);
-    } else if (strcmp(op, "/") == 0) {
-        if (right_value == 0) {
-            return raise_error("Division by zero\n");
-        }
-        result.type = TYPE_FLOAT;
-        result.data.floating_point = left_value / right_value;
-    } else if (strcmp(op, "//") == 0) {
-        if (right_value == 0) {
-            return raise_error("Floor division by zero\n");
-        }
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = floor(left_value / right_value);
-        else
-            result.data.integer = (INT_SIZE)(left_value / right_value);
-    } else if (strcmp(op, "%") == 0) {
-        if (right_value == 0) {
-            return raise_error("Modulo by zero\n");
-        }
-        if (result.type == TYPE_FLOAT) {
-            result.data.floating_point = fmod(left_value, right_value);
+        // Proceed to get numeric values
+        double left_value = 0.0, right_value = 0.0;
+        if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+            left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
+                                                   : (double)left.data.integer;
+            right_value = (right.type == TYPE_FLOAT)
+                              ? right.data.floating_point
+                              : (double)right.data.integer;
         } else {
-            result.data.integer =
-                (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
+            left_value = (double)left.data.integer;
+            right_value = (double)right.data.integer;
         }
-    } else if (strcmp(op, "**") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = pow(left_value, right_value);
-        else
-            result.data.integer = (INT_SIZE)pow(left_value, right_value);
-    } else if (strcmp(op, "<") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value < right_value);
-    } else if (strcmp(op, ">") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value > right_value);
-    } else if (strcmp(op, "<=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value <= right_value);
-    } else if (strcmp(op, ">=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value >= right_value);
-    } else if (strcmp(op, "==") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value == right_value);
-    } else if (strcmp(op, "!=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value != right_value);
-    } else {
-        return raise_error("Unknown operator");
+
+        // Determine result type based on operands
+        if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
+            result.type = TYPE_FLOAT;
+        } else {
+            result.type = TYPE_INTEGER;
+        }
+
+        // Handle operators
+        if (strcmp(op, "*") == 0) {
+            if (result.type == TYPE_FLOAT)
+                result.data.floating_point = left_value * right_value;
+            else
+                result.data.integer = (INT_SIZE)(left_value * right_value);
+        } else if (strcmp(op, "+") == 0) {
+            if (result.type == TYPE_FLOAT)
+                result.data.floating_point = left_value + right_value;
+            else
+                result.data.integer = (INT_SIZE)(left_value + right_value);
+        } else if (strcmp(op, "-") == 0) {
+            if (result.type == TYPE_FLOAT)
+                result.data.floating_point = left_value - right_value;
+            else
+                result.data.integer = (INT_SIZE)(left_value - right_value);
+        } else if (strcmp(op, "/") == 0) {
+            if (right_value == 0) {
+                return raise_error("Division by zero\n");
+            }
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_value / right_value;
+        } else if (strcmp(op, "//") == 0) {
+            if (right_value == 0) {
+                return raise_error("Floor division by zero\n");
+            }
+            if (result.type == TYPE_FLOAT)
+                result.data.floating_point = floor(left_value / right_value);
+            else
+                result.data.integer = (INT_SIZE)(left_value / right_value);
+        } else if (strcmp(op, "%") == 0) {
+            if (right_value == 0) {
+                return raise_error("Modulo by zero\n");
+            }
+            if (result.type == TYPE_FLOAT) {
+                result.data.floating_point = fmod(left_value, right_value);
+            } else {
+                result.data.integer =
+                    (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
+            }
+        } else if (strcmp(op, "**") == 0) {
+            if (result.type == TYPE_FLOAT)
+                result.data.floating_point = pow(left_value, right_value);
+            else
+                result.data.integer = (INT_SIZE)pow(left_value, right_value);
+        } else if (strcmp(op, "<") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value < right_value) ? 1 : 0;
+        } else if (strcmp(op, ">") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value > right_value) ? 1 : 0;
+        } else if (strcmp(op, "<=") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value <= right_value) ? 1 : 0;
+        } else if (strcmp(op, ">=") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value >= right_value) ? 1 : 0;
+        } else if (strcmp(op, "==") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value == right_value) ? 1 : 0;
+        } else if (strcmp(op, "!=") == 0) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (left_value != right_value) ? 1 : 0;
+        } else {
+            return raise_error("Unknown operator");
+        }
+
+        return make_result(result, false, false);
     }
 
-    return make_result(result, false, false);
+    // If operator is not recognized
+    return raise_error("Unknown operator");
 }
 
 int get_operator_precedence(const char *op) {
