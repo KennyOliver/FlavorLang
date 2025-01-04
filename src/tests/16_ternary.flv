@@ -2,7 +2,7 @@ create check_even_odd(num) {
     deliver num % 2 == 0 ? "Even" : "Odd";
 }
 
-for _ in 1..=1 {
+for _ in 1..=5 {
     serve("Enter a number:");
     let input = int(sample());
     serve(check_even_odd(input));
