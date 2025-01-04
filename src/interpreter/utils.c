@@ -86,9 +86,6 @@ void free_environment(Environment *env) {
     // Free variables
     for (size_t i = 0; i < env->variable_count; i++) {
         free(env->variables[i].variable_name);
-        printf("free_env: freeing env var_name at %p -> '%s'\n",
-               (void *)env->variables[i].variable_name,
-               env->variables[i].variable_name);
     }
     free(env->variables);
 
