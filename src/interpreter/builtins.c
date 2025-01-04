@@ -362,7 +362,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
 
-    char *cast_type = node->function_call.name;
+    char *cast_type = strdup(node->function_call.name);
     if (!cast_type) {
         return raise_error("No cast type provided to `builtin_cast()`.\n");
     }

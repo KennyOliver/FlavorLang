@@ -169,7 +169,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
     // Deep copy based on node type
     switch (node->type) {
     case AST_ASSIGNMENT:
-        // Duplicate the variable name
         if (node->assignment.variable_name) {
             new_node->assignment.variable_name =
                 strdup(node->assignment.variable_name);
@@ -180,13 +179,10 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->assignment.variable_name = NULL;
         }
-
-        // Recursively copy the value expression
         new_node->assignment.value = copy_ast_node(node->assignment.value);
         break;
 
     case AST_FUNCTION_DECLARATION:
-        // Duplicate the function name
         if (node->function_declaration.name) {
             new_node->function_declaration.name =
                 strdup(node->function_declaration.name);
@@ -197,18 +193,13 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->function_declaration.name = NULL;
         }
-
-        // Copy parameters
         new_node->function_declaration.parameters =
             copy_function_parameters(node->function_declaration.parameters);
-
-        // Recursively copy the function body
         new_node->function_declaration.body =
             copy_ast_node(node->function_declaration.body);
         break;
 
     case AST_FUNCTION_CALL:
-        // Duplicate the function name
         if (node->function_call.name) {
             new_node->function_call.name = strdup(node->function_call.name);
             if (!new_node->function_call.name) {
@@ -218,20 +209,16 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->function_call.name = NULL;
         }
-
-        // Recursively copy arguments
         new_node->function_call.arguments =
             copy_ast_node(node->function_call.arguments);
         break;
 
     case AST_FUNCTION_RETURN:
-        // Recursively copy the return data expression
         new_node->function_return.return_data =
             copy_ast_node(node->function_return.return_data);
         break;
 
     case AST_LITERAL:
-        // Deep copy the literal based on its type
         new_node->literal.type = node->literal.type;
         switch (node->literal.type) {
         case LITERAL_STRING:
@@ -262,7 +249,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_CONDITIONAL:
-        // Recursively copy the condition and body
         new_node->conditional.condition =
             copy_ast_node(node->conditional.condition);
         new_node->conditional.body = copy_ast_node(node->conditional.body);
@@ -271,7 +257,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_UNARY_OP:
-        // Duplicate the operator string
         if (node->unary_op.operator) {
             new_node->unary_op.operator= strdup(node->unary_op.operator);
             if (!new_node->unary_op.operator) {
@@ -280,13 +265,10 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->unary_op.operator= NULL;
         }
-
-        // Recursively copy the operand
         new_node->unary_op.operand = copy_ast_node(node->unary_op.operand);
         break;
 
     case AST_BINARY_OP:
-        // Duplicate the operator string
         if (node->binary_op.operator) {
             new_node->binary_op.operator= strdup(node->binary_op.operator);
             if (!new_node->binary_op.operator) {
@@ -295,14 +277,11 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->binary_op.operator= NULL;
         }
-
-        // Recursively copy left and right operands
         new_node->binary_op.left = copy_ast_node(node->binary_op.left);
         new_node->binary_op.right = copy_ast_node(node->binary_op.right);
         break;
 
     case AST_WHILE_LOOP:
-        // Recursively copy the condition and body
         new_node->while_loop.condition =
             copy_ast_node(node->while_loop.condition);
         new_node->while_loop.body = copy_ast_node(node->while_loop.body);
@@ -311,7 +290,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_FOR_LOOP:
-        // Duplicate the loop variable name
         if (node->for_loop.loop_variable) {
             new_node->for_loop.loop_variable =
                 strdup(node->for_loop.loop_variable);
@@ -322,104 +300,75 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->for_loop.loop_variable = NULL;
         }
-
-        // Recursively copy start and end expressions
         new_node->for_loop.start_expr =
             copy_ast_node(node->for_loop.start_expr);
         new_node->for_loop.end_expr = copy_ast_node(node->for_loop.end_expr);
-
-        // Copy inclusive flag
         new_node->for_loop.inclusive = node->for_loop.inclusive;
-
-        // Recursively copy step expression if it exists
-        if (node->for_loop.step_expr) {
-            new_node->for_loop.step_expr =
-                copy_ast_node(node->for_loop.step_expr);
-        } else {
-            new_node->for_loop.step_expr = NULL;
-        }
-
-        // Recursively copy the loop body
+        new_node->for_loop.step_expr = copy_ast_node(node->for_loop.step_expr);
         new_node->for_loop.body = copy_ast_node(node->for_loop.body);
         break;
 
     case AST_SWITCH:
-        // Recursively copy the switch expression
         new_node->switch_case.expression =
             copy_ast_node(node->switch_case.expression);
-
-        // Recursively copy each case
-        new_node->switch_case.cases = NULL;
         ASTCaseNode *current_case = node->switch_case.cases;
         ASTCaseNode *new_case_head = NULL;
         ASTCaseNode *new_case_tail = NULL;
-
         while (current_case) {
             ASTCaseNode *copied_case = malloc(sizeof(ASTCaseNode));
             if (!copied_case) {
                 fatal_error("Memory allocation failed for ASTCaseNode.\n");
             }
-
-            // Recursively copy the condition and body
             copied_case->condition = copy_ast_node(current_case->condition);
             copied_case->body = copy_ast_node(current_case->body);
             copied_case->next = NULL;
-
             if (!new_case_head) {
                 new_case_head = new_case_tail = copied_case;
             } else {
                 new_case_tail->next = copied_case;
                 new_case_tail = copied_case;
             }
-
             current_case = current_case->next;
         }
-
         new_node->switch_case.cases = new_case_head;
         break;
 
+    case AST_VARIABLE:
+    case AST_CONSTANT:
+        if (node->variable_name) {
+            new_node->variable_name = strdup(node->variable_name);
+            if (!new_node->variable_name) {
+                fatal_error(
+                    "Memory allocation failed for variable/constant name.\n");
+            }
+        } else {
+            new_node->variable_name = NULL;
+        }
+        break;
+
     case AST_BREAK:
-        // No additional fields to copy for break
+        // No fields to copy
         break;
 
     case AST_TERNARY:
-        // Recursively copy condition, true_expr, and false_expr
         new_node->ternary.condition = copy_ast_node(node->ternary.condition);
         new_node->ternary.true_expr = copy_ast_node(node->ternary.true_expr);
         new_node->ternary.false_expr = copy_ast_node(node->ternary.false_expr);
         break;
 
-        // Exclude AST_VARIABLE and AST_CONSTANT as they're not used yet
-        // If needed in the future, similar handling can be added here
-
     case AST_TRY:
-        // Recursively copy try block
         new_node->try_block.try_block =
             copy_ast_node(node->try_block.try_block);
-
-        // Recursively copy catch blocks
         new_node->try_block.catch_blocks =
             copy_catch_node(node->try_block.catch_blocks);
-
-        // Recursively copy finally block if it exists
-        if (node->try_block.finally_block) {
-            new_node->try_block.finally_block =
-                copy_ast_node(node->try_block.finally_block);
-        } else {
-            new_node->try_block.finally_block = NULL;
-        }
-        break;
-
-    case AST_CATCH:
-    case AST_FINALLY:
-        // These are handled within AST_TRY, so no action needed here
+        new_node->try_block.finally_block =
+            copy_ast_node(node->try_block.finally_block);
         break;
 
     default:
         fatal_error("Unknown ASTNodeType encountered in `copy_ast_node`.\n");
     }
 
-    // Recursively copy the next node in the linked list
     new_node->next = copy_ast_node(node->next);
 
     return new_node;

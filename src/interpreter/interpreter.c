@@ -2,13 +2,10 @@
 
 // Helper function to create a default LiteralValue (zero number)
 LiteralValue create_default_value(void) {
-    LiteralValue value = {
-        .type = TYPE_INTEGER,
-        .data = {
-            // .floating_point = 0.0,
-            .integer = 0, // main value used for comparisons, etc
-            // .string = "",
-        }};
+    LiteralValue value;
+    memset(&value, 0, sizeof(value));
+    value.type = TYPE_INTEGER;
+    value.data.integer = 0;
     return value;
 }
 
@@ -132,11 +129,11 @@ void interpret_program(ASTNode *program, Environment *env) {
     ASTNode *current = program;
     while (current) {
         debug_print_int("Executing top-level statement\n");
-        InterpretResult res = interpret_node(current, env);
-        if (res.is_error) {
-            fprintf(stderr, "Unhandled exception: %s\n", res.value.data.string);
-            exit(1);
-        }
+        interpret_node(current, env);
+        // if (res.is_error) {
+        //     fprintf(stderr, "Unhandled exception: %s\n",
+        //     res.value.data.string); exit(1);
+        // }
         current = current->next;
     }
 }
@@ -1223,7 +1220,7 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         return raise_error("Invalid function call");
     }
 
-    const char *func_name = node->function_call.name;
+    const char *func_name = strdup(node->function_call.name);
 
     // 1. Check if the function name is a variable holding a function reference
     Variable *func_var = get_variable(env, func_name);
