@@ -24,8 +24,7 @@ ASTNode *parse_ternary(ParserState *state) {
         // Recursively parse expression for `True` branch (allows for nesting)
         ASTNode *true_expr = parse_ternary(state);
 
-        expect_token(state, TOKEN_OPERATOR,
-                     "Expected `:` in ternary expression");
+        expect_token(state, TOKEN_COLON, "Expected `:` in ternary expression");
 
         // Recursively parse expression for `False` branch
         ASTNode *false_expr = parse_ternary(state);
