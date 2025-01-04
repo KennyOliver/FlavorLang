@@ -46,12 +46,12 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 ## Data Types
 
-| Data Type | Capacity/Range                         |
-| --------- | -------------------------------------- |
-| `string`  | Dependent on system memory & encoding. |
-| `float`   | 64-bit – 128-bit: Up to `±1.1E±4932`.  |
-| `integer` | 64-bit: `±9e18` (quintillion).         |
-| `boolean` | `1` for `True`, `0` for `False`.       |
+| Data Type | Capacity/Range                                                 |
+| --------- | -------------------------------------------------------------- |
+| `string`  | Dependent on system memory and encoding (e.g., UTF-8, UTF-16). |
+| `float`   | 64-bit: `±1.7e±308` (double); 128-bit: `±1.1e±4932` (quad).    |
+| `integer` | 64-bit: `±9e18` (quintillion).                                 |
+| `boolean` | `1` for `True`, `0` for `False`.                               |
 
 ### Explanation
 
@@ -61,7 +61,7 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 - **float**:
 
-  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to `±1.1E±4932` on 128-bit implementations.
+  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to `±1.1e±4932` on 128-bit implementations.
 
 - **integer**:
 
