@@ -103,15 +103,23 @@ typedef struct ASTFunctionParameter {
     struct ASTFunctionParameter *next; // Linked list for multiple parameters
 } ASTFunctionParameter;
 
-// AST Function Call
+// AST Function Declaration Node
 typedef struct {
     char *name;
-    ASTFunctionParameter
-        *parameters;           // For function declarations, parameter names
-    struct ASTNode *arguments; // For function calls, argument values
-    struct ASTNode *body;
-    struct ASTNode *return_data;
+    ASTFunctionParameter *parameters; // Function parameters
+    struct ASTNode *body;             // Function body
+} ASTFunctionDeclaration;
+
+// AST Function Call Node
+typedef struct {
+    char *name;
+    struct ASTNode *arguments; // Function call arguments
 } ASTFunctionCall;
+
+// AST Function Return Node
+typedef struct {
+    struct ASTNode *return_data; // Expression to return
+} ASTFunctionReturn;
 
 // AST Ternary
 typedef struct {
@@ -144,15 +152,17 @@ typedef struct ASTNode {
             struct ASTNode *value;
         } assignment;
 
-        LiteralNode literal;           // Literal
-        ASTUnaryOp unary_op;           // Unary operation
-        ASTBinaryOp binary_op;         // Binary operation
-        ASTConditional conditional;    // Conditional
-        ASTSwitch switch_case;         // Switch
-        ASTWhileLoop while_loop;       // While loop
-        ASTForLoop for_loop;           // For loop
-        ASTFunctionCall function_call; // Function
-        ASTTernary ternary;            // Ternary
+        LiteralNode literal;
+        ASTUnaryOp unary_op;
+        ASTBinaryOp binary_op;
+        ASTConditional conditional;
+        ASTSwitch switch_case;
+        ASTWhileLoop while_loop;
+        ASTForLoop for_loop;
+        ASTTernary ternary;
+        ASTFunctionDeclaration function_declaration;
+        ASTFunctionCall function_call;
+        ASTFunctionReturn function_return;
 
         ASTTry try_block; // Try Block
         // ASTCatchNode *catch_block;     // Rescue Block

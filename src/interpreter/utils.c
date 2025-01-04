@@ -122,10 +122,14 @@ ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params) {
         }
 
         // Duplicate the parameter name
-        copied_param->parameter_name = strdup(params->parameter_name);
-        if (!copied_param->parameter_name) {
-            free(copied_param);
-            fatal_error("Memory allocation failed for parameter name.\n");
+        if (params->parameter_name) {
+            copied_param->parameter_name = strdup(params->parameter_name);
+            if (!copied_param->parameter_name) {
+                free(copied_param);
+                fatal_error("Memory allocation failed for parameter name.\n");
+            }
+        } else {
+            copied_param->parameter_name = NULL;
         }
 
         copied_param->next = NULL;
@@ -147,6 +151,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
     if (!node) {
         return NULL;
     }
+
     debug_print_int("Copying ASTNode of type %d at %p\n", node->type,
                     (void *)node);
 
@@ -155,71 +160,74 @@ ASTNode *copy_ast_node(ASTNode *node) {
         fatal_error("Memory allocation failed in `copy_ast_node`\n");
     }
 
-    // Initialize new node to zero (prevents dangling pointers)
+    // Initialize the new node to zero to prevent dangling pointers
     memset(new_node, 0, sizeof(ASTNode));
 
-    // Copy the node type and line number
+    // Copy the node type
     new_node->type = node->type;
 
     // Deep copy based on node type
     switch (node->type) {
     case AST_ASSIGNMENT:
         // Duplicate the variable name
-        new_node->assignment.variable_name =
-            strdup(node->assignment.variable_name);
-        if (!new_node->assignment.variable_name) {
-            fatal_error(
-                "Memory allocation failed for variable name in assignment.\n");
+        if (node->assignment.variable_name) {
+            new_node->assignment.variable_name =
+                strdup(node->assignment.variable_name);
+            if (!new_node->assignment.variable_name) {
+                fatal_error("Memory allocation failed for variable name in "
+                            "assignment.\n");
+            }
+        } else {
+            new_node->assignment.variable_name = NULL;
         }
+
         // Recursively copy the value expression
         new_node->assignment.value = copy_ast_node(node->assignment.value);
         break;
 
     case AST_FUNCTION_DECLARATION:
         // Duplicate the function name
-        new_node->function_call.name = strdup(node->function_call.name);
-        if (!new_node->function_call.name) {
-            fatal_error(
-                "Memory allocation failed for function name in declaration.\n");
+        if (node->function_declaration.name) {
+            new_node->function_declaration.name =
+                strdup(node->function_declaration.name);
+            if (!new_node->function_declaration.name) {
+                fatal_error("Memory allocation failed for function name in "
+                            "declaration.\n");
+            }
+        } else {
+            new_node->function_declaration.name = NULL;
         }
+
         // Copy parameters
-        new_node->function_call.parameters =
-            copy_function_parameters(node->function_call.parameters);
+        new_node->function_declaration.parameters =
+            copy_function_parameters(node->function_declaration.parameters);
+
         // Recursively copy the function body
-        new_node->function_call.body = copy_ast_node(node->function_call.body);
-        // If there's return data, copy it
-        if (node->function_call.return_data) {
-            new_node->function_call.return_data =
-                copy_ast_node(node->function_call.return_data);
-        }
+        new_node->function_declaration.body =
+            copy_ast_node(node->function_declaration.body);
         break;
 
     case AST_FUNCTION_CALL:
         // Duplicate the function name
-        new_node->function_call.name = strdup(node->function_call.name);
-        if (!new_node->function_call.name) {
-            fatal_error(
-                "Memory allocation failed for function name in call.\n");
+        if (node->function_call.name) {
+            new_node->function_call.name = strdup(node->function_call.name);
+            if (!new_node->function_call.name) {
+                fatal_error(
+                    "Memory allocation failed for function name in call.\n");
+            }
+        } else {
+            new_node->function_call.name = NULL;
         }
 
         // Recursively copy arguments
         new_node->function_call.arguments =
             copy_ast_node(node->function_call.arguments);
-        if (node->function_call.body) {
-            new_node->function_call.body =
-                copy_ast_node(node->function_call.body);
-        }
-
-        // If there's return data, copy it
-        if (node->function_call.return_data) {
-            new_node->function_call.return_data =
-                copy_ast_node(node->function_call.return_data);
-        }
         break;
 
     case AST_FUNCTION_RETURN:
-        new_node->function_call.return_data =
-            copy_ast_node(node->function_call.return_data);
+        // Recursively copy the return data expression
+        new_node->function_return.return_data =
+            copy_ast_node(node->function_return.return_data);
         break;
 
     case AST_LITERAL:
@@ -227,9 +235,15 @@ ASTNode *copy_ast_node(ASTNode *node) {
         new_node->literal.type = node->literal.type;
         switch (node->literal.type) {
         case LITERAL_STRING:
-            new_node->literal.value.string = strdup(node->literal.value.string);
-            if (!new_node->literal.value.string) {
-                fatal_error("Memory allocation failed for string literal.\n");
+            if (node->literal.value.string) {
+                new_node->literal.value.string =
+                    strdup(node->literal.value.string);
+                if (!new_node->literal.value.string) {
+                    fatal_error(
+                        "Memory allocation failed for string literal.\n");
+                }
+            } else {
+                new_node->literal.value.string = NULL;
             }
             break;
         case LITERAL_FLOAT:
@@ -258,9 +272,13 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     case AST_UNARY_OP:
         // Duplicate the operator string
-        new_node->unary_op.operator= strdup(node->unary_op.operator);
-        if (!new_node->unary_op.operator) {
-            fatal_error("Memory allocation failed for unary operator.\n");
+        if (node->unary_op.operator) {
+            new_node->unary_op.operator= strdup(node->unary_op.operator);
+            if (!new_node->unary_op.operator) {
+                fatal_error("Memory allocation failed for unary operator.\n");
+            }
+        } else {
+            new_node->unary_op.operator= NULL;
         }
 
         // Recursively copy the operand
@@ -269,9 +287,13 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     case AST_BINARY_OP:
         // Duplicate the operator string
-        new_node->binary_op.operator= strdup(node->binary_op.operator);
-        if (!new_node->binary_op.operator) {
-            fatal_error("Memory allocation failed for binary operator.\n");
+        if (node->binary_op.operator) {
+            new_node->binary_op.operator= strdup(node->binary_op.operator);
+            if (!new_node->binary_op.operator) {
+                fatal_error("Memory allocation failed for binary operator.\n");
+            }
+        } else {
+            new_node->binary_op.operator= NULL;
         }
 
         // Recursively copy left and right operands
@@ -290,23 +312,33 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     case AST_FOR_LOOP:
         // Duplicate the loop variable name
-        new_node->for_loop.loop_variable = strdup(node->for_loop.loop_variable);
-        if (!new_node->for_loop.loop_variable) {
-            fatal_error(
-                "Memory allocation failed for loop variable in for-loop.\n");
+        if (node->for_loop.loop_variable) {
+            new_node->for_loop.loop_variable =
+                strdup(node->for_loop.loop_variable);
+            if (!new_node->for_loop.loop_variable) {
+                fatal_error("Memory allocation failed for loop variable in "
+                            "for-loop.\n");
+            }
+        } else {
+            new_node->for_loop.loop_variable = NULL;
         }
 
         // Recursively copy start and end expressions
         new_node->for_loop.start_expr =
             copy_ast_node(node->for_loop.start_expr);
         new_node->for_loop.end_expr = copy_ast_node(node->for_loop.end_expr);
+
+        // Copy inclusive flag
         new_node->for_loop.inclusive = node->for_loop.inclusive;
 
         // Recursively copy step expression if it exists
         if (node->for_loop.step_expr) {
             new_node->for_loop.step_expr =
                 copy_ast_node(node->for_loop.step_expr);
+        } else {
+            new_node->for_loop.step_expr = NULL;
         }
+
         // Recursively copy the loop body
         new_node->for_loop.body = copy_ast_node(node->for_loop.body);
         break;
@@ -347,6 +379,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_BREAK:
+        // No additional fields to copy for break
         break;
 
     case AST_TERNARY:
@@ -356,23 +389,8 @@ ASTNode *copy_ast_node(ASTNode *node) {
         new_node->ternary.false_expr = copy_ast_node(node->ternary.false_expr);
         break;
 
-    case AST_VARIABLE:
-        // Duplicate the variable name
-        new_node->variable_name = strdup(node->variable_name);
-        if (!new_node->variable_name) {
-            fatal_error("Memory allocation failed for variable name.\n");
-        }
-        break;
-
-    case AST_CONSTANT:
-        // Handle constants similarly to assignments
-        new_node->assignment.variable_name =
-            strdup(node->assignment.variable_name);
-        if (!new_node->assignment.variable_name) {
-            fatal_error("Memory allocation failed for constant name.\n");
-        }
-        new_node->assignment.value = copy_ast_node(node->assignment.value);
-        break;
+        // Exclude AST_VARIABLE and AST_CONSTANT as they're not used yet
+        // If needed in the future, similar handling can be added here
 
     case AST_TRY:
         // Recursively copy try block
@@ -380,54 +398,21 @@ ASTNode *copy_ast_node(ASTNode *node) {
             copy_ast_node(node->try_block.try_block);
 
         // Recursively copy catch blocks
-        new_node->try_block.catch_blocks = NULL;
-        ASTCatchNode *current_catch = node->try_block.catch_blocks;
-        ASTCatchNode *new_catch_head = NULL;
-        ASTCatchNode *new_catch_tail = NULL;
-
-        while (current_catch) {
-            ASTCatchNode *copied_catch = malloc(sizeof(ASTCatchNode));
-            if (!copied_catch) {
-                fatal_error("Memory allocation failed for ASTCatchNode.\n");
-            }
-
-            // Duplicate error variable name if it exists
-            if (current_catch->error_variable) {
-                copied_catch->error_variable =
-                    strdup(current_catch->error_variable);
-                if (!copied_catch->error_variable) {
-                    fatal_error(
-                        "Memory allocation failed for catch error variable.\n");
-                }
-            } else {
-                copied_catch->error_variable = NULL;
-            }
-
-            // Recursively copy the catch body
-            copied_catch->body = copy_ast_node(current_catch->body);
-            copied_catch->next = NULL;
-
-            if (!new_catch_head) {
-                new_catch_head = new_catch_tail = copied_catch;
-            } else {
-                new_catch_tail->next = copied_catch;
-                new_catch_tail = copied_catch;
-            }
-
-            current_catch = current_catch->next;
-        }
-
-        new_node->try_block.catch_blocks = new_catch_head;
+        new_node->try_block.catch_blocks =
+            copy_catch_node(node->try_block.catch_blocks);
 
         // Recursively copy finally block if it exists
         if (node->try_block.finally_block) {
             new_node->try_block.finally_block =
                 copy_ast_node(node->try_block.finally_block);
+        } else {
+            new_node->try_block.finally_block = NULL;
         }
         break;
 
+    case AST_CATCH:
     case AST_FINALLY:
-        // For now, managed within AST_TRY
+        // These are handled within AST_TRY, so no action needed here
         break;
 
     default:
@@ -438,6 +423,35 @@ ASTNode *copy_ast_node(ASTNode *node) {
     new_node->next = copy_ast_node(node->next);
 
     return new_node;
+}
+
+ASTCatchNode *copy_catch_node(ASTCatchNode *catch_node) {
+    if (!catch_node)
+        return NULL;
+
+    ASTCatchNode *new_catch = malloc(sizeof(ASTCatchNode));
+    if (!new_catch) {
+        fatal_error("Memory allocation failed for ASTCatchNode.\n");
+    }
+
+    // Duplicate error variable name if it exists
+    if (catch_node->error_variable) {
+        new_catch->error_variable = strdup(catch_node->error_variable);
+        if (!new_catch->error_variable) {
+            free(new_catch);
+            fatal_error("Memory allocation failed for catch error variable.\n");
+        }
+    } else {
+        new_catch->error_variable = NULL;
+    }
+
+    // Recursively copy the catch body
+    new_catch->body = copy_ast_node(catch_node->body);
+
+    // Recursively copy the next catch node
+    new_catch->next = copy_catch_node(catch_node->next);
+
+    return new_catch;
 }
 
 void add_function(Environment *env, Function func) {

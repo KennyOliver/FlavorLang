@@ -65,7 +65,7 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_FUNCTION_RETURN: {
         InterpretResult return_res =
-            interpret_node(node->function_call.return_data, env);
+            interpret_node(node->function_return.return_data, env);
         if (return_res.is_error) {
             return return_res;
         }
@@ -1166,7 +1166,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
     ASTFunctionParameter *param_tail = NULL; // keep track of the last parameter
 
     // Copy parameters
-    ASTFunctionParameter *param = node->function_call.parameters;
+    ASTFunctionParameter *param = node->function_declaration.parameters;
     while (param) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
@@ -1194,9 +1194,9 @@ InterpretResult interpret_function_declaration(ASTNode *node,
         param = param->next;
     }
 
-    Function func = {.name = strdup(node->function_call.name),
+    Function func = {.name = strdup(node->function_declaration.name),
                      .parameters = param_list,
-                     .body = node->function_call.body,
+                     .body = node->function_declaration.body,
                      .is_builtin = false};
 
     add_function(env, func);

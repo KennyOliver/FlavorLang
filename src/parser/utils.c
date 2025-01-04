@@ -175,12 +175,14 @@ void print_ast(ASTNode *node, int depth) {
             break;
 
         case AST_FUNCTION_DECLARATION:
-            printf("Function Declaration: `%s`\n", node->function_call.name);
+            printf("Function Declaration: `%s`\n",
+                   node->function_declaration.name);
             // Print Parameters
-            if (node->function_call.parameters != NULL) {
+            if (node->function_declaration.parameters != NULL) {
                 print_indentation(depth + 1);
                 printf("Parameters:\n");
-                ASTFunctionParameter *param = node->function_call.parameters;
+                ASTFunctionParameter *param =
+                    node->function_declaration.parameters;
                 while (param != NULL) {
                     print_indentation(depth + 2);
                     printf("- `%s`\n", param->parameter_name);
@@ -191,10 +193,10 @@ void print_ast(ASTNode *node, int depth) {
                 printf("Parameters: None\n");
             }
             // Print Body
-            if (node->function_call.body != NULL) {
+            if (node->function_declaration.body != NULL) {
                 print_indentation(depth + 1);
                 printf("Body:\n");
-                print_ast(node->function_call.body, depth + 2);
+                print_ast(node->function_declaration.body, depth + 2);
             } else {
                 print_indentation(depth + 1);
                 printf("Body: None\n");
@@ -216,8 +218,8 @@ void print_ast(ASTNode *node, int depth) {
 
         case AST_FUNCTION_RETURN:
             printf("Function Return:\n");
-            if (node->function_call.return_data != NULL) {
-                print_ast(node->function_call.return_data, depth + 1);
+            if (node->function_return.return_data != NULL) {
+                print_ast(node->function_return.return_data, depth + 1);
             } else {
                 print_indentation(depth + 1);
                 printf("Return Data: None\n");

@@ -28,5 +28,6 @@ Function *get_function(Environment *env, const char *name);
 
 // Helpers
 InterpretResult make_result(LiteralValue val, bool did_return, bool did_break);
+ASTCatchNode *copy_catch_node(ASTCatchNode *catch_node);
 
 #endif

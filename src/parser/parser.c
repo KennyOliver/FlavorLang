@@ -294,7 +294,7 @@ ASTNode *parse_function_return(ParserState *state) {
     }
 
     node->type = AST_FUNCTION_RETURN;
-    node->function_call.return_data = parse_expression(state);
+    node->function_return.return_data = parse_expression(state);
 
     node->next = NULL;
     expect_token(state, TOKEN_DELIMITER,
@@ -750,10 +750,9 @@ ASTNode *parse_function_declaration(ParserState *state) {
     }
 
     node->type = AST_FUNCTION_DECLARATION;
-    node->function_call.name = strdup(name->lexeme);
-    node->function_call.parameters = NULL;
-    node->function_call.body = NULL;
-    node->function_call.return_data = NULL;
+    node->function_declaration.name = strdup(name->lexeme);
+    node->function_declaration.parameters = NULL;
+    node->function_declaration.body = NULL;
     node->next = NULL;
 
     advance_token(state); // Move past the function name
@@ -764,9 +763,9 @@ ASTNode *parse_function_declaration(ParserState *state) {
 
         // Check if the parameter list is empty
         if (get_current_token(state)->type == TOKEN_PAREN_CLOSE) {
-            node->function_call.parameters = NULL; // No parameters
+            node->function_declaration.parameters = NULL; // No parameters
         } else {
-            node->function_call.parameters = parse_parameter_list(state);
+            node->function_declaration.parameters = parse_parameter_list(state);
         }
 
         expect_token(state, TOKEN_PAREN_CLOSE,
@@ -780,7 +779,7 @@ ASTNode *parse_function_declaration(ParserState *state) {
     if (get_current_token(state)->type == TOKEN_BRACE_OPEN) {
         advance_token(state); // Consume `(`
         state->in_function_body = true;
-        node->function_call.body =
+        node->function_declaration.body =
             parse_function_body(state); // Parse function body
         state->in_function_body = false;
 
