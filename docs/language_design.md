@@ -32,16 +32,15 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 | `break`   | Exit control flow            | Stops execution of further cases in `check` and exits the current flow.                     | ✅           |
 | `create`  | Define a function            | Creates a reusable block of logic.                                                          | ✅           |
 | `deliver` | Return statement             | Returns a value and stops function execution.                                               | ✅           |
-| `try`     | Try block                    | Executes code that might fail.                                                              | ❌           |
-| `rescue`  | Catch block                  | Handles errors during execution.                                                            | ❌           |
-| `finish`  | Finally block                | Optional cleanup & always runs.                                                             | ❌           |
+| `try`     | Try block                    | Executes code that might fail.                                                              | ✅           |
+| `rescue`  | Catch block                  | Handles errors during execution.                                                            | ✅           |
+| `finish`  | Finally block                | Optional cleanup & always runs.                                                             | ✅           |
 | `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 | ✅           |
 | `serve`   | Print or output              | Outputs a value or message immediately.                                                     | ✅           |
 | `sample`  | Input from console           | Reads user input.                                                                           | ✅           |
 | `plate`   | Write to file                | Writes data to a file.                                                                      | ✅           |
 | `garnish` | Append to file               | Appends data to a file.                                                                     | ✅           |
 | `taste`   | Read from file               | Reads data from a file.                                                                     | ✅           |
-| `recipe`  | Import `.flv` file           | Imports logic from another `.flv` file.                                                     | ❌           |
 
 ---
 
