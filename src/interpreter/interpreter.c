@@ -310,7 +310,7 @@ LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
     if (strcmp(op, "!") == 0) {
         // Ensure operand is boolean
         if (operand.type != TYPE_BOOLEAN) {
-            raise_error("Unary operator `%s` requires a boolean operand.\n",
+            fatal_error("Unary operator `%s` requires a boolean operand.\n",
                         op);
         }
 
@@ -328,7 +328,7 @@ LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
             result.type = TYPE_FLOAT;
             result.data.floating_point = -operand.data.floating_point;
         } else {
-            raise_error("Unary operator `%s` requires a numeric operand.\n",
+            fatal_error("Unary operator `%s` requires a numeric operand.\n",
                         op);
         }
         return result;
@@ -343,7 +343,7 @@ LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
 
     // Add more unary operators as needed
 
-    raise_error("Unknown unary operator `%s`\n", op);
+    fatal_error("Unknown unary operator `%s`\n", op);
     return result; // unreachable
 }
 
@@ -1162,7 +1162,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
     debug_print_int("`interpret_function_declaration()` called\n");
 
     if (!node || !node->function_call.name) {
-        raise_error("Invalid function declaration\n");
+        fatal_error("Invalid function declaration\n");
     }
 
     // Initialize param_list as NULL
@@ -1174,14 +1174,14 @@ InterpretResult interpret_function_declaration(ASTNode *node,
     while (param) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
-            raise_error(
+            fatal_error(
                 "Error: Memory allocation failed for function parameter\n");
         }
 
         new_param->parameter_name = strdup(param->parameter_name);
         if (!new_param->parameter_name) {
             free(new_param);
-            raise_error("Memory allocation failed for parameter name\n");
+            fatal_error("Memory allocation failed for parameter name\n");
         }
 
         new_param->next = NULL;

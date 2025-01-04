@@ -28,6 +28,17 @@ InterpretResult raise_error(const char *format, ...) {
     return res;
 }
 
+void fatal_error(const char *format, ...) {
+    char error_message[1024];
+    va_list args;
+    va_start(args, format);
+    fprintf(stderr, "\033[31mError: ");
+    vsnprintf(error_message, sizeof(error_message), format, args);
+    fprintf(stderr, "%s\033[0m\n", error_message);
+    va_end(args);
+    exit(1);
+}
+
 void initialize_builtin_function(Environment *env, const char *name) {
     Function func;
     memset(&func, 0, sizeof(Function)); // zero out for safety
@@ -55,7 +66,7 @@ void init_environment(Environment *env) {
     env->capacity = 10;
     env->variables = malloc(env->capacity * sizeof(Variable));
     if (!env->variables) {
-        error_interpreter("Failed to allocate memory for variables.\n");
+        fatal_error("Failed to allocate memory for variables.\n");
     }
 
     // Add function initialization
@@ -63,7 +74,7 @@ void init_environment(Environment *env) {
     env->function_capacity = 10;
     env->functions = malloc(env->function_capacity * sizeof(Function));
     if (!env->functions) {
-        error_interpreter("Failed to allocate memory for functions.\n");
+        fatal_error("Failed to allocate memory for functions.\n");
     }
 
     initialize_all_builtin_functions(env);
@@ -104,15 +115,14 @@ ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params) {
     while (params) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
-            error_interpreter(
+            fatal_error(
                 "Memory allocation failed for function parameter copy.\n");
         }
 
         new_param->parameter_name = strdup(params->parameter_name);
         if (!new_param->parameter_name) {
             free(new_param);
-            error_interpreter(
-                "Memory allocation failed for parameter name copy.\n");
+            fatal_error("Memory allocation failed for parameter name copy.\n");
         }
 
         new_param->next = NULL;
@@ -136,7 +146,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     ASTNode *new_node = malloc(sizeof(ASTNode));
     if (!new_node) {
-        error_interpreter("Memory allocation failed in `copy_ast_node`\n");
+        fatal_error("Memory allocation failed in `copy_ast_node`\n");
     }
 
     memcpy(new_node, node, sizeof(ASTNode));
@@ -169,7 +179,7 @@ void add_function(Environment *env, Function func) {
     if (!env->functions && env->function_capacity == 0) {
         env->functions = calloc(4, sizeof(Function));
         if (!env->functions) {
-            error_interpreter("Initial allocation for functions failed.\n");
+            fatal_error("Initial allocation for functions failed.\n");
         }
         env->function_capacity = 4;
     }
@@ -180,14 +190,14 @@ void add_function(Environment *env, Function func) {
         Function *new_functions =
             realloc(env->functions, new_capacity * sizeof(Function));
         if (!new_functions) {
-            error_interpreter("Memory allocation failed for functions.\n");
+            fatal_error("Memory allocation failed for functions.\n");
         }
         env->functions = new_functions;
         env->function_capacity = new_capacity;
     }
 
     if (!func.name) {
-        error_interpreter("Function name is `NULL` or invalid.\n");
+        fatal_error("Function name is `NULL` or invalid.\n");
     }
 
     // Create a deep copy
@@ -199,7 +209,7 @@ void add_function(Environment *env, Function func) {
     stored_func->name = strdup(func.name);
     if (!stored_func->name) {
         free(stored_func);
-        error_interpreter("Memory allocation failed for function name.\n");
+        fatal_error("Memory allocation failed for function name.\n");
     }
 
     debug_print_int("Function `%s` added successfully.\n", stored_func->name);
@@ -215,8 +225,7 @@ Function *get_function(Environment *env, const char *name) {
 }
 
 // A helper to wrap `LiteralValue` in `InterpretResult`
-static InterpretResult make_result(LiteralValue val, bool did_return,
-                                   bool did_break) {
+InterpretResult make_result(LiteralValue val, bool did_return, bool did_break) {
     InterpretResult r;
     r.value = val;
     r.did_return = did_return;
