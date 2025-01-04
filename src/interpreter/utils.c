@@ -477,5 +477,6 @@ InterpretResult make_result(LiteralValue val, bool did_return, bool did_break) {
     r.value = val;
     r.did_return = did_return;
     r.did_break = did_break;
+    r.is_error = false;
     return r;
 }

@@ -5,11 +5,14 @@ void free_ast(ASTNode *node) {
         ASTNode *next = node->next;
 
         switch (node->type) {
-            printf("free_ast: freeing AST var_name at %p -> '%s'\n",
-                   (void *)node->assignment.variable_name,
-                   node->assignment.variable_name);
 
         case AST_ASSIGNMENT:
+            // Only print debug info if the node's actually an assignment
+            if (debug_flag) {
+                printf("free_ast: freeing AST var_name at %p -> '%s'\n",
+                       (void *)node->assignment.variable_name,
+                       node->assignment.variable_name);
+            }
             free(node->assignment.variable_name);
             free_ast(node->assignment.value);
             break;
