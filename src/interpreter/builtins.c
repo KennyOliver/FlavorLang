@@ -354,134 +354,140 @@ bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
     return true;
 }
 
-LiteralValue builtin_cast(ASTNode *node, Environment *env) {
+InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     if (node->type != AST_FUNCTION_CALL) {
-        error_interpreter(
+        return raise_error(
             "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
 
     char *cast_type = node->function_call.name;
     if (!cast_type) {
-        error_interpreter("No cast type provided to `builtin_cast()`.\n");
+        return raise_error("No cast type provided to `builtin_cast()`.\n");
     }
 
     ASTNode *arg_node = node->function_call.arguments;
     if (!arg_node) {
-        error_interpreter(
+        return raise_error(
             "No expression provided for cast in `builtin_cast()`.\n");
     }
 
     // Ensure there's only one argument
     if (arg_node->next != NULL) {
-        error_interpreter("`%s` cast function takes exactly one argument.\n",
-                          cast_type);
+        return raise_error("`%s` cast function takes exactly one argument.\n",
+                           cast_type);
     }
 
     ASTNode *expr = arg_node;
 
     // Interpret the expression to be casted
     InterpretResult expr_result = interpret_node(expr, env);
-    LiteralValue original = expr_result.value;
-
-    // If interpreting the expression resulted in an error, propagate it
-    if (original.type == TYPE_ERROR) {
-        return original;
+    if (expr_result.is_error) {
+        return expr_result; // Propagate the error
     }
 
-    LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // initialize result
+    LiteralValue original = expr_result.value;
 
+    // Initialize the result
+    InterpretResult result_res = {0};
+    result_res.did_return = false;
+    result_res.did_break = false;
+    result_res.is_error = false;
+
+    // Perform the cast based on `cast_type`
     if (strcmp(cast_type, "string") == 0) {
-        result.type = TYPE_STRING;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_STRING;
         char buffer[256] = {0};
 
         switch (original.type) {
         case TYPE_INTEGER:
             snprintf(buffer, sizeof(buffer), INT_FORMAT_SPECIFIER,
                      original.data.integer);
-            result.data.string = strdup(buffer);
+            cast_val.data.string = strdup(buffer);
             break;
         case TYPE_FLOAT:
             snprintf(buffer, sizeof(buffer), FLOAT_FORMAT_SPECIFIER,
                      original.data.floating_point);
-            result.data.string = strdup(buffer);
+            cast_val.data.string = strdup(buffer);
             break;
         case TYPE_BOOLEAN:
-            result.data.string =
+            cast_val.data.string =
                 strdup(original.data.boolean ? "True" : "False");
             break;
         case TYPE_STRING:
-            result.data.string = strdup(original.data.string);
+            cast_val.data.string = strdup(original.data.string);
             break;
         default:
-            error_interpreter("Unsupported type for string cast.\n");
+            return raise_error("Unsupported type for string cast.\n");
         }
 
-        if (!result.data.string) {
-            error_interpreter("Memory allocation failed during string cast.\n");
+        if (!cast_val.data.string) {
+            return raise_error(
+                "Memory allocation failed during string cast.\n");
         }
 
-        debug_print_int("Casted value to string: `%s`\n", result.data.string);
+        result_res.value = cast_val;
     } else if (strcmp(cast_type, "int") == 0) {
-        result.type = TYPE_INTEGER;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_INTEGER;
 
         switch (original.type) {
         case TYPE_STRING: {
             INT_SIZE temp;
             if (!is_valid_int(original.data.string, &temp)) {
-                error_interpreter("Cannot cast string \"%s\" to int.\n",
-                                  original.data.string);
+                return raise_error("Cannot cast string \"%s\" to int.\n",
+                                   original.data.string);
             }
-            result.data.integer = temp;
+            cast_val.data.integer = temp;
             break;
         }
         case TYPE_FLOAT:
-            result.data.integer = (INT_SIZE)original.data.floating_point;
+            cast_val.data.integer = (INT_SIZE)original.data.floating_point;
             break;
         case TYPE_BOOLEAN:
-            result.data.integer = original.data.boolean ? 1 : 0;
+            cast_val.data.integer = original.data.boolean ? 1 : 0;
             break;
         case TYPE_INTEGER:
-            result.data.integer = original.data.integer;
+            cast_val.data.integer = original.data.integer;
             break;
         default:
-            error_interpreter("Unsupported type for int cast.\n");
+            return raise_error("Unsupported type for int cast.\n");
         }
 
-        debug_print_int("Casted value to int: `%lld`\n", result.data.integer);
+        result_res.value = cast_val;
     } else if (strcmp(cast_type, "float") == 0) {
-        result.type = TYPE_FLOAT;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_FLOAT;
 
         switch (original.type) {
         case TYPE_STRING: {
             FLOAT_SIZE temp;
             if (!is_valid_float(original.data.string, &temp)) {
-                error_interpreter("Cannot cast string \"%s\" to float.\n",
-                                  original.data.string);
+                return raise_error("Cannot cast string \"%s\" to float.\n",
+                                   original.data.string);
             }
-            result.data.floating_point = temp;
+            cast_val.data.floating_point = temp;
             break;
         }
         case TYPE_INTEGER:
-            result.data.floating_point = (FLOAT_SIZE)original.data.integer;
+            cast_val.data.floating_point = (FLOAT_SIZE)original.data.integer;
             break;
         case TYPE_BOOLEAN:
-            result.data.floating_point = original.data.boolean ? 1.0 : 0.0;
+            cast_val.data.floating_point = original.data.boolean ? 1.0 : 0.0;
             break;
         case TYPE_FLOAT:
-            result.data.floating_point = original.data.floating_point;
+            cast_val.data.floating_point = original.data.floating_point;
             break;
         default:
-            error_interpreter("Unsupported type for float cast.\n");
+            return raise_error("Unsupported type for float cast.\n");
         }
 
-        debug_print_int("Casted value to float: `%Lf`\n",
-                        result.data.floating_point);
+        result_res.value = cast_val;
     } else {
-        error_interpreter("Unsupported cast type: `%s`\n", cast_type);
+        return raise_error("Unsupported cast type: `%s`\n", cast_type);
     }
 
-    return result;
+    return result_res;
 }
 
 LiteralValue builtin_time() {
