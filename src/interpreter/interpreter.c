@@ -235,9 +235,12 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
     // Evaluate the right-hand side
     InterpretResult assign_r = interpret_node(node->assignment.value, env);
+    // If the RHS triggered a return or break, propagate it
     if (assign_r.did_return || assign_r.did_break) {
         return assign_r;
     }
+
+    LiteralValue new_value = assign_r.value;
 
     // Find the environment where the variable exists
     Environment *target_env = env;
@@ -250,8 +253,9 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
                 break;
             }
         }
-        if (existing_var)
+        if (existing_var) {
             break;
+        }
         target_env = target_env->parent;
     }
 
@@ -260,7 +264,7 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     Environment *scope_to_modify = existing_var ? target_env : env;
 
     Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
-                        .value = assign_r.value,
+                        .value = new_value,
                         .is_constant = false};
 
     return add_variable(scope_to_modify, new_var);
@@ -1385,8 +1389,8 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         }
     }
 
-    // 2) If not found in functions array, check if it's a variable holding a
-    // function reference
+    // 2) If not found in functions array, check if it's a variable holding
+    // a function reference
     Variable *func_var = get_variable(env, func_name);
     if (func_var && func_var->value.type == TYPE_FUNCTION) {
         Function *func_ref = func_var->value.data.function_ptr;
