@@ -495,11 +495,18 @@ void add_function(Environment *env, Function func) {
     debug_print_int("Function `%s` added successfully.\n", stored_func->name);
 }
 
+/**
+ * Function to retrieve a function by name, traversing the environment chain.
+ */
 Function *get_function(Environment *env, const char *name) {
-    for (size_t i = 0; i < env->function_count; i++) {
-        if (strcmp(env->functions[i].name, name) == 0) {
-            return &env->functions[i];
+    Environment *current_env = env;
+    while (current_env) {
+        for (size_t i = 0; i < current_env->function_count; i++) {
+            if (strcmp(current_env->functions[i].name, name) == 0) {
+                return &current_env->functions[i];
+            }
         }
+        current_env = current_env->parent;
     }
     return NULL;
 }

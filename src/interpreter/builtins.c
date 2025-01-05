@@ -243,6 +243,8 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
 
 // Built-in `serve()` function for printing
 InterpretResult builtin_output(ASTNode *node, Environment *env) {
+    debug_print_int("builtin_output() called\n");
+
     ASTNode *arg_node = node->function_call.arguments;
     while (arg_node != NULL) {
         InterpretResult r = interpret_node(arg_node, env);
@@ -271,7 +273,7 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
                 "Error: Invalid literal type in `serve()` (`TYPE_ERROR`).\n");
             break;
         default:
-            fprintf(stderr, "Error: Unknown literal type in s`erve()`.\n");
+            fprintf(stderr, "Error: Unknown literal type in `serve()`.\n");
             break;
         }
         printf(" "); // Space padding
@@ -280,7 +282,7 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
     printf("\n");
 
     LiteralValue lv = {.type = TYPE_INTEGER,
-                       .data.integer = 0}; // Return 0 as default
+                       .data.integer = 0}; // return 0 as default
     return make_result(lv, false, false);
 }
 

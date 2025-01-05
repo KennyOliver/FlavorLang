@@ -61,8 +61,15 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     }
 
     case AST_FUNCTION_RETURN: {
+        // After assignment
+        debug_print_int("===Value stored in 'a': %lld\n",
+                        get_variable(env, "a"));
+
         InterpretResult return_res =
             interpret_node(node->function_return.return_data, env);
+
+        // Before serve call
+        debug_print_int("===About to execute serve(a)\n");
         if (return_res.is_error) {
             return return_res;
         }
@@ -228,23 +235,35 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
     // Evaluate the right-hand side
     InterpretResult assign_r = interpret_node(node->assignment.value, env);
-
-    // If the RHS triggered a return or break, propagate it
     if (assign_r.did_return || assign_r.did_break) {
         return assign_r;
     }
 
-    LiteralValue new_value = assign_r.value;
+    // Find the environment where the variable exists
+    Environment *target_env = env;
+    Variable *existing_var = NULL;
+    while (target_env) {
+        for (size_t i = 0; i < target_env->variable_count; i++) {
+            if (strcmp(target_env->variables[i].variable_name,
+                       node->assignment.variable_name) == 0) {
+                existing_var = &target_env->variables[i];
+                break;
+            }
+        }
+        if (existing_var)
+            break;
+        target_env = target_env->parent;
+    }
 
-    // Add or update variable
-    Variable new_var = {
-        .variable_name = strdup(node->assignment.variable_name),
-        .value = new_value,
-        .is_constant = false // 'let' declarations are not constants
-    };
-    add_variable(env, new_var);
+    // If variable doesn't exist anywhere, add to current scope
+    // If it exists, update in the scope where it was found
+    Environment *scope_to_modify = existing_var ? target_env : env;
 
-    return make_result(new_value, false, false);
+    Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
+                        .value = assign_r.value,
+                        .is_constant = false};
+
+    return add_variable(scope_to_modify, new_var);
 }
 
 InterpretResult handle_string_concatenation(InterpretResult left,
@@ -1183,6 +1202,9 @@ InterpretResult interpret_switch(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
+/**
+ * Function to call a user-defined function
+ */
 InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,
                                            Environment *env) {
@@ -1260,7 +1282,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
                                                Environment *env) {
     debug_print_int("`interpret_function_declaration()` called\n");
 
-    if (!node || !node->function_call.name) {
+    if (!node || !node->function_declaration.name) {
         fatal_error("Invalid function declaration\n");
     }
 
@@ -1306,7 +1328,6 @@ InterpretResult interpret_function_declaration(ASTNode *node,
 
     // Also add the function as a variable holding its reference
     LiteralValue func_ref = {.type = TYPE_FUNCTION,
-                             // Point to the last added function
                              .data.function_ptr =
                                  &env->functions[env->function_count - 1]};
 
@@ -1328,8 +1349,44 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
 
     const char *func_name = node->function_call.name;
 
-    // 1) Try looking up the function as a variable (user-defined function
-    // reference)
+    // 1) Try looking up the function in the functions array (built-in or global
+    // user-defined)
+    Function *func = get_function(env, func_name);
+    if (func) {
+        if (func->is_builtin) {
+            // Handle built-in functions
+            if (strcmp(func->name, "sample") == 0) {
+                return builtin_input(node, env);
+            } else if (strcmp(func->name, "serve") == 0) {
+                return builtin_output(node, env);
+            } else if (strcmp(func->name, "burn") == 0) {
+                return builtin_error(node, env);
+            } else if (strcmp(func->name, "random") == 0) {
+                return builtin_random(node, env);
+            } else if (strcmp(func->name, "string") == 0 ||
+                       strcmp(func->name, "int") == 0 ||
+                       strcmp(func->name, "float") == 0) {
+                return builtin_cast(node, env);
+            } else if (strcmp(func->name, "get_time") == 0) {
+                return builtin_time();
+            } else if (strcmp(func->name, "taste_file") == 0) {
+                return builtin_file_read(node, env);
+            } else if (strcmp(func->name, "plate_file") == 0) {
+                return builtin_file_write(node, env);
+            } else if (strcmp(func->name, "garnish_file") == 0) {
+                return builtin_file_append(node, env);
+            } else {
+                return raise_error("Unknown built-in function `%s`\n",
+                                   func->name);
+            }
+        } else {
+            // Handle user-defined functions in the functions array
+            return call_user_defined_function(func, node, env);
+        }
+    }
+
+    // 2) If not found in functions array, check if it's a variable holding a
+    // function reference
     Variable *func_var = get_variable(env, func_name);
     if (func_var && func_var->value.type == TYPE_FUNCTION) {
         Function *func_ref = func_var->value.data.function_ptr;
@@ -1337,43 +1394,8 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         return call_user_defined_function(func_ref, node, env);
     }
 
-    // 2) If not found as a variable, check if it's a built-in or in global
-    // env->functions
-    Function *func = get_function(env, func_name);
-    if (!func) {
-        return raise_error("Undefined function `%s`\n", func_name);
-    }
-
-    // 2a) If built-in, call the corresponding built-in function
-    if (func->is_builtin) {
-        if (strcmp(func->name, "sample") == 0) {
-            return builtin_input(node, env);
-        } else if (strcmp(func->name, "serve") == 0) {
-            return builtin_output(node, env);
-        } else if (strcmp(func->name, "burn") == 0) {
-            return builtin_error(node, env);
-        } else if (strcmp(func->name, "random") == 0) {
-            return builtin_random(node, env);
-        } else if (strcmp(func->name, "string") == 0 ||
-                   strcmp(func->name, "int") == 0 ||
-                   strcmp(func->name, "float") == 0) {
-            return builtin_cast(node, env);
-        } else if (strcmp(func->name, "get_time") == 0) {
-            return builtin_time();
-        } else if (strcmp(func->name, "taste_file") == 0) {
-            return builtin_file_read(node, env);
-        } else if (strcmp(func->name, "plate_file") == 0) {
-            return builtin_file_write(node, env);
-        } else if (strcmp(func->name, "garnish_file") == 0) {
-            return builtin_file_append(node, env);
-        } else {
-            return raise_error("Unknown built-in function `%s`\n", func->name);
-        }
-    }
-
-    // 2b) If not built-in, it's a user-defined function in the global function
-    // array
-    return call_user_defined_function(func, node, env);
+    // 3) If not found in either, raise an error
+    return raise_error("Undefined function `%s`\n", func_name);
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
