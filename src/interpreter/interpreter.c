@@ -90,16 +90,15 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         break;
     }
 
-    case AST_VARIABLE: {
-        debug_print_int("\tMatched: `AST_VARIABLE`\n");
+    case AST_VAR_DECLARATION: {
+        debug_print_int("\tMatched: `AST_VAR_DECLARATION`\n");
         // Replace LiteralValue with InterpretResult
-        InterpretResult var_res = interpret_variable(node, env);
-        result = var_res;
+        result = interpret_variable(node, env);
         break;
     }
 
-    case AST_CONSTANT: {
-        debug_print_int("\tMatched: `AST_CONSTANT`\n");
+    case AST_CONST_DECLARATION: {
+        debug_print_int("\tMatched: `AST_CONST_DECLARATION`\n");
         result = interpret_constant(node, env);
         break;
     }
@@ -198,7 +197,7 @@ InterpretResult interpret_variable(ASTNode *node, Environment *env) {
 }
 
 InterpretResult interpret_constant(ASTNode *node, Environment *env) {
-    if (node->type != AST_CONSTANT) {
+    if (node->type != AST_CONST_DECLARATION) {
         return raise_error("Invalid node type for constant declaration.\n");
     }
 

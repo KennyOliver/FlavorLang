@@ -348,7 +348,7 @@ ASTNode *create_variable_node(char *name) {
     if (!node) {
         parser_error("Memory allocation failed for variable node", NULL);
     }
-    node->type = AST_VARIABLE;
+    node->type = AST_VAR_DECLARATION;
     node->variable_name = strdup(name);
     node->next = NULL;
     return node;

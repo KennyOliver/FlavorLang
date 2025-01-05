@@ -47,8 +47,8 @@ void free_ast(ASTNode *node) {
             free_ast(node->for_loop.body);
             break;
 
-        case AST_CONSTANT:
-        case AST_VARIABLE:
+        case AST_CONST_DECLARATION:
+        case AST_VAR_DECLARATION:
             free(node->variable_name);
             break;
 
@@ -370,11 +370,11 @@ void print_ast(ASTNode *node, int depth) {
             print_ast(node->ternary.false_expr, depth + 2);
             break;
 
-        case AST_VARIABLE:
+        case AST_VAR_DECLARATION:
             printf("Variable: `%s`\n", node->variable_name);
             break;
 
-        case AST_CONSTANT:
+        case AST_CONST_DECLARATION:
             printf("Constant: `%s`\n", node->variable_name);
             break;
 
