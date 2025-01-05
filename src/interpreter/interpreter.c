@@ -1209,7 +1209,11 @@ InterpretResult call_user_defined_function(Function *func_ref,
         Variable param_var = {.variable_name = strdup(param->parameter_name),
                               .value = arg_value,
                               .is_constant = false};
-        add_variable(&local_env, param_var);
+        InterpretResult add_res = add_variable(&local_env, param_var);
+        if (add_res.is_error) {
+            free_environment(&local_env);
+            return add_res;
+        }
 
         param = param->next;
         arg = arg->next;
@@ -1322,112 +1326,54 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         return raise_error("Invalid function call");
     }
 
-    const char *func_name = strdup(node->function_call.name);
+    const char *func_name = node->function_call.name;
 
-    // 1. Check if the function name is a variable holding a function reference
+    // 1) Try looking up the function as a variable (user-defined function
+    // reference)
     Variable *func_var = get_variable(env, func_name);
     if (func_var && func_var->value.type == TYPE_FUNCTION) {
         Function *func_ref = func_var->value.data.function_ptr;
-        // Call the user-defined function
-        InterpretResult func_res =
-            call_user_defined_function(func_ref, node, env);
-        return func_res;
+        // Delegate to call_user_defined_function
+        return call_user_defined_function(func_ref, node, env);
     }
 
-    // 2. Else, check if it's a built-in or globally defined function
+    // 2) If not found as a variable, check if it's a built-in or in global
+    // env->functions
     Function *func = get_function(env, func_name);
     if (!func) {
-        // Function not found
         return raise_error("Undefined function `%s`\n", func_name);
     }
 
-    // If it’s a built-in => call the built-in logic
+    // 2a) If built-in, call the corresponding built-in function
     if (func->is_builtin) {
-        InterpretResult builtin_res = {0};
         if (strcmp(func->name, "sample") == 0) {
-            builtin_res = builtin_input(node, env);
+            return builtin_input(node, env);
         } else if (strcmp(func->name, "serve") == 0) {
-            builtin_res = builtin_output(node, env);
+            return builtin_output(node, env);
         } else if (strcmp(func->name, "burn") == 0) {
-            builtin_res = builtin_error(node, env);
+            return builtin_error(node, env);
         } else if (strcmp(func->name, "random") == 0) {
-            builtin_res = builtin_random(node, env);
+            return builtin_random(node, env);
         } else if (strcmp(func->name, "string") == 0 ||
                    strcmp(func->name, "int") == 0 ||
                    strcmp(func->name, "float") == 0) {
-            builtin_res = builtin_cast(node, env);
+            return builtin_cast(node, env);
         } else if (strcmp(func->name, "get_time") == 0) {
-            builtin_res = builtin_time();
+            return builtin_time();
         } else if (strcmp(func->name, "taste_file") == 0) {
-            builtin_res = builtin_file_read(node, env);
+            return builtin_file_read(node, env);
         } else if (strcmp(func->name, "plate_file") == 0) {
-            builtin_res = builtin_file_write(node, env);
+            return builtin_file_write(node, env);
         } else if (strcmp(func->name, "garnish_file") == 0) {
-            builtin_res = builtin_file_append(node, env);
+            return builtin_file_append(node, env);
         } else {
-            // Unknown built-in
             return raise_error("Unknown built-in function `%s`\n", func->name);
         }
-
-        return builtin_res;
     }
 
-    // Otherwise, user-defined function.
-    // Create local environment, bind parameters, interpret AST body, etc.
-
-    Environment local_env;
-    init_environment(&local_env);
-
-    // Copy parent's functions so calls to other user-defined functions work
-    for (size_t i = 0; i < env->function_count; i++) {
-        // NOTE: If the function is built-in or user-defined,
-        // copy them all anyway.
-        Function func_copy = {.name = strdup(env->functions[i].name),
-                              .parameters = copy_function_parameters(
-                                  env->functions[i].parameters),
-                              .body = copy_ast_node(env->functions[i].body),
-                              .is_builtin = env->functions[i].is_builtin};
-        add_function(&local_env, func_copy);
-    }
-
-    // Now interpret arguments & bind them
-    ASTFunctionParameter *p = func->parameters;
-    ASTNode *arg = node->function_call.arguments;
-    while (p && arg) {
-        InterpretResult arg_res = interpret_node(arg, env);
-        LiteralValue arg_value = arg_res.value;
-        if (arg_value.type == TYPE_ERROR) {
-            free_environment(&local_env);
-            InterpretResult err_res = make_result(arg_value, false, false);
-            err_res.is_error = true;
-            return err_res;
-        }
-
-        Variable param_var = {.variable_name = strdup(p->parameter_name),
-                              .value = arg_value};
-        add_variable(&local_env, param_var);
-
-        p = p->next;
-        arg = arg->next;
-    }
-
-    // interpret function body
-    ASTNode *stmt = func->body;
-    while (stmt) {
-        InterpretResult r = interpret_node(stmt, &local_env);
-        if (r.did_return) {
-            // Short-circuit
-            free_environment(&local_env);
-            return r;
-        }
-        // Else keep going
-        stmt = stmt->next;
-    }
-
-    free_environment(&local_env);
-
-    // If no explicit return, return default value (i.e., `0`)
-    return make_result(create_default_value(), false, false);
+    // 2b) If not built-in, it's a user-defined function in the global function
+    // array
+    return call_user_defined_function(func, node, env);
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
