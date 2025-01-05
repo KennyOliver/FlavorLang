@@ -8,7 +8,9 @@
     { "include": "#functions" },
     { "include": "#numbers" },
     { "include": "#operators" },
-    { "include": "#variables" }
+    { "include": "#variables" },
+    { "include": "#ranges" },
+    { "include": "#error-handling" }
   ],
   "repository": {
     "comments": {
@@ -38,7 +40,7 @@
       "patterns": [
         {
           "name": "keyword.control.flavorlang",
-          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|break|continue)\\b"
+          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|rescue|finish|break|continue)\\b"
         },
         {
           "name": "keyword.other.flavorlang",
@@ -49,8 +51,12 @@
     "functions": {
       "patterns": [
         {
-          "name": "entity.name.function.flavorlang",
-          "match": "\\b(serve|burn|deliver|sample|plate_file|garnish_file|taste_file|create|check|rescue|string|int|float|get_time)\\b(?=\\()"
+          "name": "entity.name.function.create.flavorlang",
+          "match": "\\bcreate\\b\\s+[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        },
+        {
+          "name": "entity.name.function.call.flavorlang",
+          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b(?=\\()"
         }
       ]
     },
@@ -58,11 +64,11 @@
       "patterns": [
         {
           "name": "constant.numeric.integer.flavorlang",
-          "match": "\\b\\d+\\b"
+          "match": "\\b-?\\d+\\b"
         },
         {
           "name": "constant.numeric.float.flavorlang",
-          "match": "\\b\\d+\\.\\d+\\b"
+          "match": "\\b-?\\d+\\.\\d+\\b"
         }
       ]
     },
@@ -83,6 +89,22 @@
         {
           "name": "variable.other.flavorlang",
           "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+        }
+      ]
+    },
+    "ranges": {
+      "patterns": [
+        {
+          "name": "meta.range.flavorlang",
+          "match": "\\b\\d+\\.\\.=?\\d+\\b"
+        }
+      ]
+    },
+    "error-handling": {
+      "patterns": [
+        {
+          "name": "keyword.control.error-handling.flavorlang",
+          "match": "\\b(burn|rescue|try|deliver)\\b"
         }
       ]
     }
