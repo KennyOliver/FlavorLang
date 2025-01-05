@@ -528,6 +528,10 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
         return handle_numeric_operator(op, left_res, right_res);
     }
 
+    if (strcmp(op, "+") == 0) {
+        return handle_string_concatenation(left_res, right_res);
+    }
+
     // If operator is not recognized
     return raise_error("Unknown operator `%s`.\n", op);
 }
