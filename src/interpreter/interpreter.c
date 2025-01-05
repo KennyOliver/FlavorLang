@@ -319,7 +319,15 @@ InterpretResult handle_numeric_operator(const char *op,
     memset(&result, 0, sizeof(LiteralValue));
 
     // Handle operators
-    if (strcmp(op, "*") == 0) {
+    if (strcmp(op, "+") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val + right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val + right_val);
+        }
+    } else if (strcmp(op, "*") == 0) {
         if (result_is_float) {
             result.type = TYPE_FLOAT;
             result.data.floating_point = left_val * right_val;
@@ -511,7 +519,7 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
     // Handle Arithmetic and Comparison Operators
     // List of operators that require numeric operands
     const char *numeric_operators[] = {
-        "*", "-", "/", "//", "%", "**", "<", ">", "<=", ">=",
+        "+", "*", "-", "/", "//", "%", "**", "<", ">", "<=", ">=",
     };
     size_t num_numeric_ops =
         sizeof(numeric_operators) / sizeof(numeric_operators[0]);
