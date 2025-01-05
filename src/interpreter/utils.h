@@ -8,8 +8,11 @@
 #include <stdio.h>
 #include <string.h>
 
-// Initialize the environment
+// Initialize the environment without a parent (global)
 void init_environment(Environment *env);
+
+// Initialize the environment with a parent (local)
+void init_environment_with_parent(Environment *env, Environment *parent);
 
 // Free the environment
 void free_environment(Environment *env);

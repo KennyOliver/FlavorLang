@@ -63,8 +63,11 @@ void initialize_all_builtin_functions(Environment *env) {
     }
 }
 
+// Function to initialize the environment without a parent (global)
 void init_environment(Environment *env) {
-    // Existing variable initialization
+    env->parent = NULL;
+
+    // Initialize variables
     env->variable_count = 0;
     env->capacity = 10;
     env->variables = malloc(env->capacity * sizeof(Variable));
@@ -72,7 +75,7 @@ void init_environment(Environment *env) {
         fatal_error("Failed to allocate memory for variables.\n");
     }
 
-    // Add function initialization
+    // Initialize functions
     env->function_count = 0;
     env->function_capacity = 10;
     env->functions = malloc(env->function_capacity * sizeof(Function));
@@ -80,27 +83,56 @@ void init_environment(Environment *env) {
         fatal_error("Failed to allocate memory for functions.\n");
     }
 
+    // Initialize built-in functions ONLY for the GLOBAL environment
     initialize_all_builtin_functions(env);
 }
 
+// Function to initialize the environment with a parent (local)
+void init_environment_with_parent(Environment *env, Environment *parent) {
+    env->parent = parent;
+
+    // Initialize variables
+    env->variable_count = 0;
+    env->capacity = 10;
+    env->variables = malloc(env->capacity * sizeof(Variable));
+    if (!env->variables) {
+        fatal_error("Failed to allocate memory for variables.\n");
+    }
+
+    // Initialize functions
+    env->function_count = 0;
+    env->function_capacity = 10;
+    env->functions = malloc(env->function_capacity * sizeof(Function));
+    if (!env->functions) {
+        fatal_error("Failed to allocate memory for functions.\n");
+    }
+
+    // Do NOT initialize built-in functions in local environments
+}
+
+// Free the environment and its resources
 void free_environment(Environment *env) {
     // Free variables
     for (size_t i = 0; i < env->variable_count; i++) {
         free(env->variables[i].variable_name);
+        if (env->variables[i].value.type == TYPE_STRING) {
+            free(env->variables[i].value.data.string);
+        }
     }
     free(env->variables);
 
-    // Free functions with complete cleanup
+    // Free functions
     for (size_t i = 0; i < env->function_count; i++) {
-        // Free the parameters linked list
+        // Free function name
+        free(env->functions[i].name);
+
+        // Free function parameters
         free_parameter_list(env->functions[i].parameters);
 
-        // Free the function body AST (only if they're NOT builtin)
+        // Free function body if user-defined
         if (!env->functions[i].is_builtin && env->functions[i].body) {
             free(env->functions[i].body);
         }
-
-        free(env->functions[i].name);
     }
     free(env->functions);
 }

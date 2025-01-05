@@ -129,11 +129,15 @@ void interpret_program(ASTNode *program, Environment *env) {
     ASTNode *current = program;
     while (current) {
         debug_print_int("Executing top-level statement\n");
-        interpret_node(current, env);
-        // if (res.is_error) {
-        //     fprintf(stderr, "Unhandled exception: %s\n",
-        //     res.value.data.string); exit(1);
-        // }
+        InterpretResult res = interpret_node(current, env);
+        if (res.is_error) {
+            fprintf(stderr, "Unhandled error: %s\n", res.value.data.string);
+            break; // (or handle as needed in future)
+        }
+        if (res.did_return) {
+            // Handle unexpected return at top-level, if applicable
+            break;
+        }
         current = current->next;
     }
 }
@@ -640,28 +644,45 @@ InterpretResult evaluate_unary_operator(const char *op,
 
 Variable *get_variable(Environment *env, const char *variable_name) {
     debug_print_int("Looking up variable: `%s`\n", variable_name);
-    for (size_t i = 0; i < env->variable_count; i++) {
-        if (strcmp(env->variables[i].variable_name, variable_name) == 0) {
-            if (env->variables[i].value.type == TYPE_FLOAT) {
-                debug_print_int("Variable found: `%s` with value `%Lf`\n",
-                                variable_name,
-                                env->variables[i].value.data.floating_point);
-            } else if (env->variables[i].value.type == TYPE_INTEGER) {
-                debug_print_int("Variable found: `%s` with value `%lld`\n",
-                                variable_name,
-                                env->variables[i].value.data.integer);
-            } else if (env->variables[i].value.type == TYPE_STRING) {
-                debug_print_int("Variable found: `%s` with value `%s`\n",
-                                variable_name,
-                                env->variables[i].value.data.string);
-            } else if (env->variables[i].value.type == TYPE_FUNCTION) {
-                debug_print_int(
-                    "Variable found: `%s` with function reference `%s`\n",
-                    variable_name,
-                    env->variables[i].value.data.function_ptr->name);
+    Environment *current_env = env;
+    while (current_env) {
+        for (size_t i = 0; i < current_env->variable_count; i++) {
+            if (strcmp(current_env->variables[i].variable_name,
+                       variable_name) == 0) {
+                // Debugging information based on type
+                switch (current_env->variables[i].value.type) {
+                case TYPE_FLOAT:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%Lf`\n",
+                        variable_name,
+                        current_env->variables[i].value.data.floating_point);
+                    break;
+                case TYPE_INTEGER:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%lld`\n",
+                        variable_name,
+                        current_env->variables[i].value.data.integer);
+                    break;
+                case TYPE_STRING:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%s`\n", variable_name,
+                        current_env->variables[i].value.data.string);
+                    break;
+                case TYPE_FUNCTION:
+                    debug_print_int(
+                        "Variable found: `%s` with function reference `%s`\n",
+                        variable_name,
+                        current_env->variables[i]
+                            .value.data.function_ptr->name);
+                    break;
+                default:
+                    debug_print_int("Variable found: `%s` with unknown type.\n",
+                                    variable_name);
+                }
+                return &current_env->variables[i];
             }
-            return &env->variables[i];
         }
+        current_env = current_env->parent;
     }
     debug_print_int("Variable not found: `%s`\n", variable_name);
     return NULL;
@@ -1167,25 +1188,11 @@ InterpretResult call_user_defined_function(Function *func_ref,
                                            Environment *env) {
     debug_print_int("Calling user-defined function: `%s`\n", func_ref->name);
 
-    // 1) Create a new local environment
+    // Create a new local environment with 'env' as its parent
     Environment local_env;
-    init_environment(&local_env);
+    init_environment_with_parent(&local_env, env);
 
-    // 2) Copy global functions into the local environment
-    for (size_t i = 0; i < env->function_count; i++) {
-        Function *global_func = &env->functions[i];
-
-        // Deep copy the function
-        Function func_copy = {
-            .name = strdup(global_func->name),
-            .parameters = copy_function_parameters(global_func->parameters),
-            .body = copy_ast_node(global_func->body),
-            .is_builtin = global_func->is_builtin};
-
-        add_function(&local_env, func_copy);
-    }
-
-    // 3) Bind function parameters with arguments
+    // Bind function parameters with arguments
     ASTFunctionParameter *param = func_ref->parameters;
     ASTNode *arg = call_node->function_call.arguments;
 
@@ -1193,7 +1200,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
         InterpretResult arg_res = interpret_node(arg, env);
         if (arg_res.is_error) {
             free_environment(&local_env);
-            return arg_res;
+            return arg_res; // Propagate the error
         }
 
         LiteralValue arg_value = arg_res.value;
@@ -1208,7 +1215,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
         arg = arg->next;
     }
 
-    // 4) Check for argument count mismatch
+    // Check for argument count mismatch
     if (param || arg) {
         free_environment(&local_env);
         return raise_error(
@@ -1216,7 +1223,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
             func_ref->name);
     }
 
-    // 5) Interpret the function body
+    // Interpret the function body
     ASTNode *stmt = func_ref->body;
     InterpretResult func_res =
         make_result(create_default_value(), false, false);
@@ -1241,7 +1248,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
 
     free_environment(&local_env);
 
-    // If no explicit return, return default value (e.g., 0)
+    // If no explicit return, return default value (e.g., `0`)
     return func_res;
 }
 

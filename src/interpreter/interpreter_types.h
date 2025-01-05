@@ -6,6 +6,9 @@ struct ASTFunctionParameter;
 struct ASTNode;
 struct Function;
 
+// Forward declaration and type alias for Environment
+typedef struct Environment Environment;
+
 typedef enum {
     TYPE_BOOLEAN,
     TYPE_FLOAT,
@@ -48,7 +51,7 @@ typedef struct Function {
     bool is_builtin;
 } Function;
 
-typedef struct {
+struct Environment {
     Variable *variables;
     size_t variable_count;
     size_t capacity; // to handle dynamic resizing
@@ -56,7 +59,9 @@ typedef struct {
     Function *functions; // Array of functions
     size_t function_count;
     size_t function_capacity;
-} Environment;
+
+    Environment *parent; // Parent environment
+};
 
 typedef struct {
     LiteralValue value; // Result of interpreting a node
