@@ -198,8 +198,8 @@ serve(float(False));
 # ==================================================
 # Using `sample()` to get user input
 serve("Enter your favorite number:");
-const favorite = sample();
-serve("Your favorite is:", favorite);
+const favorite2 = sample();
+serve("Your favorite is:", favorite2);
 
 # Using `random()` with different argument counts
 const num1 = random();              # Generates between 0.0 and 1.0
