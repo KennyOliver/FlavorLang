@@ -61,18 +61,36 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     }
 
     case AST_FUNCTION_RETURN: {
-        // After assignment
-        debug_print_int("===Value stored in 'a': %lld\n",
-                        get_variable(env, "a"));
-
+        // Interpret the return expression
         InterpretResult return_res =
             interpret_node(node->function_return.return_data, env);
 
-        // Before serve call
-        debug_print_int("===About to execute serve(a)\n");
+        // Log the return value for debugging
+        switch (return_res.value.type) {
+        case TYPE_INTEGER:
+            debug_print_int("Function returning integer: %lld\n",
+                            return_res.value.data.integer);
+            break;
+        case TYPE_FLOAT:
+            debug_print_int("Function returning float: %Lf\n",
+                            return_res.value.data.floating_point);
+            break;
+        case TYPE_STRING:
+            debug_print_int("Function returning string: %s\n",
+                            return_res.value.data.string);
+            break;
+        // Handle other types as needed
+        default:
+            debug_print_int("Function returning type: %d\n",
+                            return_res.value.type);
+        }
+
+        // Propagate errors if any
         if (return_res.is_error) {
             return return_res;
         }
+
+        // Indicate that a return has occurred
         return_res.did_return = true;
         return return_res;
     }
@@ -139,10 +157,6 @@ void interpret_program(ASTNode *program, Environment *env) {
         if (res.is_error) {
             fprintf(stderr, "Unhandled error: %s\n", res.value.data.string);
             break; // (or handle as needed in future)
-        }
-        if (res.did_return) {
-            // Handle unexpected return at top-level, if applicable
-            break;
         }
         current = current->next;
     }
@@ -234,8 +248,9 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
     // Evaluate the right-hand side
     InterpretResult assign_r = interpret_node(node->assignment.value, env);
-    // If the RHS triggered a return or break, propagate it
-    if (assign_r.did_return || assign_r.did_break) {
+
+    // If the RHS triggered an error or break, propagate it
+    if (assign_r.is_error || assign_r.did_break) {
         return assign_r;
     }
 
@@ -258,15 +273,27 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         target_env = target_env->parent;
     }
 
-    // If variable doesn't exist anywhere, add to current scope
-    // If it exists, update in the scope where it was found
+    // Determine the scope to modify
     Environment *scope_to_modify = existing_var ? target_env : env;
 
+    // Create a new variable instance
     Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
                         .value = new_value,
                         .is_constant = false};
 
-    return add_variable(scope_to_modify, new_var);
+    // Assign the variable
+    InterpretResult add_res = add_variable(scope_to_modify, new_var);
+    if (add_res.is_error) {
+        return add_res;
+    }
+
+    // Now, if a return was triggered during assignment, propagate it
+    if (assign_r.did_return) {
+        return assign_r;
+    }
+
+    // Otherwise, return the assigned value
+    return make_result(new_value, false, false);
 }
 
 InterpretResult handle_string_concatenation(InterpretResult left,
