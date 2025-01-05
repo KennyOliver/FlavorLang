@@ -87,7 +87,7 @@ try {
     int("abc");
     serve("This won't run!");
 } rescue {
-    serve("Runtime error: Can't cast string `abc` to int.");
+    serve("(Expect a) Runtime error: Can't cast string `abc` to int.");
 } finish {
     serve("This always executes!");
 }
