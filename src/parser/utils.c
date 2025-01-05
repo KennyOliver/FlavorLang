@@ -53,9 +53,28 @@ void free_ast(ASTNode *node) {
             break;
 
         case AST_FUNCTION_DECLARATION:
+            free(node->function_declaration.name);
+            free_ast(node->function_declaration
+                         .body); // free function body recursively
+
+            // Free the function parameters
+            ASTFunctionParameter *param = node->function_declaration.parameters;
+            while (param) {
+                ASTFunctionParameter *next = param->next;
+                free(param->parameter_name);
+                free(param);
+                param = next;
+            }
+
+            break;
+
         case AST_FUNCTION_CALL:
             free(node->function_call.name);
             free_ast(node->function_call.arguments);
+            break;
+
+        case AST_FUNCTION_RETURN:
+            free_ast(node->function_return.return_data);
             break;
 
         case AST_BREAK:
@@ -68,7 +87,7 @@ void free_ast(ASTNode *node) {
             free_ast(node->ternary.false_expr);
             break;
 
-        case AST_SWITCH:
+        case AST_SWITCH: {
             if (node->switch_case.expression) {
                 free_ast(node->switch_case.expression);
             }
@@ -94,6 +113,46 @@ void free_ast(ASTNode *node) {
                 }
             }
 
+            break;
+        }
+
+        case AST_TRY:
+            // Free try block
+            if (node->try_block.try_block) {
+                free_ast(node->try_block.try_block);
+            }
+
+            // Free all catch blocks
+            if (node->try_block.catch_blocks) {
+                ASTCatchNode *catch_node = node->try_block.catch_blocks;
+
+                while (catch_node) {
+                    ASTCatchNode *next_catch = catch_node->next;
+
+                    // Free the error variable (if allocated)
+                    if (catch_node->error_variable) {
+                        free(catch_node->error_variable);
+                    }
+
+                    // Free the body of the catch block
+                    if (catch_node->body) {
+                        free_ast(catch_node->body);
+                    }
+
+                    free(catch_node);
+                    catch_node = next_catch;
+                }
+            }
+
+            // Free finally block
+            if (node->try_block.finally_block) {
+                free_ast(node->try_block.finally_block);
+            }
+            break;
+
+        // Already handled by `AST_TRY`
+        case AST_CATCH:
+        case AST_FINALLY:
             break;
 
         default:
@@ -135,12 +194,14 @@ void print_ast(ASTNode *node, int depth) {
             break;
 
         case AST_FUNCTION_DECLARATION:
-            printf("Function Declaration: `%s`\n", node->function_call.name);
+            printf("Function Declaration: `%s`\n",
+                   node->function_declaration.name);
             // Print Parameters
-            if (node->function_call.parameters != NULL) {
+            if (node->function_declaration.parameters != NULL) {
                 print_indentation(depth + 1);
                 printf("Parameters:\n");
-                ASTFunctionParameter *param = node->function_call.parameters;
+                ASTFunctionParameter *param =
+                    node->function_declaration.parameters;
                 while (param != NULL) {
                     print_indentation(depth + 2);
                     printf("- `%s`\n", param->parameter_name);
@@ -151,10 +212,10 @@ void print_ast(ASTNode *node, int depth) {
                 printf("Parameters: None\n");
             }
             // Print Body
-            if (node->function_call.body != NULL) {
+            if (node->function_declaration.body != NULL) {
                 print_indentation(depth + 1);
                 printf("Body:\n");
-                print_ast(node->function_call.body, depth + 2);
+                print_ast(node->function_declaration.body, depth + 2);
             } else {
                 print_indentation(depth + 1);
                 printf("Body: None\n");
@@ -176,8 +237,8 @@ void print_ast(ASTNode *node, int depth) {
 
         case AST_FUNCTION_RETURN:
             printf("Function Return:\n");
-            if (node->function_call.return_data != NULL) {
-                print_ast(node->function_call.return_data, depth + 1);
+            if (node->function_return.return_data != NULL) {
+                print_ast(node->function_return.return_data, depth + 1);
             } else {
                 print_indentation(depth + 1);
                 printf("Return Data: None\n");

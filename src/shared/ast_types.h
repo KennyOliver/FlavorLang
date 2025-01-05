@@ -23,7 +23,10 @@ typedef enum {
     AST_BREAK,
     AST_TERNARY,
     AST_VARIABLE,
-    AST_CONSTANT
+    AST_CONSTANT,
+    AST_TRY,
+    AST_CATCH,
+    AST_FINALLY
 } ASTNodeType;
 
 // Literal Node
@@ -100,15 +103,23 @@ typedef struct ASTFunctionParameter {
     struct ASTFunctionParameter *next; // Linked list for multiple parameters
 } ASTFunctionParameter;
 
-// AST Function Call
+// AST Function Declaration Node
 typedef struct {
     char *name;
-    ASTFunctionParameter
-        *parameters;           // For function declarations, parameter names
-    struct ASTNode *arguments; // For function calls, argument values
-    struct ASTNode *body;
-    struct ASTNode *return_data;
+    ASTFunctionParameter *parameters; // Function parameters
+    struct ASTNode *body;             // Function body
+} ASTFunctionDeclaration;
+
+// AST Function Call Node
+typedef struct {
+    char *name;
+    struct ASTNode *arguments; // Function call arguments
 } ASTFunctionCall;
+
+// AST Function Return Node
+typedef struct {
+    struct ASTNode *return_data; // Expression to return
+} ASTFunctionReturn;
 
 // AST Ternary
 typedef struct {
@@ -116,6 +127,20 @@ typedef struct {
     struct ASTNode *true_expr;
     struct ASTNode *false_expr;
 } ASTTernary;
+
+// AST Rescue Node (optional error object)
+typedef struct ASTCatchNode {
+    char *error_variable; // Optional: Variable name to hold the error object
+    struct ASTNode *body; // Body of the rescue block
+    struct ASTCatchNode *next; // For multiple rescue clauses (future feature)
+} ASTCatchNode;
+
+// AST Try Node
+typedef struct {
+    struct ASTNode *try_block;     // Code within the try block
+    ASTCatchNode *catch_blocks;    // Linked list of rescue blocks
+    struct ASTNode *finally_block; // Optional finish block
+} ASTTry;
 
 // AST Node Structure
 typedef struct ASTNode {
@@ -127,32 +152,21 @@ typedef struct ASTNode {
             struct ASTNode *value;
         } assignment;
 
-        // Literal
         LiteralNode literal;
-
-        // Unary operation
         ASTUnaryOp unary_op;
-
-        // Binary operation
         ASTBinaryOp binary_op;
-
-        // Conditional
         ASTConditional conditional;
-
-        // Switch
         ASTSwitch switch_case;
-
-        // While loop
         ASTWhileLoop while_loop;
-
-        // For loop
         ASTForLoop for_loop;
-
-        // Function
-        ASTFunctionCall function_call;
-
-        // Ternary
         ASTTernary ternary;
+        ASTFunctionDeclaration function_declaration;
+        ASTFunctionCall function_call;
+        ASTFunctionReturn function_return;
+
+        ASTTry try_block; // Try Block
+        // ASTCatchNode *catch_block;     // Rescue Block
+        // struct ASTNode *finally_block; // Finish Block
 
         // Variable
         char *variable_name;

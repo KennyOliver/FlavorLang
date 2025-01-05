@@ -1,7 +1,7 @@
 # Compiler and Flags
-CC = gcc
-CFLAGS = -Wall -Wextra -g
-LDFLAGS = -lm
+CC = clang
+CFLAGS = -fsanitize=address -fsanitize=undefined -g -Wall -Wextra -pedantic
+LDFLAGS = -fsanitize=address -fsanitize=undefined
 
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug

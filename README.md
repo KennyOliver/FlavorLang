@@ -119,7 +119,7 @@ $ cd src
 $ make
 ```
 
-> [!Note]
+> [!Warning]
 >
 > Unless you move `flavor` to `/usr/local/bin/`,
 > you'll have to use `./flavor` for commands with relative file paths.
@@ -160,7 +160,9 @@ $ flavor recipe.flv --debug  # Debug mode
 $ flavor --about  # About FlavorLang
 ```
 
-The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
+> [!Note]
+>
+> The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
 
 ---
 

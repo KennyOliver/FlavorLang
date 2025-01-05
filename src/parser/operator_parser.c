@@ -24,8 +24,7 @@ ASTNode *parse_ternary(ParserState *state) {
         // Recursively parse expression for `True` branch (allows for nesting)
         ASTNode *true_expr = parse_ternary(state);
 
-        expect_token(state, TOKEN_OPERATOR,
-                     "Expected `:` in ternary expression");
+        expect_token(state, TOKEN_COLON, "Expected `:` in ternary expression");
 
         // Recursively parse expression for `False` branch
         ASTNode *false_expr = parse_ternary(state);
@@ -362,7 +361,7 @@ ASTNode *create_function_call_node(char *name, ASTNode *args) {
         parser_error("Memory allocation failed for function call node", NULL);
     }
     node->type = AST_FUNCTION_CALL;
-    node->function_call.name = name;
+    node->function_call.name = strdup(name);
     node->function_call.arguments = args;
     node->next = NULL;
     return node;

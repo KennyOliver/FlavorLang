@@ -75,12 +75,22 @@ serve(result);
 # ==================================================
 # 7
 # ==================================================
-# try {
-#     burn("This recipe failed!");
-#     serve("This won't run!");
-# } rescue {
-#     serve("Caught an error: Recipe needs improvement.");
-# }
+try {
+    serve("This will run!");
+    burn("This recipe failed!");
+    serve("This won't run!");
+} rescue {
+    serve("Caught an error: Recipe needs improvement.");
+}
+
+try {
+    int("abc");
+    serve("This won't run!");
+} rescue {
+    serve("(Expect a) Runtime error: Can't cast string `abc` to int.");
+} finish {
+    serve("This always executes!");
+}
 
 
 # ==================================================
@@ -188,8 +198,8 @@ serve(float(False));
 # ==================================================
 # Using `sample()` to get user input
 serve("Enter your favorite number:");
-const favorite = sample();
-serve("Your favorite is:", favorite);
+const favorite2 = sample();
+serve("Your favorite is:", favorite2);
 
 # Using `random()` with different argument counts
 const num1 = random();              # Generates between 0.0 and 1.0

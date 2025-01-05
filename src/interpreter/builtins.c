@@ -5,27 +5,22 @@
 #include <string.h>
 #include <time.h>
 
-// Helper function to handle debug printing for floats
-#define DEBUG_PRINT_FLOAT(format, ...)                                         \
-    do {                                                                       \
-        if (debug_flag)                                                        \
-            printf(format, __VA_ARGS__);                                       \
-    } while (0)
-
 // Function to interpret a mix of argument types
-bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
-                         ArgumentSpec *specs) {
-    // size_t arg_count = 0;
+InterpretResult interpret_arguments(ASTNode *node, Environment *env,
+                                    size_t num_args, ArgumentSpec *specs) {
     ASTNode *arg_node = node;
 
     for (size_t i = 0; i < num_args; i++) {
         if (arg_node == NULL) {
-            error_interpreter("Too few arguments provided.\n");
-            return false;
+            return raise_error("Too few arguments provided.\n");
         }
 
         // Interpret the current argument
         InterpretResult arg_res = interpret_node(arg_node, env);
+        if (arg_res.is_error) {
+            // Propagate the error
+            return arg_res;
+        }
         LiteralValue lv = arg_res.value;
 
         // Reference to the current argument specification
@@ -42,9 +37,8 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_BOOLEAN) {
                 *((INT_SIZE *)output_ptr) = lv.data.boolean ? 1 : 0;
             } else {
-                error_interpreter("Expected integer for argument %zu.\n",
-                                  i + 1);
-                return false;
+                return raise_error("Expected integer for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
@@ -56,8 +50,7 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_BOOLEAN) {
                 *((FLOAT_SIZE *)output_ptr) = lv.data.boolean ? 1.0 : 0.0;
             } else {
-                error_interpreter("Expected float for argument %zu.\n", i + 1);
-                return false;
+                return raise_error("Expected float for argument %zu.\n", i + 1);
             }
             break;
 
@@ -65,8 +58,8 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             if (lv.type == TYPE_STRING) {
                 *((char **)output_ptr) = lv.data.string;
             } else {
-                error_interpreter("Expected string for argument %zu.\n", i + 1);
-                return false;
+                return raise_error("Expected string for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
@@ -78,30 +71,26 @@ bool interpret_arguments(ASTNode *node, Environment *env, size_t num_args,
             } else if (lv.type == TYPE_FLOAT) {
                 *((bool *)output_ptr) = (lv.data.floating_point != 0.0);
             } else {
-                error_interpreter("Expected boolean for argument %zu.\n",
-                                  i + 1);
-                return false;
+                return raise_error("Expected boolean for argument %zu.\n",
+                                   i + 1);
             }
             break;
 
-            // Handle additional types as needed
-
         default:
-            error_interpreter("Unknown argument type for argument %zu.\n",
-                              i + 1);
-            return false;
+            return raise_error("Unknown argument type for argument %zu.\n",
+                               i + 1);
         }
 
-        // arg_count++;
         arg_node = arg_node->next;
     }
 
     if (arg_node != NULL) {
-        error_interpreter("Too many arguments provided.\n");
-        return false;
+        return raise_error("Too many arguments provided.\n");
     }
 
-    return true;
+    // Indicate success
+    LiteralValue success_val = {.type = TYPE_BOOLEAN, .data.boolean = true};
+    return make_result(success_val, false, false);
 }
 
 void print_formatted_string(const char *str) {
@@ -133,7 +122,7 @@ void print_formatted_string(const char *str) {
 }
 
 // Built-in `input()` function
-LiteralValue builtin_input(ASTNode *node, Environment *env) {
+InterpretResult builtin_input(ASTNode *node, Environment *env) {
     (void)node; // Unused parameter, suppress compiler warning
     (void)env;  // Unused parameter
 
@@ -142,7 +131,8 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
     char *input_buffer = malloc(buffer_size);
     if (!input_buffer) {
         fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     int c;
@@ -155,7 +145,8 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
                     stderr,
                     "Error: Failed to reallocate memory for input buffer.\n");
                 free(input_buffer);
-                return (LiteralValue){.type = TYPE_ERROR};
+                LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+                return make_result(lv, false, false);
             }
             input_buffer = new_buffer;
         }
@@ -170,28 +161,56 @@ LiteralValue builtin_input(ASTNode *node, Environment *env) {
 
     if (!result.data.string) {
         fprintf(stderr, "Error: Failed to duplicate input string.\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
-    DEBUG_PRINT_FLOAT("Input received: `%s`\n", result.data.string);
+    debug_print_int("Input received: `%s`\n", result.data.string);
 
-    return result;
+    return make_result(result, false, false);
 }
 
 // Built-in `random()` function with 0, 1, or 2 arguments
-LiteralValue builtin_random(ASTNode *node, Environment *env) {
-    FLOAT_SIZE min = 0.0L;
-    FLOAT_SIZE max = 1.0L;
+InterpretResult builtin_random(ASTNode *node, Environment *env) {
+    FLOAT_SIZE min = 0.0L; // default min
+    FLOAT_SIZE max = 1.0L; // default max
 
-    ArgumentSpec specs[2];
-    specs[0].type = ARG_TYPE_FLOAT;
-    specs[0].out_ptr = &min;
-    specs[1].type = ARG_TYPE_FLOAT;
-    specs[1].out_ptr = &max;
+    ASTNode *arg_node = node->function_call.arguments;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
-        // Return an error type on failure
-        return (LiteralValue){.type = TYPE_ERROR};
+    size_t num_args = 0;
+    ASTNode *temp = arg_node;
+    while (temp) {
+        num_args++;
+        temp = temp->next;
+    }
+    if (num_args > 2) {
+        return raise_error(
+            "`random()` takes at most 2 arguments, but %zu provided.\n",
+            num_args);
+    }
+
+    if (num_args == 1) {
+        // One argument provided: set max, min remains 0.0
+        ArgumentSpec specs[1];
+        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].out_ptr = &max;
+
+        InterpretResult args_res = interpret_arguments(arg_node, env, 1, specs);
+        if (args_res.is_error) {
+            return args_res;
+        }
+    } else if (num_args == 2) {
+        // Two arguments provided: set min and max
+        ArgumentSpec specs[2];
+        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].out_ptr = &min;
+        specs[1].type = ARG_TYPE_FLOAT;
+        specs[1].out_ptr = &max;
+
+        InterpretResult args_res = interpret_arguments(arg_node, env, 2, specs);
+        if (args_res.is_error) {
+            return args_res;
+        }
     }
 
     // Seed the random number generator once
@@ -201,28 +220,31 @@ LiteralValue builtin_random(ASTNode *node, Environment *env) {
         seeded = true;
     }
 
-    // Swap min and max if min > max
+    // Swap min & max if min > max to ensure correct range
     if (min > max) {
-        FLOAT_SIZE temp = min;
+        FLOAT_SIZE temp_val = min;
         min = max;
-        max = temp;
+        max = temp_val;
     }
 
+    // Generate random number
     FLOAT_SIZE random_number =
         min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
 
-    DEBUG_PRINT_FLOAT("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
-                      min, max, random_number);
+    debug_print_int("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
+                    min, max, random_number);
 
     LiteralValue result;
     result.type = TYPE_FLOAT;
     result.data.floating_point = random_number;
 
-    return result;
+    return make_result(result, false, false);
 }
 
 // Built-in `serve()` function for printing
-LiteralValue builtin_output(ASTNode *node, Environment *env) {
+InterpretResult builtin_output(ASTNode *node, Environment *env) {
+    debug_print_int("builtin_output() called\n");
+
     ASTNode *arg_node = node->function_call.arguments;
     while (arg_node != NULL) {
         InterpretResult r = interpret_node(arg_node, env);
@@ -246,10 +268,12 @@ LiteralValue builtin_output(ASTNode *node, Environment *env) {
             printf("%s", lv.data.boolean ? "True" : "False");
             break;
         case TYPE_ERROR:
-            fprintf(stderr, "Error: Invalid literal type in `serve()`.\n");
+            fprintf(
+                stderr,
+                "Error: Invalid literal type in `serve()` (`TYPE_ERROR`).\n");
             break;
         default:
-            fprintf(stderr, "Error: Unknown literal type in s`erve()`.\n");
+            fprintf(stderr, "Error: Unknown literal type in `serve()`.\n");
             break;
         }
         printf(" "); // Space padding
@@ -257,12 +281,13 @@ LiteralValue builtin_output(ASTNode *node, Environment *env) {
     }
     printf("\n");
 
-    return (LiteralValue){.type = TYPE_INTEGER,
-                          .data.integer = 0}; // Return 0 as default
+    LiteralValue lv = {.type = TYPE_INTEGER,
+                       .data.integer = 0}; // return 0 as default
+    return make_result(lv, false, false);
 }
 
 // Built-in `burn()` function to raise errors
-LiteralValue builtin_error(ASTNode *node, Environment *env) {
+InterpretResult builtin_error(ASTNode *node, Environment *env) {
     ASTNode *arg_node = node->function_call.arguments;
     char error_message[512] = "Error raised by burn(): ";
 
@@ -298,7 +323,7 @@ LiteralValue builtin_error(ASTNode *node, Environment *env) {
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
         default:
-            strncat(error_message, "Unknown literal type in b`urn()`.",
+            strncat(error_message, "Unknown literal type in `burn()`.",
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
         }
@@ -311,190 +336,157 @@ LiteralValue builtin_error(ASTNode *node, Environment *env) {
         arg_node = arg_node->next;
     }
 
-    error_interpreter(error_message);
-
-    return (LiteralValue){.type = TYPE_ERROR}; // keep compiler happy
+    // Propagate the exception
+    return raise_error("%s", error_message);
 }
 
-bool is_valid_int(const char *str, INT_SIZE *out_value) {
-    char *endptr;
-    errno = 0; // reset errno before conversion
-    long long temp = strtoll(str, &endptr, 10);
-
-    // Check for conversion errors
-    if (errno != 0 || endptr == str || *endptr != '\0') {
-        return false;
-    }
-
-    // Optionally, check for overflow
-    if (temp < LLONG_MIN || temp > LLONG_MAX) {
-        return false;
-    }
-
-    if (out_value) {
-        *out_value = (INT_SIZE)temp;
-    }
-
-    return true;
-}
-
-bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
-    char *endptr;
-    errno = 0; // reset errno before conversion
-    long double temp = strtold(str, &endptr);
-
-    // Check for conversion errors
-    if (errno != 0 || endptr == str || *endptr != '\0') {
-        return false;
-    }
-
-    if (out_value) {
-        *out_value = (FLOAT_SIZE)temp;
-    }
-
-    return true;
-}
-
-LiteralValue builtin_cast(ASTNode *node, Environment *env) {
+InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     if (node->type != AST_FUNCTION_CALL) {
-        error_interpreter(
+        return raise_error(
             "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
 
-    char *cast_type = node->function_call.name;
+    char *cast_type = strdup(node->function_call.name);
     if (!cast_type) {
-        error_interpreter("No cast type provided to `builtin_cast()`.\n");
+        return raise_error("No cast type provided to `builtin_cast()`.\n");
     }
 
     ASTNode *arg_node = node->function_call.arguments;
     if (!arg_node) {
-        error_interpreter(
+        return raise_error(
             "No expression provided for cast in `builtin_cast()`.\n");
     }
 
     // Ensure there's only one argument
     if (arg_node->next != NULL) {
-        error_interpreter("`%s` cast function takes exactly one argument.\n",
-                          cast_type);
+        return raise_error("`%s` cast function takes exactly one argument.\n",
+                           cast_type);
     }
 
     ASTNode *expr = arg_node;
 
     // Interpret the expression to be casted
     InterpretResult expr_result = interpret_node(expr, env);
-    LiteralValue original = expr_result.value;
-
-    // If interpreting the expression resulted in an error, propagate it
-    if (original.type == TYPE_ERROR) {
-        return original;
+    if (expr_result.is_error) {
+        return expr_result; // Propagate the error
     }
 
-    LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // initialize result
+    LiteralValue original = expr_result.value;
 
+    // Initialize the result
+    InterpretResult result_res = {0};
+    result_res.did_return = false;
+    result_res.did_break = false;
+    result_res.is_error = false;
+
+    // Perform the cast based on `cast_type`
     if (strcmp(cast_type, "string") == 0) {
-        result.type = TYPE_STRING;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_STRING;
         char buffer[256] = {0};
 
         switch (original.type) {
         case TYPE_INTEGER:
             snprintf(buffer, sizeof(buffer), INT_FORMAT_SPECIFIER,
                      original.data.integer);
-            result.data.string = strdup(buffer);
+            cast_val.data.string = strdup(buffer);
             break;
         case TYPE_FLOAT:
             snprintf(buffer, sizeof(buffer), FLOAT_FORMAT_SPECIFIER,
                      original.data.floating_point);
-            result.data.string = strdup(buffer);
+            cast_val.data.string = strdup(buffer);
             break;
         case TYPE_BOOLEAN:
-            result.data.string =
+            cast_val.data.string =
                 strdup(original.data.boolean ? "True" : "False");
             break;
         case TYPE_STRING:
-            result.data.string = strdup(original.data.string);
+            cast_val.data.string = strdup(original.data.string);
             break;
         default:
-            error_interpreter("Unsupported type for string cast.\n");
+            return raise_error("Unsupported type for string cast.\n");
         }
 
-        if (!result.data.string) {
-            error_interpreter("Memory allocation failed during string cast.\n");
+        if (!cast_val.data.string) {
+            return raise_error(
+                "Memory allocation failed during string cast.\n");
         }
 
-        debug_print_int("Casted value to string: `%s`\n", result.data.string);
+        result_res.value = cast_val;
     } else if (strcmp(cast_type, "int") == 0) {
-        result.type = TYPE_INTEGER;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_INTEGER;
 
         switch (original.type) {
         case TYPE_STRING: {
             INT_SIZE temp;
             if (!is_valid_int(original.data.string, &temp)) {
-                error_interpreter("Cannot cast string \"%s\" to int.\n",
-                                  original.data.string);
+                return raise_error("Cannot cast string \"%s\" to int.\n",
+                                   original.data.string);
             }
-            result.data.integer = temp;
+            cast_val.data.integer = temp;
             break;
         }
         case TYPE_FLOAT:
-            result.data.integer = (INT_SIZE)original.data.floating_point;
+            cast_val.data.integer = (INT_SIZE)original.data.floating_point;
             break;
         case TYPE_BOOLEAN:
-            result.data.integer = original.data.boolean ? 1 : 0;
+            cast_val.data.integer = original.data.boolean ? 1 : 0;
             break;
         case TYPE_INTEGER:
-            result.data.integer = original.data.integer;
+            cast_val.data.integer = original.data.integer;
             break;
         default:
-            error_interpreter("Unsupported type for int cast.\n");
+            return raise_error("Unsupported type for int cast.\n");
         }
 
-        debug_print_int("Casted value to int: `%lld`\n", result.data.integer);
+        result_res.value = cast_val;
     } else if (strcmp(cast_type, "float") == 0) {
-        result.type = TYPE_FLOAT;
+        LiteralValue cast_val;
+        cast_val.type = TYPE_FLOAT;
 
         switch (original.type) {
         case TYPE_STRING: {
             FLOAT_SIZE temp;
             if (!is_valid_float(original.data.string, &temp)) {
-                error_interpreter("Cannot cast string \"%s\" to float.\n",
-                                  original.data.string);
+                return raise_error("Cannot cast string \"%s\" to float.\n",
+                                   original.data.string);
             }
-            result.data.floating_point = temp;
+            cast_val.data.floating_point = temp;
             break;
         }
         case TYPE_INTEGER:
-            result.data.floating_point = (FLOAT_SIZE)original.data.integer;
+            cast_val.data.floating_point = (FLOAT_SIZE)original.data.integer;
             break;
         case TYPE_BOOLEAN:
-            result.data.floating_point = original.data.boolean ? 1.0 : 0.0;
+            cast_val.data.floating_point = original.data.boolean ? 1.0 : 0.0;
             break;
         case TYPE_FLOAT:
-            result.data.floating_point = original.data.floating_point;
+            cast_val.data.floating_point = original.data.floating_point;
             break;
         default:
-            error_interpreter("Unsupported type for float cast.\n");
+            return raise_error("Unsupported type for float cast.\n");
         }
 
-        debug_print_int("Casted value to float: `%Lf`\n",
-                        result.data.floating_point);
+        result_res.value = cast_val;
     } else {
-        error_interpreter("Unsupported cast type: `%s`\n", cast_type);
+        return raise_error("Unsupported cast type: `%s`\n", cast_type);
     }
 
-    return result;
+    return result_res;
 }
 
-LiteralValue builtin_time() {
+InterpretResult builtin_time(void) {
     time_t current_time = time(NULL);
 
     if (current_time == -1) {
-        error_interpreter("Failed to get the current time\n");
-        exit(1);
+        return raise_error("Failed to get the current time\n");
     }
 
-    return (LiteralValue){.type = TYPE_INTEGER,
-                          .data.integer = (INT_SIZE)current_time};
+    LiteralValue time_val = {.type = TYPE_INTEGER,
+                             .data.integer = (INT_SIZE)current_time};
+
+    return make_result(time_val, false, false);
 }
 
 char *process_escape_sequences(const char *input) {
@@ -544,21 +536,25 @@ char *process_escape_sequences(const char *input) {
     return processed;
 }
 
-LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_read(ASTNode *node, Environment *env) {
     char *filepath;
 
     ArgumentSpec specs[1];
     specs[0].type = ARG_TYPE_STRING;
     specs[0].out_ptr = &filepath;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 1, specs)) {
-        return (LiteralValue){.type = TYPE_ERROR};
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     FILE *file = fopen(filepath, "r");
     if (file == NULL) {
         perror("Failed to open file");
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     size_t buffer_size = 1024;
@@ -569,7 +565,8 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     if (file_contents == NULL) {
         perror("Failed to allocate memory for file contents");
         fclose(file);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     // Initialize buffer for reading each line
@@ -587,7 +584,8 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
                 free(buffer);
                 free(file_contents);
                 fclose(file);
-                return (LiteralValue){.type = TYPE_ERROR};
+                LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+                return make_result(lv, false, false);
             }
 
             file_contents = temp;
@@ -602,10 +600,12 @@ LiteralValue builtin_file_read(ASTNode *node, Environment *env) {
     free(buffer);
     fclose(file);
 
-    return (LiteralValue){.type = TYPE_STRING, .data.string = file_contents};
+    LiteralValue lv = {.type = TYPE_STRING, .data.string = file_contents};
+    return make_result(lv, false, false);
 }
 
-LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
+InterpretResult helper_file_writer(ASTNode *node, Environment *env,
+                                   bool append) {
     char *filepath;
     char *content;
 
@@ -616,40 +616,47 @@ LiteralValue helper_file_writer(ASTNode *node, Environment *env, bool append) {
     specs[1].type = ARG_TYPE_STRING;
     specs[1].out_ptr = &content;
 
-    if (!interpret_arguments(node->function_call.arguments, env, 2, specs)) {
-        return (LiteralValue){.type = TYPE_ERROR};
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 2, specs);
+    if (args_res.is_error) {
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     // Process the content to handle escape sequences
     char *processed_content = process_escape_sequences(content);
     if (processed_content == NULL) {
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     FILE *file = fopen(filepath, append ? "a" : "w");
     if (file == NULL) {
         perror("Failed to open file for writing");
         free(processed_content);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     if (fputs(processed_content, file) == EOF) {
         perror("Failed to write to file");
         free(processed_content);
         fclose(file);
-        return (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        return make_result(lv, false, false);
     }
 
     free(processed_content);
     fclose(file);
 
-    return (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true};
+    LiteralValue lv = {.type = TYPE_BOOLEAN, .data.boolean = true};
+    return make_result(lv, false, false);
 }
 
-LiteralValue builtin_file_write(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_write(ASTNode *node, Environment *env) {
     return helper_file_writer(node, env, false);
 }
 
-LiteralValue builtin_file_append(ASTNode *node, Environment *env) {
+InterpretResult builtin_file_append(ASTNode *node, Environment *env) {
     return helper_file_writer(node, env, true);
 }

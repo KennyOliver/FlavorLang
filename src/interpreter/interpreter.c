@@ -1,149 +1,155 @@
 #include "interpreter.h"
 
 // Helper function to create a default LiteralValue (zero number)
-LiteralValue create_default_value() {
-    LiteralValue value = {
-        .type = TYPE_INTEGER,
-        .data = {
-            // .floating_point = 0.0,
-            .integer = 0, // main value used for comparisons, etc
-            // .string = "",
-        }};
+LiteralValue create_default_value(void) {
+    LiteralValue value;
+    memset(&value, 0, sizeof(value));
+    value.type = TYPE_INTEGER;
+    value.data.integer = 0;
     return value;
-}
-
-// A helper to wrap `LiteralValue` in `InterpretResult`
-static InterpretResult make_result(LiteralValue val, bool did_return,
-                                   bool did_break) {
-    InterpretResult r;
-    r.value = val;
-    r.did_return = did_return;
-    r.did_break = did_break;
-    return r;
 }
 
 InterpretResult interpret_node(ASTNode *node, Environment *env) {
     if (!node) {
-        fprintf(stderr, "Error: Attempt to interpret NULL node\n");
-        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
+        return make_result(create_default_value(), false, false);
     }
 
     debug_print_int("`interpret_node()` called\n");
 
+    InterpretResult result = {0};
+
     switch (node->type) {
     case AST_LITERAL:
         debug_print_int("\tMatched: `AST_LITERAL`\n");
-        return make_result(interpret_literal(node), false, false);
+        result = interpret_literal(node);
+        break;
 
     case AST_ASSIGNMENT:
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
-        return interpret_assignment(node, env);
+        result = interpret_assignment(node, env);
+        break;
 
     case AST_UNARY_OP:
         debug_print_int("\tMatched: `AST_UNARY_OP`\n");
-        {
-            LiteralValue unary_result = interpret_unary_op(node, env);
-            return make_result(unary_result, false, false);
-        }
+        result = interpret_unary_op(node, env);
+        break;
 
     case AST_BINARY_OP:
         debug_print_int("\tMatched: `AST_BINARY_OP`\n");
-        return make_result(interpret_binary_op(node, env), false, false);
+        result = interpret_binary_op(node, env);
+        break;
 
     case AST_CONDITIONAL: {
         debug_print_int("\tMatched: `AST_CONDITIONAL`\n");
-        InterpretResult cond_res = interpret_conditional(node, env);
-        if (cond_res.did_return || cond_res.did_break) {
-            return cond_res;
-        }
-        return make_result(cond_res.value, false, false);
+        result = interpret_conditional(node, env);
+        break;
     }
 
     case AST_FUNCTION_CALL: {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
-        // interpret_function_call(...) returns a LiteralValue
-        LiteralValue fc_val = interpret_function_call(node, env);
-        return make_result(fc_val, false, false);
+        // interpret_function_call(...) returns an InterpretResult
+        result = interpret_function_call(node, env);
+        break;
     }
 
     case AST_FUNCTION_DECLARATION: {
         debug_print_int("\tMatched: `AST_FUNCTION_DECLARATION`\n");
         interpret_function_declaration(node, env);
         // No direct return from a function declaration
-        return make_result(create_default_value(), false, false);
+        result = make_result(create_default_value(), false, false);
+        break;
     }
 
     case AST_FUNCTION_RETURN: {
-        debug_print_int("\tMatched: `AST_FUNCTION_RETURN`\n");
-        LiteralValue return_value =
-            interpret_node(node->assignment.value, env).value;
-        debug_print_int("Return value before returning: type=%d, value=%lld\n",
-                        return_value.type,
-                        (return_value.type == TYPE_INTEGER)
-                            ? return_value.data.integer
-                            : 0);
+        // After assignment
+        debug_print_int("===Value stored in 'a': %lld\n",
+                        get_variable(env, "a"));
 
-        // Return this value, but also set did_return = true
-        return make_result(return_value, true, false);
+        InterpretResult return_res =
+            interpret_node(node->function_return.return_data, env);
+
+        // Before serve call
+        debug_print_int("===About to execute serve(a)\n");
+        if (return_res.is_error) {
+            return return_res;
+        }
+        return_res.did_return = true;
+        return return_res;
     }
 
     case AST_WHILE_LOOP: {
         debug_print_int("\tMatched: `AST_WHILE_LOOP`\n");
-        InterpretResult loop_res = interpret_while_loop(node, env);
-        return loop_res;
+        result = interpret_while_loop(node, env);
+        break;
     }
 
     case AST_FOR_LOOP: {
         debug_print_int("\tMatched: `AST_FOR_LOOP`\n");
-        LiteralValue for_loop = interpret_for_loop(node, env);
-        return make_result(for_loop, false, false);
+        InterpretResult loop_res = interpret_for_loop(node, env);
+        result = loop_res;
+        break;
     }
 
     case AST_VARIABLE: {
         debug_print_int("\tMatched: `AST_VARIABLE`\n");
-        LiteralValue var_val = interpret_variable(node, env);
-        return make_result(var_val, false, false);
+        // Replace LiteralValue with InterpretResult
+        InterpretResult var_res = interpret_variable(node, env);
+        result = var_res;
+        break;
     }
 
     case AST_CONSTANT: {
         debug_print_int("\tMatched: `AST_CONSTANT`\n");
-        return interpret_constant(node, env);
+        result = interpret_constant(node, env);
+        break;
     }
 
     case AST_SWITCH: {
         debug_print_int("\tMatched: `AST_SWITCH`\n");
-        InterpretResult switch_res = interpret_switch(node, env);
-        if (switch_res.did_return || switch_res.did_break) {
-            return switch_res;
-        }
-        return make_result(switch_res.value, false, false);
+        result = interpret_switch(node, env);
+        break;
     }
 
     case AST_BREAK:
         debug_print_int("\tMatched: `AST_BREAK`\n");
-        return make_result(create_default_value(), false, true);
+        result = make_result(create_default_value(), false, true);
+        break;
 
     case AST_TERNARY:
         debug_print_int("\tMatched: `AST_TERNARY`\n");
-        return interpret_ternary(node, env); // Delegate to helper
+        result = interpret_ternary(node, env);
+        break;
+
+    case AST_TRY:
+        debug_print_int("\tMatched: `AST_TRY`\n");
+        result = interpret_try(node, env);
+        break;
 
     default:
-        error_interpreter("Unsupported `ASTNode` type.\n");
-        return make_result(create_default_value(), false,
-                           false); // keep compiler happy
+        return raise_error("Unsupported `ASTNode` type.\n");
     }
+
+    return result;
 }
 
 void interpret_program(ASTNode *program, Environment *env) {
     ASTNode *current = program;
     while (current) {
         debug_print_int("Executing top-level statement\n");
-        interpret_node(current, env);
+        InterpretResult res = interpret_node(current, env);
+        if (res.is_error) {
+            fprintf(stderr, "Unhandled error: %s\n", res.value.data.string);
+            break; // (or handle as needed in future)
+        }
+        if (res.did_return) {
+            // Handle unexpected return at top-level, if applicable
+            break;
+        }
         current = current->next;
     }
 }
 
-LiteralValue interpret_literal(ASTNode *node) {
+InterpretResult interpret_literal(ASTNode *node) {
     LiteralValue value;
     debug_print_int("Interpreting literal value...\n");
     debug_print_int("Literal type: %d\n", node->literal.type);
@@ -173,45 +179,48 @@ LiteralValue interpret_literal(ASTNode *node) {
                         value.data.boolean ? "True" : "False");
         break;
     default:
-        error_interpreter("Unsupported literal type.\n");
+        // Let `interpret_node` handle unsupported literals
+        value.type = TYPE_ERROR;
+        value.data.string = strdup("Unsupported literal type.\n");
+        break;
     }
-    return value;
+
+    return make_result(value, false, false);
 }
 
-LiteralValue interpret_variable(ASTNode *node, Environment *env) {
+InterpretResult interpret_variable(ASTNode *node, Environment *env) {
     Variable *var = get_variable(env, node->variable_name);
     if (!var) {
-        error_interpreter("Undefined variable `%s`.\n", node->variable_name);
+        return raise_error("Undefined variable `%s`.\n", node->variable_name);
     }
 
-    return var->value;
+    return make_result(var->value, false, false);
 }
 
 InterpretResult interpret_constant(ASTNode *node, Environment *env) {
     if (node->type != AST_CONSTANT) {
-        fprintf(stderr, "Error: Invalid node type for constant declaration.\n");
-        exit(1);
+        return raise_error("Invalid node type for constant declaration.\n");
     }
 
     // Extract the constant name and value
-    char *const_name = node->assignment.variable_name;
+    char *const_name = strdup(node->assignment.variable_name);
     InterpretResult value_res = interpret_node(node->assignment.value, env);
     LiteralValue const_value = value_res.value;
+
+    if (value_res.is_error) {
+        return value_res;
+    }
 
     // Check if the constant already exists
     Variable *existing_var = get_variable(env, const_name);
     if (existing_var) {
-        fprintf(stderr, "Error: Constant `%s` is already defined.\n",
-                const_name);
-        return make_result(create_default_value(), false, false);
+        return raise_error("Constant `%s` is already defined.\n", const_name);
     }
 
     // Add the constant to the environment
-    Variable new_var = {
-        .variable_name = strdup(const_name),
-        .value = const_value,
-        .is_constant = true // Mark as constant
-    };
+    Variable new_var = {.variable_name = strdup(const_name),
+                        .value = const_value,
+                        .is_constant = true};
     add_variable(env, new_var);
 
     return make_result(const_value, false, false);
@@ -226,7 +235,6 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
     // Evaluate the right-hand side
     InterpretResult assign_r = interpret_node(node->assignment.value, env);
-
     // If the RHS triggered a return or break, propagate it
     if (assign_r.did_return || assign_r.did_break) {
         return assign_r;
@@ -234,77 +242,399 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
     LiteralValue new_value = assign_r.value;
 
-    // Add or update variable
-    Variable new_var = {
-        .variable_name = strdup(node->assignment.variable_name),
-        .value = new_value,
-        .is_constant = false // 'let' declarations are not constants
-    };
-    add_variable(env, new_var);
+    // Find the environment where the variable exists
+    Environment *target_env = env;
+    Variable *existing_var = NULL;
+    while (target_env) {
+        for (size_t i = 0; i < target_env->variable_count; i++) {
+            if (strcmp(target_env->variables[i].variable_name,
+                       node->assignment.variable_name) == 0) {
+                existing_var = &target_env->variables[i];
+                break;
+            }
+        }
+        if (existing_var) {
+            break;
+        }
+        target_env = target_env->parent;
+    }
 
-    return make_result(new_value, false, false);
+    // If variable doesn't exist anywhere, add to current scope
+    // If it exists, update in the scope where it was found
+    Environment *scope_to_modify = existing_var ? target_env : env;
+
+    Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
+                        .value = new_value,
+                        .is_constant = false};
+
+    return add_variable(scope_to_modify, new_var);
 }
 
-LiteralValue handle_string_concatenation(LiteralValue left,
-                                         LiteralValue right) {
-    LiteralValue result;
-    result.type = TYPE_STRING;
+InterpretResult handle_string_concatenation(InterpretResult left,
+                                            InterpretResult right) {
+    LiteralValue lv_result;
+    lv_result.type = TYPE_STRING;
+
+    LiteralValue left_val = left.value;
+    LiteralValue right_val = right.value;
 
     // Convert numbers to strings
     char num_str1[50] = {0};
     char num_str2[50] = {0};
 
-    if (left.type == TYPE_FLOAT) {
+    if (left_val.type == TYPE_FLOAT) {
         snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT_SPECIFIER,
-                 left.data.floating_point);
+                 left_val.data.floating_point);
     }
-    if (right.type == TYPE_FLOAT) {
+    if (right_val.type == TYPE_FLOAT) {
         snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT_SPECIFIER,
-                 right.data.floating_point);
+                 right_val.data.floating_point);
     }
 
     // Allocate memory for the concatenated string
     size_t new_size =
         strlen(num_str1) + strlen(num_str2) +
-        strlen(left.type == TYPE_STRING ? left.data.string : "") +
-        strlen(right.type == TYPE_STRING ? right.data.string : "") + 1;
+        strlen(left_val.type == TYPE_STRING ? left_val.data.string : "") +
+        strlen(right_val.type == TYPE_STRING ? right_val.data.string : "") + 1;
 
     char *new_string = malloc(new_size);
     if (!new_string) {
-        error_interpreter(
+        return raise_error(
             "Memory allocation failed for string concatenation.\n");
     }
 
-    strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
+    strcpy(new_string,
+           left_val.type == TYPE_STRING ? left_val.data.string : num_str1);
     strcat(new_string,
-           right.type == TYPE_STRING ? right.data.string : num_str2);
-    result.data.string = new_string;
+           right_val.type == TYPE_STRING ? right_val.data.string : num_str2);
+    lv_result.data.string = new_string;
 
-    return result;
+    return make_result(lv_result, false, false);
 }
 
-LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
-    // Debugging output
-    debug_print_int("Unary Operator: `%s`\n", op);
-
-    LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // initialize result
-
-    // Handle logical NOT
-    if (strcmp(op, "!") == 0) {
-        // Ensure operand is boolean
-        if (operand.type != TYPE_BOOLEAN) {
-            error_interpreter(
-                "Unary operator `%s` requires a boolean operand.\n", op);
-        }
-
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = !operand.data.boolean;
-        return result;
+// Helper function to handle numeric operations and comparisons
+InterpretResult handle_numeric_operator(const char *op,
+                                        InterpretResult left_res,
+                                        InterpretResult right_res) {
+    // Check for errors in operands
+    if (left_res.is_error) {
+        return left_res;
+    }
+    if (right_res.is_error) {
+        return right_res;
     }
 
-    // Handle unary minus
+    LiteralValue left = left_res.value;
+    LiteralValue right = right_res.value;
+
+    // Ensure both operands are numeric
+    if (!is_numeric_type(left.type) || !is_numeric_type(right.type)) {
+        return raise_error("Operator `%s` requires numeric operands.\n", op);
+    }
+
+    // Determine if the result should be a float
+    bool result_is_float =
+        (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT);
+
+    // Fetch numeric values with coercion
+    double left_val = (left.type == TYPE_FLOAT) ? left.data.floating_point
+                                                : (double)left.data.integer;
+    double right_val = (right.type == TYPE_FLOAT) ? right.data.floating_point
+                                                  : (double)right.data.integer;
+
+    LiteralValue result;
+    memset(&result, 0, sizeof(LiteralValue));
+
+    // Handle operators
+    if (strcmp(op, "+") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val + right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val + right_val);
+        }
+    } else if (strcmp(op, "*") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val * right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val * right_val);
+        }
+    } else if (strcmp(op, "-") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val - right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val - right_val);
+        }
+    } else if (strcmp(op, "/") == 0) {
+        if (right_val == 0.0) {
+            return raise_error("Division by zero.\n");
+        }
+        result.type = TYPE_FLOAT;
+        result.data.floating_point = left_val / right_val;
+    } else if (strcmp(op, "//") == 0) { // floor Division
+        if (right_val == 0.0) {
+            return raise_error("Floor division by zero.\n");
+        }
+        double div_result = left_val / right_val;
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = floor(div_result);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)floor(div_result);
+        }
+    } else if (strcmp(op, "%") == 0) { // modulo
+        if (right_val == 0.0) {
+            return raise_error("Modulo by zero.\n");
+        }
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = fmod(left_val, right_val);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer =
+                (INT_SIZE)((INT_SIZE)left_val % (INT_SIZE)right_val);
+        }
+    } else if (strcmp(op, "**") == 0) { // exponentiation
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = pow(left_val, right_val);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)pow(left_val, right_val);
+        }
+    } else if (strcmp(op, "<") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val < right_val);
+    } else if (strcmp(op, ">") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val > right_val);
+    } else if (strcmp(op, "<=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val <= right_val);
+    } else if (strcmp(op, ">=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val >= right_val);
+    } else {
+        return raise_error("Unknown operator `%s`.\n", op);
+    }
+
+    return make_result(result, false, false);
+}
+
+// Function to evaluate binary operators
+InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
+                                  InterpretResult right_res) {
+    debug_print_int("Operator: `%s`\n", op);
+
+    // Handle string concatenation with "+" operator
+    if (strcmp(op, "+") == 0 && (left_res.value.type == TYPE_STRING ||
+                                 right_res.value.type == TYPE_STRING)) {
+        return handle_string_concatenation(left_res, right_res);
+    }
+
+    // Handle logical AND and OR
+    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
+        // Ensure both operands are boolean
+        if (!is_boolean_type(left_res.value.type) ||
+            !is_boolean_type(right_res.value.type)) {
+            return raise_error(
+                "Logical operators `&&` and `||` require boolean operands.\n");
+        }
+
+        LiteralValue result;
+        result.type = TYPE_BOOLEAN;
+
+        if (strcmp(op, "&&") == 0) {
+            result.data.boolean =
+                left_res.value.data.boolean && right_res.value.data.boolean;
+        } else { // op == "||"
+            result.data.boolean =
+                left_res.value.data.boolean || right_res.value.data.boolean;
+        }
+
+        return make_result(result, false, false);
+    }
+
+    // Handle Equality Operators `==` and `!=` Across All Types
+    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0) {
+        bool comparison_result = false;
+
+        // If types are the same, perform direct comparison
+        if (left_res.value.type == right_res.value.type) {
+            switch (left_res.value.type) {
+            case TYPE_INTEGER:
+                comparison_result = (left_res.value.data.integer ==
+                                     right_res.value.data.integer);
+                break;
+            case TYPE_FLOAT:
+                comparison_result = (left_res.value.data.floating_point ==
+                                     right_res.value.data.floating_point);
+                break;
+            case TYPE_BOOLEAN:
+                comparison_result = (left_res.value.data.boolean ==
+                                     right_res.value.data.boolean);
+                break;
+            case TYPE_STRING:
+                if (left_res.value.data.string == NULL ||
+                    right_res.value.data.string == NULL) {
+                    return raise_error("Cannot compare NULL strings.\n");
+                }
+                comparison_result = (strcmp(left_res.value.data.string,
+                                            right_res.value.data.string) == 0);
+                break;
+            default:
+                return raise_error("Equality operators `==` and `!=` are not "
+                                   "supported for this type.\n");
+            }
+        }
+        // Handle cross-type comparisons
+        else {
+            // For simplicity, handle numeric comparisons by coercing to float
+            if (is_numeric_type(left_res.value.type) &&
+                is_numeric_type(right_res.value.type)) {
+                return handle_numeric_operator(op, left_res, right_res);
+            }
+            // Handle boolean and integer comparisons
+            else if ((left_res.value.type == TYPE_BOOLEAN &&
+                      is_numeric_type(right_res.value.type)) ||
+                     (right_res.value.type == TYPE_BOOLEAN &&
+                      is_numeric_type(left_res.value.type))) {
+                // Coerce boolean to integer (false=0, true=1)
+                LiteralValue coerced_left = left_res.value;
+                LiteralValue coerced_right = right_res.value;
+
+                if (left_res.value.type == TYPE_BOOLEAN) {
+                    coerced_left.type = TYPE_INTEGER;
+                    coerced_left.data.integer =
+                        left_res.value.data.boolean ? 1 : 0;
+                }
+                if (right_res.value.type == TYPE_BOOLEAN) {
+                    coerced_right.type = TYPE_INTEGER;
+                    coerced_right.data.integer =
+                        right_res.value.data.boolean ? 1 : 0;
+                }
+
+                return handle_numeric_operator(
+                    op, make_result(coerced_left, false, false),
+                    make_result(coerced_right, false, false));
+            }
+            // Handle string and other type comparisons if necessary
+            else {
+                return raise_error("Cannot compare different types.\n");
+            }
+        }
+
+        // Apply `!=` logic if operator is "!="
+        if (strcmp(op, "!=") == 0) {
+            comparison_result = !comparison_result;
+        }
+
+        // Set the result
+        LiteralValue result;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = comparison_result;
+
+        return make_result(result, false, false);
+    }
+
+    // Handle Arithmetic and Comparison Operators
+    // List of operators that require numeric operands
+    const char *numeric_operators[] = {
+        "+", "*", "-", "/", "//", "%", "**", "<", ">", "<=", ">=",
+    };
+    size_t num_numeric_ops =
+        sizeof(numeric_operators) / sizeof(numeric_operators[0]);
+
+    bool is_numeric_op = false;
+    for (size_t i = 0; i < num_numeric_ops; ++i) {
+        if (strcmp(op, numeric_operators[i]) == 0) {
+            is_numeric_op = true;
+            break;
+        }
+    }
+
+    if (is_numeric_op) {
+        return handle_numeric_operator(op, left_res, right_res);
+    }
+
+    if (strcmp(op, "+") == 0) {
+        return handle_string_concatenation(left_res, right_res);
+    }
+
+    // If operator is not recognized
+    return raise_error("Unknown operator `%s`.\n", op);
+}
+
+InterpretResult interpret_binary_op(ASTNode *node, Environment *env) {
+    if (node->type != AST_BINARY_OP) {
+        return raise_error("Invalid node type for binary operation.\n");
+    }
+
+    // Interpret left operand
+    InterpretResult left_res = interpret_node(node->binary_op.left, env);
+    if (left_res.is_error) {
+        return left_res;
+    }
+
+    // Interpret right operand
+    InterpretResult right_res = interpret_node(node->binary_op.right, env);
+    if (right_res.is_error) {
+        return right_res;
+    }
+
+    // Evaluate the operator
+    const char *op = node->binary_op.operator;
+    InterpretResult op_res = evaluate_operator(op, left_res, right_res);
+    if (op_res.is_error) {
+        return op_res;
+    }
+
+    return make_result(op_res.value, false, false);
+}
+
+// Implementation of interpret_unary_op
+InterpretResult interpret_unary_op(ASTNode *node, Environment *env) {
+    if (node->type != AST_UNARY_OP) {
+        return raise_error("Invalid node type for unary operation.\n");
+    }
+
+    // Interpret the operand
+    InterpretResult operand_res = interpret_node(node->unary_op.operand, env);
+    if (operand_res.is_error) {
+        return operand_res;
+    }
+
+    // Evaluate the unary operator
+    const char *op = node->unary_op.operator;
+    InterpretResult op_res = evaluate_unary_operator(op, operand_res);
+    if (op_res.is_error) {
+        return op_res;
+    }
+
+    return make_result(op_res.value, false, false);
+}
+
+// Helper function to handle unary operators
+InterpretResult evaluate_unary_operator(const char *op,
+                                        InterpretResult operand_res) {
+    debug_print_int("Unary Operator: `%s`\n", op);
+
+    // Check for errors in operand
+    if (operand_res.is_error) {
+        return operand_res;
+    }
+
+    LiteralValue operand = operand_res.value;
+    LiteralValue result;
+
     if (strcmp(op, "-") == 0) {
+        // Arithmetic negation
         if (operand.type == TYPE_INTEGER) {
             result.type = TYPE_INTEGER;
             result.data.integer = -operand.data.integer;
@@ -312,267 +642,83 @@ LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
             result.type = TYPE_FLOAT;
             result.data.floating_point = -operand.data.floating_point;
         } else {
-            error_interpreter(
-                "Unary operator `%s` requires a numeric operand.\n", op);
+            return raise_error(
+                "Unary `-` operator requires numeric operand.\n");
         }
-        return result;
-    }
-
-    // Handle unary plus (no effect)
-    if (strcmp(op, "+") == 0) {
-        // Unary plus doesn't change the operand
-        result = operand;
-        return result;
-    }
-
-    // Add more unary operators as needed
-
-    error_interpreter("Unknown unary operator `%s`\n", op);
-    return result; // unreachable
-}
-
-LiteralValue interpret_unary_op(ASTNode *node, Environment *env) {
-    if (!node || node->type != AST_UNARY_OP) {
-        error_interpreter("Invalid unary operation node.\n");
-    }
-
-    // Extract the operator and operand
-    const char *op = node->unary_op.operator;
-    ASTNode *operand_node = node->unary_op.operand;
-
-    // Interpret the operand
-    InterpretResult operand_r = interpret_node(operand_node, env);
-    LiteralValue operand = operand_r.value;
-
-    // If interpreting the operand caused a return, propagate it
-    if (operand_r.did_return) {
-        return operand;
-    }
-
-    // Evaluate the unary operator
-    return evaluate_unary_operator(op, operand);
-}
-
-LiteralValue evaluate_operator(const char *op, LiteralValue left,
-                               LiteralValue right) {
-    debug_print_int("Operator: `%s`\n", op);
-
-    LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // Initialize result
-
-    // Handle string concatenation with "+" operator
-    if (strcmp(op, "+") == 0 &&
-        (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
-        return handle_string_concatenation(left, right);
-    }
-
-    // Handle logical AND and OR
-    if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
-        // Ensure both operands are boolean
-        if (left.type != TYPE_BOOLEAN || right.type != TYPE_BOOLEAN) {
-            error_interpreter(
-                "Logical operator `%s` requires boolean operands.\n", op);
-        }
-
-        result.type = TYPE_BOOLEAN;
-
-        if (strcmp(op, "&&") == 0) {
-            result.data.boolean = left.data.boolean && right.data.boolean;
-        } else { // op == "||"
-            result.data.boolean = left.data.boolean || right.data.boolean;
-        }
-
-        return result;
-    }
-
-    // Get numeric values for arithmetic and comparison
-    FLOAT_SIZE left_value = 0.0, right_value = 0.0;
-    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-        left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                               : (FLOAT_SIZE)left.data.integer;
-        right_value = (right.type == TYPE_FLOAT)
-                          ? right.data.floating_point
-                          : (FLOAT_SIZE)right.data.integer;
-    } else {
-        left_value = (FLOAT_SIZE)left.data.integer;
-        right_value = (FLOAT_SIZE)right.data.integer;
-    }
-
-    // Determine result type based on operands
-    if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-        result.type = TYPE_FLOAT;
-    } else {
-        result.type = TYPE_INTEGER;
-    }
-
-    // Handle operators
-    if (strcmp(op, "*") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value * right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value * right_value);
-    } else if (strcmp(op, "+") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value + right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value + right_value);
-    } else if (strcmp(op, "-") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = left_value - right_value;
-        else
-            result.data.integer = (INT_SIZE)(left_value - right_value);
-    } else if (strcmp(op, "/") == 0) {
-        if (right_value == 0) {
-            error_interpreter("Division by zero\n");
-        }
-        result.type = TYPE_FLOAT;
-        result.data.floating_point = left_value / right_value;
-    } else if (strcmp(op, "//") == 0) {
-        if (right_value == 0) {
-            error_interpreter("Floor division by zero\n");
-        }
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = floor(left_value / right_value);
-        else
-            result.data.integer = (INT_SIZE)(left_value / right_value);
-    } else if (strcmp(op, "%") == 0) {
-        if (right_value == 0) {
-            error_interpreter("Modulo by zero\n");
-        }
-        if (result.type == TYPE_FLOAT) {
-            result.data.floating_point = fmod(left_value, right_value);
+    } else if (strcmp(op, "!") == 0) {
+        // Logical NOT
+        if (operand.type == TYPE_BOOLEAN) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = !operand.data.boolean;
+        } else if (operand.type == TYPE_INTEGER) {
+            // Treat 0 as false, non-zero as true
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (operand.data.integer == 0) ? true : false;
         } else {
-            result.data.integer =
-                (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
+            return raise_error(
+                "Unary `!` operator requires boolean or integer operand.\n");
         }
-    } else if (strcmp(op, "**") == 0) {
-        if (result.type == TYPE_FLOAT)
-            result.data.floating_point = pow(left_value, right_value);
-        else
-            result.data.integer = (INT_SIZE)pow(left_value, right_value);
-    } else if (strcmp(op, "<") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value < right_value);
-    } else if (strcmp(op, ">") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value > right_value);
-    } else if (strcmp(op, "<=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value <= right_value);
-    } else if (strcmp(op, ">=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value >= right_value);
-    } else if (strcmp(op, "==") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value == right_value);
-    } else if (strcmp(op, "!=") == 0) {
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = (left_value != right_value);
     } else {
-        error_interpreter("Unknown operator `%s`\n", op);
+        return raise_error("Unsupported unary operator `%s`.\n", op);
     }
 
-    return result;
-}
-
-int get_operator_precedence(const char *op) {
-    if (strcmp(op, "**") == 0)
-        return 4; // highest precedence
-    if (strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "//") == 0 ||
-        strcmp(op, "%") == 0)
-        return 3;
-    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0)
-        return 2;
-    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || strcmp(op, "<=") == 0 ||
-        strcmp(op, ">=") == 0)
-        return 1;
-    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0)
-        return 1;
-
-    // Return `0` for unknown operators
-    return 0;
-}
-
-int is_right_associative(const char *op) {
-    return (strcmp(op, "**") == 0); // exponentiation is right-associative
-}
-
-LiteralValue interpret_binary_op(ASTNode *node, Environment *env) {
-    if (!node || node->type != AST_BINARY_OP) {
-        error_interpreter("Invalid binary operation node.");
-    }
-
-    // Interpret left operand
-    InterpretResult left_r = interpret_node(node->binary_op.left, env);
-    LiteralValue left = left_r.value;
-    if (left.type == TYPE_ERROR) {
-        return left; // propagate errors
-    }
-
-    // Interpret right operand
-    InterpretResult right_r = interpret_node(node->binary_op.right, env);
-    LiteralValue right = right_r.value;
-    if (right.type == TYPE_ERROR) {
-        return right; // propagate errors
-    }
-
-    // Evaluate based on operator
-    const char *op = node->binary_op.operator;
-
-    // Check precedence dynamically if subnodes have binary ops
-    if (node->binary_op.right->type == AST_BINARY_OP) {
-        int op_prec = get_operator_precedence(op);
-        int right_prec =
-            get_operator_precedence(node->binary_op.right->binary_op.operator);
-
-        // Reevaluate RHS if its operator has higher precedence
-        if (op_prec < right_prec ||
-            (op_prec == right_prec && is_right_associative(op))) {
-            right = interpret_binary_op(node->binary_op.right, env);
-        }
-    }
-
-    return evaluate_operator(op, left, right);
+    return make_result(result, false, false);
 }
 
 Variable *get_variable(Environment *env, const char *variable_name) {
     debug_print_int("Looking up variable: `%s`\n", variable_name);
-    for (size_t i = 0; i < env->variable_count; i++) {
-        if (strcmp(env->variables[i].variable_name, variable_name) == 0) {
-            if (env->variables[i].value.type == TYPE_FLOAT) {
-                debug_print_int("Variable found: `%s` with value `%Lf`\n",
-                                variable_name,
-                                env->variables[i].value.data.floating_point);
-            } else if (env->variables[i].value.type == TYPE_INTEGER) {
-                debug_print_int("Variable found: `%s` with value `%lld`\n",
-                                variable_name,
-                                env->variables[i].value.data.integer);
-            } else if (env->variables[i].value.type == TYPE_STRING) {
-                debug_print_int("Variable found: `%s` with value `%s`\n",
-                                variable_name,
-                                env->variables[i].value.data.string);
-            } else if (env->variables[i].value.type == TYPE_FUNCTION) {
-                debug_print_int(
-                    "Variable found: `%s` with function reference `%s`\n",
-                    variable_name,
-                    env->variables[i].value.data.function_ptr->name);
+    Environment *current_env = env;
+    while (current_env) {
+        for (size_t i = 0; i < current_env->variable_count; i++) {
+            if (strcmp(current_env->variables[i].variable_name,
+                       variable_name) == 0) {
+                // Debugging information based on type
+                switch (current_env->variables[i].value.type) {
+                case TYPE_FLOAT:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%Lf`\n",
+                        variable_name,
+                        current_env->variables[i].value.data.floating_point);
+                    break;
+                case TYPE_INTEGER:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%lld`\n",
+                        variable_name,
+                        current_env->variables[i].value.data.integer);
+                    break;
+                case TYPE_STRING:
+                    debug_print_int(
+                        "Variable found: `%s` with value `%s`\n", variable_name,
+                        current_env->variables[i].value.data.string);
+                    break;
+                case TYPE_FUNCTION:
+                    debug_print_int(
+                        "Variable found: `%s` with function reference `%s`\n",
+                        variable_name,
+                        current_env->variables[i]
+                            .value.data.function_ptr->name);
+                    break;
+                default:
+                    debug_print_int("Variable found: `%s` with unknown type.\n",
+                                    variable_name);
+                }
+                return &current_env->variables[i];
             }
-            return &env->variables[i];
         }
+        current_env = current_env->parent;
     }
     debug_print_int("Variable not found: `%s`\n", variable_name);
     return NULL;
 }
 
-void add_variable(Environment *env, Variable var) {
+InterpretResult add_variable(Environment *env, Variable var) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, var.variable_name) == 0) {
             // If existing variable is a constant, prevent re-assignment
             if (env->variables[i].is_constant) {
-                fprintf(stderr, "Error: Cannot reassign to constant `%s`.\n",
-                        var.variable_name);
-                return;
+                return raise_error("Error: Cannot reassign to constant `%s`.\n",
+                                   var.variable_name);
             }
 
             // Update the value of the existing variable
@@ -583,29 +729,31 @@ void add_variable(Environment *env, Variable var) {
 
             env->variables[i].value = var.value;
             env->variables[i].is_constant = var.is_constant;
-            return;
+            return make_result(var.value, false, false);
         }
     }
 
     // Add a new variable
     if (env->variable_count == env->capacity) {
         // Resize the variables array if necessary
-        env->capacity = env->capacity ? env->capacity * 2 : 4;
-        env->variables =
-            realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables) {
-            error_interpreter(
+        size_t new_capacity = env->capacity ? env->capacity * 2 : 4;
+        Variable *new_variables =
+            realloc(env->variables, new_capacity * sizeof(Variable));
+        if (!new_variables) {
+            return raise_error(
                 "Memory allocation failed while adding variable `%s`.\n",
                 var.variable_name);
         }
+        env->variables = new_variables;
+        env->capacity = new_capacity;
     }
 
     // Copy variable name and value
     env->variables[env->variable_count].variable_name =
         strdup(var.variable_name);
     if (!env->variables[env->variable_count].variable_name) {
-        error_interpreter("Memory allocation failed for variable name `%s`.\n",
-                          var.variable_name);
+        return raise_error("Memory allocation failed for variable name `%s`.\n",
+                           var.variable_name);
     }
 
     // Deep copy based on type
@@ -613,6 +761,11 @@ void add_variable(Environment *env, Variable var) {
         env->variables[env->variable_count].value.type = TYPE_STRING;
         env->variables[env->variable_count].value.data.string =
             strdup(var.value.data.string);
+        if (!env->variables[env->variable_count].value.data.string) {
+            return raise_error(
+                "Memory allocation failed for string variable `%s`.\n",
+                var.variable_name);
+        }
     } else if (var.value.type == TYPE_FUNCTION) {
         env->variables[env->variable_count].value.type = TYPE_FUNCTION;
         env->variables[env->variable_count].value.data.function_ptr =
@@ -623,59 +776,71 @@ void add_variable(Environment *env, Variable var) {
 
     env->variables[env->variable_count].is_constant = var.is_constant;
     env->variable_count++;
+
+    return make_result(var.value, false, false);
 }
 
-Variable *allocate_variable(Environment *env, const char *name) {
+InterpretResult allocate_variable(Environment *env, const char *name) {
     // Check if the variable already exists
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, name) == 0) {
-            return &env->variables[i]; // return existing variable
+            return make_result(env->variables[i].value, false, false);
         }
     }
 
     // If the variable doesn't exist, allocate it in memory
     if (env->variable_count == env->capacity) {
-        env->capacity *= 2;
-        env->variables =
-            realloc(env->variables, env->capacity * sizeof(Variable));
-        if (!env->variables) {
-            error_interpreter("Memory allocation failed.\n");
+        size_t new_capacity = env->capacity ? env->capacity * 2 : 4;
+        Variable *new_variables =
+            realloc(env->variables, new_capacity * sizeof(Variable));
+        if (!new_variables) {
+            return raise_error("Memory allocation failed.\n");
         }
+        env->variables = new_variables;
+        env->capacity = new_capacity;
     }
 
     env->variables[env->variable_count].variable_name = strdup(name);
+    if (!env->variables[env->variable_count].variable_name) {
+        return raise_error("Memory allocation failed for variable name `%s`.\n",
+                           name);
+    }
+
+    // Initialize the variable with default value
+    env->variables[env->variable_count].value = create_default_value();
+    env->variables[env->variable_count].is_constant = false;
     env->variable_count++;
 
-    return &env->variables[env->variable_count - 1];
+    Variable *var = &env->variables[env->variable_count - 1];
+    return make_result(var->value, false, false);
 }
 
 InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
     debug_print_int("`interpret_conditional()` called\n");
     if (!node) {
         // Error
-        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
+        return raise_error("Invalid conditional node.");
     }
 
-    ASTNode *current_branch = node;
     bool condition_met = false;
+
+    ASTNode *current_branch = node;
 
     while (current_branch) {
         if (current_branch->conditional.condition) {
             InterpretResult cond_res =
                 interpret_node(current_branch->conditional.condition, env);
 
-            if (cond_res.did_return || cond_res.did_break) {
-                // Bubble up immediately
+            if (cond_res.is_error) {
+                // Propagate the error
                 return cond_res;
             }
 
             // Check for valid condition types
             if (cond_res.value.type != TYPE_INTEGER &&
                 cond_res.value.type != TYPE_BOOLEAN) {
-                fprintf(stderr, "Error: Condition expression must be boolean "
-                                "or integer.\n");
-                return make_result((LiteralValue){.type = TYPE_ERROR}, false,
-                                   false);
+                return raise_error(
+                    "Condition expression must be boolean or integer.\n");
             }
 
             bool condition_true = false;
@@ -691,7 +856,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
 
-                    if (body_res.did_return || body_res.did_break) {
+                    if (body_res.is_error || body_res.did_return ||
+                        body_res.did_break) {
                         return body_res;
                     }
                     cs = cs->next;
@@ -708,7 +874,8 @@ InterpretResult interpret_conditional(ASTNode *node, Environment *env) {
                 while (cs) {
                     InterpretResult body_res = interpret_node(cs, env);
 
-                    if (body_res.did_return || body_res.did_break) {
+                    if (body_res.is_error || body_res.did_return ||
+                        body_res.did_break) {
                         return body_res;
                     }
                     cs = cs->next;
@@ -770,14 +937,17 @@ InterpretResult interpret_while_loop(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
-LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
+InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     if (node->type != AST_FOR_LOOP) {
-        error_interpreter(
+        return raise_error(
             "`interpret_for_loop` called with non-`for`-loop `ASTNode`\n");
     }
 
     // Extract loop components
-    char *loop_var = node->for_loop.loop_variable;
+    char *loop_var = strdup(node->for_loop.loop_variable);
+    if (!loop_var) {
+        return raise_error("Memory allocation failed for loop variable\n");
+    }
     ASTNode *start_expr = node->for_loop.start_expr;
     ASTNode *end_expr = node->for_loop.end_expr;
     bool inclusive = node->for_loop.inclusive;
@@ -786,47 +956,53 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Evaluate start and end expressions
     InterpretResult start_res = interpret_node(start_expr, env);
-    if (start_res.value.type == TYPE_ERROR) {
-        return start_res.value;
+    if (start_res.is_error) {
+        free(loop_var);
+        return start_res;
     }
 
     InterpretResult end_res = interpret_node(end_expr, env);
-    if (end_res.value.type == TYPE_ERROR) {
-        return end_res.value;
+    if (end_res.is_error) {
+        free(loop_var);
+        return end_res;
     }
 
-    // Determine start & end as floats for flexibility
+    // Determine start & end as doubles for flexibility
     double start_val, end_val;
     if (start_res.value.type == TYPE_FLOAT) {
         start_val = start_res.value.data.floating_point;
     } else if (start_res.value.type == TYPE_INTEGER) {
-        start_val = (FLOAT_SIZE)start_res.value.data.integer;
+        start_val = (double)start_res.value.data.integer;
     } else {
-        error_interpreter("Start expression in `for` loop must be numeric\n");
+        free(loop_var);
+        return raise_error("Start expression in `for` loop must be numeric\n");
     }
 
     if (end_res.value.type == TYPE_FLOAT) {
         end_val = end_res.value.data.floating_point;
     } else if (end_res.value.type == TYPE_INTEGER) {
-        end_val = (FLOAT_SIZE)end_res.value.data.integer;
+        end_val = (double)end_res.value.data.integer;
     } else {
-        error_interpreter("End expression in `for` loop must be numeric\n");
+        free(loop_var);
+        return raise_error("End expression in `for` loop must be numeric\n");
     }
 
     // Evaluate step expression if present
     double step = 1.0; // default
     if (step_expr) {
         InterpretResult step_res = interpret_node(step_expr, env);
-        if (step_res.value.type == TYPE_ERROR) {
-            return step_res.value;
+        if (step_res.is_error) {
+            free(loop_var);
+            return step_res;
         }
 
         if (step_res.value.type == TYPE_FLOAT) {
             step = step_res.value.data.floating_point;
         } else if (step_res.value.type == TYPE_INTEGER) {
-            step = (FLOAT_SIZE)step_res.value.data.integer;
+            step = (double)step_res.value.data.integer;
         } else {
-            error_interpreter(
+            free(loop_var);
+            return raise_error(
                 "Step expression in `for` loop must be numeric\n");
         }
     } else {
@@ -840,76 +1016,88 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
 
     // Validate step to prevent infinite loops
     if (step < 1e-9 && step > -1e-9) {
-        error_interpreter("Step value cannot be zero in `for` loop\n");
-    }
-
-    // Validate step to check if step is in correct direction
-    if ((start_val < end_val && step < 0) ||
-        (start_val > end_val && step > 0)) {
-        error_interpreter("Step value is in the wrong direction for the "
-                          "specified range of the `for` loop\n");
+        free(loop_var);
+        return raise_error("Step value cannot be zero in `for` loop\n");
     }
 
     // Assign or update loop variable in the environment
+    InterpretResult var_res = allocate_variable(env, loop_var);
+    if (var_res.is_error) {
+        free(loop_var);
+        return var_res; // Propagate the error
+    }
+
+    // Initialize the loop variable with the start value
     Variable *var = get_variable(env, loop_var);
     if (!var) {
-        // Variable does not exist; create it
-        var = allocate_variable(env, loop_var);
-        if (start_res.value.type == TYPE_FLOAT) {
-            var->value.type = TYPE_FLOAT;
-            var->value.data.floating_point = start_val;
-        } else {
-            var->value.type = TYPE_INTEGER;
-            var->value.data.integer = (INT_SIZE)start_val;
-        }
+        free(loop_var);
+        return raise_error("Failed to allocate and retrieve variable `%s`.\n",
+                           loop_var);
+    }
+
+    if (start_res.value.type == TYPE_FLOAT) {
+        var->value.type = TYPE_FLOAT;
+        var->value.data.floating_point = start_val;
     } else {
-        // Update existing variable
-        if (start_res.value.type == TYPE_FLOAT ||
-            var->value.type == TYPE_FLOAT) {
-            var->value.type = TYPE_FLOAT;
-            var->value.data.floating_point = start_val;
-        } else {
-            var->value.type = TYPE_INTEGER;
-            var->value.data.integer = (INT_SIZE)start_val;
-        }
+        var->value.type = TYPE_INTEGER;
+        var->value.data.integer = (INT_SIZE)start_val;
     }
 
     // Determine loop direction
     bool is_ascending = step > 0.0;
 
     while (1) {
-        // Fetch current value
+        // Re-fetch the variable pointer at the start of each iteration
+        var = get_variable(env, loop_var);
+        if (!var) {
+            free(loop_var);
+            return raise_error("Loop variable `%s` not found in environment\n",
+                               loop_var);
+        }
+
         double current_val;
         if (var->value.type == TYPE_FLOAT) {
             current_val = var->value.data.floating_point;
         } else if (var->value.type == TYPE_INTEGER) {
-            current_val = (FLOAT_SIZE)var->value.data.integer;
+            current_val = (double)var->value.data.integer;
         } else {
-            error_interpreter("Loop variable `%s` must be numeric\n", loop_var);
+            free(loop_var);
+            return raise_error("Loop variable `%s` must be numeric\n",
+                               loop_var);
         }
 
-        // Check if condition is still valid
-        bool condition = is_ascending ? (inclusive ? (current_val <= end_val)
-                                                   : (current_val < end_val))
-                                      : (inclusive ? (current_val >= end_val)
-                                                   : (current_val > end_val));
-        if (!condition) {
+        // Check if the loop should continue
+        bool condition_true = false;
+        if (is_ascending) {
+            condition_true =
+                inclusive ? (current_val <= end_val) : (current_val < end_val);
+        } else {
+            condition_true =
+                inclusive ? (current_val >= end_val) : (current_val > end_val);
+        }
+
+        if (!condition_true) {
             break;
         }
 
-        // Execute loop body
-        ASTNode *current_stmt = body;
-        while (current_stmt) {
-            InterpretResult res = interpret_node(current_stmt, env);
-            if (res.did_return) {
-                return res.value;
+        // Interpret the loop body
+        ASTNode *current = body;
+        while (current) {
+            InterpretResult body_res = interpret_node(current, env);
+            if (body_res.did_return || body_res.did_break) {
+                free(loop_var);
+                return body_res;
             }
-            if (res.did_break) {
-                // break out of the for loop
-                // just exit interpret_for_loop entirely
-                return create_default_value();
-            }
-            current_stmt = current_stmt->next;
+            current = current->next;
+        }
+
+        // Re-fetch the variable pointer after interpreting the loop body
+        var = get_variable(env, loop_var);
+        if (!var) {
+            free(loop_var);
+            return raise_error(
+                "Loop variable `%s` not found in environment after loop body\n",
+                loop_var);
         }
 
         // Update loop variable
@@ -920,8 +1108,11 @@ LiteralValue interpret_for_loop(ASTNode *node, Environment *env) {
         }
     }
 
+    // Clean up
+    free(loop_var);
+
     // Loops do not return values
-    return create_default_value();
+    return make_result(create_default_value(), false, false);
 }
 
 InterpretResult interpret_switch(ASTNode *node, Environment *env) {
@@ -1015,90 +1206,88 @@ InterpretResult interpret_switch(ASTNode *node, Environment *env) {
     return make_result(create_default_value(), false, false);
 }
 
-LiteralValue call_user_defined_function(Function *func_ref, ASTNode *call_node,
-                                        Environment *env) {
+/**
+ * Function to call a user-defined function
+ */
+InterpretResult call_user_defined_function(Function *func_ref,
+                                           ASTNode *call_node,
+                                           Environment *env) {
     debug_print_int("Calling user-defined function: `%s`\n", func_ref->name);
 
-    // 1) Create a new local environment
+    // Create a new local environment with 'env' as its parent
     Environment local_env;
-    init_environment(&local_env);
+    init_environment_with_parent(&local_env, env);
 
-    // 2) Copy global functions into the local environment
-    //    This ensures that nested function calls can access global functions
-    for (size_t i = 0; i < env->function_count; i++) {
-        Function *global_func = &env->functions[i];
-
-        // Deep copy the function
-        Function func_copy = {
-            .name = strdup(global_func->name),
-            .parameters = copy_function_parameters(global_func->parameters),
-            .body = copy_ast_node(global_func->body),
-            .is_builtin = global_func->is_builtin};
-
-        add_function(&local_env, func_copy);
-    }
-
-    // 3) Bind function parameters with arguments
+    // Bind function parameters with arguments
     ASTFunctionParameter *param = func_ref->parameters;
     ASTNode *arg = call_node->function_call.arguments;
 
     while (param && arg) {
         InterpretResult arg_res = interpret_node(arg, env);
-        LiteralValue arg_value = arg_res.value;
-
-        if (arg_value.type == TYPE_ERROR) {
+        if (arg_res.is_error) {
             free_environment(&local_env);
-            return arg_value;
+            return arg_res; // Propagate the error
         }
+
+        LiteralValue arg_value = arg_res.value;
 
         // Bind the argument to the parameter in the local environment
         Variable param_var = {.variable_name = strdup(param->parameter_name),
                               .value = arg_value,
                               .is_constant = false};
-        add_variable(&local_env, param_var);
+        InterpretResult add_res = add_variable(&local_env, param_var);
+        if (add_res.is_error) {
+            free_environment(&local_env);
+            return add_res;
+        }
 
         param = param->next;
         arg = arg->next;
     }
 
-    // 4) Check for argument count mismatch
+    // Check for argument count mismatch
     if (param || arg) {
-        fprintf(stderr,
-                "Error: Argument count mismatch when calling function `%s`\n",
-                func_ref->name);
         free_environment(&local_env);
-        return (LiteralValue){.type = TYPE_ERROR};
+        return raise_error(
+            "Error: Argument count mismatch when calling function `%s`\n",
+            func_ref->name);
     }
 
-    // 5) Interpret the function body
+    // Interpret the function body
     ASTNode *stmt = func_ref->body;
-    LiteralValue result = create_default_value();
+    InterpretResult func_res =
+        make_result(create_default_value(), false, false);
+
     while (stmt) {
         InterpretResult r = interpret_node(stmt, &local_env);
         if (r.did_return) {
-            result = r.value;
+            func_res = r;
             break;
         }
         if (r.did_break) {
-            fprintf(stderr,
-                    "Error: 'break' statement outside of loop or switch.\n");
             free_environment(&local_env);
-            return (LiteralValue){.type = TYPE_ERROR};
+            return raise_error(
+                "Error: 'break' statement outside of loop or switch.\n");
+        }
+        if (r.is_error) {
+            free_environment(&local_env);
+            return r;
         }
         stmt = stmt->next;
     }
 
     free_environment(&local_env);
 
-    // If no explicit return, return default value (e.g., 0)
-    return result;
+    // If no explicit return, return default value (e.g., `0`)
+    return func_res;
 }
 
-void interpret_function_declaration(ASTNode *node, Environment *env) {
+InterpretResult interpret_function_declaration(ASTNode *node,
+                                               Environment *env) {
     debug_print_int("`interpret_function_declaration()` called\n");
 
-    if (!node || !node->function_call.name) {
-        error_interpreter("Invalid function declaration\n");
+    if (!node || !node->function_declaration.name) {
+        fatal_error("Invalid function declaration\n");
     }
 
     // Initialize param_list as NULL
@@ -1106,18 +1295,18 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
     ASTFunctionParameter *param_tail = NULL; // keep track of the last parameter
 
     // Copy parameters
-    ASTFunctionParameter *param = node->function_call.parameters;
+    ASTFunctionParameter *param = node->function_declaration.parameters;
     while (param) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
-            error_interpreter(
+            fatal_error(
                 "Error: Memory allocation failed for function parameter\n");
         }
 
         new_param->parameter_name = strdup(param->parameter_name);
         if (!new_param->parameter_name) {
             free(new_param);
-            error_interpreter("Memory allocation failed for parameter name\n");
+            fatal_error("Memory allocation failed for parameter name\n");
         }
 
         new_param->next = NULL;
@@ -1134,16 +1323,15 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
         param = param->next;
     }
 
-    Function func = {.name = strdup(node->function_call.name),
+    Function func = {.name = strdup(node->function_declaration.name),
                      .parameters = param_list,
-                     .body = node->function_call.body,
+                     .body = node->function_declaration.body,
                      .is_builtin = false};
 
     add_function(env, func);
 
     // Also add the function as a variable holding its reference
     LiteralValue func_ref = {.type = TYPE_FUNCTION,
-                             // Point to the last added function
                              .data.function_ptr =
                                  &env->functions[env->function_count - 1]};
 
@@ -1152,126 +1340,75 @@ void interpret_function_declaration(ASTNode *node, Environment *env) {
                     .is_constant = false};
 
     add_variable(env, var);
+
+    return make_result(create_default_value(), false, false);
 }
 
-LiteralValue interpret_function_call(ASTNode *node, Environment *env) {
+InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     debug_print_int("Starting function call interpretation\n");
 
     if (!node || !node->function_call.name) {
-        fprintf(stderr, "Error: Invalid function call\n");
-        return (LiteralValue){.type = TYPE_ERROR};
+        return raise_error("Invalid function call");
     }
 
     const char *func_name = node->function_call.name;
 
-    // 1. Check if the function name is a variable holding a function reference
+    // 1) Try looking up the function in the functions array (built-in or global
+    // user-defined)
+    Function *func = get_function(env, func_name);
+    if (func) {
+        if (func->is_builtin) {
+            // Handle built-in functions
+            if (strcmp(func->name, "sample") == 0) {
+                return builtin_input(node, env);
+            } else if (strcmp(func->name, "serve") == 0) {
+                return builtin_output(node, env);
+            } else if (strcmp(func->name, "burn") == 0) {
+                return builtin_error(node, env);
+            } else if (strcmp(func->name, "random") == 0) {
+                return builtin_random(node, env);
+            } else if (strcmp(func->name, "string") == 0 ||
+                       strcmp(func->name, "int") == 0 ||
+                       strcmp(func->name, "float") == 0) {
+                return builtin_cast(node, env);
+            } else if (strcmp(func->name, "get_time") == 0) {
+                return builtin_time();
+            } else if (strcmp(func->name, "taste_file") == 0) {
+                return builtin_file_read(node, env);
+            } else if (strcmp(func->name, "plate_file") == 0) {
+                return builtin_file_write(node, env);
+            } else if (strcmp(func->name, "garnish_file") == 0) {
+                return builtin_file_append(node, env);
+            } else {
+                return raise_error("Unknown built-in function `%s`\n",
+                                   func->name);
+            }
+        } else {
+            // Handle user-defined functions in the functions array
+            return call_user_defined_function(func, node, env);
+        }
+    }
+
+    // 2) If not found in functions array, check if it's a variable holding
+    // a function reference
     Variable *func_var = get_variable(env, func_name);
     if (func_var && func_var->value.type == TYPE_FUNCTION) {
         Function *func_ref = func_var->value.data.function_ptr;
-        // Call the function using the helper
+        // Delegate to call_user_defined_function
         return call_user_defined_function(func_ref, node, env);
     }
 
-    // 2. Else, check if it's a built-in or globally defined function
-    Function *func = get_function(env, func_name);
-    if (!func) {
-        // Function not found
-        fprintf(stderr, "Error: Undefined function `%s`\n", func_name);
-        exit(1);
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    // If it’s a built-in => call the built-in logic
-    if (func->is_builtin) {
-        if (strcmp(func->name, "sample") == 0) {
-            return builtin_input(node, env);
-        } else if (strcmp(func->name, "serve") == 0) {
-            return builtin_output(node, env);
-        } else if (strcmp(func->name, "burn") == 0) {
-            return builtin_error(node, env);
-        } else if (strcmp(func->name, "random") == 0) {
-            return builtin_random(node, env);
-        } else if (strcmp(func->name, "string") == 0 ||
-                   strcmp(func->name, "int") == 0 ||
-                   strcmp(func->name, "float") == 0) {
-            return builtin_cast(node, env);
-        } else if (strcmp(func->name, "get_time") == 0) {
-            return builtin_time();
-        } else if (strcmp(func->name, "taste_file") == 0) {
-            return builtin_file_read(node, env);
-        } else if (strcmp(func->name, "plate_file") == 0) {
-            return builtin_file_write(node, env);
-        } else if (strcmp(func->name, "garnish_file") == 0) {
-            return builtin_file_append(node, env);
-        }
-
-        // If no recognized built-in, error
-        fprintf(stderr, "Error: Unknown built-in `%s`\n", func->name);
-        return (LiteralValue){.type = TYPE_ERROR};
-    }
-
-    // Otherwise, user-defined function.
-    // Create local environment, bind parameters, interpret AST body, etc.
-
-    Environment local_env;
-    init_environment(&local_env);
-
-    // Copy parent's functions so calls to other user-defined functions work
-    for (size_t i = 0; i < env->function_count; i++) {
-        // NOTE: If the function is built-in or user-defined,
-        // copy them all anyway.
-        Function func_copy = {.name = strdup(env->functions[i].name),
-                              .parameters = copy_function_parameters(
-                                  env->functions[i].parameters),
-                              .body = copy_ast_node(env->functions[i].body),
-                              .is_builtin = env->functions[i].is_builtin};
-        add_function(&local_env, func_copy);
-    }
-
-    // Now interpret arguments & bind them
-    ASTFunctionParameter *p = func->parameters;
-    ASTNode *arg = node->function_call.arguments;
-    while (p && arg) {
-        InterpretResult arg_res = interpret_node(arg, env);
-        LiteralValue arg_value = arg_res.value;
-        if (arg_value.type == TYPE_ERROR) {
-            free_environment(&local_env);
-            return arg_value;
-        }
-
-        Variable param_var = {.variable_name = strdup(p->parameter_name),
-                              .value = arg_value};
-        add_variable(&local_env, param_var);
-
-        p = p->next;
-        arg = arg->next;
-    }
-
-    // interpret function body
-    LiteralValue result = create_default_value();
-    ASTNode *stmt = func->body;
-    while (stmt) {
-        InterpretResult r = interpret_node(stmt, &local_env);
-        if (r.did_return) {
-            // Short-circuit
-            free_environment(&local_env);
-            return r.value;
-        }
-        // Else keep going
-        stmt = stmt->next;
-    }
-
-    free_environment(&local_env);
-    return result; // if no explicit return => return `0` (or default)
+    // 3) If not found in either, raise an error
+    return raise_error("Undefined function `%s`\n", func_name);
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
     if (!node || node->type != AST_TERNARY) {
-        error_interpreter("Invalid ternary operation node.\n");
+        return raise_error("Invalid ternary operation node.\n");
     }
 
     InterpretResult cond_res = interpret_node(node->ternary.condition, env);
-    if (cond_res.did_return || cond_res.did_break) {
+    if (cond_res.is_error || cond_res.did_return || cond_res.did_break) {
         return cond_res;
     }
 
@@ -1281,7 +1418,7 @@ InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
     } else if (cond_res.value.type == TYPE_INTEGER) {
         is_true = (cond_res.value.data.integer != 0);
     } else {
-        error_interpreter("Ternary condition must be boolean or integer.\n");
+        return raise_error("Ternary condition must be boolean or integer.\n");
     }
 
     if (is_true) {
@@ -1292,4 +1429,110 @@ InterpretResult interpret_ternary(ASTNode *node, Environment *env) {
             interpret_node(node->ternary.false_expr, env);
         return false_res;
     }
+}
+
+InterpretResult interpret_try(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_TRY) {
+        return raise_error("Invalid AST node for try block.");
+    }
+
+    InterpretResult result = make_result(create_default_value(), false, false);
+    bool exception_occurred = false;
+    LiteralValue exception_value = create_default_value();
+
+    // Execute try block
+    ASTNode *stmt = node->try_block.try_block;
+    while (stmt) {
+        InterpretResult res = interpret_node(stmt, env);
+        if (res.is_error) {
+            // An exception has been thrown
+            exception_occurred = true;
+            exception_value = res.value;
+            break;
+        }
+        if (res.did_return) {
+            // Propagate return up
+            return res;
+        }
+        stmt = stmt->next;
+    }
+
+    // If exception occurred, handle rescue blocks
+    if (exception_occurred) {
+        ASTCatchNode *catch = node->try_block.catch_blocks;
+        bool handled = false;
+
+        while (catch && !handled) {
+            Environment catch_env;
+            init_environment(&catch_env);
+
+            // Copy global functions to rescue environment
+            for (size_t i = 0; i < env->function_count; i++) {
+                Function *global_func = &env->functions[i];
+                Function func_copy = {.name = strdup(global_func->name),
+                                      .parameters = copy_function_parameters(
+                                          global_func->parameters),
+                                      .body = copy_ast_node(global_func->body),
+                                      .is_builtin = global_func->is_builtin};
+                add_function(&catch_env, func_copy);
+            }
+
+            // If there's an error variable, bind the exception to it
+            if (catch->error_variable) {
+                Variable error_var = {.variable_name =
+                                          strdup(catch->error_variable),
+                                      .value = exception_value,
+                                      .is_constant = false};
+                add_variable(&catch_env, error_var);
+            }
+
+            // Execute catch block
+            ASTNode *catch_stmt = catch->body;
+            while (catch_stmt) {
+                InterpretResult res = interpret_node(catch_stmt, &catch_env);
+                if (res.is_error) {
+                    // Nested exception, propagate
+                    free_environment(&catch_env);
+                    return res;
+                }
+                if (res.did_return) {
+                    // Propagate return up
+                    free_environment(&catch_env);
+                    return res;
+                }
+                catch_stmt = catch_stmt->next;
+            }
+
+            handled = true; // Currently handling only one catch block
+            free_environment(&catch_env);
+            catch = catch->next;
+        }
+
+        if (!handled) {
+            // No rescue block handled the exception, propagate it
+            result.value = exception_value;
+            result.is_error = true;
+            return result;
+        }
+    }
+
+    // Execute finish block if it exists
+    if (node->try_block.finally_block) {
+        ASTNode *finish_stmt = node->try_block.finally_block;
+        while (finish_stmt) {
+            InterpretResult res = interpret_node(finish_stmt, env);
+            if (res.is_error) {
+                // If an exception occurs in finish, prioritize it
+                return res;
+            }
+            if (res.did_return) {
+                // Propagate return up
+                return res;
+            }
+            finish_stmt = finish_stmt->next;
+        }
+    }
+
+    // Normal execution
+    return result;
 }

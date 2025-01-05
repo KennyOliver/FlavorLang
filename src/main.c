@@ -30,7 +30,7 @@ void print_logo_from_file(const char *filename) {
     fclose(file);
 }
 
-void print_about() {
+void print_about(void) {
     printf("\n");
     print_logo_from_file("../logo/logo.txt");
     printf("\n");
