@@ -5,13 +5,6 @@
 #include <string.h>
 #include <time.h>
 
-// Helper function to handle debug printing for floats
-#define DEBUG_PRINT_FLOAT(format, ...)                                         \
-    do {                                                                       \
-        if (debug_flag)                                                        \
-            printf(format, __VA_ARGS__);                                       \
-    } while (0)
-
 // Function to interpret a mix of argument types
 InterpretResult interpret_arguments(ASTNode *node, Environment *env,
                                     size_t num_args, ArgumentSpec *specs) {
@@ -172,7 +165,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
         return make_result(lv, false, false);
     }
 
-    DEBUG_PRINT_FLOAT("Input received: `%s`\n", result.data.string);
+    debug_print_int("Input received: `%s`\n", result.data.string);
 
     return make_result(result, false, false);
 }
@@ -238,8 +231,8 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE random_number =
         min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
 
-    DEBUG_PRINT_FLOAT("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
-                      min, max, random_number);
+    debug_print_int("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
+                    min, max, random_number);
 
     LiteralValue result;
     result.type = TYPE_FLOAT;
