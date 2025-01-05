@@ -26,7 +26,8 @@ InterpretResult interpret_switch(ASTNode *node, Environment *env);
 InterpretResult interpret_function_declaration(ASTNode *node, Environment *env);
 InterpretResult interpret_function_call(ASTNode *node, Environment *env);
 InterpretResult interpret_unary_op(ASTNode *node, Environment *env);
-LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand);
+InterpretResult evaluate_unary_operator(const char *op,
+                                        InterpretResult operand_res);
 InterpretResult interpret_ternary(ASTNode *node, Environment *env);
 InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,

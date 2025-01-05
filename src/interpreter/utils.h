@@ -30,4 +30,13 @@ Function *get_function(Environment *env, const char *name);
 InterpretResult make_result(LiteralValue val, bool did_return, bool did_break);
 ASTCatchNode *copy_catch_node(ASTCatchNode *catch_node);
 
+// Type Helpers
+bool is_numeric_type(LiteralType type);
+bool is_boolean_type(LiteralType type);
+const char *literal_type_to_string(LiteralType type);
+
+// Casting Helpers
+bool is_valid_int(const char *str, INT_SIZE *out);
+bool is_valid_float(const char *str, FLOAT_SIZE *out);
+
 #endif

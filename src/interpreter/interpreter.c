@@ -243,40 +243,32 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     return make_result(new_value, false, false);
 }
 
-InterpretResult handle_string_concatenation(InterpretResult left_res,
-                                            InterpretResult right_res) {
-    // Check for errors in operands
-    if (left_res.is_error) {
-        return left_res;
-    }
-    if (right_res.is_error) {
-        return right_res;
-    }
+InterpretResult handle_string_concatenation(InterpretResult left,
+                                            InterpretResult right) {
+    LiteralValue lv_result;
+    lv_result.type = TYPE_STRING;
 
-    LiteralValue left = left_res.value;
-    LiteralValue right = right_res.value;
-
-    LiteralValue result;
-    result.type = TYPE_STRING;
+    LiteralValue left_val = left.value;
+    LiteralValue right_val = right.value;
 
     // Convert numbers to strings
     char num_str1[50] = {0};
     char num_str2[50] = {0};
 
-    if (left.type == TYPE_FLOAT) {
+    if (left_val.type == TYPE_FLOAT) {
         snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT_SPECIFIER,
-                 left.data.floating_point);
+                 left_val.data.floating_point);
     }
-    if (right.type == TYPE_FLOAT) {
+    if (right_val.type == TYPE_FLOAT) {
         snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT_SPECIFIER,
-                 right.data.floating_point);
+                 right_val.data.floating_point);
     }
 
     // Allocate memory for the concatenated string
     size_t new_size =
         strlen(num_str1) + strlen(num_str2) +
-        strlen(left.type == TYPE_STRING ? left.data.string : "") +
-        strlen(right.type == TYPE_STRING ? right.data.string : "") + 1;
+        strlen(left_val.type == TYPE_STRING ? left_val.data.string : "") +
+        strlen(right_val.type == TYPE_STRING ? right_val.data.string : "") + 1;
 
     char *new_string = malloc(new_size);
     if (!new_string) {
@@ -284,106 +276,19 @@ InterpretResult handle_string_concatenation(InterpretResult left_res,
             "Memory allocation failed for string concatenation.\n");
     }
 
-    strcpy(new_string, left.type == TYPE_STRING ? left.data.string : num_str1);
+    strcpy(new_string,
+           left_val.type == TYPE_STRING ? left_val.data.string : num_str1);
     strcat(new_string,
-           right.type == TYPE_STRING ? right.data.string : num_str2);
-    result.data.string = new_string;
+           right_val.type == TYPE_STRING ? right_val.data.string : num_str2);
+    lv_result.data.string = new_string;
 
-    return make_result(result, false, false);
+    return make_result(lv_result, false, false);
 }
 
-LiteralValue evaluate_unary_operator(const char *op, LiteralValue operand) {
-    // Debugging output
-    debug_print_int("Unary Operator: `%s`\n", op);
-
-    LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // initialize result
-
-    // Handle logical NOT
-    if (strcmp(op, "!") == 0) {
-        // Ensure operand is boolean
-        if (operand.type != TYPE_BOOLEAN) {
-            fatal_error("Unary operator `%s` requires a boolean operand.\n",
-                        op);
-        }
-
-        result.type = TYPE_BOOLEAN;
-        result.data.boolean = !operand.data.boolean;
-        return result;
-    }
-
-    // Handle unary minus
-    if (strcmp(op, "-") == 0) {
-        if (operand.type == TYPE_INTEGER) {
-            result.type = TYPE_INTEGER;
-            result.data.integer = -operand.data.integer;
-        } else if (operand.type == TYPE_FLOAT) {
-            result.type = TYPE_FLOAT;
-            result.data.floating_point = -operand.data.floating_point;
-        } else {
-            fatal_error("Unary operator `%s` requires a numeric operand.\n",
-                        op);
-        }
-        return result;
-    }
-
-    // Handle unary plus (no effect)
-    if (strcmp(op, "+") == 0) {
-        // Unary plus doesn't change the operand
-        result = operand;
-        return result;
-    }
-
-    // Add more unary operators as needed
-
-    fatal_error("Unknown unary operator `%s`\n", op);
-    return result; // unreachable
-}
-
-InterpretResult interpret_unary_op(ASTNode *node, Environment *env) {
-    if (!node || node->type != AST_UNARY_OP) {
-        return raise_error("Invalid unary operation node.");
-    }
-
-    // Extract the operator and operand
-    const char *op = node->unary_op.operator;
-    ASTNode *operand_node = node->unary_op.operand;
-
-    // Interpret the operand
-    InterpretResult operand_r = interpret_node(operand_node, env);
-    if (operand_r.is_error) {
-        return operand_r;
-    }
-
-    LiteralValue operand = operand_r.value;
-
-    // Evaluate the unary operator
-    LiteralValue result = evaluate_unary_operator(op, operand);
-
-    if (result.type == TYPE_ERROR) {
-        InterpretResult res;
-        res.value = result;
-        res.did_return = false;
-        res.did_break = false;
-        res.is_error = true;
-        return res;
-    }
-
-    return make_result(result, false, false);
-}
-
-// Helper function to check if a type is numeric
-bool is_numeric_type(LiteralType type) {
-    return type == TYPE_INTEGER || type == TYPE_FLOAT;
-}
-
-// Helper function to check if a type is boolean
-bool is_boolean_type(LiteralType type) { return type == TYPE_BOOLEAN; }
-
-InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
-                                  InterpretResult right_res) {
-    debug_print_int("Operator: `%s`\n", op);
-
+// Helper function to handle numeric operations and comparisons
+InterpretResult handle_numeric_operator(const char *op,
+                                        InterpretResult left_res,
+                                        InterpretResult right_res) {
     // Check for errors in operands
     if (left_res.is_error) {
         return left_res;
@@ -395,38 +300,219 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
     LiteralValue left = left_res.value;
     LiteralValue right = right_res.value;
 
+    // Ensure both operands are numeric
+    if (!is_numeric_type(left.type) || !is_numeric_type(right.type)) {
+        return raise_error("Operator `%s` requires numeric operands.\n", op);
+    }
+
+    // Determine if the result should be a float
+    bool result_is_float =
+        (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT);
+
+    // Fetch numeric values with coercion
+    double left_val = (left.type == TYPE_FLOAT) ? left.data.floating_point
+                                                : (double)left.data.integer;
+    double right_val = (right.type == TYPE_FLOAT) ? right.data.floating_point
+                                                  : (double)right.data.integer;
+
     LiteralValue result;
-    memset(&result, 0, sizeof(LiteralValue)); // Initialize result
+    memset(&result, 0, sizeof(LiteralValue));
+
+    // Handle operators
+    if (strcmp(op, "*") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val * right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val * right_val);
+        }
+    } else if (strcmp(op, "-") == 0) {
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = left_val - right_val;
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)(left_val - right_val);
+        }
+    } else if (strcmp(op, "/") == 0) {
+        if (right_val == 0.0) {
+            return raise_error("Division by zero.\n");
+        }
+        result.type = TYPE_FLOAT;
+        result.data.floating_point = left_val / right_val;
+    } else if (strcmp(op, "//") == 0) { // floor Division
+        if (right_val == 0.0) {
+            return raise_error("Floor division by zero.\n");
+        }
+        double div_result = left_val / right_val;
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = floor(div_result);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)floor(div_result);
+        }
+    } else if (strcmp(op, "%") == 0) { // modulo
+        if (right_val == 0.0) {
+            return raise_error("Modulo by zero.\n");
+        }
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = fmod(left_val, right_val);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer =
+                (INT_SIZE)((INT_SIZE)left_val % (INT_SIZE)right_val);
+        }
+    } else if (strcmp(op, "**") == 0) { // exponentiation
+        if (result_is_float) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = pow(left_val, right_val);
+        } else {
+            result.type = TYPE_INTEGER;
+            result.data.integer = (INT_SIZE)pow(left_val, right_val);
+        }
+    } else if (strcmp(op, "<") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val < right_val);
+    } else if (strcmp(op, ">") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val > right_val);
+    } else if (strcmp(op, "<=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val <= right_val);
+    } else if (strcmp(op, ">=") == 0) {
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = (left_val >= right_val);
+    } else {
+        return raise_error("Unknown operator `%s`.\n", op);
+    }
+
+    return make_result(result, false, false);
+}
+
+// Function to evaluate binary operators
+InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
+                                  InterpretResult right_res) {
+    debug_print_int("Operator: `%s`\n", op);
 
     // Handle string concatenation with "+" operator
-    if (strcmp(op, "+") == 0 &&
-        (left.type == TYPE_STRING || right.type == TYPE_STRING)) {
+    if (strcmp(op, "+") == 0 && (left_res.value.type == TYPE_STRING ||
+                                 right_res.value.type == TYPE_STRING)) {
         return handle_string_concatenation(left_res, right_res);
     }
 
     // Handle logical AND and OR
     if (strcmp(op, "&&") == 0 || strcmp(op, "||") == 0) {
         // Ensure both operands are boolean
-        if (!is_boolean_type(left.type) || !is_boolean_type(right.type)) {
+        if (!is_boolean_type(left_res.value.type) ||
+            !is_boolean_type(right_res.value.type)) {
             return raise_error(
                 "Logical operators `&&` and `||` require boolean operands.\n");
         }
 
+        LiteralValue result;
         result.type = TYPE_BOOLEAN;
 
         if (strcmp(op, "&&") == 0) {
-            result.data.boolean = left.data.boolean && right.data.boolean;
+            result.data.boolean =
+                left_res.value.data.boolean && right_res.value.data.boolean;
         } else { // op == "||"
-            result.data.boolean = left.data.boolean || right.data.boolean;
+            result.data.boolean =
+                left_res.value.data.boolean || right_res.value.data.boolean;
         }
 
         return make_result(result, false, false);
     }
 
-    // **New Type Validation for Numeric Operators**
+    // Handle Equality Operators `==` and `!=` Across All Types
+    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0) {
+        bool comparison_result = false;
+
+        // If types are the same, perform direct comparison
+        if (left_res.value.type == right_res.value.type) {
+            switch (left_res.value.type) {
+            case TYPE_INTEGER:
+                comparison_result = (left_res.value.data.integer ==
+                                     right_res.value.data.integer);
+                break;
+            case TYPE_FLOAT:
+                comparison_result = (left_res.value.data.floating_point ==
+                                     right_res.value.data.floating_point);
+                break;
+            case TYPE_BOOLEAN:
+                comparison_result = (left_res.value.data.boolean ==
+                                     right_res.value.data.boolean);
+                break;
+            case TYPE_STRING:
+                if (left_res.value.data.string == NULL ||
+                    right_res.value.data.string == NULL) {
+                    return raise_error("Cannot compare NULL strings.\n");
+                }
+                comparison_result = (strcmp(left_res.value.data.string,
+                                            right_res.value.data.string) == 0);
+                break;
+            default:
+                return raise_error("Equality operators `==` and `!=` are not "
+                                   "supported for this type.\n");
+            }
+        }
+        // Handle cross-type comparisons
+        else {
+            // For simplicity, handle numeric comparisons by coercing to float
+            if (is_numeric_type(left_res.value.type) &&
+                is_numeric_type(right_res.value.type)) {
+                return handle_numeric_operator(op, left_res, right_res);
+            }
+            // Handle boolean and integer comparisons
+            else if ((left_res.value.type == TYPE_BOOLEAN &&
+                      is_numeric_type(right_res.value.type)) ||
+                     (right_res.value.type == TYPE_BOOLEAN &&
+                      is_numeric_type(left_res.value.type))) {
+                // Coerce boolean to integer (false=0, true=1)
+                LiteralValue coerced_left = left_res.value;
+                LiteralValue coerced_right = right_res.value;
+
+                if (left_res.value.type == TYPE_BOOLEAN) {
+                    coerced_left.type = TYPE_INTEGER;
+                    coerced_left.data.integer =
+                        left_res.value.data.boolean ? 1 : 0;
+                }
+                if (right_res.value.type == TYPE_BOOLEAN) {
+                    coerced_right.type = TYPE_INTEGER;
+                    coerced_right.data.integer =
+                        right_res.value.data.boolean ? 1 : 0;
+                }
+
+                return handle_numeric_operator(
+                    op, make_result(coerced_left, false, false),
+                    make_result(coerced_right, false, false));
+            }
+            // Handle string and other type comparisons if necessary
+            else {
+                return raise_error("Cannot compare different types.\n");
+            }
+        }
+
+        // Apply `!=` logic if operator is "!="
+        if (strcmp(op, "!=") == 0) {
+            comparison_result = !comparison_result;
+        }
+
+        // Set the result
+        LiteralValue result;
+        result.type = TYPE_BOOLEAN;
+        result.data.boolean = comparison_result;
+
+        return make_result(result, false, false);
+    }
+
+    // Handle Arithmetic and Comparison Operators
     // List of operators that require numeric operands
-    const char *numeric_operators[] = {"*", "+", "-",  "/",  "//", "%", "**",
-                                       "<", ">", "<=", ">=", "==", "!="};
+    const char *numeric_operators[] = {
+        "*", "-", "/", "//", "%", "**", "<", ">", "<=", ">=",
+    };
     size_t num_numeric_ops =
         sizeof(numeric_operators) / sizeof(numeric_operators[0]);
 
@@ -439,154 +525,105 @@ InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
     }
 
     if (is_numeric_op) {
-        // Ensure both operands are numeric
-        if (!is_numeric_type(left.type) || !is_numeric_type(right.type)) {
-            return raise_error("Operator `%s` requires numeric operands.\n",
-                               op);
-        }
-
-        // Proceed to get numeric values
-        double left_value = 0.0, right_value = 0.0;
-        if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-            left_value = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                                   : (double)left.data.integer;
-            right_value = (right.type == TYPE_FLOAT)
-                              ? right.data.floating_point
-                              : (double)right.data.integer;
-        } else {
-            left_value = (double)left.data.integer;
-            right_value = (double)right.data.integer;
-        }
-
-        // Determine result type based on operands
-        if (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT) {
-            result.type = TYPE_FLOAT;
-        } else {
-            result.type = TYPE_INTEGER;
-        }
-
-        // Handle operators
-        if (strcmp(op, "*") == 0) {
-            if (result.type == TYPE_FLOAT)
-                result.data.floating_point = left_value * right_value;
-            else
-                result.data.integer = (INT_SIZE)(left_value * right_value);
-        } else if (strcmp(op, "+") == 0) {
-            if (result.type == TYPE_FLOAT)
-                result.data.floating_point = left_value + right_value;
-            else
-                result.data.integer = (INT_SIZE)(left_value + right_value);
-        } else if (strcmp(op, "-") == 0) {
-            if (result.type == TYPE_FLOAT)
-                result.data.floating_point = left_value - right_value;
-            else
-                result.data.integer = (INT_SIZE)(left_value - right_value);
-        } else if (strcmp(op, "/") == 0) {
-            if (right_value == 0) {
-                return raise_error("Division by zero\n");
-            }
-            result.type = TYPE_FLOAT;
-            result.data.floating_point = left_value / right_value;
-        } else if (strcmp(op, "//") == 0) {
-            if (right_value == 0) {
-                return raise_error("Floor division by zero\n");
-            }
-            if (result.type == TYPE_FLOAT)
-                result.data.floating_point = floor(left_value / right_value);
-            else
-                result.data.integer = (INT_SIZE)(left_value / right_value);
-        } else if (strcmp(op, "%") == 0) {
-            if (right_value == 0) {
-                return raise_error("Modulo by zero\n");
-            }
-            if (result.type == TYPE_FLOAT) {
-                result.data.floating_point = fmod(left_value, right_value);
-            } else {
-                result.data.integer =
-                    (INT_SIZE)((INT_SIZE)left_value % (INT_SIZE)right_value);
-            }
-        } else if (strcmp(op, "**") == 0) {
-            if (result.type == TYPE_FLOAT)
-                result.data.floating_point = pow(left_value, right_value);
-            else
-                result.data.integer = (INT_SIZE)pow(left_value, right_value);
-        } else if (strcmp(op, "<") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value < right_value) ? 1 : 0;
-        } else if (strcmp(op, ">") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value > right_value) ? 1 : 0;
-        } else if (strcmp(op, "<=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value <= right_value) ? 1 : 0;
-        } else if (strcmp(op, ">=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value >= right_value) ? 1 : 0;
-        } else if (strcmp(op, "==") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value == right_value) ? 1 : 0;
-        } else if (strcmp(op, "!=") == 0) {
-            result.type = TYPE_BOOLEAN;
-            result.data.boolean = (left_value != right_value) ? 1 : 0;
-        } else {
-            return raise_error("Unknown operator");
-        }
-
-        return make_result(result, false, false);
+        return handle_numeric_operator(op, left_res, right_res);
     }
 
     // If operator is not recognized
-    return raise_error("Unknown operator");
-}
-
-int get_operator_precedence(const char *op) {
-    if (strcmp(op, "**") == 0)
-        return 4; // highest precedence
-    if (strcmp(op, "*") == 0 || strcmp(op, "/") == 0 || strcmp(op, "//") == 0 ||
-        strcmp(op, "%") == 0)
-        return 3;
-    if (strcmp(op, "+") == 0 || strcmp(op, "-") == 0)
-        return 2;
-    if (strcmp(op, "<") == 0 || strcmp(op, ">") == 0 || strcmp(op, "<=") == 0 ||
-        strcmp(op, ">=") == 0)
-        return 1;
-    if (strcmp(op, "==") == 0 || strcmp(op, "!=") == 0)
-        return 1;
-
-    // Return `0` for unknown operators
-    return 0;
-}
-
-int is_right_associative(const char *op) {
-    return (strcmp(op, "**") == 0); // exponentiation is right-associative
+    return raise_error("Unknown operator `%s`.\n", op);
 }
 
 InterpretResult interpret_binary_op(ASTNode *node, Environment *env) {
-    if (!node || node->type != AST_BINARY_OP) {
-        return raise_error("Invalid binary operation node.");
+    if (node->type != AST_BINARY_OP) {
+        return raise_error("Invalid node type for binary operation.\n");
     }
 
     // Interpret left operand
-    InterpretResult left_r = interpret_node(node->binary_op.left, env);
-    if (left_r.is_error) {
-        return left_r;
+    InterpretResult left_res = interpret_node(node->binary_op.left, env);
+    if (left_res.is_error) {
+        return left_res;
     }
 
     // Interpret right operand
-    InterpretResult right_r = interpret_node(node->binary_op.right, env);
-    if (right_r.is_error) {
-        return right_r;
+    InterpretResult right_res = interpret_node(node->binary_op.right, env);
+    if (right_res.is_error) {
+        return right_res;
     }
 
-    // Evaluate based on operator
+    // Evaluate the operator
     const char *op = node->binary_op.operator;
-
-    InterpretResult op_res = evaluate_operator(op, left_r, right_r);
+    InterpretResult op_res = evaluate_operator(op, left_res, right_res);
     if (op_res.is_error) {
         return op_res;
     }
 
     return make_result(op_res.value, false, false);
+}
+
+// Implementation of interpret_unary_op
+InterpretResult interpret_unary_op(ASTNode *node, Environment *env) {
+    if (node->type != AST_UNARY_OP) {
+        return raise_error("Invalid node type for unary operation.\n");
+    }
+
+    // Interpret the operand
+    InterpretResult operand_res = interpret_node(node->unary_op.operand, env);
+    if (operand_res.is_error) {
+        return operand_res;
+    }
+
+    // Evaluate the unary operator
+    const char *op = node->unary_op.operator;
+    InterpretResult op_res = evaluate_unary_operator(op, operand_res);
+    if (op_res.is_error) {
+        return op_res;
+    }
+
+    return make_result(op_res.value, false, false);
+}
+
+// Helper function to handle unary operators
+InterpretResult evaluate_unary_operator(const char *op,
+                                        InterpretResult operand_res) {
+    debug_print_int("Unary Operator: `%s`\n", op);
+
+    // Check for errors in operand
+    if (operand_res.is_error) {
+        return operand_res;
+    }
+
+    LiteralValue operand = operand_res.value;
+    LiteralValue result;
+
+    if (strcmp(op, "-") == 0) {
+        // Arithmetic negation
+        if (operand.type == TYPE_INTEGER) {
+            result.type = TYPE_INTEGER;
+            result.data.integer = -operand.data.integer;
+        } else if (operand.type == TYPE_FLOAT) {
+            result.type = TYPE_FLOAT;
+            result.data.floating_point = -operand.data.floating_point;
+        } else {
+            return raise_error(
+                "Unary `-` operator requires numeric operand.\n");
+        }
+    } else if (strcmp(op, "!") == 0) {
+        // Logical NOT
+        if (operand.type == TYPE_BOOLEAN) {
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = !operand.data.boolean;
+        } else if (operand.type == TYPE_INTEGER) {
+            // Treat 0 as false, non-zero as true
+            result.type = TYPE_BOOLEAN;
+            result.data.boolean = (operand.data.integer == 0) ? true : false;
+        } else {
+            return raise_error(
+                "Unary `!` operator requires boolean or integer operand.\n");
+        }
+    } else {
+        return raise_error("Unsupported unary operator `%s`.\n", op);
+    }
+
+    return make_result(result, false, false);
 }
 
 Variable *get_variable(Environment *env, const char *variable_name) {

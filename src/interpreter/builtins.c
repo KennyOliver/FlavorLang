@@ -317,45 +317,6 @@ InterpretResult builtin_error(ASTNode *node, Environment *env) {
     return raise_error("%s", error_message);
 }
 
-bool is_valid_int(const char *str, INT_SIZE *out_value) {
-    char *endptr;
-    errno = 0; // reset errno before conversion
-    long long temp = strtoll(str, &endptr, 10);
-
-    // Check for conversion errors
-    if (errno != 0 || endptr == str || *endptr != '\0') {
-        return false;
-    }
-
-    // Optionally, check for overflow
-    if (temp < LLONG_MIN || temp > LLONG_MAX) {
-        return false;
-    }
-
-    if (out_value) {
-        *out_value = (INT_SIZE)temp;
-    }
-
-    return true;
-}
-
-bool is_valid_float(const char *str, FLOAT_SIZE *out_value) {
-    char *endptr;
-    errno = 0; // reset errno before conversion
-    long double temp = strtold(str, &endptr);
-
-    // Check for conversion errors
-    if (errno != 0 || endptr == str || *endptr != '\0') {
-        return false;
-    }
-
-    if (out_value) {
-        *out_value = (FLOAT_SIZE)temp;
-    }
-
-    return true;
-}
-
 InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     if (node->type != AST_FUNCTION_CALL) {
         return raise_error(

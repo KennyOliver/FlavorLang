@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <errno.h>
 
 InterpretResult raise_error(const char *format, ...) {
     char error_message[1024];
@@ -479,4 +480,53 @@ InterpretResult make_result(LiteralValue val, bool did_return, bool did_break) {
     r.did_break = did_break;
     r.is_error = false;
     return r;
+}
+
+bool is_valid_int(const char *str, INT_SIZE *out) {
+    char *endptr;
+    errno = 0;
+    long long val = strtoll(str, &endptr, 10);
+    if (errno != 0 || *endptr != '\0') {
+        return false;
+    }
+    *out = (INT_SIZE)val;
+    return true;
+}
+
+bool is_valid_float(const char *str, FLOAT_SIZE *out) {
+    char *endptr;
+    errno = 0;
+    long double val = strtold(str, &endptr);
+    if (errno != 0 || *endptr != '\0') {
+        return false;
+    }
+    *out = (FLOAT_SIZE)val;
+    return true;
+}
+
+// Type checking helpers
+bool is_numeric_type(LiteralType type) {
+    return type == TYPE_INTEGER || type == TYPE_FLOAT;
+}
+
+bool is_boolean_type(LiteralType type) { return type == TYPE_BOOLEAN; }
+
+// Convert LiteralType to string for error messages
+const char *literal_type_to_string(LiteralType type) {
+    switch (type) {
+    case TYPE_INTEGER:
+        return "integer";
+    case TYPE_FLOAT:
+        return "float";
+    case TYPE_BOOLEAN:
+        return "boolean";
+    case TYPE_STRING:
+        return "string";
+    case TYPE_FUNCTION:
+        return "function";
+    case TYPE_ERROR:
+        return "error";
+    default:
+        return "unknown";
+    }
 }
