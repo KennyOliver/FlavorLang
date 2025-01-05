@@ -179,20 +179,45 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
 
 // Built-in `random()` function with 0, 1, or 2 arguments
 InterpretResult builtin_random(ASTNode *node, Environment *env) {
-    FLOAT_SIZE min = 0.0L;
-    FLOAT_SIZE max = 1.0L;
+    FLOAT_SIZE min = 0.0L; // default min
+    FLOAT_SIZE max = 1.0L; // default max
 
-    ArgumentSpec specs[2];
-    specs[0].type = ARG_TYPE_FLOAT;
-    specs[0].out_ptr = &min;
-    specs[1].type = ARG_TYPE_FLOAT;
-    specs[1].out_ptr = &max;
+    ASTNode *arg_node = node->function_call.arguments;
 
-    InterpretResult args_res =
-        interpret_arguments(node->function_call.arguments, env, 2, specs);
-    if (args_res.is_error) {
-        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
-        return make_result(lv, false, false);
+    size_t num_args = 0;
+    ASTNode *temp = arg_node;
+    while (temp) {
+        num_args++;
+        temp = temp->next;
+    }
+    if (num_args > 2) {
+        return raise_error(
+            "`random()` takes at most 2 arguments, but %zu provided.\n",
+            num_args);
+    }
+
+    if (num_args == 1) {
+        // One argument provided: set max, min remains 0.0
+        ArgumentSpec specs[1];
+        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].out_ptr = &max;
+
+        InterpretResult args_res = interpret_arguments(arg_node, env, 1, specs);
+        if (args_res.is_error) {
+            return args_res;
+        }
+    } else if (num_args == 2) {
+        // Two arguments provided: set min and max
+        ArgumentSpec specs[2];
+        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].out_ptr = &min;
+        specs[1].type = ARG_TYPE_FLOAT;
+        specs[1].out_ptr = &max;
+
+        InterpretResult args_res = interpret_arguments(arg_node, env, 2, specs);
+        if (args_res.is_error) {
+            return args_res;
+        }
     }
 
     // Seed the random number generator once
@@ -202,13 +227,14 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
         seeded = true;
     }
 
-    // Swap min and max if min > max
+    // Swap min & max if min > max to ensure correct range
     if (min > max) {
-        FLOAT_SIZE temp = min;
+        FLOAT_SIZE temp_val = min;
         min = max;
-        max = temp;
+        max = temp_val;
     }
 
+    // Generate random number
     FLOAT_SIZE random_number =
         min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
 
@@ -247,7 +273,9 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
             printf("%s", lv.data.boolean ? "True" : "False");
             break;
         case TYPE_ERROR:
-            fprintf(stderr, "Error: Invalid literal type in `serve()`.\n");
+            fprintf(
+                stderr,
+                "Error: Invalid literal type in `serve()` (`TYPE_ERROR`).\n");
             break;
         default:
             fprintf(stderr, "Error: Unknown literal type in s`erve()`.\n");
