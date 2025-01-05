@@ -89,7 +89,7 @@ ASTNode *parse_expression_statement(ParserState *state) {
 }
 
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
-    if (type == AST_CONSTANT) {
+    if (type == AST_CONST_DECLARATION) {
         debug_print_par("Starting constant declaration parse\n");
         expect_token(state, TOKEN_KEYWORD, "Expected `const` keyword");
     } else {
@@ -99,7 +99,7 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
 
     // Parse variable/constant name
     Token *name = get_current_token(state);
-    if (type == AST_CONSTANT) {
+    if (type == AST_CONST_DECLARATION) {
         expect_token(state, TOKEN_IDENTIFIER, "Expected constant name");
         expect_token(state, TOKEN_OPERATOR, "Expected `=` after constant name");
     } else {
@@ -118,14 +118,14 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
     if (name && name->lexeme) {
         node->assignment.variable_name = strdup(name->lexeme);
         if (!node->assignment.variable_name) {
-            parser_error(AST_CONSTANT
+            parser_error(AST_CONST_DECLARATION
                              ? "Memory allocation failed for constant name"
                              : "Memory allocation failed for variable name",
                          name);
         }
     } else {
-        parser_error(AST_CONSTANT ? "Invalid constant name token"
-                                  : "Invalid variable name token",
+        parser_error(AST_CONST_DECLARATION ? "Invalid constant name token"
+                                           : "Invalid variable name token",
                      name);
     }
 
@@ -133,8 +133,9 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER,
-                 AST_CONSTANT ? "Expected `;` after constant declaration"
-                              : "Expected `;` after variable declaration");
+                 AST_CONST_DECLARATION
+                     ? "Expected `;` after constant declaration"
+                     : "Expected `;` after variable declaration");
 
     return node;
 }
@@ -144,7 +145,7 @@ ASTNode *parse_variable_declaration(ParserState *state) {
 }
 
 ASTNode *parse_constant_declaration(ParserState *state) {
-    return parse_declaration(state, AST_CONSTANT);
+    return parse_declaration(state, AST_CONST_DECLARATION);
 }
 
 ASTNode *parse_variable_assignment(ParserState *state) {

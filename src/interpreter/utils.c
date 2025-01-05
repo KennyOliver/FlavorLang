@@ -374,8 +374,8 @@ ASTNode *copy_ast_node(ASTNode *node) {
         new_node->switch_case.cases = new_case_head;
         break;
 
-    case AST_VARIABLE:
-    case AST_CONSTANT:
+    case AST_VAR_DECLARATION:
+    case AST_CONST_DECLARATION:
         if (node->variable_name) {
             new_node->variable_name = strdup(node->variable_name);
             if (!new_node->variable_name) {
