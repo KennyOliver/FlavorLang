@@ -167,7 +167,7 @@ ASTNode *parse_unary(ParserState *state) {
     return parse_primary(state);
 }
 
-// Primary Expressions: literals, variables, function calls, parentheses
+// Primary Expressions: literals, variables, function calls, parentheses, arrays
 ASTNode *parse_primary(ParserState *state) {
     // Identify the "base" expression
     ASTNode *node = NULL;

@@ -6,8 +6,12 @@
 #include "parser.h"
 #include "parser_state.h"
 #include "utils.h"
+#include <stdbool.h>
 
 ASTNode *parse_array_literal(ParserState *state);
 ASTNode *parse_index_access(ASTNode *array, ParserState *state);
+
+// Helpers
+bool is_array_operator(Token *token);
 
 #endif

@@ -82,7 +82,9 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
     expect_token(state, TOKEN_SQ_BRACKET_OPEN,
                  "Expected `[` for array indexing or slicing");
 
-    // Check if it's a slice (contains `:`) or a simple index
+    Token *current = get_current_token(state);
+
+    // Check if it's a slice (contains `:`)
     bool is_slice = false;
     size_t temp_token = state->current_token;
 
@@ -127,6 +129,20 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
         // Expect and consume `]`
         expect_token(state, TOKEN_SQ_BRACKET_CLOSE,
                      "Expected `]` to close slice expression");
+    } else if (is_array_operator(current)) {
+        // It's an array operator like `^+`, `+^`, `^-`, `-^`
+        node->type = AST_ARRAY_OPERATION;
+        node->array_operation.operator= strdup(current->lexeme);
+        if (!node->array_operation.operator) {
+            parser_error("Memory allocation failed for array operator",
+                         current);
+        }
+        node->next = NULL;
+        advance_token(state); // consume the operator
+
+        // Expect and consume `]`
+        expect_token(state, TOKEN_SQ_BRACKET_CLOSE,
+                     "Expected `]` after array operator");
     } else {
         // It's a simple index
         node->type = AST_ARRAY_INDEX_ACCESS;
@@ -139,4 +155,15 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
     }
 
     return node;
+}
+
+// Helper function to check if a token is an array operator
+bool is_array_operator(Token *token) {
+    if (token->type != TOKEN_ARRAY_OP) {
+        return false;
+    }
+
+    return strcmp(token->lexeme, "^+") == 0 ||
+           strcmp(token->lexeme, "+^") == 0 ||
+           strcmp(token->lexeme, "^-") == 0 || strcmp(token->lexeme, "-^") == 0;
 }
