@@ -10,7 +10,9 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 
 2. [Data Types](#data-types)
 
-3. [Extended Backus-Naur Form (EBNF)](#ebnf)
+3. [Arrays](#arrays)
+
+4. [Extended Backus-Naur Form (EBNF)](#ebnf)
 
 ---
 
@@ -70,6 +72,32 @@ This `docs/` page details the core design of FlavorLang's syntax, the various da
 - **boolean**:
 
   Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
+
+---
+
+## Arrays
+
+> [!Note]
+>
+> All array operations do not mutate original array to reduce confusion.
+
+| **Operation**            | **Syntax**      | **Explanation**                                                                     |
+| ------------------------ | --------------- | ----------------------------------------------------------------------------------- |
+| **Element Access**       | `array[5]`      | Accesses element at index `5`.                                                      |
+| **Append**               | `array[^+]`     | Appends an element to end.                                                          |
+| **Prepend**              | `array[+^]`     | Prepends an element to beginning.                                                   |
+| **Remove Last Element**  | `array[^-]`     | Removes last element.                                                               |
+| **Remove First Element** | `array[-^]`     | Removes first element.                                                              |
+| **Slicing**              | `array[0:5]`    | Slices from index `0` (incl.) to `5` (excl.).                                       |
+|                          | `array[::-1]`   | Reverses using step of `-1`.                                                        |
+|                          | `array[3:]`     | Slices from index `3` (incl.) to end.                                               |
+|                          | `array[:8]`     | Slices from start to index `8` (excl.).                                             |
+|                          | `array[3:8:2]`  | Slices from index `3` (incl.) to `8` (excl.), skipping every 2nd element.           |
+|                          | `array[8:3:-2]` | Slices from index `8` (incl.) to `3` (excl.), skipping every 2nd element (reverse). |
+|                          | `array[3::-1]`  | Slices from index `3` (incl.) to start (reversed).                                  |
+|                          | `array[:8:-1]`  | Slices from end towards index `8` (excl., reversed).                                |
+|                          | `array[::2]`    | Slices entire array, skipping every 2nd element.                                    |
+|                          | `array[::-3]`   | Reverses entire array, skipping every 3rd element.                                  |
 
 ---
 
