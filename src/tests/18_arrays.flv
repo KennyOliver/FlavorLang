@@ -1,0 +1,66 @@
+# Initialize test array
+let array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+serve("Initial array:", array);
+
+# Element Access
+serve("Accessing 6th element (index 5):", array[5]);
+
+# Append
+array[^+] = 11;
+serve("Array after appending 11:", array);
+
+# Prepend
+array[+^] = 0;
+serve("Array after prepending 0:", array);
+
+# Remove Last Element
+array[^-];
+serve("Array after removing last element:", array);
+
+# Remove First Element
+array[-^];
+serve("Array after removing first element:", array);
+
+# Slicing
+serve("Slice from index 0 to 5:", array[0:5]);
+serve("Reversed array:", array[::-1]);
+serve("Slice from index 3 to end:", array[3:]);
+serve("Slice from start to index 8:", array[:8]);
+serve("Slice from index 3 to 8, skipping every 2nd element:", array[3:8:2]);
+serve("Slice from index 8 to 3, skipping every 2nd element (reverse):", array[8:3:-2]);
+serve("Slice from index 3 to start (reversed):", array[3::-1]);
+serve("Slice from end towards index 8 (exclusive, reversed):", array[:8:-1]);
+serve("Slice entire array, skipping every 2nd element:", array[::2]);
+serve("Reverse array, skipping every 3rd element:", array[::-3]);
+
+# Test completed
+serve("Array operation tests complete!");
+
+# Initialize const (immutable) array
+const const_array = [10, 20, 30, 40, 50];
+serve("Initial const array:", const_array);
+
+# Attempt mutation
+try {
+    const_array[^+] = 60; # Trying to append to const array
+    serve("This should not be shown; const array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const array.");
+}
+
+# Confirm immutability
+serve("Const array remains unchanged:", const_array);
+
+# Try to remove element
+try {
+    const_array[^-]; # Attempting to remove the last element
+    serve("This should not be shown; const array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const array.");
+}
+
+# Final confirmation
+serve("Const array is still:", const_array);
+
+# Test completed
+serve("Immutable array tests complete!");
