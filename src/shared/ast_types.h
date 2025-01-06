@@ -26,7 +26,11 @@ typedef enum {
     AST_CONST_DECLARATION,
     AST_TRY,
     AST_CATCH,
-    AST_FINALLY
+    AST_FINALLY,
+    AST_ARRAY_LITERAL,
+    AST_ARRAY_OPERATION,
+    AST_ARRAY_INDEX_ACCESS,
+    AST_ARRAY_SLICE_ACCESS
 } ASTNodeType;
 
 // Literal Node
@@ -98,8 +102,7 @@ typedef struct {
 // AST Function Parameter
 typedef struct ASTFunctionParameter {
     char *parameter_name; // Parameter name
-    // LiteralNode *type;              // Optional: parameter type (e.g.,
-    // int, string, etc.)
+    // LiteralNode *type;  // Optional: parameter type (e.g., int, string, etc.)
     struct ASTFunctionParameter *next; // Linked list for multiple parameters
 } ASTFunctionParameter;
 
@@ -142,10 +145,38 @@ typedef struct {
     struct ASTNode *finally_block; // Optional finish block
 } ASTTry;
 
+// AST Array Literal Node
+typedef struct {
+    struct ASTNode **elements; // Array of element expressions
+    size_t count;              // Number of elements
+} ASTArrayLiteral;
+
+// AST Index Access Node
+typedef struct {
+    struct ASTNode *array; // The array expression
+    struct ASTNode *index; // The index expression
+} ASTArrayIndexAccess;
+
+// AST Slice Access Node (New)
+typedef struct {
+    struct ASTNode *array; // The array expression
+    struct ASTNode *start; // Start index (can be NULL)
+    struct ASTNode *end;   // End index (can be NULL)
+    struct ASTNode *step;  // Step value (can be NULL)
+} ASTArraySliceAccess;
+
+// AST Array Operation Node
+typedef struct {
+    char *operator; // Array operation operator (e.g., "^+", "+^", "^-", "-^")
+} ASTArrayOperation;
+
 // AST Node Structure
 typedef struct ASTNode {
     ASTNodeType type;
     union {
+        // Variable/Constant Name
+        char *variable_name;
+
         // Assignment
         struct {
             char *variable_name;
@@ -153,23 +184,28 @@ typedef struct ASTNode {
         } assignment;
 
         LiteralNode literal;
+
         ASTUnaryOp unary_op;
         ASTBinaryOp binary_op;
+        ASTTernary ternary;
+
         ASTConditional conditional;
         ASTSwitch switch_case;
         ASTWhileLoop while_loop;
         ASTForLoop for_loop;
-        ASTTernary ternary;
+
+        ASTTry try_block;
+
+        // Function Nodes
         ASTFunctionDeclaration function_declaration;
         ASTFunctionCall function_call;
         ASTFunctionReturn function_return;
 
-        ASTTry try_block; // Try Block
-        // ASTCatchNode *catch_block;     // Rescue Block
-        // struct ASTNode *finally_block; // Finish Block
-
-        // Variable
-        char *variable_name;
+        // Array Nodes
+        ASTArrayLiteral array_literal;          // Array Literal
+        ASTArrayOperation array_operation;      // Array Operation
+        ASTArrayIndexAccess array_index_access; // Array Index Access
+        ASTArraySliceAccess array_slice_access; // Array Slice Access
     };
 
     struct ASTNode *next;
