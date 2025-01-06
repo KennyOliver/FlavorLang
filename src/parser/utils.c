@@ -5,7 +5,6 @@ void free_ast(ASTNode *node) {
         ASTNode *next = node->next;
 
         switch (node->type) {
-
         case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
             free_ast(node->assignment.lhs);
@@ -48,25 +47,24 @@ void free_ast(ASTNode *node) {
             free_ast(node->for_loop.body);
             break;
 
-        case AST_CONST_DECLARATION:
         case AST_VAR_DECLARATION:
+        case AST_CONST_DECLARATION:
             free(node->variable_name);
             break;
 
         case AST_FUNCTION_DECLARATION:
             free(node->function_declaration.name);
-            free_ast(node->function_declaration
-                         .body); // free function body recursively
-
-            // Free the function parameters
-            ASTFunctionParameter *param = node->function_declaration.parameters;
-            while (param) {
-                ASTFunctionParameter *next = param->next;
-                free(param->parameter_name);
-                free(param);
-                param = next;
+            free_ast(node->function_declaration.body);
+            {
+                ASTFunctionParameter *param =
+                    node->function_declaration.parameters;
+                while (param) {
+                    ASTFunctionParameter *next = param->next;
+                    free(param->parameter_name);
+                    free(param);
+                    param = next;
+                }
             }
-
             break;
 
         case AST_FUNCTION_CALL:
@@ -78,87 +76,73 @@ void free_ast(ASTNode *node) {
             free_ast(node->function_return.return_data);
             break;
 
-        case AST_BREAK:
-            // No cleanup needed!
-            break;
-
         case AST_TERNARY:
             free_ast(node->ternary.condition);
             free_ast(node->ternary.true_expr);
             free_ast(node->ternary.false_expr);
             break;
 
-        case AST_SWITCH: {
-            if (node->switch_case.expression) {
-                free_ast(node->switch_case.expression);
-            }
-
-            if (node->switch_case.cases) {
+        case AST_SWITCH:
+            free_ast(node->switch_case.expression);
+            {
                 ASTCaseNode *case_node = node->switch_case.cases;
-
                 while (case_node) {
                     ASTCaseNode *next = case_node->next;
-
-                    // Free the condition ASTNode if it exists
-                    if (case_node->condition) {
-                        free_ast(case_node->condition);
-                    }
-
-                    // Free the body
-                    if (case_node->body) {
-                        free_ast(case_node->body);
-                    }
-
+                    free_ast(case_node->condition);
+                    free_ast(case_node->body);
                     free(case_node);
                     case_node = next;
                 }
             }
-
             break;
-        }
 
         case AST_TRY:
-            // Free try block
-            if (node->try_block.try_block) {
-                free_ast(node->try_block.try_block);
-            }
-
-            // Free all catch blocks
-            if (node->try_block.catch_blocks) {
+            free_ast(node->try_block.try_block);
+            {
                 ASTCatchNode *catch_node = node->try_block.catch_blocks;
-
                 while (catch_node) {
                     ASTCatchNode *next_catch = catch_node->next;
-
-                    // Free the error variable (if allocated)
-                    if (catch_node->error_variable) {
-                        free(catch_node->error_variable);
-                    }
-
-                    // Free the body of the catch block
-                    if (catch_node->body) {
-                        free_ast(catch_node->body);
-                    }
-
+                    free(catch_node->error_variable);
+                    free_ast(catch_node->body);
                     free(catch_node);
-                    catch_node = next_catch;
                 }
             }
+            free_ast(node->try_block.finally_block);
+            break;
 
-            // Free finally block
-            if (node->try_block.finally_block) {
-                free_ast(node->try_block.finally_block);
+        case AST_ARRAY_LITERAL:
+            for (size_t i = 0; i < node->array_literal.count; i++) {
+                free_ast(node->array_literal.elements[i]);
             }
+            free(node->array_literal.elements);
+            break;
+
+        case AST_ARRAY_OPERATION:
+            free(node->array_operation.operator);
+            free_ast(node->array_operation.array);
+            break;
+
+        case AST_ARRAY_INDEX_ACCESS:
+            free_ast(node->array_index_access.array);
+            free_ast(node->array_index_access.index);
+            break;
+
+        case AST_ARRAY_SLICE_ACCESS:
+            free_ast(node->array_slice_access.array);
+            free_ast(node->array_slice_access.start);
+            free_ast(node->array_slice_access.end);
+            free_ast(node->array_slice_access.step);
             break;
 
         // Already handled by `AST_TRY`
         case AST_CATCH:
         case AST_FINALLY:
+        case AST_VARIABLE_REFERENCE:
+            // No dynamic memory to free
             break;
 
         default:
-            fprintf(stderr,
-                    "Error: Unknown `ASTNode` type `%d` in `free_ast`.\n",
+            fprintf(stderr, "Unknown ASTNode type `%d` in free_ast.\n",
                     node->type);
             exit(1);
         }
