@@ -63,6 +63,91 @@ void scan_number(ScannerState *state, Token **tokens, size_t *token_count,
     free(lexeme);
 }
 
+void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
+                size_t *capacity) {
+    char c = state->source[state->pos];
+
+    if (c == '[') {
+        // Add opening bracket token
+        append_token(tokens, token_count, capacity, TOKEN_SQ_BRACKET_OPEN, "[",
+                     state->line);
+        state->pos++; // Move past `[`.
+
+        // Scan inside the brackets
+        while (state->pos < state->length && state->source[state->pos] != ']') {
+            char inner_c = state->source[state->pos];
+
+            // Handle whitespace
+            if (is_whitespace(inner_c)) {
+                if (inner_c == '\n') {
+                    state->line++;
+                }
+                state->pos++;
+                continue;
+            }
+
+            // Handle numbers
+            if (isdigit(inner_c) || inner_c == '-') {
+                scan_number(state, tokens, token_count, capacity);
+                continue;
+            }
+
+            // Handle separators (`,`)
+            if (inner_c == ',') {
+                append_token(tokens, token_count, capacity, TOKEN_DELIMITER,
+                             ",", state->line);
+                state->pos++;
+                continue;
+            }
+
+            // Handle slicing syntax (`:`)
+            if (inner_c == ':') {
+                append_token(tokens, token_count, capacity, TOKEN_COLON, ":",
+                             state->line);
+                state->pos++;
+                continue;
+            }
+
+            // Handle special array operations
+            // (e.g., `[^+], `[^-]`, `[+^]`, `[-^]`)
+            if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
+                // Check for combinations like `[^-]` or `[-^]`
+                if (state->pos + 1 < state->length &&
+                    (state->source[state->pos + 1] == '^' ||
+                     state->source[state->pos + 1] == '-')) {
+                    char *op = strndup(&state->source[state->pos], 2);
+                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
+                                 op, state->line);
+                    free(op);
+                    state->pos += 2; // Move past the two-character operator
+                    continue;
+                } else {
+                    // Handle single-character operator
+                    char op[2] = {inner_c, '\0'};
+                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
+                                 op, state->line);
+                    state->pos++;
+                    continue;
+                }
+            }
+
+            // Unexpected character
+            token_error("Unexpected character in array", state->line);
+        }
+
+        // Check for closing bracket
+        if (state->pos < state->length && state->source[state->pos] == ']') {
+            append_token(tokens, token_count, capacity, TOKEN_SQ_BRACKET_CLOSE,
+                         "]", state->line);
+            state->pos++; // Move past `]`.
+        } else {
+            token_error("Unmatched opening bracket `[`", state->line);
+        }
+    } else if (c == ']') {
+        token_error("Unmatched closing bracket `]`", state->line);
+    }
+}
+
 void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
                  size_t *capacity) {
     size_t start = ++(state->pos); // skip opening quote

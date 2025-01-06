@@ -61,6 +61,25 @@ void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
                  size_t *capacity);
 
 /**
+ * Processes an array literal or access in the source code.
+ *
+ * This function is triggered when encountering an opening or closing square
+ * bracket (`[` or `]`). It determines whether the brackets represent an array
+ * literal, an index access, or slicing operations. It ensures proper matching
+ * of brackets and validates the syntax.
+ *
+ * If mismatched or unexpected brackets are encountered, it triggers an error.
+ *
+ * @param state The current scanning state, which includes the source code,
+ *              the current position, and the line number.
+ * @param tokens A pointer to the token array being built.
+ * @param token_count The current number of tokens.
+ * @param capacity The allocated capacity for the token array.
+ */
+void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
+                size_t *capacity);
+
+/**
  * Processes a boolean literal in the source code.
  *
  * This function handles the extraction of boolean literals (`True` or `False`),
