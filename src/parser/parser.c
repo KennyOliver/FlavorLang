@@ -32,6 +32,7 @@ ASTNode *parse_statement(ParserState *state) {
 
     debug_print_par("Current Token: Type=`%d`, Lexeme=`%s`\n", token->type,
                     token->lexeme);
+
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
     if (match_token(state, "const"))
@@ -61,33 +62,25 @@ ASTNode *parse_statement(ParserState *state) {
         return node;
     }
 
-    // Handle variable assignments
-    if (token->type == TOKEN_IDENTIFIER) {
-        Token *next_token = peek_next_token(state);
-        if (next_token) {
-            debug_print_par("Peek Next Token: Type=`%d`, Lexeme=`%s`\n",
-                            next_token->type, next_token->lexeme);
-            // Check if it's an assignment: either '=' or '['
-            if ((next_token->type == TOKEN_OPERATOR &&
-                 strcmp(next_token->lexeme, "=") == 0) ||
-                (next_token->type == TOKEN_SQ_BRACKET_OPEN)) {
-                return parse_variable_assignment(state);
-            }
-        }
-        return parse_expression_statement(state);
+    // Handle variable assignments using the helper function
+    if (token->type == TOKEN_IDENTIFIER && is_assignment(state)) {
+        return parse_variable_assignment(state);
     }
 
-    // If none of the above, raise an error
-    parser_error("Unexpected token at start of statement", token);
-    return NULL;
+    // Handle expression statements (e.g., array operations without assignment)
+    ASTNode *expr_stmt = parse_expression_statement(state);
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after expression statement");
+    return expr_stmt;
 }
 
 ASTNode *parse_expression_statement(ParserState *state) {
     // Parse the expression (which can handle binary ops, variables, etc.)
-    ASTNode *expr_node = parse_expression(state);
-    expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after expression statement");
-    return expr_node;
+    // ASTNode *expr_node = parse_expression(state);
+    // expect_token(state, TOKEN_DELIMITER,
+    //              "Expected `;` after expression statement");
+    // return expr_node;
+    return parse_expression(state);
 }
 
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
@@ -930,4 +923,65 @@ ASTNode *parse_finally_block(ParserState *state) {
     ASTNode *finally_body = parse_block(state);
     expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to end finish block");
     return finally_body;
+}
+
+/**
+ * Peeks ahead 'n' tokens from the current position.
+ *
+ * @param state The current parser state.
+ * @param n The number of tokens to peek ahead.
+ * @return A pointer to the token 'n' positions ahead, or the last token if out
+ * of bounds.
+ */
+Token *peek_ahead(ParserState *state, size_t n) {
+    size_t target = state->current_token + n;
+    // Assuming tokens are terminated with TOKEN_EOF
+    // Return the last token if target exceeds the array
+    return &state->tokens[target];
+}
+
+/**
+ * Determines if the current statement is an assignment.
+ *
+ * An assignment can be:
+ * - identifier = expression
+ * - identifier [ array_operator ] = expression
+ *
+ * @param state The current parser state.
+ * @return `true` if it's an assignment, `false` otherwise.
+ */
+bool is_assignment(ParserState *state) {
+    // Ensure the current token is an identifier
+    if (state->current->type != TOKEN_IDENTIFIER)
+        return false;
+
+    // Peek the next token
+    Token *next = peek_next_token(state);
+    if (!next)
+        return false;
+
+    // Case 1: identifier '='
+    if (next->type == TOKEN_OPERATOR && strcmp(next->lexeme, "=") == 0)
+        return true;
+
+    // Case 2: identifier '[' array_operator ']' '='
+    if (next->type == TOKEN_SQ_BRACKET_OPEN) {
+        // Peek two tokens ahead (array operator)
+        Token *array_op = peek_ahead(state, 2);
+        if (array_op && is_array_operator(array_op)) {
+            // Peek three tokens ahead (']')
+            Token *after_bracket = peek_ahead(state, 3);
+            if (after_bracket &&
+                after_bracket->type == TOKEN_SQ_BRACKET_CLOSE) {
+                // Peek four tokens ahead ('=')
+                Token *equals = peek_ahead(state, 4);
+                if (equals && equals->type == TOKEN_OPERATOR &&
+                    strcmp(equals->lexeme, "=") == 0)
+                    return true;
+            }
+        }
+    }
+
+    // Not an assignment
+    return false;
 }
