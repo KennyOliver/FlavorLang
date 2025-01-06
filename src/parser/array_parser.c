@@ -111,7 +111,7 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
             node->array_slice_access.start = parse_expression(state);
         }
 
-        // Expect and consume `:`
+        // Expect and consume first `:`
         expect_token(state, TOKEN_COLON, "Expected `:` in slice expression");
 
         // Parse end expression (optional)
@@ -122,8 +122,13 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
 
         // Check for optional step
         if (get_current_token(state)->type == TOKEN_COLON) {
-            advance_token(state); // Consume `:`
-            node->array_slice_access.step = parse_expression(state);
+            advance_token(state); // consume second `:`
+            if (get_current_token(state)->type != TOKEN_SQ_BRACKET_CLOSE) {
+                node->array_slice_access.step = parse_expression(state);
+            } else {
+                // Handle cases like `[::]`
+                node->array_slice_access.step = NULL;
+            }
         }
 
         // Expect and consume `]`
