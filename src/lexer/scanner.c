@@ -71,7 +71,7 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
         // Add opening bracket token
         append_token(tokens, token_count, capacity, TOKEN_SQ_BRACKET_OPEN, "[",
                      state->line);
-        state->pos++; // Move past `[`.
+        state->pos++; // Move past `[`
 
         // Scan inside the brackets
         while (state->pos < state->length && state->source[state->pos] != ']') {
@@ -86,8 +86,33 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
-            // Handle numbers
-            if (isdigit(inner_c) || inner_c == '-') {
+            // **Handle special array operations first**
+            if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
+                // Check if next character is also '^', '+', or '-'
+                if (state->pos + 1 < state->length &&
+                    (state->source[state->pos + 1] == '^' ||
+                     state->source[state->pos + 1] == '+' ||
+                     state->source[state->pos + 1] == '-')) {
+                    // Two-character array operator
+                    char *op = strndup(&state->source[state->pos], 2);
+                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
+                                 op, state->line);
+                    free(op);
+                    state->pos += 2; // Move past the two-character operator
+                    continue;
+                } else {
+                    // Single-character array operator (if valid)
+                    char op[2] = {inner_c, '\0'};
+                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
+                                 op, state->line);
+                    state->pos++;
+                    continue;
+                }
+            }
+
+            // **Handle numbers after array operators**
+            if (isdigit(inner_c) ||
+                (inner_c == '-' && isdigit(state->source[state->pos + 1]))) {
                 scan_number(state, tokens, token_count, capacity);
                 continue;
             }
@@ -108,30 +133,10 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
-            // Handle special array operations
-            // (e.g., `[^+], `[^-]`, `[+^]`, `[-^]`)
-            if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
-                // Check for combinations like `[^-]` or `[-^]`
-                if (state->pos + 1 < state->length &&
-                    (state->source[state->pos + 1] == '^' ||
-                     state->source[state->pos + 1] == '-')) {
-                    char *op = strndup(&state->source[state->pos], 2);
-                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
-                                 op, state->line);
-                    free(op);
-                    state->pos += 2; // Move past the two-character operator
-                    continue;
-                } else {
-                    // Handle single-character operator
-                    char op[2] = {inner_c, '\0'};
-                    append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
-                                 op, state->line);
-                    state->pos++;
-                    continue;
-                }
-            }
-
             // Unexpected character
+            fprintf(stderr,
+                    "Unexpected character `%c` at position %zu (line %d)\n",
+                    inner_c, state->pos, state->line);
             token_error("Unexpected character in array", state->line);
         }
 
