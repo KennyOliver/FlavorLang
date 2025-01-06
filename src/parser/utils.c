@@ -168,7 +168,7 @@ void free_ast(ASTNode *node) {
 }
 
 // Print indentation based on depth
-static void print_indentation(int depth) {
+void print_indentation(int depth) {
     for (int i = 0; i < depth; i++) {
         printf("  ");
     }
@@ -376,6 +376,61 @@ void print_ast(ASTNode *node, int depth) {
 
         case AST_CONST_DECLARATION:
             printf("Constant: `%s`\n", node->variable_name);
+            break;
+
+        case AST_ARRAY_LITERAL:
+            printf("AST_ARRAY_LITERAL: [\n");
+            for (size_t i = 0; i < node->array_literal.count; i++) {
+                print_ast(node->array_literal.elements[i], depth + 1);
+            }
+            for (int i = 0; i < depth; i++)
+                printf("  ");
+            printf("]\n");
+            break;
+        case AST_ARRAY_OPERATION:
+            printf("AST_ARRAY_OPERATION: %s\n", node->array_operation.operator);
+            break;
+        case AST_ARRAY_INDEX_ACCESS:
+            printf("AST_INDEX_ACCESS:\n");
+            print_ast(node->array_index_access.array, depth + 1);
+            print_ast(node->array_index_access.index, depth + 1);
+            break;
+        case AST_ARRAY_SLICE_ACCESS:
+            printf("AST_SLICE_ACCESS:\n");
+            for (int i = 0; i < depth + 1; i++)
+                printf("  ");
+            printf("Array:\n");
+            print_ast(node->array_slice_access.array, depth + 2);
+            for (int i = 0; i < depth + 1; i++)
+                printf("  ");
+            printf("Start:\n");
+            if (node->array_slice_access.start) {
+                print_ast(node->array_slice_access.start, depth + 2);
+            } else {
+                for (int i = 0; i < depth + 2; i++)
+                    printf("  ");
+                printf("NULL\n");
+            }
+            for (int i = 0; i < depth + 1; i++)
+                printf("  ");
+            printf("End:\n");
+            if (node->array_slice_access.end) {
+                print_ast(node->array_slice_access.end, depth + 2);
+            } else {
+                for (int i = 0; i < depth + 2; i++)
+                    printf("  ");
+                printf("NULL\n");
+            }
+            for (int i = 0; i < depth + 1; i++)
+                printf("  ");
+            printf("Step:\n");
+            if (node->array_slice_access.step) {
+                print_ast(node->array_slice_access.step, depth + 2);
+            } else {
+                for (int i = 0; i < depth + 2; i++)
+                    printf("  ");
+                printf("NULL\n");
+            }
             break;
 
         default:

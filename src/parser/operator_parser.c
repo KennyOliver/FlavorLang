@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../shared/ast_types.h"
+#include "array_parser.h"
 #include "parser_state.h"
 
 // Implementation of the main expression parser
@@ -195,9 +196,7 @@ ASTNode *parse_primary(ParserState *state) {
 
         ASTNode *node = create_function_call_node(func_name, args);
         return node;
-    }
-
-    if (current->type == TOKEN_IDENTIFIER) {
+    } else if (current->type == TOKEN_IDENTIFIER) {
         // Check if identifier is followed by '(' indicating a function call
         Token *next = peek_next_token(state);
         if (next && next->type == TOKEN_PAREN_OPEN) {
@@ -225,14 +224,20 @@ ASTNode *parse_primary(ParserState *state) {
             advance_token(state);
             return node;
         }
-    }
-
-    if (current->type == TOKEN_PAREN_OPEN) {
+    } else if (current->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // consume `(`
         ASTNode *node = parse_operator_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
         return node;
+    } else if (current->type == TOKEN_SQ_BRACKET_OPEN) {
+        return parse_array_literal(state);
+    } else {
+        parser_error("Expected expression", current);
     }
+
+    // while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+    //     return parse_index_access(node, state);
+    // }
 
     parser_error("Expected expression", current);
     return NULL; // unreachable

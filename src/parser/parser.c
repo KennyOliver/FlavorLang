@@ -147,33 +147,37 @@ ASTNode *parse_variable_declaration(ParserState *state) {
 ASTNode *parse_constant_declaration(ParserState *state) {
     return parse_declaration(state, AST_CONST_DECLARATION);
 }
-
 ASTNode *parse_variable_assignment(ParserState *state) {
     debug_print_par("Starting variable assignment parse\n");
 
-    // Parse variable name
-    Token *name = get_current_token(state);
-    debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
+    // Parse variable name or array operation/slice
+    Token *name_token = get_current_token(state);
+    if (name_token->type != TOKEN_IDENTIFIER &&
+        name_token->type != TOKEN_FUNCTION_NAME) {
+        parser_error("Expected variable name for assignment", name_token);
+    }
+
+    // Create variable node
+    ASTNode *variable_node = create_variable_node(name_token->lexeme);
     advance_token(state); // consume variable name
+
+    // Check for array indexing or slicing
+    while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+        variable_node = parse_index_access(variable_node, state);
+    }
 
     // Expect `=` operator
     Token *op_token = get_current_token(state);
-    debug_print_par("Expected operator `=`, found: `%s`\n", op_token->lexeme);
-    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+    if (op_token->type != TOKEN_OPERATOR ||
+        strcmp(op_token->lexeme, "=") != 0) {
+        parser_error("Expected `=` operator after variable name or slice",
+                     op_token);
+    }
+    advance_token(state); // consume `=`
 
     // Parse the expression on the right-hand side
     ASTNode *value_node = parse_expression(state);
     debug_print_par("Parsed expression for assignment\n");
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-
-    node->type = AST_ASSIGNMENT;
-    node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.value = value_node;
-    node->next = NULL;
 
     // Expect `;` delimiter
     Token *delimiter = get_current_token(state);
@@ -185,6 +189,28 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     expect_token(state, TOKEN_DELIMITER,
                  "Expected `;` after variable assignment");
     debug_print_par("Consumed `;` after variable assignment\n");
+
+    // Create AST Assignment Node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for assignment node",
+                     get_current_token(state));
+    }
+
+    node->type = AST_ASSIGNMENT;
+
+    // If the variable node is a slice or index access, set accordingly
+    if (variable_node->type == AST_ARRAY_INDEX_ACCESS ||
+        variable_node->type == AST_ARRAY_SLICE_ACCESS) {
+        node->assignment.variable_name = NULL; // not a simple variable
+        node->assignment.value =
+            variable_node; // The index or slice access node
+    } else {
+        node->assignment.variable_name = strdup(variable_node->variable_name);
+        node->assignment.value = value_node;
+    }
+
+    node->next = NULL;
 
     return node;
 }
@@ -225,7 +251,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         }
     }
 
-    // Handle literals and identifiers
+    // Handle literals
     if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
         ASTNode *node = malloc(sizeof(ASTNode));
@@ -244,12 +270,12 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         } else if (current->type == TOKEN_STRING) {
             node->literal.type = LITERAL_STRING;
             node->literal.value.string = strdup(current->lexeme);
-        } else if (current->type == TOKEN_BOOLEAN) { // Handle boolean
+        } else if (current->type == TOKEN_BOOLEAN) {
             node->literal.type = LITERAL_BOOLEAN;
             if (strcmp(current->lexeme, "True") == 0) {
-                node->literal.value.boolean = 1;
+                node->literal.value.boolean = true;
             } else {
-                node->literal.value.boolean = 0;
+                node->literal.value.boolean = false;
             }
         }
 
@@ -258,21 +284,19 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         return node;
     } else if (current->type == TOKEN_FUNCTION_NAME ||
                current->type == TOKEN_IDENTIFIER) {
-        // Check if `(` indicates a call
-        Token *next = peek_next_token(state);
-        if (next && next->type == TOKEN_PAREN_OPEN) {
-            // It's a call
-            ASTNode *node = parse_function_call(state);
-            return node;
-        } else {
-            // It's just a variable (or a function reference used as a variable)
-            ASTNode *node = create_variable_node(current->lexeme);
-            advance_token(state);
-            return node;
+        // Handle variable or function call
+        ASTNode *node = create_variable_node(current->lexeme);
+        advance_token(state);
+
+        // Handle array indexing or slicing
+        while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+            node = parse_index_access(node, state);
         }
+
+        return node;
     } else if (current->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // consume `(`
-        ASTNode *node = parse_operator_expression(state);
+        ASTNode *node = parse_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
         return node;
     }
@@ -566,7 +590,8 @@ ASTNode *parse_case_body(ParserState *state) {
     while (1) {
         Token *current = get_current_token(state);
 
-        // Stop parsing the body if any of `is`, `else`, or `}` get encountered
+        // Stop parsing the body if any of `is`, `else`, or `}` get
+        // encountered
         if ((current->type == TOKEN_KEYWORD &&
              (strcmp(current->lexeme, "is") == 0 ||
               strcmp(current->lexeme, "else") == 0)) ||
