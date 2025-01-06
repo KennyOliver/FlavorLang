@@ -169,16 +169,16 @@ ASTNode *parse_unary(ParserState *state) {
 
 // Primary Expressions: literals, variables, function calls, parentheses
 ASTNode *parse_primary(ParserState *state) {
+    // Identify the "base" expression
+    ASTNode *node = NULL;
     Token *current = get_current_token(state);
 
     if (current->type == TOKEN_INTEGER || current->type == TOKEN_FLOAT ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
-        ASTNode *node = create_literal_node(current);
+        node = create_literal_node(current);
         advance_token(state);
         return node;
-    }
-
-    if (current->type == TOKEN_FUNCTION_NAME) {
+    } else if (current->type == TOKEN_FUNCTION_NAME) {
         // Parse function call
         char *func_name = strdup(current->lexeme);
         if (!func_name) {
@@ -194,8 +194,7 @@ ASTNode *parse_primary(ParserState *state) {
         expect_token(state, TOKEN_PAREN_CLOSE,
                      "Expected ')' after function arguments");
 
-        ASTNode *node = create_function_call_node(func_name, args);
-        return node;
+        node = create_function_call_node(func_name, args);
     } else if (current->type == TOKEN_IDENTIFIER) {
         // Check if identifier is followed by '(' indicating a function call
         Token *next = peek_next_token(state);
@@ -220,27 +219,24 @@ ASTNode *parse_primary(ParserState *state) {
             return node;
         } else {
             // It's a variable
-            ASTNode *node = create_variable_node(current->lexeme);
+            node = create_variable_node(current->lexeme);
             advance_token(state);
-            return node;
         }
     } else if (current->type == TOKEN_PAREN_OPEN) {
-        advance_token(state); // consume `(`
-        ASTNode *node = parse_operator_expression(state);
+        advance_token(
+            state); // consume `(`node = parse_operator_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
-        return node;
     } else if (current->type == TOKEN_SQ_BRACKET_OPEN) {
-        return parse_array_literal(state);
+        node = parse_array_literal(state);
     } else {
         parser_error("Expected expression", current);
     }
 
-    // while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
-    //     return parse_index_access(node, state);
-    // }
+    while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+        node = parse_index_access(node, state);
+    }
 
-    parser_error("Expected expression", current);
-    return NULL; // unreachable
+    return node;
 }
 
 ASTNode *parse_argument_list(ParserState *state) {
