@@ -220,7 +220,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
         } else {
             new_node->assignment.variable_name = NULL;
         }
-        new_node->assignment.value = copy_ast_node(node->assignment.value);
+        new_node->assignment.rhs = copy_ast_node(node->assignment.rhs);
         break;
 
     case AST_FUNCTION_DECLARATION:

@@ -30,7 +30,8 @@ typedef enum {
     AST_ARRAY_LITERAL,
     AST_ARRAY_OPERATION,
     AST_ARRAY_INDEX_ACCESS,
-    AST_ARRAY_SLICE_ACCESS
+    AST_ARRAY_SLICE_ACCESS,
+    AST_VARIABLE_REFERENCE
 } ASTNodeType;
 
 // Literal Node
@@ -180,7 +181,8 @@ typedef struct ASTNode {
         // Assignment
         struct {
             char *variable_name;
-            struct ASTNode *value;
+            struct ASTNode *lhs;
+            struct ASTNode *rhs;
         } assignment;
 
         LiteralNode literal;

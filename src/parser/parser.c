@@ -67,8 +67,10 @@ ASTNode *parse_statement(ParserState *state) {
         if (next_token) {
             debug_print_par("Peek Next Token: Type=`%d`, Lexeme=`%s`\n",
                             next_token->type, next_token->lexeme);
-            if (next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0) {
+            // Check if it's an assignment: either '=' or '['
+            if ((next_token->type == TOKEN_OPERATOR &&
+                 strcmp(next_token->lexeme, "=") == 0) ||
+                (next_token->type == TOKEN_SQ_BRACKET_OPEN)) {
                 return parse_variable_assignment(state);
             }
         }
@@ -129,7 +131,7 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
                      name);
     }
 
-    node->assignment.value = parse_expression(state);
+    node->assignment.rhs = parse_expression(state);
     node->next = NULL;
 
     expect_token(state, TOKEN_DELIMITER,
@@ -147,24 +149,24 @@ ASTNode *parse_variable_declaration(ParserState *state) {
 ASTNode *parse_constant_declaration(ParserState *state) {
     return parse_declaration(state, AST_CONST_DECLARATION);
 }
+
+ASTNode *create_variable_reference_node(char *name) {
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for variable reference node",
+                     NULL);
+    }
+    node->type = AST_VARIABLE_REFERENCE;
+    node->variable_name = strdup(name);
+    node->next = NULL;
+    return node;
+}
+
 ASTNode *parse_variable_assignment(ParserState *state) {
     debug_print_par("Starting variable assignment parse\n");
 
-    // Parse variable name or array operation/slice
-    Token *name_token = get_current_token(state);
-    if (name_token->type != TOKEN_IDENTIFIER &&
-        name_token->type != TOKEN_FUNCTION_NAME) {
-        parser_error("Expected variable name for assignment", name_token);
-    }
-
-    // Create variable node
-    ASTNode *variable_node = create_variable_node(name_token->lexeme);
-    advance_token(state); // consume variable name
-
-    // Check for array indexing or slicing
-    while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
-        variable_node = parse_index_access(variable_node, state);
-    }
+    // Parse the left-hand side (LHS) expression
+    ASTNode *lhs = parse_expression(state);
 
     // Expect `=` operator
     Token *op_token = get_current_token(state);
@@ -175,8 +177,8 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     }
     advance_token(state); // consume `=`
 
-    // Parse the expression on the right-hand side
-    ASTNode *value_node = parse_expression(state);
+    // Parse the expression on the right-hand side (RHS)
+    ASTNode *rhs = parse_expression(state);
     debug_print_par("Parsed expression for assignment\n");
 
     // Expect `;` delimiter
@@ -198,18 +200,8 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     }
 
     node->type = AST_ASSIGNMENT;
-
-    // If the variable node is a slice or index access, set accordingly
-    if (variable_node->type == AST_ARRAY_INDEX_ACCESS ||
-        variable_node->type == AST_ARRAY_SLICE_ACCESS) {
-        node->assignment.variable_name = NULL; // not a simple variable
-        node->assignment.value =
-            variable_node; // The index or slice access node
-    } else {
-        node->assignment.variable_name = strdup(variable_node->variable_name);
-        node->assignment.value = value_node;
-    }
-
+    node->assignment.lhs = lhs;
+    node->assignment.rhs = rhs;
     node->next = NULL;
 
     return node;

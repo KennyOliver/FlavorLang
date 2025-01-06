@@ -177,7 +177,6 @@ ASTNode *parse_primary(ParserState *state) {
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
         node = create_literal_node(current);
         advance_token(state);
-        return node;
     } else if (current->type == TOKEN_FUNCTION_NAME) {
         // Parse function call
         char *func_name = strdup(current->lexeme);
@@ -218,13 +217,13 @@ ASTNode *parse_primary(ParserState *state) {
             ASTNode *node = create_function_call_node(func_name, args);
             return node;
         } else {
-            // It's a variable
-            node = create_variable_node(current->lexeme);
+            // It's a variable reference
+            node = create_variable_reference_node(current->lexeme);
             advance_token(state);
         }
     } else if (current->type == TOKEN_PAREN_OPEN) {
-        advance_token(
-            state); // consume `(`node = parse_operator_expression(state);
+        advance_token(state); // consume `(`
+        node = parse_operator_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
     } else if (current->type == TOKEN_SQ_BRACKET_OPEN) {
         node = parse_array_literal(state);
@@ -232,6 +231,7 @@ ASTNode *parse_primary(ParserState *state) {
         parser_error("Expected expression", current);
     }
 
+    // Handle chained indexing/slicing
     while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
         node = parse_index_access(node, state);
     }

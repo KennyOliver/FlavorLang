@@ -8,7 +8,8 @@ void free_ast(ASTNode *node) {
 
         case AST_ASSIGNMENT:
             free(node->assignment.variable_name);
-            free_ast(node->assignment.value);
+            free_ast(node->assignment.lhs);
+            free_ast(node->assignment.rhs);
             break;
 
         case AST_LITERAL:
@@ -190,7 +191,8 @@ void print_ast(ASTNode *node, int depth) {
             printf("Variable: `%s`\n", node->assignment.variable_name);
             print_indentation(depth + 1);
             printf("Value:\n");
-            print_ast(node->assignment.value, depth + 2);
+            print_ast(node->assignment.lhs, depth + 2);
+            print_ast(node->assignment.rhs, depth + 2);
             break;
 
         case AST_FUNCTION_DECLARATION:

@@ -35,6 +35,8 @@ ASTNode *parse_expression(ParserState *state);
 ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
+ASTNode *create_variable_reference_node(char *name);
+
 // Helper functions
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type);
 bool match_token(ParserState *state, const char *lexeme);

@@ -217,7 +217,7 @@ InterpretResult interpret_constant(ASTNode *node, Environment *env) {
 
     // Extract the constant name and value
     char *const_name = strdup(node->assignment.variable_name);
-    InterpretResult value_res = interpret_node(node->assignment.value, env);
+    InterpretResult value_res = interpret_node(node->assignment.rhs, env);
     LiteralValue const_value = value_res.value;
 
     if (value_res.is_error) {
@@ -247,7 +247,7 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     }
 
     // Evaluate the right-hand side
-    InterpretResult assign_r = interpret_node(node->assignment.value, env);
+    InterpretResult assign_r = interpret_node(node->assignment.rhs, env);
 
     // If the RHS triggered an error or break, propagate it
     if (assign_r.is_error || assign_r.did_break) {
