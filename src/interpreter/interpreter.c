@@ -358,71 +358,8 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         return interpret_array_slice_access(node, env);
     }
 
-    case AST_ARRAY_OPERATION: {
-        const char *operator= lhs_node->array_operation.operator;
-        ASTNode *array_node = lhs_node->array_operation.array;
-
-        // Ensure the array_node is a variable reference
-        if (array_node->type != AST_VARIABLE_REFERENCE) {
-            return raise_error("Array operation requires a variable reference "
-                               "as the array.\n");
-        }
-
-        const char *var_name = array_node->variable_name;
-
-        // Retrieve the variable from the environment
-        Variable *var = get_variable(env, var_name);
-        if (!var) {
-            return raise_error("Undefined variable `%s`.\n", var_name);
-        }
-
-        if (var->value.type != TYPE_ARRAY) {
-            return raise_error("Array operation requires an array variable.\n");
-        }
-
-        // Access ArrayValue by reference
-        ArrayValue *array = &var->value.data.array;
-
-        // Perform the operation based on the operator
-        if (strcmp(operator, "^+") == 0) { // Append
-            if (array->count == array->capacity) {
-                size_t new_capacity = array->capacity * 2;
-                LiteralValue *new_elements = realloc(
-                    array->elements, new_capacity * sizeof(LiteralValue));
-                if (!new_elements) {
-                    return raise_error(
-                        "Memory allocation failed while expanding array.\n");
-                }
-                array->elements = new_elements;
-                array->capacity = new_capacity;
-            }
-            array->elements[array->count++] = rhs_val_res.value;
-        } else if (strcmp(operator, "+^") == 0) { // prepend
-            if (array->count == array->capacity) {
-                size_t new_capacity = array->capacity * 2;
-                LiteralValue *new_elements = realloc(
-                    array->elements, new_capacity * sizeof(LiteralValue));
-                if (!new_elements) {
-                    return raise_error(
-                        "Memory allocation failed while expanding array.\n");
-                }
-                array->elements = new_elements;
-                array->capacity = new_capacity;
-            }
-
-            // Shift elements to the right
-            memmove(&array->elements[1], &array->elements[0],
-                    array->count * sizeof(LiteralValue));
-            array->elements[0] = rhs_val_res.value;
-            array->count++;
-        } else {
-            return raise_error(
-                "Unsupported array operation operator `%s`.\n", operator);
-        }
-
-        // Return the modified array
-        return make_result(var->value, false, false);
-    }
+    case AST_ARRAY_OPERATION:
+        return interpret_array_operation(node, env);
 
     default:
         return raise_error("Invalid LHS in assignment.\n");
@@ -859,6 +796,12 @@ Variable *get_variable(Environment *env, const char *variable_name) {
                         current_env->variables[i]
                             .value.data.function_ptr->name);
                     break;
+                case TYPE_ARRAY:
+                    debug_print_int(
+                        "Variable found: `%s` with array of %zu elements.\n",
+                        variable_name,
+                        current_env->variables[i].value.data.array.count);
+                    break;
                 default:
                     debug_print_int("Variable found: `%s` with unknown type.\n",
                                     variable_name);
@@ -878,6 +821,8 @@ InterpretResult add_variable(Environment *env, Variable var) {
         if (strcmp(env->variables[i].variable_name, var.variable_name) == 0) {
             // If existing variable is a constant, prevent re-assignment
             if (env->variables[i].is_constant) {
+                debug_print_int("Attempted to reassign to constant `%s`\n",
+                                var.variable_name);
                 return raise_error("Error: Cannot reassign to constant `%s`.\n",
                                    var.variable_name);
             }
@@ -889,7 +834,12 @@ InterpretResult add_variable(Environment *env, Variable var) {
             }
 
             env->variables[i].value = var.value;
-            env->variables[i].is_constant = var.is_constant;
+            // Do not modify is_constant when updating existing variable
+            // env->variables[i].is_constant = var.is_constant;
+
+            debug_print_int("Updated variable `%s` with is_constant=%d\n",
+                            var.variable_name, env->variables[i].is_constant);
+
             return make_result(var.value, false, false);
         }
     }
@@ -937,6 +887,9 @@ InterpretResult add_variable(Environment *env, Variable var) {
 
     env->variables[env->variable_count].is_constant = var.is_constant;
     env->variable_count++;
+
+    debug_print_int("Added variable `%s` with is_constant=%d\n",
+                    var.variable_name, var.is_constant);
 
     return make_result(var.value, false, false);
 }
