@@ -496,10 +496,12 @@ InterpretResult handle_numeric_operator(const char *op,
         (left.type == TYPE_FLOAT || right.type == TYPE_FLOAT);
 
     // Fetch numeric values with coercion
-    double left_val = (left.type == TYPE_FLOAT) ? left.data.floating_point
-                                                : (double)left.data.integer;
-    double right_val = (right.type == TYPE_FLOAT) ? right.data.floating_point
-                                                  : (double)right.data.integer;
+    FLOAT_SIZE left_val = (left.type == TYPE_FLOAT)
+                              ? left.data.floating_point
+                              : (FLOAT_SIZE)left.data.integer;
+    FLOAT_SIZE right_val = (right.type == TYPE_FLOAT)
+                               ? right.data.floating_point
+                               : (FLOAT_SIZE)right.data.integer;
 
     LiteralValue result;
     memset(&result, 0, sizeof(LiteralValue));
@@ -539,7 +541,7 @@ InterpretResult handle_numeric_operator(const char *op,
         if (right_val == 0.0) {
             return raise_error("Floor division by zero.\n");
         }
-        double div_result = left_val / right_val;
+        FLOAT_SIZE div_result = left_val / right_val;
         if (result_is_float) {
             result.type = TYPE_FLOAT;
             result.data.floating_point = floor(div_result);
@@ -1126,12 +1128,12 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
         return end_res;
     }
 
-    // Determine start & end as doubles for flexibility
-    double start_val, end_val;
+    // Determine start & end as FLOAT_SIZEs for flexibility
+    FLOAT_SIZE start_val, end_val;
     if (start_res.value.type == TYPE_FLOAT) {
         start_val = start_res.value.data.floating_point;
     } else if (start_res.value.type == TYPE_INTEGER) {
-        start_val = (double)start_res.value.data.integer;
+        start_val = (FLOAT_SIZE)start_res.value.data.integer;
     } else {
         free(loop_var);
         return raise_error("Start expression in `for` loop must be numeric\n");
@@ -1140,14 +1142,14 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     if (end_res.value.type == TYPE_FLOAT) {
         end_val = end_res.value.data.floating_point;
     } else if (end_res.value.type == TYPE_INTEGER) {
-        end_val = (double)end_res.value.data.integer;
+        end_val = (FLOAT_SIZE)end_res.value.data.integer;
     } else {
         free(loop_var);
         return raise_error("End expression in `for` loop must be numeric\n");
     }
 
     // Evaluate step expression if present
-    double step = 1.0; // default
+    FLOAT_SIZE step = 1.0; // default
     if (step_expr) {
         InterpretResult step_res = interpret_node(step_expr, env);
         if (step_res.is_error) {
@@ -1158,7 +1160,7 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
         if (step_res.value.type == TYPE_FLOAT) {
             step = step_res.value.data.floating_point;
         } else if (step_res.value.type == TYPE_INTEGER) {
-            step = (double)step_res.value.data.integer;
+            step = (FLOAT_SIZE)step_res.value.data.integer;
         } else {
             free(loop_var);
             return raise_error(
@@ -1214,11 +1216,11 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
                                loop_var);
         }
 
-        double current_val;
+        FLOAT_SIZE current_val;
         if (var->value.type == TYPE_FLOAT) {
             current_val = var->value.data.floating_point;
         } else if (var->value.type == TYPE_INTEGER) {
-            current_val = (double)var->value.data.integer;
+            current_val = (FLOAT_SIZE)var->value.data.integer;
         } else {
             free(loop_var);
             return raise_error("Loop variable `%s` must be numeric\n",
@@ -1859,11 +1861,11 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
         return raise_error("Array index must be an integer.\n");
     }
 
-    long long index = index_res.value.data.integer;
+    INT_SIZE index = index_res.value.data.integer;
 
     // Handle negative indices (e.g., -1 refers to the last element)
     if (index < 0) {
-        index = (long long)array->count + index;
+        index = (INT_SIZE)array->count + index;
     }
 
     if (index < 0 || (size_t)index >= array->count) {
@@ -1909,11 +1911,11 @@ InterpretResult interpret_array_index_assignment(ASTNode *node,
         return raise_error("Array index must be an integer.\n");
     }
 
-    long long index = index_res.value.data.integer;
+    INT_SIZE index = index_res.value.data.integer;
 
     // Handle negative indices (e.g., -1 refers to the last element)
     if (index < 0) {
-        index = (long long)array->count + index;
+        index = (INT_SIZE)array->count + index;
     }
 
     if (index < 0 || (size_t)index >= array->count) {
@@ -1956,9 +1958,9 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     ArrayValue *array = &array_res.value.data.array;
 
     // Interpret start, end, step
-    double start_val = 0.0;
-    double end_val = (double)array->count; // default to array length
-    double step_val = 1.0;                 // default step
+    FLOAT_SIZE start_val = 0.0;
+    FLOAT_SIZE end_val = (FLOAT_SIZE)array->count; // default to array length
+    FLOAT_SIZE step_val = 1.0;                     // default step
 
     if (start_node) {
         InterpretResult start_res = interpret_node(start_node, env);
@@ -1970,8 +1972,8 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             return raise_error("Slice start must be integer or float.\n");
         }
         start_val = (start_res.value.type == TYPE_INTEGER)
-                        ? (double)start_res.value.data.integer
-                        : (double)start_res.value.data.floating_point;
+                        ? (FLOAT_SIZE)start_res.value.data.integer
+                        : (FLOAT_SIZE)start_res.value.data.floating_point;
     }
 
     if (end_node) {
@@ -1984,8 +1986,8 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             return raise_error("Slice end must be integer or float.\n");
         }
         end_val = (end_res.value.type == TYPE_INTEGER)
-                      ? (double)end_res.value.data.integer
-                      : (double)end_res.value.data.floating_point;
+                      ? (FLOAT_SIZE)end_res.value.data.integer
+                      : (FLOAT_SIZE)end_res.value.data.floating_point;
     }
 
     if (step_node) {
@@ -1998,14 +2000,14 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             return raise_error("Slice step must be integer or float.\n");
         }
         step_val = (step_res.value.type == TYPE_INTEGER)
-                       ? (double)step_res.value.data.integer
-                       : (double)step_res.value.data.floating_point;
+                       ? (FLOAT_SIZE)step_res.value.data.integer
+                       : (FLOAT_SIZE)step_res.value.data.floating_point;
     }
 
     // Convert to integer indices
-    long long start_index = (long long)floor(start_val);
-    long long end_index = (long long)ceil(end_val);
-    long long step = (long long)step_val;
+    INT_SIZE start_index = (INT_SIZE)floor(start_val);
+    INT_SIZE end_index = (INT_SIZE)ceil(end_val);
+    INT_SIZE step = (INT_SIZE)step_val;
 
     if (step == 0) {
         return raise_error("Slice step cannot be zero.\n");
@@ -2013,10 +2015,10 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
 
     // Handle negative indices
     if (start_index < 0) {
-        start_index += (long long)array->count;
+        start_index += (INT_SIZE)array->count;
     }
     if (end_index < 0) {
-        end_index += (long long)array->count;
+        end_index += (INT_SIZE)array->count;
     }
 
     // Clamp indices
@@ -2057,7 +2059,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     }
 
     // Populate the slice
-    for (long long i = start_index;
+    for (INT_SIZE i = start_index;
          (step > 0 && i < end_index) || (step < 0 && i > end_index);
          i += step) {
         if ((size_t)i >= array->count) {
