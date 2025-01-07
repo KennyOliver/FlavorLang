@@ -1762,23 +1762,33 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
     ASTNode *array_node = node->array_operation.array;
     ASTNode *operand_node = node->array_operation.operand;
 
-    // Interpret the array
-    InterpretResult array_res = interpret_node(array_node, env);
-    if (array_res.is_error) {
-        return array_res; // Propagate error
+    if (array_node->type != AST_VARIABLE_REFERENCE) {
+        return raise_error(
+            "Array operation requires a variable reference as the array.\n");
     }
 
-    if (array_res.value.type != TYPE_ARRAY) {
-        return raise_error("Array operation requires an array operand.\n");
+    const char *var_name = array_node->variable_name;
+
+    // Retrieve variable from environment
+    Variable *var = get_variable(env, var_name);
+    if (!var) {
+        return raise_error("Undefined variable `%s`.\n", var_name);
+    }
+
+    if (var->value.type != TYPE_ARRAY) {
+        return raise_error("Array operation requires an array variable.\n");
     }
 
     // Access the ArrayValue by reference
-    ArrayValue *array = &array_res.value.data.array;
+    ArrayValue *array = &var->value.data.array;
 
-    // Interpret the operand (element to append/prepend)
-    InterpretResult operand_res = interpret_node(operand_node, env);
-    if (operand_res.is_error) {
-        return operand_res;
+    // For append & prepend, interpret the operand
+    InterpretResult operand_res;
+    if (strcmp(operator, "^+") == 0 || strcmp(operator, "+^") == 0) {
+        operand_res = interpret_node(operand_node, env);
+        if (operand_res.is_error) {
+            return operand_res;
+        }
     }
 
     // Perform operation based on operator
@@ -1795,6 +1805,8 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
             array->capacity = new_capacity;
         }
         array->elements[array->count++] = operand_res.value;
+        // Return the modified array
+        return make_result(var->value, false, false);
     } else if (strcmp(operator, "+^") == 0) { // Prepend
         if (array->count == array->capacity) {
             size_t new_capacity = array->capacity * 2;
@@ -1813,13 +1825,31 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
                 array->count * sizeof(LiteralValue));
         array->elements[0] = operand_res.value;
         array->count++;
+        // Optionally, return the modified array
+        return make_result(var->value, false, false);
+    } else if (strcmp(operator, "^-") == 0) { // Remove Last Element
+        if (array->count == 0) {
+            return raise_error("Cannot remove from an empty array.\n");
+        }
+        LiteralValue removed = array->elements[array->count - 1];
+        array->count--;
+        // Return the removed element
+        return make_result(removed, false, false);
+    } else if (strcmp(operator, "-^") == 0) { // Remove First Element
+        if (array->count == 0) {
+            return raise_error("Cannot remove from an empty array.\n");
+        }
+        LiteralValue removed = array->elements[0];
+        // Shift elements to the left
+        memmove(&array->elements[0], &array->elements[1],
+                (array->count - 1) * sizeof(LiteralValue));
+        array->count--;
+        // Return the removed element
+        return make_result(removed, false, false);
     } else {
         return raise_error(
             "Unsupported array operation operator `%s`.\n", operator);
     }
-
-    // Return the modified array
-    return make_result(array_res.value, false, false);
 }
 
 /**
