@@ -355,10 +355,70 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         return interpret_array_slice_access(node, env);
     }
 
+    // Handle array operations (e.g., append, prepend)
+    case AST_ARRAY_OPERATION: {
+        const char *operator= lhs_node->array_operation.operator;
+        ASTNode *array_node = lhs_node->array_operation.array;
+
+        // Interpret the array expression to get the ArrayValue
+        InterpretResult array_res = interpret_node(array_node, env);
+        if (array_res.is_error) {
+            return array_res; // propagate error
+        }
+
+        if (array_res.value.type != TYPE_ARRAY) {
+            return raise_error("Array operation requires an array operand.\n");
+        }
+
+        // Access ArrayValue by reference
+        ArrayValue *array = &array_res.value.data.array;
+
+        // Perform operation based on the operator
+        if (strcmp(operator, "^+") == 0) { // append
+            if (array->count == array->capacity) {
+                size_t new_capacity = array->capacity * 2;
+                LiteralValue *new_elements = realloc(
+                    array->elements, new_capacity * sizeof(LiteralValue));
+                if (!new_elements) {
+                    return raise_error(
+                        "Memory allocation failed while expanding array.\n");
+                }
+                array->elements = new_elements;
+                array->capacity = new_capacity;
+            }
+            array->elements[array->count++] = rhs_val_res.value;
+        } else if (strcmp(operator, "+^") == 0) { // prepend
+            if (array->count == array->capacity) {
+                size_t new_capacity = array->capacity * 2;
+                LiteralValue *new_elements = realloc(
+                    array->elements, new_capacity * sizeof(LiteralValue));
+                if (!new_elements) {
+                    return raise_error(
+                        "Memory allocation failed while expanding array.\n");
+                }
+                array->elements = new_elements;
+                array->capacity = new_capacity;
+            }
+
+            // Shift elements to the right
+            memmove(&array->elements[1], &array->elements[0],
+                    array->count * sizeof(LiteralValue));
+            array->elements[0] = rhs_val_res.value;
+            array->count++;
+        } else {
+            return raise_error(
+                "Unsupported array operation operator `%s`.\n", operator);
+        }
+
+        // Return modified array
+        return make_result(array_res.value, false, false);
+    }
+
     default:
         return raise_error("Invalid LHS in assignment.\n");
     }
 }
+
 InterpretResult handle_string_concatenation(InterpretResult left,
                                             InterpretResult right) {
     LiteralValue lv_result;
