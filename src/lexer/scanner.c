@@ -86,9 +86,6 @@ void scan_number(ScannerState *state, Token **tokens, size_t *token_count,
         }
     }
 
-    // **Debug: Print the captured lexeme**
-    printf("[DEBUG SCAN_NUMBER] Captured lexeme: `%s`\n", lexeme);
-
     // Determine the token type based on the presence of a decimal point
     TokenType type = has_decimal_point ? TOKEN_FLOAT : TOKEN_INTEGER;
 
