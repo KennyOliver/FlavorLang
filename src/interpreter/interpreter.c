@@ -313,10 +313,9 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     case AST_VARIABLE_REFERENCE: {
         const char *var_name = lhs_node->variable_name;
 
-        // Find the variable in the environment
         Variable *var = get_variable(env, var_name);
         if (!var) {
-            // Variable not found; optionally, handle declaration here
+            // Variable not found; optionally handle declaration here
             Variable new_var;
             new_var.variable_name = strdup(var_name);
             if (!new_var.variable_name) {
@@ -340,13 +339,17 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
             return raise_error("Cannot reassign to constant `%s`.\n", var_name);
         }
 
+        // If assigning to a string, free the old string to prevent memory leaks
+        if (var->value.type == TYPE_STRING && var->value.data.string) {
+            free(var->value.data.string);
+        }
+
         var->value = rhs_val_res.value;
 
         return rhs_val_res;
     }
 
     case AST_ARRAY_INDEX_ACCESS: {
-        // Assign to an array element
         return interpret_array_index_assignment(lhs_node, env,
                                                 rhs_val_res.value);
     }
@@ -355,26 +358,33 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         return interpret_array_slice_access(node, env);
     }
 
-    // Handle array operations (e.g., append, prepend)
     case AST_ARRAY_OPERATION: {
         const char *operator= lhs_node->array_operation.operator;
         ASTNode *array_node = lhs_node->array_operation.array;
 
-        // Interpret the array expression to get the ArrayValue
-        InterpretResult array_res = interpret_node(array_node, env);
-        if (array_res.is_error) {
-            return array_res; // propagate error
+        // Ensure the array_node is a variable reference
+        if (array_node->type != AST_VARIABLE_REFERENCE) {
+            return raise_error("Array operation requires a variable reference "
+                               "as the array.\n");
         }
 
-        if (array_res.value.type != TYPE_ARRAY) {
-            return raise_error("Array operation requires an array operand.\n");
+        const char *var_name = array_node->variable_name;
+
+        // Retrieve the variable from the environment
+        Variable *var = get_variable(env, var_name);
+        if (!var) {
+            return raise_error("Undefined variable `%s`.\n", var_name);
+        }
+
+        if (var->value.type != TYPE_ARRAY) {
+            return raise_error("Array operation requires an array variable.\n");
         }
 
         // Access ArrayValue by reference
-        ArrayValue *array = &array_res.value.data.array;
+        ArrayValue *array = &var->value.data.array;
 
-        // Perform operation based on the operator
-        if (strcmp(operator, "^+") == 0) { // append
+        // Perform the operation based on the operator
+        if (strcmp(operator, "^+") == 0) { // Append
             if (array->count == array->capacity) {
                 size_t new_capacity = array->capacity * 2;
                 LiteralValue *new_elements = realloc(
@@ -410,8 +420,8 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
                 "Unsupported array operation operator `%s`.\n", operator);
         }
 
-        // Return modified array
-        return make_result(array_res.value, false, false);
+        // Return the modified array
+        return make_result(var->value, false, false);
     }
 
     default:
@@ -1714,7 +1724,7 @@ InterpretResult interpret_array_literal(ASTNode *node, Environment *env) {
             // Free previously allocated elements if necessary
             // For simplicity, assume no deep copies needed here
             free(array.elements);
-            return elem_res; // Propagate the error
+            return elem_res; // propagate the error
         }
 
         // Add the element to the array
@@ -1736,7 +1746,7 @@ InterpretResult interpret_array_literal(ASTNode *node, Environment *env) {
 
     LiteralValue result;
     result.type = TYPE_ARRAY;
-    result.data.array = array; // **By value**
+    result.data.array = array; // by value
 
     return make_result(result, false, false);
 }
@@ -1769,7 +1779,7 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
         return operand_res;
     }
 
-    // Perform the operation based on the operator
+    // Perform operation based on operator
     if (strcmp(operator, "^+") == 0) { // Append
         if (array->count == array->capacity) {
             size_t new_capacity = array->capacity * 2;
