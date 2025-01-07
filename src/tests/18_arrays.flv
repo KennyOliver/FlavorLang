@@ -64,3 +64,30 @@ serve("Const array is still:", const_array);
 
 # Test completed
 serve("Immutable array tests complete!");
+
+
+# EXPECTED OUTPUT
+#
+# Initial array: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# Accessing 6th element (index 5): 6
+# Array after appending 11: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+# Array after prepending 0: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
+# Array after removing last element: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# Array after removing first element: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+# Slice from index 0 to 5: [1, 2, 3, 4, 5]
+# Reversed array: [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+# Slice from index 3 to end: [4, 5, 6, 7, 8, 9, 10]
+# Slice from start to index 8: [1, 2, 3, 4, 5, 6, 7, 8]
+# Slice from index 3 to 8, skipping every 2nd element: [4, 6, 8]
+# Slice from index 8 to 3, skipping every 2nd element (reverse): [9, 7, 5]
+# Slice from index 3 to start (reversed): [4, 3, 2, 1]
+# Slice from end towards index 8 (exclusive, reversed): [10, 9]
+# Slice entire array, skipping every 2nd element: [1, 3, 5, 7, 9]
+# Reverse array, skipping every 3rd element: [10, 7, 4, 1]
+# Array operation tests complete!
+# Initial const array: [10, 20, 30, 40, 50]
+# Caught error: Cannot mutate a const array.
+# Const array remains unchanged: [10, 20, 30, 40, 50]
+# Caught error: Cannot mutate a const array.
+# Const array is still: [10, 20, 30, 40, 50]
+# Immutable array tests complete!
