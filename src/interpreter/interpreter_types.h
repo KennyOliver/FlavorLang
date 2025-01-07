@@ -5,8 +5,6 @@
 struct ASTFunctionParameter;
 struct ASTNode;
 struct Function;
-
-// Forward declaration and type alias for Environment
 typedef struct Environment Environment;
 
 typedef enum {
@@ -14,11 +12,18 @@ typedef enum {
     TYPE_FLOAT,
     TYPE_INTEGER,
     TYPE_STRING,
+    TYPE_ARRAY,
     TYPE_FUNCTION,
     TYPE_ERROR
 } LiteralType;
 
 typedef enum { RETURN_NORMAL, RETURN_ERROR } ReturnType;
+
+typedef struct {
+    LiteralNode *elements; // Dynamic array of `LiteralValue`s
+    size_t count;          // Number of elements
+    size_t capacity;       // Allocated capacity;
+} ArrayValue;
 
 typedef struct {
     LiteralType type;
@@ -28,6 +33,7 @@ typedef struct {
         INT_SIZE integer;
         bool boolean;
         struct Function *function_ptr;
+        ArrayValue array;
     } data;
 } LiteralValue;
 
