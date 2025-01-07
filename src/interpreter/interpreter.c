@@ -1779,6 +1779,11 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
         return raise_error("Array operation requires an array variable.\n");
     }
 
+    // Check for `const`-ness
+    if (var->is_constant) {
+        return raise_error("Cannot mutate a constant array `%s`.\n", var_name);
+    }
+
     // Access the ArrayValue by reference
     ArrayValue *array = &var->value.data.array;
 
@@ -1825,7 +1830,7 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
                 array->count * sizeof(LiteralValue));
         array->elements[0] = operand_res.value;
         array->count++;
-        // Optionally, return the modified array
+        // Return the modified array
         return make_result(var->value, false, false);
     } else if (strcmp(operator, "^-") == 0) { // Remove Last Element
         if (array->count == 0) {
@@ -1927,8 +1932,23 @@ InterpretResult interpret_array_index_assignment(ASTNode *node,
         return raise_error("Index access requires an array operand.\n");
     }
 
+    // Retrieve the variable to check for `const`-ness
+    if (array_node->type != AST_VARIABLE_REFERENCE) {
+        return raise_error("Index assignment requires a variable reference.\n");
+    }
+    const char *var_name = array_node->variable_name;
+    Variable *var = get_variable(env, var_name);
+    if (!var) {
+        return raise_error("Undefined variable `%s`.\n", var_name);
+    }
+
+    if (var->is_constant) {
+        debug_print_int("Attempted to assign to const array `%s`\n", var_name);
+        return raise_error("Cannot mutate a constant array `%s`.\n", var_name);
+    }
+
     // Access the ArrayValue by reference
-    ArrayValue *array = &array_res.value.data.array;
+    ArrayValue *array = &var->value.data.array;
 
     // Interpret the index
     InterpretResult index_res = interpret_node(index_node, env);
@@ -1955,6 +1975,18 @@ InterpretResult interpret_array_index_assignment(ASTNode *node,
     // Assign the new value to the array element
     array->elements[index] = new_value;
     return make_result(new_value, false, false);
+}
+
+// Helper function to get the index of a variable in the environment
+int get_variable_index(Environment *env, const char *variable_name) {
+    for (size_t i = 0; i < env->variable_count; i++) {
+        if (strcmp(env->variables[i].variable_name, variable_name) == 0) {
+            return (int)i;
+        }
+    }
+
+    // Not found
+    return -1;
 }
 
 /**
@@ -1986,40 +2018,13 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
 
     // Access the ArrayValue by reference
     ArrayValue *array = &array_res.value.data.array;
+    size_t array_count = array->count;
 
-    // Interpret start, end, step
-    FLOAT_SIZE start_val = 0.0;
-    FLOAT_SIZE end_val = (FLOAT_SIZE)array->count; // default to array length
-    FLOAT_SIZE step_val = 1.0;                     // default step
+    debug_print_int("Array `%s` has %zu elements.\n", array_node->variable_name,
+                    array_count);
 
-    if (start_node) {
-        InterpretResult start_res = interpret_node(start_node, env);
-        if (start_res.is_error) {
-            return start_res;
-        }
-        if (start_res.value.type != TYPE_INTEGER &&
-            start_res.value.type != TYPE_FLOAT) {
-            return raise_error("Slice start must be integer or float.\n");
-        }
-        start_val = (start_res.value.type == TYPE_INTEGER)
-                        ? (FLOAT_SIZE)start_res.value.data.integer
-                        : (FLOAT_SIZE)start_res.value.data.floating_point;
-    }
-
-    if (end_node) {
-        InterpretResult end_res = interpret_node(end_node, env);
-        if (end_res.is_error) {
-            return end_res;
-        }
-        if (end_res.value.type != TYPE_INTEGER &&
-            end_res.value.type != TYPE_FLOAT) {
-            return raise_error("Slice end must be integer or float.\n");
-        }
-        end_val = (end_res.value.type == TYPE_INTEGER)
-                      ? (FLOAT_SIZE)end_res.value.data.integer
-                      : (FLOAT_SIZE)end_res.value.data.floating_point;
-    }
-
+    // Interpret the step first to determine default start and end
+    FLOAT_SIZE step_val = 1.0; // default step
     if (step_node) {
         InterpretResult step_res = interpret_node(step_node, env);
         if (step_res.is_error) {
@@ -2031,36 +2036,106 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         }
         step_val = (step_res.value.type == TYPE_INTEGER)
                        ? (FLOAT_SIZE)step_res.value.data.integer
-                       : (FLOAT_SIZE)step_res.value.data.floating_point;
+                       : step_res.value.data.floating_point;
     }
+
+    if (step_val == 0.0) {
+        return raise_error("Slice step cannot be zero.\n");
+    }
+
+    debug_print_int(
+        "Slice parameters: start_node=%p, end_node=%p, step_val=%Lf\n",
+        start_node, end_node, step_val);
+
+    // Set default start and end based on step direction
+    FLOAT_SIZE start_val;
+    FLOAT_SIZE end_val;
+    if (step_val > 0) {
+        start_val = 0.0;                   // Default start for positive step
+        end_val = (FLOAT_SIZE)array_count; // Default end for positive step
+    } else {                               // step_val < 0
+        start_val =
+            (FLOAT_SIZE)(array_count - 1); // Default start for negative step
+        end_val = -1.0;                    // Default end for negative step
+    }
+
+    // Interpret start if provided
+    if (start_node) {
+        InterpretResult start_res = interpret_node(start_node, env);
+        if (start_res.is_error) {
+            return start_res;
+        }
+        if (start_res.value.type != TYPE_INTEGER &&
+            start_res.value.type != TYPE_FLOAT) {
+            return raise_error("Slice start must be integer or float.\n");
+        }
+        start_val = (start_res.value.type == TYPE_INTEGER)
+                        ? (FLOAT_SIZE)start_res.value.data.integer
+                    : (step_val > 0)
+                        ? floor(start_res.value.data.floating_point)
+                        : ceil(start_res.value.data.floating_point);
+    }
+
+    // Interpret end if provided
+    if (end_node) {
+        InterpretResult end_res = interpret_node(end_node, env);
+        if (end_res.is_error) {
+            return end_res;
+        }
+        if (end_res.value.type != TYPE_INTEGER &&
+            end_res.value.type != TYPE_FLOAT) {
+            return raise_error("Slice end must be integer or float.\n");
+        }
+        end_val = (end_res.value.type == TYPE_INTEGER)
+                      ? (FLOAT_SIZE)end_res.value.data.integer
+                  : (step_val > 0) ? ceil(end_res.value.data.floating_point)
+                                   : floor(end_res.value.data.floating_point);
+    }
+
+    debug_print_int("Interpreted slice values: start_val=%Lf, end_val=%Lf\n",
+                    start_val, end_val);
 
     // Convert to integer indices
     INT_SIZE start_index = (INT_SIZE)floor(start_val);
     INT_SIZE end_index = (INT_SIZE)ceil(end_val);
     INT_SIZE step = (INT_SIZE)step_val;
 
-    if (step == 0) {
-        return raise_error("Slice step cannot be zero.\n");
+    // Handle negative indices based on step direction
+    if (step > 0) {
+        if (start_index < 0)
+            start_index += (INT_SIZE)array_count;
+        if (end_index < 0)
+            end_index += (INT_SIZE)array_count;
+    } else { // step < 0
+        if (start_index < 0)
+            start_index += (INT_SIZE)array_count;
+        // Do NOT adjust end_index for negative steps
     }
 
-    // Handle negative indices
-    if (start_index < 0) {
-        start_index += (INT_SIZE)array->count;
-    }
-    if (end_index < 0) {
-        end_index += (INT_SIZE)array->count;
-    }
+    debug_print_int(
+        "Converted indices: start_index=%lld, end_index=%lld, step=%lld\n",
+        start_index, end_index, step);
 
-    // Clamp indices
-    if (start_index < 0)
-        start_index = 0;
-    if ((size_t)start_index > array->count)
-        start_index = array->count;
-
-    if (end_index < 0)
-        end_index = 0;
-    if ((size_t)end_index > array->count)
-        end_index = array->count;
+    // Clamp indices based on step direction
+    if (step > 0) {
+        if (start_index < 0)
+            start_index = 0;
+        if ((size_t)start_index > array_count)
+            start_index = array_count;
+        if (end_index < 0)
+            end_index = 0;
+        if ((size_t)end_index > array_count)
+            end_index = array_count;
+    } else { // step < 0
+        if (start_index >= (INT_SIZE)array_count)
+            start_index = (INT_SIZE)array_count - 1;
+        if (start_index < 0)
+            start_index = (INT_SIZE)array_count - 1;
+        if (end_index < -1)
+            end_index = -1;
+        if (end_index >= (INT_SIZE)array_count)
+            end_index = -1;
+    }
 
     // Determine the number of elements in the slice
     size_t slice_count = 0;
@@ -2079,6 +2154,8 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         }
     }
 
+    debug_print_int("Calculated slice_count=%zu\n", slice_count);
+
     // Initialize the slice array
     ArrayValue slice;
     slice.count = 0;
@@ -2092,28 +2169,30 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     for (INT_SIZE i = start_index;
          (step > 0 && i < end_index) || (step < 0 && i > end_index);
          i += step) {
-        if ((size_t)i >= array->count) {
-            break; // Prevent out-of-bounds
-        }
-        if (slice.count == slice.capacity) {
-            size_t new_capacity = slice.capacity * 2;
-            LiteralValue *new_elements =
-                realloc(slice.elements, new_capacity * sizeof(LiteralValue));
-            if (!new_elements) {
-                free(slice.elements);
-                return raise_error(
-                    "Memory allocation failed while expanding slice array.\n");
-            }
-            slice.elements = new_elements;
-            slice.capacity = new_capacity;
+        debug_print_int("Loop iteration: i=%lld\n", i);
+
+        if (i < 0 || (size_t)i >= array_count) {
+            debug_print_int("Index out of bounds: i=%lld, array_count=%zu\n", i,
+                            array_count);
+            break;
         }
         slice.elements[slice.count++] = array->elements[i];
+        if (slice.elements[slice.count - 1].type == TYPE_INTEGER) {
+            debug_print_int("Added element: %lld (count=%zu)\n",
+                            slice.elements[slice.count - 1].data.integer,
+                            slice.count);
+        } else {
+            debug_print_int("Added element of non-integer type (count=%zu)\n",
+                            slice.count);
+        }
     }
+
+    debug_print_int("Final slice count=%zu\n", slice.count);
 
     // Create the slice LiteralValue
     LiteralValue result;
     result.type = TYPE_ARRAY;
-    result.data.array = slice; // **By value**
+    result.data.array = slice; // by value
 
     return make_result(result, false, false);
 }
