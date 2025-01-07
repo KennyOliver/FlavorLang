@@ -15,8 +15,9 @@
 
 InterpretResult interpret_node(ASTNode *node, Environment *env);
 InterpretResult interpret_literal(ASTNode *node);
-InterpretResult interpret_variable(ASTNode *node, Environment *env);
-InterpretResult interpret_constant(ASTNode *node, Environment *env);
+InterpretResult interpret_variable_reference(ASTNode *node, Environment *env);
+InterpretResult interpret_var_declaration(ASTNode *node, Environment *env);
+InterpretResult interpret_const_declaration(ASTNode *node, Environment *env);
 InterpretResult interpret_assignment(ASTNode *node, Environment *env);
 InterpretResult interpret_binary_op(ASTNode *node, Environment *env);
 InterpretResult interpret_conditional(ASTNode *node, Environment *env);

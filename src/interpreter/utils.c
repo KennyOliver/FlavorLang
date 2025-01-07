@@ -375,15 +375,28 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_VAR_DECLARATION:
-    case AST_CONST_DECLARATION:
-        if (node->variable_name) {
-            new_node->variable_name = strdup(node->variable_name);
-            if (!new_node->variable_name) {
+        if (node->var_declaration.variable_name) {
+            new_node->var_declaration.variable_name =
+                strdup(node->var_declaration.variable_name);
+            if (!new_node->var_declaration.variable_name) {
                 fatal_error(
                     "Memory allocation failed for variable/constant name.\n");
             }
         } else {
-            new_node->variable_name = NULL;
+            new_node->var_declaration.variable_name = NULL;
+        }
+        break;
+
+    case AST_CONST_DECLARATION:
+        if (node->const_declaration.constant_name) {
+            new_node->const_declaration.constant_name =
+                strdup(node->const_declaration.constant_name);
+            if (!new_node->const_declaration.constant_name) {
+                fatal_error(
+                    "Memory allocation failed for variable/constant name.\n");
+            }
+        } else {
+            new_node->const_declaration.constant_name = NULL;
         }
         break;
 

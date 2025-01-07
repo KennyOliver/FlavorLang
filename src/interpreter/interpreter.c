@@ -24,9 +24,25 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         result = interpret_literal(node);
         break;
 
+    case AST_VAR_DECLARATION: {
+        debug_print_int("\tMatched: `AST_VAR_DECLARATION`\n");
+        result = interpret_var_declaration(node, env);
+        break;
+    }
+
+    case AST_CONST_DECLARATION: {
+        debug_print_int("\tMatched: `AST_CONST_DECLARATION`\n");
+        result = interpret_const_declaration(node, env);
+        break;
+    }
+
     case AST_ASSIGNMENT:
         debug_print_int("\tMatched: `AST_ASSIGNMENT`\n");
         result = interpret_assignment(node, env);
+        break;
+
+    case AST_VARIABLE_REFERENCE:
+        result = interpret_variable_reference(node, env);
         break;
 
     case AST_UNARY_OP:
@@ -105,19 +121,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         debug_print_int("\tMatched: `AST_FOR_LOOP`\n");
         InterpretResult loop_res = interpret_for_loop(node, env);
         result = loop_res;
-        break;
-    }
-
-    case AST_VAR_DECLARATION: {
-        debug_print_int("\tMatched: `AST_VAR_DECLARATION`\n");
-        // Replace LiteralValue with InterpretResult
-        result = interpret_variable(node, env);
-        break;
-    }
-
-    case AST_CONST_DECLARATION: {
-        debug_print_int("\tMatched: `AST_CONST_DECLARATION`\n");
-        result = interpret_constant(node, env);
         break;
     }
 
@@ -201,42 +204,76 @@ InterpretResult interpret_literal(ASTNode *node) {
     return make_result(value, false, false);
 }
 
-InterpretResult interpret_variable(ASTNode *node, Environment *env) {
-    Variable *var = get_variable(env, node->variable_name);
+InterpretResult interpret_variable_reference(ASTNode *node, Environment *env) {
+    if (node->type != AST_VARIABLE_REFERENCE) {
+        return raise_error("Expected AST_VARIABLE_REFERENCE node.\n");
+    }
+
+    Variable *var = get_variable(env, node->var_declaration.variable_name);
     if (!var) {
-        return raise_error("Undefined variable `%s`.\n", node->variable_name);
+        return raise_error("Undefined variable `%s`.\n",
+                           node->var_declaration.variable_name);
     }
 
     return make_result(var->value, false, false);
 }
 
-InterpretResult interpret_constant(ASTNode *node, Environment *env) {
+InterpretResult interpret_var_declaration(ASTNode *node, Environment *env) {
+    if (node->type != AST_VAR_DECLARATION) {
+        return raise_error("Invalid node type for variable declaration.\n");
+    }
+
+    char *var_name = node->var_declaration.variable_name;
+    ASTNode *init_expr = node->var_declaration.initializer;
+
+    // Evaluate the initializer expression
+    InterpretResult init_val_res = interpret_node(init_expr, env);
+    if (init_val_res.is_error) {
+        return init_val_res; // propagate the error
+    }
+
+    // If that variable already exists in Environment, possibly handle
+    // re-declaration For now, just add a brand-new variable
+    Variable new_var;
+    new_var.variable_name = strdup(var_name);
+    new_var.value = init_val_res.value;
+    new_var.is_constant = false;
+
+    // Add the variable to Environment
+    InterpretResult add_res = add_variable(env, new_var);
+    if (add_res.is_error) {
+        return add_res;
+    }
+
+    return make_result(init_val_res.value, false, false);
+}
+
+InterpretResult interpret_const_declaration(ASTNode *node, Environment *env) {
     if (node->type != AST_CONST_DECLARATION) {
         return raise_error("Invalid node type for constant declaration.\n");
     }
 
-    // Extract the constant name and value
-    char *const_name = strdup(node->const_declaration.constant_name);
-    InterpretResult value_res = interpret_node(node->assignment.rhs, env);
-    LiteralValue const_value = value_res.value;
+    char *const_name = node->const_declaration.constant_name;
+    ASTNode *init_expr = node->const_declaration.initializer;
 
-    if (value_res.is_error) {
-        return value_res;
-    }
-
-    // Check if the constant already exists
-    Variable *existing_var = get_variable(env, const_name);
-    if (existing_var) {
-        return raise_error("Constant `%s` is already defined.\n", const_name);
+    // Evaluate initializer
+    InterpretResult init_val_res = interpret_node(init_expr, env);
+    if (init_val_res.is_error) {
+        return init_val_res;
     }
 
     // Add the constant to the environment
-    Variable new_var = {.variable_name = strdup(const_name),
-                        .value = const_value,
-                        .is_constant = true};
-    add_variable(env, new_var);
+    Variable new_var;
+    new_var.variable_name = strdup(const_name);
+    new_var.value = init_val_res.value;
+    new_var.is_constant = true;
 
-    return make_result(const_value, false, false);
+    InterpretResult add_res = add_variable(env, new_var);
+    if (add_res.is_error) {
+        return add_res;
+    }
+
+    return make_result(init_val_res.value, false, false);
 }
 
 InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
