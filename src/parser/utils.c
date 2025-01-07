@@ -6,7 +6,7 @@ void free_ast(ASTNode *node) {
 
         switch (node->type) {
         case AST_ASSIGNMENT:
-            free(node->assignment.variable_name);
+            // free(node->assignment.variable_name);
             free_ast(node->assignment.lhs);
             free_ast(node->assignment.rhs);
             break;
@@ -170,10 +170,28 @@ void print_ast(ASTNode *node, int depth) {
     while (node != NULL) {
         print_indent(depth);
         switch (node->type) {
+        case AST_VAR_DECLARATION:
+            printf("Variable Declaration: %s\n",
+                   node->var_declaration.variable_name);
+            if (node->var_declaration.initializer) {
+                print_indent(depth + 1);
+                printf("Initializer:\n");
+                print_ast(node->var_declaration.initializer, depth + 2);
+            }
+            break;
+
+        case AST_CONST_DECLARATION:
+            printf("Constant Declaration: %s\n",
+                   node->const_declaration.constant_name);
+            if (node->const_declaration.initializer) {
+                print_indent(depth + 1);
+                printf("Initializer:\n");
+                print_ast(node->const_declaration.initializer, depth + 2);
+            }
+            break;
+
         case AST_ASSIGNMENT:
             printf("Assignment:\n");
-            print_indent(depth + 1);
-            printf("Variable Name: %s\n", node->assignment.variable_name);
             print_indent(depth + 1);
             printf("LHS:\n");
             print_ast(node->assignment.lhs, depth + 2);
@@ -314,9 +332,14 @@ void print_ast(ASTNode *node, int depth) {
                 while (case_node != NULL) {
                     print_indent(depth + 2);
                     printf("Case:\n");
-                    print_indent(depth + 3);
-                    printf("Condition:\n");
-                    print_ast(case_node->condition, depth + 4);
+                    if (case_node->condition) {
+                        print_indent(depth + 3);
+                        printf("Condition:\n");
+                        print_ast(case_node->condition, depth + 4);
+                    } else {
+                        print_indent(depth + 3);
+                        printf("Condition: None (Default)\n");
+                    }
                     print_indent(depth + 3);
                     printf("Body:\n");
                     print_ast(case_node->body, depth + 4);
@@ -340,26 +363,6 @@ void print_ast(ASTNode *node, int depth) {
             print_indent(depth + 1);
             printf("False Expression:\n");
             print_ast(node->ternary.false_expr, depth + 2);
-            break;
-
-        case AST_VAR_DECLARATION:
-            printf("Variable Declaration: %s\n", node->variable_name);
-            if (node->assignment.rhs) { // Assuming variable declaration can
-                                        // have an initializer
-                print_indent(depth + 1);
-                printf("Initializer:\n");
-                print_ast(node->assignment.rhs, depth + 2);
-            }
-            break;
-
-        case AST_CONST_DECLARATION:
-            printf("Constant Declaration: %s\n", node->variable_name);
-            if (node->assignment.rhs) { // Assuming constant declaration can
-                                        // have an initializer
-                print_indent(depth + 1);
-                printf("Initializer:\n");
-                print_ast(node->assignment.rhs, depth + 2);
-            }
             break;
 
         case AST_TRY:

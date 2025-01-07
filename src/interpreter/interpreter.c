@@ -216,7 +216,7 @@ InterpretResult interpret_constant(ASTNode *node, Environment *env) {
     }
 
     // Extract the constant name and value
-    char *const_name = strdup(node->assignment.variable_name);
+    char *const_name = strdup(node->const_declaration.constant_name);
     InterpretResult value_res = interpret_node(node->assignment.rhs, env);
     LiteralValue const_value = value_res.value;
 
@@ -240,7 +240,7 @@ InterpretResult interpret_constant(ASTNode *node, Environment *env) {
 }
 
 InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
-    if (!node->assignment.variable_name) {
+    if (!node->var_declaration.variable_name) {
         debug_print_int("Assignment variable name missing for node type: %d\n",
                         node->type);
         return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
@@ -262,7 +262,7 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     while (target_env) {
         for (size_t i = 0; i < target_env->variable_count; i++) {
             if (strcmp(target_env->variables[i].variable_name,
-                       node->assignment.variable_name) == 0) {
+                       node->var_declaration.variable_name) == 0) {
                 existing_var = &target_env->variables[i];
                 break;
             }
@@ -277,7 +277,8 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
     Environment *scope_to_modify = existing_var ? target_env : env;
 
     // Create a new variable instance
-    Variable new_var = {.variable_name = strdup(node->assignment.variable_name),
+    Variable new_var = {.variable_name =
+                            strdup(node->var_declaration.variable_name),
                         .value = new_value,
                         .is_constant = false};
 

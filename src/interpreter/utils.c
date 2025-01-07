@@ -210,15 +210,15 @@ ASTNode *copy_ast_node(ASTNode *node) {
     // Deep copy based on node type
     switch (node->type) {
     case AST_ASSIGNMENT:
-        if (node->assignment.variable_name) {
-            new_node->assignment.variable_name =
-                strdup(node->assignment.variable_name);
-            if (!new_node->assignment.variable_name) {
+        if (node->var_declaration.variable_name) {
+            new_node->var_declaration.variable_name =
+                strdup(node->var_declaration.variable_name);
+            if (!new_node->var_declaration.variable_name) {
                 fatal_error("Memory allocation failed for variable name in "
                             "assignment.\n");
             }
         } else {
-            new_node->assignment.variable_name = NULL;
+            new_node->var_declaration.variable_name = NULL;
         }
         new_node->assignment.rhs = copy_ast_node(node->assignment.rhs);
         break;

@@ -84,60 +84,66 @@ ASTNode *parse_expression_statement(ParserState *state) {
 }
 
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
+    // Parse keyword (`let` or `const`)
     if (type == AST_CONST_DECLARATION) {
         debug_print_par("Starting constant declaration parse\n");
         expect_token(state, TOKEN_KEYWORD, "Expected `const` keyword");
-    } else {
+    } else if (type == AST_VAR_DECLARATION) {
         debug_print_par("Starting variable declaration parse\n");
         expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
+    } else {
+        parser_error("Unknown declaration type", get_current_token(state));
     }
 
     // Parse variable/constant name
     Token *name = get_current_token(state);
-    if (type == AST_CONST_DECLARATION) {
-        expect_token(state, TOKEN_IDENTIFIER, "Expected constant name");
-        expect_token(state, TOKEN_OPERATOR, "Expected `=` after constant name");
-    } else {
-        expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
-        expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+    if (name->type != TOKEN_IDENTIFIER && name->type != TOKEN_FUNCTION_NAME) {
+        parser_error("Expected name in declaration", name);
+    }
+    char *decl_name = strdup(name->lexeme);
+    if (!decl_name) {
+        parser_error("Memory allocation failed for declaration name", name);
+    }
+    advance_token(state); // Consume name
+
+    // Expect `=` operator
+    expect_token(state, TOKEN_OPERATOR, "Expected `=` after name");
+
+    // Parse initializer expression
+    ASTNode *initializer = parse_expression(state);
+    if (!initializer) {
+        parser_error("Expected initializer expression",
+                     get_current_token(state));
     }
 
-    // Create AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-    node->type = type;
-
-    // Create a deep copy of the variable/constant name
-    if (name && name->lexeme) {
-        node->assignment.variable_name = strdup(name->lexeme);
-        if (!node->assignment.variable_name) {
-            parser_error(AST_CONST_DECLARATION
-                             ? "Memory allocation failed for constant name"
-                             : "Memory allocation failed for variable name",
-                         name);
-        }
-    } else {
-        parser_error(AST_CONST_DECLARATION ? "Invalid constant name token"
-                                           : "Invalid variable name token",
-                     name);
-    }
-
-    node->assignment.lhs = NULL;
-    node->assignment.rhs = parse_expression(state);
-    node->next = NULL;
-
+    // Expect `;` delimiter
     expect_token(state, TOKEN_DELIMITER,
-                 AST_CONST_DECLARATION
+                 type == AST_CONST_DECLARATION
                      ? "Expected `;` after constant declaration"
                      : "Expected `;` after variable declaration");
+
+    // Create AST node based on type
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for declaration node",
+                     get_current_token(state));
+    }
+    node->type = type;
+    node->next = NULL;
+
+    if (type == AST_VAR_DECLARATION) {
+        node->var_declaration.variable_name = decl_name;
+        node->var_declaration.initializer = initializer;
+    } else if (type == AST_CONST_DECLARATION) {
+        node->const_declaration.constant_name = decl_name;
+        node->const_declaration.initializer = initializer;
+    }
 
     return node;
 }
 
 ASTNode *parse_variable_declaration(ParserState *state) {
-    return parse_declaration(state, AST_ASSIGNMENT);
+    return parse_declaration(state, AST_VAR_DECLARATION);
 }
 
 ASTNode *parse_constant_declaration(ParserState *state) {
@@ -145,13 +151,19 @@ ASTNode *parse_constant_declaration(ParserState *state) {
 }
 
 ASTNode *create_variable_reference_node(char *name) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(
+        1, sizeof(ASTNode)); // use `calloc` instead of `malloc` to ensure
+                             // all fields are initialized to zero (`NULL`)
     if (!node) {
         parser_error("Memory allocation failed for variable reference node",
                      NULL);
     }
     node->type = AST_VARIABLE_REFERENCE;
     node->variable_name = strdup(name);
+    if (!node->variable_name) {
+        free(node);
+        parser_error("Memory allocation failed for variable name", NULL);
+    }
     node->next = NULL;
     return node;
 }
