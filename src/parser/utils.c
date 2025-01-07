@@ -48,8 +48,11 @@ void free_ast(ASTNode *node) {
             break;
 
         case AST_VAR_DECLARATION:
+            free(node->var_declaration.variable_name);
+            break;
+
         case AST_CONST_DECLARATION:
-            free(node->variable_name);
+            free(node->const_declaration.constant_name);
             break;
 
         case AST_FUNCTION_DECLARATION:
