@@ -230,13 +230,6 @@ void print_ast(ASTNode *node, int depth) {
                 printf("Boolean (%s)\n",
                        node->literal.value.boolean ? "true" : "false");
                 break;
-            case LITERAL_ARRAY:
-                printf("Array\n");
-                print_ast(
-                    (ASTNode *)node->literal.value.string,
-                    depth +
-                        1); // Assuming array literals are handled as ASTNodes
-                break;
             default:
                 printf("Unknown Literal Type\n");
             }
@@ -458,6 +451,7 @@ void print_ast(ASTNode *node, int depth) {
 
         default:
             printf("Unknown AST Node Type: %d\n", node->type);
+            break;
         }
 
         // Move to the next node in the linked list, if any

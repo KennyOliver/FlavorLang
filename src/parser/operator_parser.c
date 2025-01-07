@@ -227,7 +227,7 @@ ASTNode *parse_primary(ParserState *state) {
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
     } else if (current->type == TOKEN_SQ_BRACKET_OPEN) {
         node = parse_array_literal(state);
-        node->type = LITERAL_ARRAY;
+        node->type = AST_ARRAY_LITERAL;
     } else {
         parser_error("Expected expression", current);
     }
