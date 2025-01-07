@@ -165,8 +165,9 @@ typedef struct {
 
 // AST Array Operation Node
 typedef struct {
-    char *operator; // Array operation operator (e.g., "^+", "+^", "^-", "-^")
-    struct ASTNode *array;
+    char *operator; // Array operation operator (e.g., `^+`, `+^`, `^-`, `-^`)
+    struct ASTNode *array;   // Array on which the operation is performed
+    struct ASTNode *operand; // Element to operate with (e.g., to append)
 } ASTArrayOperation;
 
 // AST Node Structure

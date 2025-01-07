@@ -145,6 +145,26 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         result = interpret_try(node, env);
         break;
 
+    case AST_ARRAY_LITERAL:
+        debug_print_int("\tMatched: `AST_ARRAY_LITERAL`\n");
+        result = interpret_array_literal(node, env);
+        break;
+
+    case AST_ARRAY_OPERATION:
+        debug_print_int("\tMatched: `AST_ARRAY_OPERATION`\n");
+        result = interpret_array_operation(node, env);
+        break;
+
+    case AST_ARRAY_INDEX_ACCESS:
+        debug_print_int("\tMatched: `AST_ARRAY_INDEX_ACCESS`\n");
+        result = interpret_array_index_access(node, env);
+        break;
+
+    case AST_ARRAY_SLICE_ACCESS:
+        debug_print_int("\tMatched: `AST_ARRAY_SLICE_ACCESS`\n");
+        result = interpret_array_slice_access(node, env);
+        break;
+
     default:
         return raise_error("Unsupported `ASTNode` type.\n");
     }
@@ -209,10 +229,9 @@ InterpretResult interpret_variable_reference(ASTNode *node, Environment *env) {
         return raise_error("Expected AST_VARIABLE_REFERENCE node.\n");
     }
 
-    Variable *var = get_variable(env, node->var_declaration.variable_name);
+    Variable *var = get_variable(env, node->variable_name);
     if (!var) {
-        return raise_error("Undefined variable `%s`.\n",
-                           node->var_declaration.variable_name);
+        return raise_error("Undefined variable `%s`.\n", node->variable_name);
     }
 
     return make_result(var->value, false, false);
@@ -277,63 +296,69 @@ InterpretResult interpret_const_declaration(ASTNode *node, Environment *env) {
 }
 
 InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
-    if (!node->var_declaration.variable_name) {
-        debug_print_int("Assignment variable name missing for node type: %d\n",
-                        node->type);
-        return make_result((LiteralValue){.type = TYPE_ERROR}, false, false);
+    if (node->type != AST_ASSIGNMENT) {
+        return raise_error("Invalid node type for assignment.\n");
     }
 
-    // Evaluate the right-hand side
-    InterpretResult assign_r = interpret_node(node->assignment.rhs, env);
-
-    // If the RHS triggered an error or break, propagate it
-    if (assign_r.is_error || assign_r.did_break) {
-        return assign_r;
+    // Interpret the RHS expression
+    InterpretResult rhs_val_res = interpret_node(node->assignment.rhs, env);
+    if (rhs_val_res.is_error) {
+        return rhs_val_res; // propagate the error
     }
 
-    LiteralValue new_value = assign_r.value;
+    // Determine the LHS type
+    ASTNode *lhs_node = node->assignment.lhs;
 
-    // Find the environment where the variable exists
-    Environment *target_env = env;
-    Variable *existing_var = NULL;
-    while (target_env) {
-        for (size_t i = 0; i < target_env->variable_count; i++) {
-            if (strcmp(target_env->variables[i].variable_name,
-                       node->var_declaration.variable_name) == 0) {
-                existing_var = &target_env->variables[i];
-                break;
+    switch (lhs_node->type) {
+    case AST_VARIABLE_REFERENCE: {
+        const char *var_name = lhs_node->variable_name;
+
+        // Find the variable in the environment
+        Variable *var = get_variable(env, var_name);
+        if (!var) {
+            // Variable not found; optionally, handle declaration here
+            Variable new_var;
+            new_var.variable_name = strdup(var_name);
+            if (!new_var.variable_name) {
+                return raise_error(
+                    "Memory allocation failed for variable name `%s`.\n",
+                    var_name);
             }
+            new_var.value = rhs_val_res.value;
+            new_var.is_constant = false;
+
+            InterpretResult add_res = add_variable(env, new_var);
+            if (add_res.is_error) {
+                free(new_var.variable_name); // clean up on error
+                return add_res;
+            }
+
+            return add_res;
         }
-        if (existing_var) {
-            break;
+
+        if (var->is_constant) {
+            return raise_error("Cannot reassign to constant `%s`.\n", var_name);
         }
-        target_env = target_env->parent;
+
+        var->value = rhs_val_res.value;
+
+        return rhs_val_res;
     }
 
-    // Determine the scope to modify
-    Environment *scope_to_modify = existing_var ? target_env : env;
-
-    // Create a new variable instance
-    Variable new_var = {.variable_name =
-                            strdup(node->var_declaration.variable_name),
-                        .value = new_value,
-                        .is_constant = false};
-
-    // Assign the variable
-    InterpretResult add_res = add_variable(scope_to_modify, new_var);
-    if (add_res.is_error) {
-        return add_res;
+    case AST_ARRAY_INDEX_ACCESS: {
+        // Assign to an array element
+        return interpret_array_index_assignment(lhs_node, env,
+                                                rhs_val_res.value);
     }
 
-    // Now, if a return was triggered during assignment, propagate it
-    if (assign_r.did_return) {
-        return assign_r;
+    case AST_ARRAY_SLICE_ACCESS: {
+        return interpret_array_slice_access(node, env);
     }
 
-    // Otherwise, return the assigned value
-    return make_result(new_value, false, false);
+    default:
+        return raise_error("Invalid LHS in assignment.\n");
+    }
 }
-
 InterpretResult handle_string_concatenation(InterpretResult left,
                                             InterpretResult right) {
     LiteralValue lv_result;
@@ -1599,4 +1624,394 @@ InterpretResult interpret_try(ASTNode *node, Environment *env) {
 
     // Normal execution
     return result;
+}
+
+/**
+ * @brief Interprets array literals like `[1, 2, 3]`.
+ *
+ * @param node
+ * @param env
+ * @return InterpretResult
+ */
+InterpretResult interpret_array_literal(ASTNode *node, Environment *env) {
+    if (node->type != AST_ARRAY_LITERAL) {
+        return raise_error("Expected AST_ARRAY_LITERAL node.\n");
+    }
+
+    ArrayValue array;
+    array.count = 0;
+    array.capacity = node->array_literal.count > 4 ? node->array_literal.count
+                                                   : 4; // initial capacity
+    array.elements = malloc(array.capacity * sizeof(LiteralValue));
+    if (!array.elements) {
+        return raise_error("Memory allocation failed for array elements.\n");
+    }
+
+    for (size_t i = 0; i < node->array_literal.count; i++) {
+        ASTNode *element_node = node->array_literal.elements[i];
+        InterpretResult elem_res = interpret_node(element_node, env);
+        if (elem_res.is_error) {
+            // Free previously allocated elements if necessary
+            // For simplicity, assume no deep copies needed here
+            free(array.elements);
+            return elem_res; // Propagate the error
+        }
+
+        // Add the element to the array
+        if (array.count == array.capacity) {
+            size_t new_capacity = array.capacity * 2;
+            LiteralValue *new_elements =
+                realloc(array.elements, new_capacity * sizeof(LiteralValue));
+            if (!new_elements) {
+                free(array.elements);
+                return raise_error(
+                    "Memory allocation failed while expanding array.\n");
+            }
+            array.elements = new_elements;
+            array.capacity = new_capacity;
+        }
+
+        array.elements[array.count++] = elem_res.value;
+    }
+
+    LiteralValue result;
+    result.type = TYPE_ARRAY;
+    result.data.array = array; // **By value**
+
+    return make_result(result, false, false);
+}
+
+InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
+    if (node->type != AST_ARRAY_OPERATION) {
+        return raise_error("Expected AST_ARRAY_OPERATION node.\n");
+    }
+
+    const char *operator= node->array_operation.operator;
+    ASTNode *array_node = node->array_operation.array;
+    ASTNode *operand_node = node->array_operation.operand;
+
+    // Interpret the array
+    InterpretResult array_res = interpret_node(array_node, env);
+    if (array_res.is_error) {
+        return array_res; // Propagate error
+    }
+
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error("Array operation requires an array operand.\n");
+    }
+
+    // Access the ArrayValue by reference
+    ArrayValue *array = &array_res.value.data.array;
+
+    // Interpret the operand (element to append/prepend)
+    InterpretResult operand_res = interpret_node(operand_node, env);
+    if (operand_res.is_error) {
+        return operand_res;
+    }
+
+    // Perform the operation based on the operator
+    if (strcmp(operator, "^+") == 0) { // Append
+        if (array->count == array->capacity) {
+            size_t new_capacity = array->capacity * 2;
+            LiteralValue *new_elements =
+                realloc(array->elements, new_capacity * sizeof(LiteralValue));
+            if (!new_elements) {
+                return raise_error(
+                    "Memory allocation failed while expanding array.\n");
+            }
+            array->elements = new_elements;
+            array->capacity = new_capacity;
+        }
+        array->elements[array->count++] = operand_res.value;
+    } else if (strcmp(operator, "+^") == 0) { // Prepend
+        if (array->count == array->capacity) {
+            size_t new_capacity = array->capacity * 2;
+            LiteralValue *new_elements =
+                realloc(array->elements, new_capacity * sizeof(LiteralValue));
+            if (!new_elements) {
+                return raise_error(
+                    "Memory allocation failed while expanding array.\n");
+            }
+            array->elements = new_elements;
+            array->capacity = new_capacity;
+        }
+
+        // Shift elements to the right
+        memmove(&array->elements[1], &array->elements[0],
+                array->count * sizeof(LiteralValue));
+        array->elements[0] = operand_res.value;
+        array->count++;
+    } else {
+        return raise_error(
+            "Unsupported array operation operator `%s`.\n", operator);
+    }
+
+    // Return the modified array
+    return make_result(array_res.value, false, false);
+}
+
+/**
+ * @brief Handles accessing array elements like `array[2]`.
+ *
+ * @param node
+ * @param env
+ * @return InterpretResult
+ */
+InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
+    if (node->type != AST_ARRAY_INDEX_ACCESS) {
+        return raise_error("Expected AST_ARRAY_INDEX_ACCESS node.\n");
+    }
+
+    ASTNode *array_node = node->array_index_access.array;
+    ASTNode *index_node = node->array_index_access.index;
+
+    // Interpret the array
+    InterpretResult array_res = interpret_node(array_node, env);
+    if (array_res.is_error) {
+        return array_res;
+    }
+
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error("Index access requires an array operand.\n");
+    }
+
+    // Access the ArrayValue by reference
+    ArrayValue *array = &array_res.value.data.array;
+
+    // Interpret the index
+    InterpretResult index_res = interpret_node(index_node, env);
+    if (index_res.is_error) {
+        return index_res;
+    }
+
+    // Index must be integer
+    if (index_res.value.type != TYPE_INTEGER) {
+        return raise_error("Array index must be an integer.\n");
+    }
+
+    long long index = index_res.value.data.integer;
+
+    // Handle negative indices (e.g., -1 refers to the last element)
+    if (index < 0) {
+        index = (long long)array->count + index;
+    }
+
+    if (index < 0 || (size_t)index >= array->count) {
+        return raise_error("Array index `%lld` out of bounds.\n", index);
+    }
+
+    // Access the element
+    LiteralValue element = array->elements[index];
+    return make_result(element, false, false);
+}
+
+InterpretResult interpret_array_index_assignment(ASTNode *node,
+                                                 Environment *env,
+                                                 LiteralValue new_value) {
+    if (node->type != AST_ARRAY_INDEX_ACCESS) {
+        return raise_error("Expected AST_ARRAY_INDEX_ACCESS node.\n");
+    }
+
+    ASTNode *array_node = node->array_index_access.array;
+    ASTNode *index_node = node->array_index_access.index;
+
+    // Interpret the array
+    InterpretResult array_res = interpret_node(array_node, env);
+    if (array_res.is_error) {
+        return array_res;
+    }
+
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error("Index access requires an array operand.\n");
+    }
+
+    // Access the ArrayValue by reference
+    ArrayValue *array = &array_res.value.data.array;
+
+    // Interpret the index
+    InterpretResult index_res = interpret_node(index_node, env);
+    if (index_res.is_error) {
+        return index_res;
+    }
+
+    // Index must be integer
+    if (index_res.value.type != TYPE_INTEGER) {
+        return raise_error("Array index must be an integer.\n");
+    }
+
+    long long index = index_res.value.data.integer;
+
+    // Handle negative indices (e.g., -1 refers to the last element)
+    if (index < 0) {
+        index = (long long)array->count + index;
+    }
+
+    if (index < 0 || (size_t)index >= array->count) {
+        return raise_error("Array index `%lld` out of bounds.\n", index);
+    }
+
+    // Assign the new value to the array element
+    array->elements[index] = new_value;
+    return make_result(new_value, false, false);
+}
+
+/**
+ * @brief Handles slicing arrays like `array[1:4]`.
+ *
+ * @param node
+ * @param env
+ * @return InterpretResult
+ */
+InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
+    if (node->type != AST_ARRAY_SLICE_ACCESS) {
+        return raise_error("Expected AST_ARRAY_SLICE_ACCESS node.\n");
+    }
+
+    ASTNode *array_node = node->array_slice_access.array;
+    ASTNode *start_node = node->array_slice_access.start;
+    ASTNode *end_node = node->array_slice_access.end;
+    ASTNode *step_node = node->array_slice_access.step;
+
+    // Interpret the array
+    InterpretResult array_res = interpret_node(array_node, env);
+    if (array_res.is_error) {
+        return array_res;
+    }
+
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error("Slice access requires an array operand.\n");
+    }
+
+    // Access the ArrayValue by reference
+    ArrayValue *array = &array_res.value.data.array;
+
+    // Interpret start, end, step
+    double start_val = 0.0;
+    double end_val = (double)array->count; // default to array length
+    double step_val = 1.0;                 // default step
+
+    if (start_node) {
+        InterpretResult start_res = interpret_node(start_node, env);
+        if (start_res.is_error) {
+            return start_res;
+        }
+        if (start_res.value.type != TYPE_INTEGER &&
+            start_res.value.type != TYPE_FLOAT) {
+            return raise_error("Slice start must be integer or float.\n");
+        }
+        start_val = (start_res.value.type == TYPE_INTEGER)
+                        ? (double)start_res.value.data.integer
+                        : (double)start_res.value.data.floating_point;
+    }
+
+    if (end_node) {
+        InterpretResult end_res = interpret_node(end_node, env);
+        if (end_res.is_error) {
+            return end_res;
+        }
+        if (end_res.value.type != TYPE_INTEGER &&
+            end_res.value.type != TYPE_FLOAT) {
+            return raise_error("Slice end must be integer or float.\n");
+        }
+        end_val = (end_res.value.type == TYPE_INTEGER)
+                      ? (double)end_res.value.data.integer
+                      : (double)end_res.value.data.floating_point;
+    }
+
+    if (step_node) {
+        InterpretResult step_res = interpret_node(step_node, env);
+        if (step_res.is_error) {
+            return step_res;
+        }
+        if (step_res.value.type != TYPE_INTEGER &&
+            step_res.value.type != TYPE_FLOAT) {
+            return raise_error("Slice step must be integer or float.\n");
+        }
+        step_val = (step_res.value.type == TYPE_INTEGER)
+                       ? (double)step_res.value.data.integer
+                       : (double)step_res.value.data.floating_point;
+    }
+
+    // Convert to integer indices
+    long long start_index = (long long)floor(start_val);
+    long long end_index = (long long)ceil(end_val);
+    long long step = (long long)step_val;
+
+    if (step == 0) {
+        return raise_error("Slice step cannot be zero.\n");
+    }
+
+    // Handle negative indices
+    if (start_index < 0) {
+        start_index += (long long)array->count;
+    }
+    if (end_index < 0) {
+        end_index += (long long)array->count;
+    }
+
+    // Clamp indices
+    if (start_index < 0)
+        start_index = 0;
+    if ((size_t)start_index > array->count)
+        start_index = array->count;
+
+    if (end_index < 0)
+        end_index = 0;
+    if ((size_t)end_index > array->count)
+        end_index = array->count;
+
+    // Determine the number of elements in the slice
+    size_t slice_count = 0;
+    if (step > 0) {
+        if (start_index >= end_index) {
+            slice_count = 0;
+        } else {
+            slice_count = (size_t)((end_index - start_index + step - 1) / step);
+        }
+    } else { // step < 0
+        if (start_index <= end_index) {
+            slice_count = 0;
+        } else {
+            slice_count =
+                (size_t)((start_index - end_index - step - 1) / (-step));
+        }
+    }
+
+    // Initialize the slice array
+    ArrayValue slice;
+    slice.count = 0;
+    slice.capacity = slice_count > 4 ? slice_count : 4;
+    slice.elements = malloc(slice.capacity * sizeof(LiteralValue));
+    if (!slice.elements) {
+        return raise_error("Memory allocation failed for array slice.\n");
+    }
+
+    // Populate the slice
+    for (long long i = start_index;
+         (step > 0 && i < end_index) || (step < 0 && i > end_index);
+         i += step) {
+        if ((size_t)i >= array->count) {
+            break; // Prevent out-of-bounds
+        }
+        if (slice.count == slice.capacity) {
+            size_t new_capacity = slice.capacity * 2;
+            LiteralValue *new_elements =
+                realloc(slice.elements, new_capacity * sizeof(LiteralValue));
+            if (!new_elements) {
+                free(slice.elements);
+                return raise_error(
+                    "Memory allocation failed while expanding slice array.\n");
+            }
+            slice.elements = new_elements;
+            slice.capacity = new_capacity;
+        }
+        slice.elements[slice.count++] = array->elements[i];
+    }
+
+    // Create the slice LiteralValue
+    LiteralValue result;
+    result.type = TYPE_ARRAY;
+    result.data.array = slice; // **By value**
+
+    return make_result(result, false, false);
 }
