@@ -40,7 +40,8 @@ typedef struct {
         LITERAL_STRING,
         LITERAL_FLOAT,
         LITERAL_INTEGER,
-        LITERAL_BOOLEAN
+        LITERAL_BOOLEAN,
+        LITERAL_ARRAY
     } type;
     union {
         char *string;
