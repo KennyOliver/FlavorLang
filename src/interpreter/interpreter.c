@@ -315,7 +315,7 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
 
         Variable *var = get_variable(env, var_name);
         if (!var) {
-            // Variable not found; optionally handle declaration here
+            // Variable not found; handle declaration
             Variable new_var;
             new_var.variable_name = strdup(var_name);
             if (!new_var.variable_name) {
@@ -358,8 +358,9 @@ InterpretResult interpret_assignment(ASTNode *node, Environment *env) {
         return interpret_array_slice_access(node, env);
     }
 
-    case AST_ARRAY_OPERATION:
-        return interpret_array_operation(node, env);
+    case AST_ARRAY_OPERATION: {
+        return interpret_array_operation(lhs_node, env);
+    }
 
     default:
         return raise_error("Invalid LHS in assignment.\n");
