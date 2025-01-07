@@ -124,6 +124,7 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
                      name);
     }
 
+    node->assignment.lhs = NULL;
     node->assignment.rhs = parse_expression(state);
     node->next = NULL;
 
