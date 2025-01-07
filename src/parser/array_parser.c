@@ -134,6 +134,7 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
         // Expect and consume `]`
         expect_token(state, TOKEN_SQ_BRACKET_CLOSE,
                      "Expected `]` to close slice expression");
+        node->next = NULL;
     } else if (is_array_operator(current)) {
         // It's an array operator like `^+`, `+^`, `^-`, `-^`
         node->type = AST_ARRAY_OPERATION;
@@ -142,6 +143,8 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
             parser_error("Memory allocation failed for array operator",
                          current);
         }
+
+        node->array_operation.array = array;
         node->next = NULL;
         advance_token(state); // consume the operator
 
@@ -157,6 +160,7 @@ ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
         // Expect and consume `]`
         expect_token(state, TOKEN_SQ_BRACKET_CLOSE,
                      "Expected `]` to close index expression");
+        node->next = NULL;
     }
 
     return node;
