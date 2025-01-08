@@ -87,12 +87,13 @@ void minify_tokens(Token *tokens, const char *output_file) {
     Token *next = tokens + 1;
 
     while (current->type != TOKEN_EOF) {
+
         // Handle different token types
         switch (current->type) {
-        case TOKEN_STRING: // Type 5
-            fputc('"', output);
-            fputs(current->lexeme, output);
-            fputc('"', output);
+        case TOKEN_STRING:
+            fputc('"', output);             // Opening quote
+            fputs(current->lexeme, output); // String content
+            fputc('"', output);             // Closing quote
             break;
 
         default:
@@ -102,40 +103,26 @@ void minify_tokens(Token *tokens, const char *output_file) {
 
         // Add necessary spacing between tokens
         if (next->type != TOKEN_EOF) {
-            // Space after keywords (const, let, etc.)
+            // Space after keywords (e.g., `const`) before identifiers
             if (current->type == TOKEN_KEYWORD &&
-                (next->type == TOKEN_IDENTIFIER)) {
+                next->type == TOKEN_IDENTIFIER) {
                 fputc(' ', output);
             }
-
-            // Space between identifiers/literals
+            // Space between consecutive identifiers/literals (excluding
+            // operators)
             else if ((current->type == TOKEN_IDENTIFIER ||
                       current->type == TOKEN_STRING ||
                       current->type == TOKEN_INTEGER ||
-                      current->type == TOKEN_BOOLEAN ||
-                      current->type == TOKEN_FLOAT) &&
+                      current->type == TOKEN_FLOAT ||
+                      current->type == TOKEN_BOOLEAN) &&
                      (next->type == TOKEN_IDENTIFIER ||
                       next->type == TOKEN_STRING ||
                       next->type == TOKEN_INTEGER ||
-                      next->type == TOKEN_BOOLEAN ||
-                      next->type == TOKEN_FLOAT)) {
+                      next->type == TOKEN_FLOAT ||
+                      next->type == TOKEN_BOOLEAN)) {
                 fputc(' ', output);
             }
-
-            // Space around operators (except parentheses, brackets, etc.)
-            else if ((current->type == TOKEN_IDENTIFIER ||
-                      current->type == TOKEN_STRING ||
-                      current->type == TOKEN_INTEGER ||
-                      current->type == TOKEN_FLOAT) &&
-                     next->type == TOKEN_OPERATOR) {
-                fputc(' ', output);
-            } else if (current->type == TOKEN_OPERATOR &&
-                       (next->type == TOKEN_IDENTIFIER ||
-                        next->type == TOKEN_STRING ||
-                        next->type == TOKEN_INTEGER ||
-                        next->type == TOKEN_FLOAT)) {
-                fputc(' ', output);
-            }
+            // **Removed**: Conditions adding spaces around operators
         }
 
         current++;
