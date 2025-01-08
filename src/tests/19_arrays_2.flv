@@ -1,0 +1,74 @@
+# Test for array length
+let array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+serve("Initial array:", array);
+serve("Length of array:", length(array));
+
+# Test compound slicing
+serve("Original array:", array);
+serve("Double slice (first 5, then reverse):", (array[0:5])[::-1]);
+serve("Triple slice (first 5, skip every second, then reverse):", ((array[0:5])[::2])[::-1]);
+
+# Test declaring and using 2D arrays
+let array2D = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+serve("2D array:", array2D);
+
+# Access individual elements
+serve("Element at (2, 2):", array2D[1][1]);
+serve("Element at (3, 3):", array2D[2][2]);
+
+# Modify elements in a 2D array
+array2D[0][0] = 10;
+serve("2D array after modifying (1, 1) to 10:", array2D);
+
+# Test slicing on rows
+serve("First row:", array2D[0]);
+serve("Last row reversed:", array2D[2][::-1]);
+
+# Test slicing on columns (manual transpose-like slicing)
+let first_column = [array2D[0][0], array2D[1][0], array2D[2][0]];
+serve("First column:", first_column);
+
+let second_column_reversed = [array2D[2][1], array2D[1][1], array2D[0][1]];
+serve("Second column reversed:", second_column_reversed);
+
+# Test length of 2D array and its rows
+serve("Number of rows:", length(array2D));
+serve("Number of elements in first row:", length(array2D[0]));
+
+# Immutable 2D arrays
+const const_2D_array = [
+    [10, 20, 30],
+    [40, 50, 60],
+    [70, 80, 90]
+];
+serve("Immutable 2D array:", const_2D_array);
+
+# Attempt mutation on immutable 2D array
+try {
+    const_2D_array[0][0] = 100; # Trying to modify element
+    serve("This should not be shown; const 2D array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const 2D array.");
+}
+
+# Confirm immutability
+serve("Const 2D array remains unchanged:", const_2D_array);
+
+# Final confirmation
+serve("Immutable 2D array tests complete!");
+
+# Test length of a mixed array
+let mixed_array = [1, "two", [3, 4], [5, 6]];
+serve("Mixed array:", mixed_array);
+serve("Length of mixed array:", length(mixed_array));
+
+# Compound operations on mixed array
+serve("First element of nested array (3, 4):", mixed_array[2][0]);
+serve("Length of nested array:", length(mixed_array[2]));
+
+# Test completed
+serve("All array operation tests complete!");
