@@ -1907,72 +1907,167 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
     return make_result(element, false, false);
 }
 
+/**
+ * @brief Collects the indices from a nested AST_ARRAY_INDEX_ACCESS node.
+ *
+ * @param node The AST node representing the LHS of the assignment.
+ * @param env The current execution environment.
+ * @param indices Pointer to store the array of indices.
+ * @param count Pointer to store the number of indices collected.
+ * @return InterpretResult indicating success or error.
+ */
+InterpretResult collect_indices(ASTNode *node, Environment *env,
+                                INT_SIZE **indices, size_t *count) {
+    size_t capacity = 4;
+    *indices = malloc(capacity * sizeof(INT_SIZE));
+    if (!(*indices)) {
+        return raise_error("Memory allocation failed.\n");
+    }
+    *count = 0;
+
+    ASTNode *current_node = node;
+
+    while (current_node->type == AST_ARRAY_INDEX_ACCESS) {
+        ASTNode *index_node = current_node->array_index_access.index;
+
+        // Interpret the index
+        InterpretResult index_res = interpret_node(index_node, env);
+        if (index_res.is_error) {
+            free(*indices);
+            return index_res;
+        }
+
+        if (index_res.value.type != TYPE_INTEGER) {
+            free(*indices);
+            return raise_error("Array index must be an integer.\n");
+        }
+
+        INT_SIZE index = index_res.value.data.integer;
+
+        // Add to the indices array
+        if (*count == capacity) {
+            capacity *= 2;
+            INT_SIZE *temp = realloc(*indices, capacity * sizeof(INT_SIZE));
+            if (!temp) {
+                free(*indices);
+                return raise_error("Memory allocation failed.\n");
+            }
+            *indices = temp;
+        }
+
+        (*indices)[(*count)++] = index;
+
+        // Move to the next array node
+        current_node = current_node->array_index_access.array;
+    }
+
+    // After traversal, current_node should be AST_VARIABLE_REFERENCE
+    if (current_node->type != AST_VARIABLE_REFERENCE) {
+        free(*indices);
+        return raise_error("Index assignment requires a variable reference.\n");
+    }
+
+    return make_result(
+        (LiteralValue){.type = TYPE_BOOLEAN, .data.boolean = true}, false,
+        false);
+}
+
+/**
+ * @brief Handles assignments to array indices, supporting nested assignments.
+ *
+ * @param node The AST node representing the LHS of the assignment.
+ * @param env The current execution environment.
+ * @param new_value The new value to assign.
+ * @return InterpretResult indicating success or error.
+ */
 InterpretResult interpret_array_index_assignment(ASTNode *node,
                                                  Environment *env,
                                                  LiteralValue new_value) {
-    if (node->type != AST_ARRAY_INDEX_ACCESS) {
-        return raise_error("Expected AST_ARRAY_INDEX_ACCESS node.\n");
+    INT_SIZE *indices = NULL;
+    size_t count = 0;
+
+    // Collect the indices from the AST
+    InterpretResult res = collect_indices(node, env, &indices, &count);
+    if (res.is_error) {
+        return res;
     }
 
-    ASTNode *array_node = node->array_index_access.array;
-    ASTNode *index_node = node->array_index_access.index;
-
-    // Interpret the array
-    InterpretResult array_res = interpret_node(array_node, env);
-    if (array_res.is_error) {
-        return array_res;
+    if (count == 0) {
+        free(indices);
+        return raise_error("No indices provided for array assignment.\n");
     }
 
-    if (array_res.value.type != TYPE_ARRAY) {
-        return raise_error("Index access requires an array operand.\n");
+    // Get the base variable
+    ASTNode *current_node = node;
+    while (current_node->type == AST_ARRAY_INDEX_ACCESS) {
+        current_node = current_node->array_index_access.array;
     }
 
-    // Retrieve the variable to check for `const`-ness
-    if (array_node->type != AST_VARIABLE_REFERENCE) {
-        return raise_error("Index assignment requires a variable reference.\n");
-    }
-    const char *var_name = array_node->variable_name;
+    const char *var_name = current_node->variable_name;
     Variable *var = get_variable(env, var_name);
     if (!var) {
+        free(indices);
         return raise_error("Undefined variable `%s`.\n", var_name);
     }
 
     if (var->is_constant) {
-        debug_print_int("Attempted to assign to const array `%s`\n", var_name);
+        free(indices);
         return raise_error("Cannot mutate a constant array `%s`.\n", var_name);
     }
 
-    // Access the ArrayValue by reference
-    ArrayValue *array = &var->value.data.array;
-
-    // Interpret the index
-    InterpretResult index_res = interpret_node(index_node, env);
-    if (index_res.is_error) {
-        return index_res;
+    if (var->value.type != TYPE_ARRAY) {
+        free(indices);
+        return raise_error("Assignment requires an array variable.\n");
     }
 
-    // Index must be integer
-    if (index_res.value.type != TYPE_INTEGER) {
-        return raise_error("Array index must be an integer.\n");
+    ArrayValue *current_array = &var->value.data.array;
+
+    // Traverse the array using indices up to the penultimate index
+    for (size_t i = 0; i < count - 1; i++) {
+        INT_SIZE index = indices[i];
+
+        // Handle negative indices
+        if (index < 0) {
+            index = (INT_SIZE)current_array->count + index;
+        }
+
+        if (index < 0 || (size_t)index >= current_array->count) {
+            free(indices);
+            return raise_error("Array index `%lld` out of bounds.\n", index);
+        }
+
+        LiteralValue *elem = &current_array->elements[index];
+        if (elem->type != TYPE_ARRAY) {
+            free(indices);
+            return raise_error(
+                "Cannot assign to a non-array element in nested assignment.\n");
+        }
+
+        current_array = &elem->data.array;
     }
 
-    INT_SIZE index = index_res.value.data.integer;
+    // Handle last index for assignment
+    INT_SIZE final_index = indices[count - 1];
 
-    // Handle negative indices (e.g., -1 refers to the last element)
-    if (index < 0) {
-        index = (INT_SIZE)array->count + index;
+    // Handle negative indices
+    if (final_index < 0) {
+        final_index = (INT_SIZE)current_array->count + final_index;
     }
 
-    if (index < 0 || (size_t)index >= array->count) {
-        return raise_error("Array index `%lld` out of bounds.\n", index);
+    if (final_index < 0 || (size_t)final_index >= current_array->count) {
+        free(indices);
+        return raise_error("Array index `%lld` out of bounds.\n", final_index);
     }
 
-    // Assign the new value to the array element
-    array->elements[index] = new_value;
+    // Assign new value
+    current_array->elements[final_index] = new_value;
+
+    free(indices);
+
     return make_result(new_value, false, false);
 }
 
-// Helper function to get the index of a variable in the environment
+// Helper function to get index of a variable in the environment
 int get_variable_index(Environment *env, const char *variable_name) {
     for (size_t i = 0; i < env->variable_count; i++) {
         if (strcmp(env->variables[i].variable_name, variable_name) == 0) {
@@ -2001,7 +2096,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     ASTNode *end_node = node->array_slice_access.end;
     ASTNode *step_node = node->array_slice_access.step;
 
-    // Interpret the array
+    // Interpret array
     InterpretResult array_res = interpret_node(array_node, env);
     if (array_res.is_error) {
         return array_res;
@@ -2011,7 +2106,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         return raise_error("Slice access requires an array operand.\n");
     }
 
-    // Access the ArrayValue by reference
+    // Access ArrayValue by reference
     ArrayValue *array = &array_res.value.data.array;
     size_t array_count = array->count;
 
