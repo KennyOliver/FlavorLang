@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../shared/ast_types.h"
+#include "array_parser.h"
 #include "parser_state.h"
 
 // Implementation of the main expression parser
@@ -166,18 +167,17 @@ ASTNode *parse_unary(ParserState *state) {
     return parse_primary(state);
 }
 
-// Primary Expressions: literals, variables, function calls, parentheses
+// Primary Expressions: literals, variables, function calls, parentheses, arrays
 ASTNode *parse_primary(ParserState *state) {
+    // Identify the "base" expression
+    ASTNode *node = NULL;
     Token *current = get_current_token(state);
 
     if (current->type == TOKEN_INTEGER || current->type == TOKEN_FLOAT ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
-        ASTNode *node = create_literal_node(current);
+        node = create_literal_node(current);
         advance_token(state);
-        return node;
-    }
-
-    if (current->type == TOKEN_FUNCTION_NAME) {
+    } else if (current->type == TOKEN_FUNCTION_NAME) {
         // Parse function call
         char *func_name = strdup(current->lexeme);
         if (!func_name) {
@@ -193,11 +193,8 @@ ASTNode *parse_primary(ParserState *state) {
         expect_token(state, TOKEN_PAREN_CLOSE,
                      "Expected ')' after function arguments");
 
-        ASTNode *node = create_function_call_node(func_name, args);
-        return node;
-    }
-
-    if (current->type == TOKEN_IDENTIFIER) {
+        node = create_function_call_node(func_name, args);
+    } else if (current->type == TOKEN_IDENTIFIER) {
         // Check if identifier is followed by '(' indicating a function call
         Token *next = peek_next_token(state);
         if (next && next->type == TOKEN_PAREN_OPEN) {
@@ -220,22 +217,27 @@ ASTNode *parse_primary(ParserState *state) {
             ASTNode *node = create_function_call_node(func_name, args);
             return node;
         } else {
-            // It's a variable
-            ASTNode *node = create_variable_node(current->lexeme);
+            // It's a variable reference
+            node = create_variable_reference_node(current->lexeme);
             advance_token(state);
-            return node;
         }
-    }
-
-    if (current->type == TOKEN_PAREN_OPEN) {
+    } else if (current->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // consume `(`
-        ASTNode *node = parse_operator_expression(state);
+        node = parse_operator_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
-        return node;
+    } else if (current->type == TOKEN_SQ_BRACKET_OPEN) {
+        node = parse_array_literal(state);
+        node->type = AST_ARRAY_LITERAL;
+    } else {
+        parser_error("Expected expression", current);
     }
 
-    parser_error("Expected expression", current);
-    return NULL; // unreachable
+    // Handle chained indexing/slicing
+    while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+        node = parse_index_access(node, state);
+    }
+
+    return node;
 }
 
 ASTNode *parse_argument_list(ParserState *state) {
@@ -315,9 +317,10 @@ ASTNode *create_literal_node(Token *token) {
     if (!node) {
         parser_error("Memory allocation failed for literal node", token);
     }
-    node->type = AST_LITERAL;
 
-    // Assign the correct literal type and value based on the token type
+    node->type = AST_LITERAL;
+    node->literal.type = LITERAL_INTEGER;
+
     switch (token->type) {
     case TOKEN_INTEGER:
         node->literal.type = LITERAL_INTEGER;
@@ -325,20 +328,24 @@ ASTNode *create_literal_node(Token *token) {
         break;
     case TOKEN_FLOAT:
         node->literal.type = LITERAL_FLOAT;
-        node->literal.value.floating_point = strtold(token->lexeme, NULL);
+        node->literal.value.floating_point = atof(token->lexeme);
         break;
     case TOKEN_STRING:
         node->literal.type = LITERAL_STRING;
         node->literal.value.string = strdup(token->lexeme);
+        if (!node->literal.value.string) {
+            free(node);
+            parser_error("Memory allocation failed for string literal", token);
+        }
         break;
     case TOKEN_BOOLEAN:
         node->literal.type = LITERAL_BOOLEAN;
-        node->literal.value.boolean = strcmp(token->lexeme, "True") == 0;
+        node->literal.value.boolean = (strcmp(token->lexeme, "True") == 0);
         break;
     default:
-        parser_error("Unsupported literal type", token);
+        free(node);
+        parser_error("Unknown literal type", token);
     }
-
     node->next = NULL;
     return node;
 }

@@ -2,6 +2,7 @@
 #define PARSER_H
 
 #include "../shared/ast_types.h"
+#include "array_parser.h"
 #include "operator_parser.h"
 #include "parser_state.h"
 
@@ -34,13 +35,17 @@ ASTNode *parse_expression(ParserState *state);
 ASTNode *parse_literal_or_identifier(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 
+ASTNode *create_variable_reference_node(char *name);
+
 // Helper functions
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type);
 bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
+Token *peek_ahead(ParserState *state, size_t n);
 ASTNode *parse_expression_statement(ParserState *state);
 ASTNode *parse_block(ParserState *state);
 ASTNode *parse_case_body(ParserState *state);
 ASTNode *parse_function_body(ParserState *state);
+bool is_assignment(ParserState *state);
 
 #endif

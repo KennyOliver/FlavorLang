@@ -32,6 +32,8 @@ Function *get_function(Environment *env, const char *name);
 // Helpers
 InterpretResult make_result(LiteralValue val, bool did_return, bool did_break);
 ASTCatchNode *copy_catch_node(ASTCatchNode *catch_node);
+ASTCaseNode *copy_ast_case_node(ASTCaseNode *case_node);
+char *safe_strdup(const char *str);
 
 // Type Helpers
 bool is_numeric_type(LiteralType type);

@@ -8,7 +8,7 @@
 void free_ast(ASTNode *node);
 
 // Print indentation based on depth
-static void print_indentation(int depth);
+void print_indent(int depth);
 
 // Print AST nodes
 void print_ast(ASTNode *node, int depth);

@@ -32,6 +32,7 @@ ASTNode *parse_statement(ParserState *state) {
 
     debug_print_par("Current Token: Type=`%d`, Lexeme=`%s`\n", token->type,
                     token->lexeme);
+
     if (match_token(state, "let"))
         return parse_variable_declaration(state);
     if (match_token(state, "const"))
@@ -61,119 +62,130 @@ ASTNode *parse_statement(ParserState *state) {
         return node;
     }
 
-    // Handle variable assignments
-    if (token->type == TOKEN_IDENTIFIER) {
-        Token *next_token = peek_next_token(state);
-        if (next_token) {
-            debug_print_par("Peek Next Token: Type=`%d`, Lexeme=`%s`\n",
-                            next_token->type, next_token->lexeme);
-            if (next_token->type == TOKEN_OPERATOR &&
-                strcmp(next_token->lexeme, "=") == 0) {
-                return parse_variable_assignment(state);
-            }
-        }
-        return parse_expression_statement(state);
+    // Handle variable assignments using the helper function
+    if (token->type == TOKEN_IDENTIFIER && is_assignment(state)) {
+        return parse_variable_assignment(state);
     }
 
-    // If none of the above, raise an error
-    parser_error("Unexpected token at start of statement", token);
-    return NULL;
+    // Handle expression statements (e.g., array operations without assignment)
+    ASTNode *expr_stmt = parse_expression_statement(state);
+    expect_token(state, TOKEN_DELIMITER,
+                 "Expected `;` after expression statement");
+    return expr_stmt;
 }
 
 ASTNode *parse_expression_statement(ParserState *state) {
     // Parse the expression (which can handle binary ops, variables, etc.)
-    ASTNode *expr_node = parse_expression(state);
-    expect_token(state, TOKEN_DELIMITER,
-                 "Expected `;` after expression statement");
-    return expr_node;
+    // ASTNode *expr_node = parse_expression(state);
+    // expect_token(state, TOKEN_DELIMITER,
+    //              "Expected `;` after expression statement");
+    // return expr_node;
+    return parse_expression(state);
 }
 
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
+    // Parse keyword (`let` or `const`)
     if (type == AST_CONST_DECLARATION) {
         debug_print_par("Starting constant declaration parse\n");
         expect_token(state, TOKEN_KEYWORD, "Expected `const` keyword");
-    } else {
+    } else if (type == AST_VAR_DECLARATION) {
         debug_print_par("Starting variable declaration parse\n");
         expect_token(state, TOKEN_KEYWORD, "Expected `let` keyword");
+    } else {
+        parser_error("Unknown declaration type", get_current_token(state));
     }
 
     // Parse variable/constant name
     Token *name = get_current_token(state);
-    if (type == AST_CONST_DECLARATION) {
-        expect_token(state, TOKEN_IDENTIFIER, "Expected constant name");
-        expect_token(state, TOKEN_OPERATOR, "Expected `=` after constant name");
-    } else {
-        expect_token(state, TOKEN_IDENTIFIER, "Expected variable name");
-        expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
+    if (name->type != TOKEN_IDENTIFIER && name->type != TOKEN_FUNCTION_NAME) {
+        parser_error("Expected name in declaration", name);
+    }
+    char *decl_name = strdup(name->lexeme);
+    if (!decl_name) {
+        parser_error("Memory allocation failed for declaration name", name);
+    }
+    advance_token(state); // Consume name
+
+    // Expect `=` operator
+    expect_token(state, TOKEN_OPERATOR, "Expected `=` after name");
+
+    // Parse initializer expression
+    ASTNode *initializer = parse_expression(state);
+    if (!initializer) {
+        parser_error("Expected initializer expression",
+                     get_current_token(state));
     }
 
-    // Create AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
-    }
-    node->type = type;
-
-    // Create a deep copy of the variable/constant name
-    if (name && name->lexeme) {
-        node->assignment.variable_name = strdup(name->lexeme);
-        if (!node->assignment.variable_name) {
-            parser_error(AST_CONST_DECLARATION
-                             ? "Memory allocation failed for constant name"
-                             : "Memory allocation failed for variable name",
-                         name);
-        }
-    } else {
-        parser_error(AST_CONST_DECLARATION ? "Invalid constant name token"
-                                           : "Invalid variable name token",
-                     name);
-    }
-
-    node->assignment.value = parse_expression(state);
-    node->next = NULL;
-
+    // Expect `;` delimiter
     expect_token(state, TOKEN_DELIMITER,
-                 AST_CONST_DECLARATION
+                 type == AST_CONST_DECLARATION
                      ? "Expected `;` after constant declaration"
                      : "Expected `;` after variable declaration");
+
+    // Create AST node based on type
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for declaration node",
+                     get_current_token(state));
+    }
+    node->type = type;
+    node->next = NULL;
+
+    if (type == AST_VAR_DECLARATION) {
+        node->var_declaration.variable_name = decl_name;
+        node->var_declaration.initializer = initializer;
+    } else if (type == AST_CONST_DECLARATION) {
+        node->const_declaration.constant_name = decl_name;
+        node->const_declaration.initializer = initializer;
+    }
 
     return node;
 }
 
 ASTNode *parse_variable_declaration(ParserState *state) {
-    return parse_declaration(state, AST_ASSIGNMENT);
+    return parse_declaration(state, AST_VAR_DECLARATION);
 }
 
 ASTNode *parse_constant_declaration(ParserState *state) {
     return parse_declaration(state, AST_CONST_DECLARATION);
 }
 
+ASTNode *create_variable_reference_node(char *name) {
+    ASTNode *node = calloc(
+        1, sizeof(ASTNode)); // use `calloc` instead of `malloc` to ensure
+                             // all fields are initialized to zero (`NULL`)
+    if (!node) {
+        parser_error("Memory allocation failed for variable reference node",
+                     NULL);
+    }
+    node->type = AST_VARIABLE_REFERENCE;
+    node->variable_name = strdup(name);
+    if (!node->variable_name) {
+        free(node);
+        parser_error("Memory allocation failed for variable name", NULL);
+    }
+    node->next = NULL;
+    return node;
+}
+
 ASTNode *parse_variable_assignment(ParserState *state) {
     debug_print_par("Starting variable assignment parse\n");
 
-    // Parse variable name
-    Token *name = get_current_token(state);
-    debug_print_par("Variable assignment name: `%s`\n", name->lexeme);
-    advance_token(state); // consume variable name
+    // Parse the left-hand side (LHS) expression
+    ASTNode *lhs = parse_expression(state);
 
     // Expect `=` operator
     Token *op_token = get_current_token(state);
-    debug_print_par("Expected operator `=`, found: `%s`\n", op_token->lexeme);
-    expect_token(state, TOKEN_OPERATOR, "Expected `=` after variable name");
-
-    // Parse the expression on the right-hand side
-    ASTNode *value_node = parse_expression(state);
-    debug_print_par("Parsed expression for assignment\n");
-
-    ASTNode *node = malloc(sizeof(ASTNode));
-    if (!node) {
-        parser_error("Memory allocation failed", get_current_token(state));
+    if (op_token->type != TOKEN_OPERATOR ||
+        strcmp(op_token->lexeme, "=") != 0) {
+        parser_error("Expected `=` operator after variable name or slice",
+                     op_token);
     }
+    advance_token(state); // consume `=`
 
-    node->type = AST_ASSIGNMENT;
-    node->assignment.variable_name = strdup(name->lexeme);
-    node->assignment.value = value_node;
-    node->next = NULL;
+    // Parse the expression on the right-hand side (RHS)
+    ASTNode *rhs = parse_expression(state);
+    debug_print_par("Parsed expression for assignment\n");
 
     // Expect `;` delimiter
     Token *delimiter = get_current_token(state);
@@ -185,6 +197,18 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     expect_token(state, TOKEN_DELIMITER,
                  "Expected `;` after variable assignment");
     debug_print_par("Consumed `;` after variable assignment\n");
+
+    // Create AST Assignment Node
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for assignment node",
+                     get_current_token(state));
+    }
+
+    node->type = AST_ASSIGNMENT;
+    node->assignment.lhs = lhs;
+    node->assignment.rhs = rhs;
+    node->next = NULL;
 
     return node;
 }
@@ -225,7 +249,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         }
     }
 
-    // Handle literals and identifiers
+    // Handle literals
     if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
         ASTNode *node = malloc(sizeof(ASTNode));
@@ -244,12 +268,12 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         } else if (current->type == TOKEN_STRING) {
             node->literal.type = LITERAL_STRING;
             node->literal.value.string = strdup(current->lexeme);
-        } else if (current->type == TOKEN_BOOLEAN) { // Handle boolean
+        } else if (current->type == TOKEN_BOOLEAN) {
             node->literal.type = LITERAL_BOOLEAN;
             if (strcmp(current->lexeme, "True") == 0) {
-                node->literal.value.boolean = 1;
+                node->literal.value.boolean = true;
             } else {
-                node->literal.value.boolean = 0;
+                node->literal.value.boolean = false;
             }
         }
 
@@ -258,21 +282,19 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
         return node;
     } else if (current->type == TOKEN_FUNCTION_NAME ||
                current->type == TOKEN_IDENTIFIER) {
-        // Check if `(` indicates a call
-        Token *next = peek_next_token(state);
-        if (next && next->type == TOKEN_PAREN_OPEN) {
-            // It's a call
-            ASTNode *node = parse_function_call(state);
-            return node;
-        } else {
-            // It's just a variable (or a function reference used as a variable)
-            ASTNode *node = create_variable_node(current->lexeme);
-            advance_token(state);
-            return node;
+        // Handle variable or function call
+        ASTNode *node = create_variable_node(current->lexeme);
+        advance_token(state);
+
+        // Handle array indexing or slicing
+        while (get_current_token(state)->type == TOKEN_SQ_BRACKET_OPEN) {
+            node = parse_index_access(node, state);
         }
+
+        return node;
     } else if (current->type == TOKEN_PAREN_OPEN) {
         advance_token(state); // consume `(`
-        ASTNode *node = parse_operator_expression(state);
+        ASTNode *node = parse_expression(state);
         expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after expression");
         return node;
     }
@@ -566,7 +588,8 @@ ASTNode *parse_case_body(ParserState *state) {
     while (1) {
         Token *current = get_current_token(state);
 
-        // Stop parsing the body if any of `is`, `else`, or `}` get encountered
+        // Stop parsing the body if any of `is`, `else`, or `}` get
+        // encountered
         if ((current->type == TOKEN_KEYWORD &&
              (strcmp(current->lexeme, "is") == 0 ||
               strcmp(current->lexeme, "else") == 0)) ||
@@ -913,4 +936,65 @@ ASTNode *parse_finally_block(ParserState *state) {
     ASTNode *finally_body = parse_block(state);
     expect_token(state, TOKEN_BRACE_CLOSE, "Expected `}` to end finish block");
     return finally_body;
+}
+
+/**
+ * Peeks ahead 'n' tokens from the current position.
+ *
+ * @param state The current parser state.
+ * @param n The number of tokens to peek ahead.
+ * @return A pointer to the token 'n' positions ahead, or the last token if out
+ * of bounds.
+ */
+Token *peek_ahead(ParserState *state, size_t n) {
+    size_t target = state->current_token + n;
+    // Assuming tokens are terminated with TOKEN_EOF
+    // Return the last token if target exceeds the array
+    return &state->tokens[target];
+}
+
+/**
+ * Determines if the current statement is an assignment.
+ *
+ * An assignment can be:
+ * - identifier = expression
+ * - identifier [ array_operator ] = expression
+ *
+ * @param state The current parser state.
+ * @return `true` if it's an assignment, `false` otherwise.
+ */
+bool is_assignment(ParserState *state) {
+    // Ensure the current token is an identifier
+    if (state->current->type != TOKEN_IDENTIFIER)
+        return false;
+
+    // Peek the next token
+    Token *next = peek_next_token(state);
+    if (!next)
+        return false;
+
+    // Case 1: identifier '='
+    if (next->type == TOKEN_OPERATOR && strcmp(next->lexeme, "=") == 0)
+        return true;
+
+    // Case 2: identifier '[' array_operator ']' '='
+    if (next->type == TOKEN_SQ_BRACKET_OPEN) {
+        // Peek two tokens ahead (array operator)
+        Token *array_op = peek_ahead(state, 2);
+        if (array_op && is_array_operator(array_op)) {
+            // Peek three tokens ahead (']')
+            Token *after_bracket = peek_ahead(state, 3);
+            if (after_bracket &&
+                after_bracket->type == TOKEN_SQ_BRACKET_CLOSE) {
+                // Peek four tokens ahead ('=')
+                Token *equals = peek_ahead(state, 4);
+                if (equals && equals->type == TOKEN_OPERATOR &&
+                    strcmp(equals->lexeme, "=") == 0)
+                    return true;
+            }
+        }
+    }
+
+    // Not an assignment
+    return false;
 }

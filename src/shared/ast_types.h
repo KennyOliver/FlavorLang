@@ -5,15 +5,15 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define MAX_ARGUMENTS 1024
-
 // AST Node Types
 typedef enum {
+    AST_VAR_DECLARATION,
+    AST_CONST_DECLARATION,
     AST_ASSIGNMENT,
+    AST_LITERAL,
     AST_FUNCTION_DECLARATION,
     AST_FUNCTION_CALL,
     AST_FUNCTION_RETURN,
-    AST_LITERAL,
     AST_CONDITIONAL,
     AST_UNARY_OP,
     AST_BINARY_OP,
@@ -22,11 +22,14 @@ typedef enum {
     AST_SWITCH,
     AST_BREAK,
     AST_TERNARY,
-    AST_VAR_DECLARATION,
-    AST_CONST_DECLARATION,
     AST_TRY,
     AST_CATCH,
-    AST_FINALLY
+    AST_FINALLY,
+    AST_ARRAY_LITERAL,
+    AST_ARRAY_OPERATION,
+    AST_ARRAY_INDEX_ACCESS,
+    AST_ARRAY_SLICE_ACCESS,
+    AST_VARIABLE_REFERENCE
 } ASTNodeType;
 
 // Literal Node
@@ -97,9 +100,7 @@ typedef struct {
 
 // AST Function Parameter
 typedef struct ASTFunctionParameter {
-    char *parameter_name; // Parameter name
-    // LiteralNode *type;              // Optional: parameter type (e.g.,
-    // int, string, etc.)
+    char *parameter_name;              // Parameter name
     struct ASTFunctionParameter *next; // Linked list for multiple parameters
 } ASTFunctionParameter;
 
@@ -128,48 +129,95 @@ typedef struct {
     struct ASTNode *false_expr;
 } ASTTernary;
 
-// AST Rescue Node (optional error object)
+// AST Catch Node
 typedef struct ASTCatchNode {
     char *error_variable; // Optional: Variable name to hold the error object
     struct ASTNode *body; // Body of the rescue block
-    struct ASTCatchNode *next; // For multiple rescue clauses (future feature)
+    struct ASTCatchNode *next; // For multiple `rescue` clauses
 } ASTCatchNode;
 
 // AST Try Node
 typedef struct {
     struct ASTNode *try_block;     // Code within the try block
     ASTCatchNode *catch_blocks;    // Linked list of rescue blocks
-    struct ASTNode *finally_block; // Optional finish block
+    struct ASTNode *finally_block; // Optional `finish` block
 } ASTTry;
+
+// AST Array Literal Node
+typedef struct {
+    struct ASTNode **elements; // Array of element expressions
+    size_t count;              // Number of elements
+} ASTArrayLiteral;
+
+// AST Index Access Node
+typedef struct {
+    struct ASTNode *array; // The array expression
+    struct ASTNode *index; // The index expression
+} ASTArrayIndexAccess;
+
+// AST Slice Access Node
+typedef struct {
+    struct ASTNode *array; // The array expression
+    struct ASTNode *start; // Start index (can be NULL)
+    struct ASTNode *end;   // End index (can be NULL)
+    struct ASTNode *step;  // Step value (can be NULL)
+} ASTArraySliceAccess;
+
+// AST Array Operation Node
+typedef struct {
+    char *operator; // Array operation operator (e.g., `^+`, `+^`, `^-`, `-^`)
+    struct ASTNode *array;   // Array on which the operation is performed
+    struct ASTNode *operand; // Element to operate with (e.g., to append)
+} ASTArrayOperation;
 
 // AST Node Structure
 typedef struct ASTNode {
     ASTNodeType type;
     union {
-        // Assignment
+        // Variable Declaration
         struct {
             char *variable_name;
-            struct ASTNode *value;
+            struct ASTNode *initializer;
+        } var_declaration;
+
+        // Constant Declaration
+        struct {
+            char *constant_name;
+            struct ASTNode *initializer;
+        } const_declaration;
+
+        // Assignment
+        struct {
+            struct ASTNode *lhs;
+            struct ASTNode *rhs;
         } assignment;
 
-        LiteralNode literal;
-        ASTUnaryOp unary_op;
-        ASTBinaryOp binary_op;
+        // Function Nodes
+        ASTFunctionDeclaration function_declaration;
+        ASTFunctionCall function_call;
+        ASTFunctionReturn function_return;
+
+        // Control Flow Nodes
         ASTConditional conditional;
         ASTSwitch switch_case;
         ASTWhileLoop while_loop;
         ASTForLoop for_loop;
         ASTTernary ternary;
-        ASTFunctionDeclaration function_declaration;
-        ASTFunctionCall function_call;
-        ASTFunctionReturn function_return;
+        ASTTry try_block;
 
-        ASTTry try_block; // Try Block
-        // ASTCatchNode *catch_block;     // Rescue Block
-        // struct ASTNode *finally_block; // Finish Block
+        // Operations
+        ASTUnaryOp unary_op;
+        ASTBinaryOp binary_op;
 
-        // Variable
-        char *variable_name;
+        // Array Nodes
+        ASTArrayLiteral array_literal;
+        ASTArrayOperation array_operation;
+        ASTArrayIndexAccess array_index_access;
+        ASTArraySliceAccess array_slice_access;
+
+        // Literal and Reference
+        LiteralNode literal;
+        char *variable_name; // For AST_VARIABLE_REFERENCE
     };
 
     struct ASTNode *next;

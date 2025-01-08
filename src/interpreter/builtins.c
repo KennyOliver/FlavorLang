@@ -241,6 +241,45 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
+void print_literal_value(LiteralValue lv) {
+    switch (lv.type) {
+    case TYPE_FLOAT:
+        if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
+            printf("%.1Lf", lv.data.floating_point);
+        } else {
+            printf("%Lf", lv.data.floating_point);
+        }
+        break;
+    case TYPE_INTEGER:
+        printf("%lld", lv.data.integer);
+        break;
+    case TYPE_STRING:
+        printf("\"%s\"", lv.data.string);
+        break;
+    case TYPE_BOOLEAN:
+        printf("%s", lv.data.boolean ? "True" : "False");
+        break;
+    case TYPE_ARRAY:
+        printf("[");
+        for (size_t i = 0; i < lv.data.array.count; i++) {
+            print_literal_value(lv.data.array.elements[i]);
+            if (i < lv.data.array.count - 1) {
+                printf(", ");
+            }
+        }
+        printf("]");
+        break;
+    case TYPE_FUNCTION:
+        printf("<Function %s>", lv.data.function_ptr->name);
+        break;
+    case TYPE_ERROR:
+        printf("<Error>");
+        break;
+    default:
+        printf("<Unknown>");
+    }
+}
+
 // Built-in `serve()` function for printing
 InterpretResult builtin_output(ASTNode *node, Environment *env) {
     debug_print_int("builtin_output() called\n");
@@ -248,6 +287,10 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
     ASTNode *arg_node = node->function_call.arguments;
     while (arg_node != NULL) {
         InterpretResult r = interpret_node(arg_node, env);
+        if (r.is_error) {
+            return r; // propagate error
+        }
+
         LiteralValue lv = r.value;
 
         switch (lv.type) {
@@ -266,6 +309,18 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
             break;
         case TYPE_BOOLEAN:
             printf("%s", lv.data.boolean ? "True" : "False");
+            break;
+        case TYPE_ARRAY:
+            printf("[");
+            for (size_t i = 0; i < lv.data.array.count; i++) {
+                LiteralValue elem = lv.data.array.elements[i];
+                print_literal_value(elem);
+
+                if (i < lv.data.array.count - 1) {
+                    printf(", ");
+                }
+            }
+            printf("]");
             break;
         case TYPE_ERROR:
             fprintf(

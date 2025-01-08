@@ -15,8 +15,9 @@
 
 InterpretResult interpret_node(ASTNode *node, Environment *env);
 InterpretResult interpret_literal(ASTNode *node);
-InterpretResult interpret_variable(ASTNode *node, Environment *env);
-InterpretResult interpret_constant(ASTNode *node, Environment *env);
+InterpretResult interpret_variable_reference(ASTNode *node, Environment *env);
+InterpretResult interpret_var_declaration(ASTNode *node, Environment *env);
+InterpretResult interpret_const_declaration(ASTNode *node, Environment *env);
 InterpretResult interpret_assignment(ASTNode *node, Environment *env);
 InterpretResult interpret_binary_op(ASTNode *node, Environment *env);
 InterpretResult interpret_conditional(ASTNode *node, Environment *env);
@@ -33,6 +34,13 @@ InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,
                                            Environment *env);
 InterpretResult interpret_try(ASTNode *node, Environment *env);
+InterpretResult interpret_array_literal(ASTNode *node, Environment *env);
+InterpretResult interpret_array_operation(ASTNode *node, Environment *env);
+InterpretResult interpret_array_index_access(ASTNode *node, Environment *env);
+InterpretResult interpret_array_index_assignment(ASTNode *node,
+                                                 Environment *env,
+                                                 LiteralValue new_value);
+InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env);
 
 // Interpret program
 void interpret_program(ASTNode *program, Environment *env);

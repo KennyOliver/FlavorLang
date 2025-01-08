@@ -188,52 +188,70 @@ ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params) {
     return new_params;
 }
 
-ASTNode *copy_ast_node(ASTNode *node) {
-    if (!node) {
+// Helper function for safely duplicating strings
+char *safe_strdup(const char *str) {
+    if (!str)
         return NULL;
+    char *copy = strdup(str);
+    if (!copy) {
+        fatal_error("Memory allocation failed for string duplication.\n");
     }
+    return copy;
+}
+
+// Helper function for copying ASTCaseNode linked lists
+ASTCaseNode *copy_ast_case_node(ASTCaseNode *case_node) {
+    if (!case_node)
+        return NULL;
+
+    ASTCaseNode *new_head = NULL, *new_tail = NULL;
+
+    while (case_node) {
+        ASTCaseNode *new_case = malloc(sizeof(ASTCaseNode));
+        if (!new_case) {
+            fatal_error("Memory allocation failed for ASTCaseNode.\n");
+        }
+
+        new_case->condition = copy_ast_node(case_node->condition);
+        new_case->body = copy_ast_node(case_node->body);
+        new_case->next = NULL;
+
+        if (!new_head) {
+            new_head = new_tail = new_case;
+        } else {
+            new_tail->next = new_case;
+            new_tail = new_case;
+        }
+
+        case_node = case_node->next;
+    }
+
+    return new_head;
+}
+
+ASTNode *copy_ast_node(ASTNode *node) {
+    if (!node)
+        return NULL;
 
     debug_print_int("Copying ASTNode of type %d at %p\n", node->type,
                     (void *)node);
 
-    ASTNode *new_node = malloc(sizeof(ASTNode));
+    ASTNode *new_node = calloc(1, sizeof(ASTNode));
     if (!new_node) {
         fatal_error("Memory allocation failed in `copy_ast_node`\n");
     }
 
-    // Initialize the new node to zero to prevent dangling pointers
-    memset(new_node, 0, sizeof(ASTNode));
-
-    // Copy the node type
     new_node->type = node->type;
 
-    // Deep copy based on node type
     switch (node->type) {
     case AST_ASSIGNMENT:
-        if (node->assignment.variable_name) {
-            new_node->assignment.variable_name =
-                strdup(node->assignment.variable_name);
-            if (!new_node->assignment.variable_name) {
-                fatal_error("Memory allocation failed for variable name in "
-                            "assignment.\n");
-            }
-        } else {
-            new_node->assignment.variable_name = NULL;
-        }
-        new_node->assignment.value = copy_ast_node(node->assignment.value);
+        new_node->assignment.lhs = copy_ast_node(node->assignment.lhs);
+        new_node->assignment.rhs = copy_ast_node(node->assignment.rhs);
         break;
 
     case AST_FUNCTION_DECLARATION:
-        if (node->function_declaration.name) {
-            new_node->function_declaration.name =
-                strdup(node->function_declaration.name);
-            if (!new_node->function_declaration.name) {
-                fatal_error("Memory allocation failed for function name in "
-                            "declaration.\n");
-            }
-        } else {
-            new_node->function_declaration.name = NULL;
-        }
+        new_node->function_declaration.name =
+            safe_strdup(node->function_declaration.name);
         new_node->function_declaration.parameters =
             copy_function_parameters(node->function_declaration.parameters);
         new_node->function_declaration.body =
@@ -241,15 +259,7 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_FUNCTION_CALL:
-        if (node->function_call.name) {
-            new_node->function_call.name = strdup(node->function_call.name);
-            if (!new_node->function_call.name) {
-                fatal_error(
-                    "Memory allocation failed for function name in call.\n");
-            }
-        } else {
-            new_node->function_call.name = NULL;
-        }
+        new_node->function_call.name = safe_strdup(node->function_call.name);
         new_node->function_call.arguments =
             copy_ast_node(node->function_call.arguments);
         break;
@@ -261,31 +271,12 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     case AST_LITERAL:
         new_node->literal.type = node->literal.type;
-        switch (node->literal.type) {
-        case LITERAL_STRING:
-            if (node->literal.value.string) {
-                new_node->literal.value.string =
-                    strdup(node->literal.value.string);
-                if (!new_node->literal.value.string) {
-                    fatal_error(
-                        "Memory allocation failed for string literal.\n");
-                }
-            } else {
-                new_node->literal.value.string = NULL;
-            }
-            break;
-        case LITERAL_FLOAT:
-            new_node->literal.value.floating_point =
-                node->literal.value.floating_point;
-            break;
-        case LITERAL_INTEGER:
-            new_node->literal.value.integer = node->literal.value.integer;
-            break;
-        case LITERAL_BOOLEAN:
-            new_node->literal.value.boolean = node->literal.value.boolean;
-            break;
-        default:
-            fatal_error("Unknown literal type during copy.\n");
+        if (node->literal.type == LITERAL_STRING) {
+            new_node->literal.value.string =
+                safe_strdup(node->literal.value.string);
+        } else {
+            new_node->literal.value =
+                node->literal.value; // Copy union directly
         }
         break;
 
@@ -298,26 +289,12 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_UNARY_OP:
-        if (node->unary_op.operator) {
-            new_node->unary_op.operator= strdup(node->unary_op.operator);
-            if (!new_node->unary_op.operator) {
-                fatal_error("Memory allocation failed for unary operator.\n");
-            }
-        } else {
-            new_node->unary_op.operator= NULL;
-        }
+        new_node->unary_op.operator= safe_strdup(node->unary_op.operator);
         new_node->unary_op.operand = copy_ast_node(node->unary_op.operand);
         break;
 
     case AST_BINARY_OP:
-        if (node->binary_op.operator) {
-            new_node->binary_op.operator= strdup(node->binary_op.operator);
-            if (!new_node->binary_op.operator) {
-                fatal_error("Memory allocation failed for binary operator.\n");
-            }
-        } else {
-            new_node->binary_op.operator= NULL;
-        }
+        new_node->binary_op.operator= safe_strdup(node->binary_op.operator);
         new_node->binary_op.left = copy_ast_node(node->binary_op.left);
         new_node->binary_op.right = copy_ast_node(node->binary_op.right);
         break;
@@ -331,16 +308,8 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_FOR_LOOP:
-        if (node->for_loop.loop_variable) {
-            new_node->for_loop.loop_variable =
-                strdup(node->for_loop.loop_variable);
-            if (!new_node->for_loop.loop_variable) {
-                fatal_error("Memory allocation failed for loop variable in "
-                            "for-loop.\n");
-            }
-        } else {
-            new_node->for_loop.loop_variable = NULL;
-        }
+        new_node->for_loop.loop_variable =
+            safe_strdup(node->for_loop.loop_variable);
         new_node->for_loop.start_expr =
             copy_ast_node(node->for_loop.start_expr);
         new_node->for_loop.end_expr = copy_ast_node(node->for_loop.end_expr);
@@ -352,43 +321,22 @@ ASTNode *copy_ast_node(ASTNode *node) {
     case AST_SWITCH:
         new_node->switch_case.expression =
             copy_ast_node(node->switch_case.expression);
-        ASTCaseNode *current_case = node->switch_case.cases;
-        ASTCaseNode *new_case_head = NULL;
-        ASTCaseNode *new_case_tail = NULL;
-        while (current_case) {
-            ASTCaseNode *copied_case = malloc(sizeof(ASTCaseNode));
-            if (!copied_case) {
-                fatal_error("Memory allocation failed for ASTCaseNode.\n");
-            }
-            copied_case->condition = copy_ast_node(current_case->condition);
-            copied_case->body = copy_ast_node(current_case->body);
-            copied_case->next = NULL;
-            if (!new_case_head) {
-                new_case_head = new_case_tail = copied_case;
-            } else {
-                new_case_tail->next = copied_case;
-                new_case_tail = copied_case;
-            }
-            current_case = current_case->next;
-        }
-        new_node->switch_case.cases = new_case_head;
+        new_node->switch_case.cases =
+            copy_ast_case_node(node->switch_case.cases);
         break;
 
     case AST_VAR_DECLARATION:
-    case AST_CONST_DECLARATION:
-        if (node->variable_name) {
-            new_node->variable_name = strdup(node->variable_name);
-            if (!new_node->variable_name) {
-                fatal_error(
-                    "Memory allocation failed for variable/constant name.\n");
-            }
-        } else {
-            new_node->variable_name = NULL;
-        }
+        new_node->var_declaration.variable_name =
+            safe_strdup(node->var_declaration.variable_name);
+        new_node->var_declaration.initializer =
+            copy_ast_node(node->var_declaration.initializer);
         break;
 
-    case AST_BREAK:
-        // No fields to copy
+    case AST_CONST_DECLARATION:
+        new_node->const_declaration.constant_name =
+            safe_strdup(node->const_declaration.constant_name);
+        new_node->const_declaration.initializer =
+            copy_ast_node(node->const_declaration.initializer);
         break;
 
     case AST_TERNARY:
@@ -404,6 +352,57 @@ ASTNode *copy_ast_node(ASTNode *node) {
             copy_catch_node(node->try_block.catch_blocks);
         new_node->try_block.finally_block =
             copy_ast_node(node->try_block.finally_block);
+        break;
+
+    case AST_BREAK:
+    case AST_CATCH:
+    case AST_FINALLY:
+        // Nothing to copy
+        break;
+
+    case AST_ARRAY_LITERAL:
+        new_node->array_literal.count = node->array_literal.count;
+        new_node->array_literal.elements =
+            malloc(sizeof(ASTNode *) * node->array_literal.count);
+        if (!new_node->array_literal.elements) {
+            fatal_error(
+                "Memory allocation failed for array literal elements.\n");
+        }
+        for (size_t i = 0; i < node->array_literal.count; i++) {
+            new_node->array_literal.elements[i] =
+                copy_ast_node(node->array_literal.elements[i]);
+        }
+        break;
+
+    case AST_ARRAY_OPERATION:
+        new_node->array_operation.operator=
+            safe_strdup(node->array_operation.operator);
+        new_node->array_operation.array =
+            copy_ast_node(node->array_operation.array);
+        new_node->array_operation.operand =
+            copy_ast_node(node->array_operation.operand);
+        break;
+
+    case AST_ARRAY_INDEX_ACCESS:
+        new_node->array_index_access.array =
+            copy_ast_node(node->array_index_access.array);
+        new_node->array_index_access.index =
+            copy_ast_node(node->array_index_access.index);
+        break;
+
+    case AST_ARRAY_SLICE_ACCESS:
+        new_node->array_slice_access.array =
+            copy_ast_node(node->array_slice_access.array);
+        new_node->array_slice_access.start =
+            copy_ast_node(node->array_slice_access.start);
+        new_node->array_slice_access.end =
+            copy_ast_node(node->array_slice_access.end);
+        new_node->array_slice_access.step =
+            copy_ast_node(node->array_slice_access.step);
+        break;
+
+    case AST_VARIABLE_REFERENCE:
+        new_node->variable_name = safe_strdup(node->variable_name);
         break;
 
     default:

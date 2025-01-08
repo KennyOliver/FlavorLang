@@ -72,6 +72,12 @@ Token *tokenize(const char *source) {
             continue;
         }
 
+        // Array
+        if (strchr("[]", c)) {
+            scan_array(&state, &tokens, &token_count, &capacity);
+            continue;
+        }
+
         // Identifier
         if (is_valid_identifier_start(c)) {
             scan_identifier_or_keyword(&state, &tokens, &token_count,
