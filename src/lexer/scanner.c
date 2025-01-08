@@ -126,6 +126,12 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
+            // Handle string literals
+            if (inner_c == '"') {
+                scan_string(state, tokens, token_count, capacity);
+                continue;
+            }
+
             // Handle special array operations first
             if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
                 // Peek the next character
