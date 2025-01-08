@@ -14,11 +14,11 @@ array[+^] = 0;
 serve("Array after prepending 0:", array);
 
 # Remove Last Element
-array[^-];
+serve("Removing last element:", array[^-]);
 serve("Array after removing last element:", array);
 
 # Remove First Element
-array[-^];
+serve("Removing first element:", array[-^]);
 serve("Array after removing first element:", array);
 
 # Slicing

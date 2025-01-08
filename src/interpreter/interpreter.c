@@ -1828,17 +1828,19 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
             if (array->count == 0) {
                 return raise_error("Cannot remove from an empty array.\n");
             }
+            LiteralValue removed = array->elements[array->count - 1];
             array->count--;
-            return make_result(create_default_value(), false, false);
+            return make_result(removed, false, false);
         } else if (strcmp(operator, "-^") == 0) { // Remove First Element
             if (array->count == 0) {
                 return raise_error("Cannot remove from an empty array.\n");
             }
+            LiteralValue removed = array->elements[0];
             // Shift elements to the left
             memmove(&array->elements[0], &array->elements[1],
                     (array->count - 1) * sizeof(LiteralValue));
             array->count--;
-            return make_result(create_default_value(), false, false);
+            return make_result(removed, false, false);
         } else {
             return raise_error(
                 "Unsupported array operation operator `%s`.\n", operator);
