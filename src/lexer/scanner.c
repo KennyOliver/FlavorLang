@@ -119,6 +119,13 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
+            // Handle nested array
+            if (inner_c == '[') {
+                // Recursively scan the nested array
+                scan_array(state, tokens, token_count, capacity);
+                continue;
+            }
+
             // Handle special array operations first
             if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
                 // Peek the next character
