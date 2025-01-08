@@ -18,8 +18,9 @@ typedef enum {
     ARG_TYPE_ARRAY,
 } ArgType;
 typedef struct {
-    ArgType type;  // expected argument type
-    void *out_ptr; // pointer to store interpreted value
+    size_t num_types; // number of acceptable types
+    ArgType type;     // expected argument type
+    void *out_ptr;    // pointer to store interpreted value
 } ArgumentSpec;
 
 // Built-in functions for the standard library
@@ -35,6 +36,7 @@ InterpretResult builtin_file_append(ASTNode *node, Environment *env);
 InterpretResult builtin_length(ASTNode *node, Environment *env);
 
 // Helpers
+bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type);
 InterpretResult interpret_arguments(ASTNode *node, Environment *env,
                                     size_t num_args, ArgumentSpec *specs);
 void print_formatted_string(const char *str);

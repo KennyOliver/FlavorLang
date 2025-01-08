@@ -5,7 +5,25 @@
 #include <string.h>
 #include <time.h>
 
-// Function to interpret a mix of argument types
+// Helper function to check if a LiteralType matches an ArgType
+bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
+    switch (arg_type) {
+    case ARG_TYPE_INTEGER:
+        return lit_type == TYPE_INTEGER;
+    case ARG_TYPE_FLOAT:
+        return lit_type == TYPE_FLOAT;
+    case ARG_TYPE_STRING:
+        return lit_type == TYPE_STRING;
+    case ARG_TYPE_BOOLEAN:
+        return lit_type == TYPE_BOOLEAN;
+    case ARG_TYPE_ARRAY:
+        return lit_type == TYPE_ARRAY;
+    default:
+        return false; // Unknown ArgType
+    }
+}
+
+// Function to interpret arguments with single expected type per ArgumentSpec
 InterpretResult interpret_arguments(ASTNode *node, Environment *env,
                                     size_t num_args, ArgumentSpec *specs) {
     ASTNode *arg_node = node;
@@ -24,60 +42,57 @@ InterpretResult interpret_arguments(ASTNode *node, Environment *env,
         LiteralValue lv = arg_res.value;
 
         // Reference to the current argument specification
-        ArgType expected_type = specs[i].type;
-        void *output_ptr = specs[i].out_ptr;
+        ArgumentSpec current_spec = specs[i];
+        bool type_matched =
+            literal_type_matches_arg_type(lv.type, current_spec.type);
 
-        // Verify and assign the argument based on its expected type
-        switch (expected_type) {
-        case ARG_TYPE_INTEGER:
-            if (lv.type == TYPE_INTEGER) {
-                *((INT_SIZE *)output_ptr) = lv.data.integer;
-            } else if (lv.type == TYPE_FLOAT) {
-                *((INT_SIZE *)output_ptr) = (INT_SIZE)lv.data.floating_point;
-            } else if (lv.type == TYPE_BOOLEAN) {
-                *((INT_SIZE *)output_ptr) = lv.data.boolean ? 1 : 0;
-            } else {
-                return raise_error("Expected integer for argument %zu.\n",
+        if (type_matched) {
+            // Assign the value based on the expected type
+            switch (current_spec.type) {
+            case ARG_TYPE_INTEGER:
+                *((INT_SIZE *)current_spec.out_ptr) = lv.data.integer;
+                break;
+            case ARG_TYPE_FLOAT:
+                *((FLOAT_SIZE *)current_spec.out_ptr) = lv.data.floating_point;
+                break;
+            case ARG_TYPE_STRING:
+                *((char **)current_spec.out_ptr) = lv.data.string;
+                break;
+            case ARG_TYPE_BOOLEAN:
+                *((bool *)current_spec.out_ptr) = lv.data.boolean;
+                break;
+            case ARG_TYPE_ARRAY:
+                *((ArrayValue **)current_spec.out_ptr) = &lv.data.array;
+                break;
+            default:
+                return raise_error("Unknown argument type for argument %zu.\n",
                                    i + 1);
             }
-            break;
-
-        case ARG_TYPE_FLOAT:
-            if (lv.type == TYPE_FLOAT) {
-                *((FLOAT_SIZE *)output_ptr) = lv.data.floating_point;
-            } else if (lv.type == TYPE_INTEGER) {
-                *((FLOAT_SIZE *)output_ptr) = (FLOAT_SIZE)lv.data.integer;
-            } else if (lv.type == TYPE_BOOLEAN) {
-                *((FLOAT_SIZE *)output_ptr) = lv.data.boolean ? 1.0 : 0.0;
-            } else {
-                return raise_error("Expected float for argument %zu.\n", i + 1);
+        } else {
+            // Construct a string of expected type for the error message
+            char expected_type[32] = "";
+            switch (current_spec.type) {
+            case ARG_TYPE_INTEGER:
+                strcpy(expected_type, "integer");
+                break;
+            case ARG_TYPE_FLOAT:
+                strcpy(expected_type, "float");
+                break;
+            case ARG_TYPE_STRING:
+                strcpy(expected_type, "string");
+                break;
+            case ARG_TYPE_BOOLEAN:
+                strcpy(expected_type, "boolean");
+                break;
+            case ARG_TYPE_ARRAY:
+                strcpy(expected_type, "array");
+                break;
+            default:
+                strcpy(expected_type, "unknown");
+                break;
             }
-            break;
 
-        case ARG_TYPE_STRING:
-            if (lv.type == TYPE_STRING) {
-                *((char **)output_ptr) = lv.data.string;
-            } else {
-                return raise_error("Expected string for argument %zu.\n",
-                                   i + 1);
-            }
-            break;
-
-        case ARG_TYPE_BOOLEAN:
-            if (lv.type == TYPE_BOOLEAN) {
-                *((bool *)output_ptr) = lv.data.boolean;
-            } else if (lv.type == TYPE_INTEGER) {
-                *((bool *)output_ptr) = (lv.data.integer != 0);
-            } else if (lv.type == TYPE_FLOAT) {
-                *((bool *)output_ptr) = (lv.data.floating_point != 0.0);
-            } else {
-                return raise_error("Expected boolean for argument %zu.\n",
-                                   i + 1);
-            }
-            break;
-
-        default:
-            return raise_error("Unknown argument type for argument %zu.\n",
+            return raise_error("Expected %s for argument %zu.\n", expected_type,
                                i + 1);
         }
 
