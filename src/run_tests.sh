@@ -13,6 +13,7 @@ for test_file in "$TEST_DIR"/*.flv; do
 
     echo "Running test: $test_file"
     ./flavor "$test_file"
+    sleep 0.1 # Add a short delay to allow cleanup for macOS
 
     # Optionally check the exit code of each test
     if [ $? -ne 0 ]; then
