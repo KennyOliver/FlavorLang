@@ -1706,114 +1706,145 @@ InterpretResult interpret_array_literal(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
-InterpretResult interpret_array_operation(ASTNode *assignment_node,
-                                          Environment *env) {
-    if (assignment_node->type != AST_ASSIGNMENT) {
-        return raise_error(
-            "Expected AST_ASSIGNMENT node for array operation.\n");
-    }
+InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
+    if (node->type == AST_ASSIGNMENT) {
+        // Handle assignment-based array operations (append, prepend)
+        ASTNode *lhs_node = node->assignment.lhs;
+        ASTNode *rhs_node = node->assignment.rhs;
 
-    // Should be AST_ARRAY_OPERATION
-    ASTNode *lhs_node = assignment_node->assignment.lhs;
-    // Operand for the operation
-    ASTNode *rhs_node = assignment_node->assignment.rhs;
+        if (lhs_node->type != AST_ARRAY_OPERATION) {
+            return raise_error("Expected AST_ARRAY_OPERATION in assignment.\n");
+        }
 
-    if (lhs_node->type != AST_ARRAY_OPERATION) {
-        return raise_error("Expected AST_ARRAY_OPERATION in assignment.\n");
-    }
+        const char *operator= lhs_node->array_operation.operator;
+        ASTNode *array_node = lhs_node->array_operation.array;
 
-    const char *operator= lhs_node->array_operation.operator;
-    ASTNode *array_node = lhs_node->array_operation.array;
+        if (array_node->type != AST_VARIABLE_REFERENCE) {
+            return raise_error("Array operation requires a variable reference "
+                               "as the array.\n");
+        }
 
-    if (array_node->type != AST_VARIABLE_REFERENCE) {
-        return raise_error(
-            "Array operation requires a variable reference as the array.\n");
-    }
+        const char *var_name = array_node->variable_name;
 
-    const char *var_name = array_node->variable_name;
+        // Retrieve variable from environment
+        Variable *var = get_variable(env, var_name);
+        if (!var) {
+            return raise_error("Undefined variable `%s`.\n", var_name);
+        }
 
-    // Retrieve variable from environment
-    Variable *var = get_variable(env, var_name);
-    if (!var) {
-        return raise_error("Undefined variable `%s`.\n", var_name);
-    }
+        if (var->value.type != TYPE_ARRAY) {
+            return raise_error("Array operation requires an array variable.\n");
+        }
 
-    if (var->value.type != TYPE_ARRAY) {
-        return raise_error("Array operation requires an array variable.\n");
-    }
+        // Check for `const`-ness
+        if (var->is_constant) {
+            return raise_error("Cannot mutate a constant array `%s`.\n",
+                               var_name);
+        }
 
-    // Check for `const`-ness
-    if (var->is_constant) {
-        return raise_error("Cannot mutate a constant array `%s`.\n", var_name);
-    }
+        // Access the ArrayValue by reference
+        ArrayValue *array = &var->value.data.array;
 
-    // Access the ArrayValue by reference
-    ArrayValue *array = &var->value.data.array;
+        // Interpret the operand (RHS of assignment)
+        InterpretResult operand_res = interpret_node(rhs_node, env);
+        if (operand_res.is_error) {
+            return operand_res;
+        }
 
-    // Interpret the operand
-    InterpretResult operand_res = interpret_node(rhs_node, env);
-    if (operand_res.is_error) {
-        return operand_res;
-    }
-
-    // Perform operation based on operator
-    if (strcmp(operator, "^+") == 0) { // Append
-        if (array->count == array->capacity) {
-            size_t new_capacity = array->capacity * 2;
-            LiteralValue *new_elements =
-                realloc(array->elements, new_capacity * sizeof(LiteralValue));
-            if (!new_elements) {
-                return raise_error(
-                    "Memory allocation failed while expanding array.\n");
+        // Perform operation based on operator
+        if (strcmp(operator, "^+") == 0) { // Append
+            if (array->count == array->capacity) {
+                size_t new_capacity = array->capacity * 2;
+                LiteralValue *new_elements = realloc(
+                    array->elements, new_capacity * sizeof(LiteralValue));
+                if (!new_elements) {
+                    return raise_error(
+                        "Memory allocation failed while expanding array.\n");
+                }
+                array->elements = new_elements;
+                array->capacity = new_capacity;
             }
-            array->elements = new_elements;
-            array->capacity = new_capacity;
-        }
-        array->elements[array->count++] = operand_res.value;
-        // Return the modified array
-        return make_result(var->value, false, false);
-    } else if (strcmp(operator, "+^") == 0) { // Prepend
-        if (array->count == array->capacity) {
-            size_t new_capacity = array->capacity * 2;
-            LiteralValue *new_elements =
-                realloc(array->elements, new_capacity * sizeof(LiteralValue));
-            if (!new_elements) {
-                return raise_error(
-                    "Memory allocation failed while expanding array.\n");
+            array->elements[array->count++] = operand_res.value;
+            // Return the modified array
+            return make_result(var->value, false, false);
+        } else if (strcmp(operator, "+^") == 0) { // Prepend
+            if (array->count == array->capacity) {
+                size_t new_capacity = array->capacity * 2;
+                LiteralValue *new_elements = realloc(
+                    array->elements, new_capacity * sizeof(LiteralValue));
+                if (!new_elements) {
+                    return raise_error(
+                        "Memory allocation failed while expanding array.\n");
+                }
+                array->elements = new_elements;
+                array->capacity = new_capacity;
             }
-            array->elements = new_elements;
-            array->capacity = new_capacity;
+
+            // Shift elements to the right
+            memmove(&array->elements[1], &array->elements[0],
+                    array->count * sizeof(LiteralValue));
+            array->elements[0] = operand_res.value;
+            array->count++;
+            // Return the modified array
+            return make_result(var->value, false, false);
+        } else {
+            return raise_error(
+                "Unsupported array operation operator `%s` in assignment.\n",
+                operator);
+        }
+    } else if (node->type == AST_ARRAY_OPERATION) {
+        // Handle standalone array operations (remove last, remove first)
+        const char *operator= node->array_operation.operator;
+        ASTNode *array_node = node->array_operation.array;
+
+        if (array_node->type != AST_VARIABLE_REFERENCE) {
+            return raise_error("Array operation requires a variable reference "
+                               "as the array.\n");
         }
 
-        // Shift elements to the right
-        memmove(&array->elements[1], &array->elements[0],
-                array->count * sizeof(LiteralValue));
-        array->elements[0] = operand_res.value;
-        array->count++;
-        // Return the modified array
-        return make_result(var->value, false, false);
-    } else if (strcmp(operator, "^-") == 0) { // Remove Last Element
-        if (array->count == 0) {
-            return raise_error("Cannot remove from an empty array.\n");
+        const char *var_name = array_node->variable_name;
+
+        // Retrieve variable from environment
+        Variable *var = get_variable(env, var_name);
+        if (!var) {
+            return raise_error("Undefined variable `%s`.\n", var_name);
         }
-        LiteralValue removed = array->elements[array->count - 1];
-        array->count--;
-        // Return the removed element
-        return make_result(removed, false, false);
-    } else if (strcmp(operator, "-^") == 0) { // Remove First Element
-        if (array->count == 0) {
-            return raise_error("Cannot remove from an empty array.\n");
+
+        if (var->value.type != TYPE_ARRAY) {
+            return raise_error("Array operation requires an array variable.\n");
         }
-        LiteralValue removed = array->elements[0];
-        // Shift elements to the left
-        memmove(&array->elements[0], &array->elements[1],
-                (array->count - 1) * sizeof(LiteralValue));
-        array->count--;
-        // Return the removed element
-        return make_result(removed, false, false);
+
+        // Check for `const`-ness
+        if (var->is_constant) {
+            return raise_error("Cannot mutate a constant array `%s`.\n",
+                               var_name);
+        }
+
+        // Access the ArrayValue by reference
+        ArrayValue *array = &var->value.data.array;
+
+        // Perform operation based on operator
+        if (strcmp(operator, "^-") == 0) { // Remove Last Element
+            if (array->count == 0) {
+                return raise_error("Cannot remove from an empty array.\n");
+            }
+            array->count--;
+            return make_result(create_default_value(), false, false);
+        } else if (strcmp(operator, "-^") == 0) { // Remove First Element
+            if (array->count == 0) {
+                return raise_error("Cannot remove from an empty array.\n");
+            }
+            // Shift elements to the left
+            memmove(&array->elements[0], &array->elements[1],
+                    (array->count - 1) * sizeof(LiteralValue));
+            array->count--;
+            return make_result(create_default_value(), false, false);
+        } else {
+            return raise_error(
+                "Unsupported array operation operator `%s`.\n", operator);
+        }
     } else {
-        return raise_error(
-            "Unsupported array operation operator `%s`.\n", operator);
+        return raise_error("Unsupported node type for array operation.\n");
     }
 }
 
