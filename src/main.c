@@ -143,13 +143,13 @@ void minify_tokens(Token *tokens, const char *output_file) {
     Token *next = tokens + 1;
 
     while (current->type != TOKEN_EOF) {
+        // Handle the current token
         switch (current->type) {
         case TOKEN_STRING:
-            fputc('"', output); // Opening quote
+            fputc('"', output);
             fputs(current->lexeme, output);
-            fputc('"', output); // Closing quote
+            fputc('"', output);
             break;
-
         default:
             fputs(current->lexeme, output);
             break;
@@ -159,20 +159,36 @@ void minify_tokens(Token *tokens, const char *output_file) {
         if (next->type != TOKEN_EOF) {
             bool add_space = false;
 
-            if (current->type == TOKEN_KEYWORD &&
-                next->type == TOKEN_IDENTIFIER) {
+            // Always add space after keywords
+            if (current->type == TOKEN_KEYWORD) {
                 add_space = true;
-            } else if ((current->type == TOKEN_IDENTIFIER ||
-                        current->type == TOKEN_STRING ||
-                        current->type == TOKEN_INTEGER ||
-                        current->type == TOKEN_FLOAT ||
-                        current->type == TOKEN_BOOLEAN) &&
+            }
+            // Space between identifiers/literals
+            else if ((current->type == TOKEN_IDENTIFIER ||
+                      current->type == TOKEN_STRING ||
+                      current->type == TOKEN_INTEGER ||
+                      current->type == TOKEN_FLOAT ||
+                      current->type == TOKEN_BOOLEAN) &&
+                     (next->type == TOKEN_IDENTIFIER ||
+                      next->type == TOKEN_STRING ||
+                      next->type == TOKEN_INTEGER ||
+                      next->type == TOKEN_FLOAT ||
+                      next->type == TOKEN_BOOLEAN)) {
+                add_space = true;
+            }
+            // Handle operator spacing
+            else if ((current->type == TOKEN_IDENTIFIER ||
+                      current->type == TOKEN_STRING ||
+                      current->type == TOKEN_INTEGER ||
+                      current->type == TOKEN_FLOAT) &&
+                     next->type == TOKEN_OPERATOR) {
+                add_space = false;
+            } else if (current->type == TOKEN_OPERATOR &&
                        (next->type == TOKEN_IDENTIFIER ||
                         next->type == TOKEN_STRING ||
                         next->type == TOKEN_INTEGER ||
-                        next->type == TOKEN_FLOAT ||
-                        next->type == TOKEN_BOOLEAN)) {
-                add_space = true;
+                        next->type == TOKEN_FLOAT)) {
+                add_space = false;
             }
 
             if (add_space) {

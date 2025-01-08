@@ -77,7 +77,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 <!-- chmod +x install.sh -->
 
 ```bash
-./install.sh
+$ bash install.sh
 ```
 
 ##### 3. Handle macOS Security Prompt (If Any)
@@ -88,7 +88,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 ##### 4. Verify Installation
 
 ```bash
-flavor --about
+$ flavor --about
 ```
 
 #### For Ubuntu Users
@@ -102,13 +102,13 @@ flavor --about
 <!-- chmod +x install.sh -->
 
 ```bash
-./install.sh
+$ bash install.sh
 ```
 
 ##### 3. Verify Installation
 
 ```bash
-flavor --about
+$ flavor --about
 ```
 
 #### Make it Yourself
@@ -190,8 +190,8 @@ $ flavor --about              # About FlavorLang
 Navigate to the `vscode-extension` folder and install dependencies:
 
 ```bash
-cd vscode-extension
-npm install
+$ cd vscode-extension
+$ npm install
 ```
 
 #### 2. Package the Extension
@@ -199,13 +199,13 @@ npm install
 Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
 
 ```bash
-npx vsce package
+$ npx vsce package
 ```
 
 #### 3. Install in VS Code
 
 - Open VS Code.
-- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>&#8984;</kbd>+<kbd>&#8679;</kbd>+<kbd>P</kbd> on macOS) and select <kbd>Extensions: Install from VSIX…</kbd>.
+- Press <kbd>&#8984;</kbd><kbd>&#8679;</kbd><kbd>P</kbd> (<kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>P</kbd> on Windows) and select <kbd>Extensions: Install from VSIX…</kbd>.
 - Select the generated `.vsix` file within the `vscode-extension` folder.
 - Restart your extensions via the popup notification.
 
