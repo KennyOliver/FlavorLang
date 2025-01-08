@@ -1706,14 +1706,24 @@ InterpretResult interpret_array_literal(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
-InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
-    if (node->type != AST_ARRAY_OPERATION) {
-        return raise_error("Expected AST_ARRAY_OPERATION node.\n");
+InterpretResult interpret_array_operation(ASTNode *assignment_node,
+                                          Environment *env) {
+    if (assignment_node->type != AST_ASSIGNMENT) {
+        return raise_error(
+            "Expected AST_ASSIGNMENT node for array operation.\n");
     }
 
-    const char *operator= node->array_operation.operator;
-    ASTNode *array_node = node->array_operation.array;
-    ASTNode *operand_node = node->array_operation.operand;
+    // Should be AST_ARRAY_OPERATION
+    ASTNode *lhs_node = assignment_node->assignment.lhs;
+    // Operand for the operation
+    ASTNode *rhs_node = assignment_node->assignment.rhs;
+
+    if (lhs_node->type != AST_ARRAY_OPERATION) {
+        return raise_error("Expected AST_ARRAY_OPERATION in assignment.\n");
+    }
+
+    const char *operator= lhs_node->array_operation.operator;
+    ASTNode *array_node = lhs_node->array_operation.array;
 
     if (array_node->type != AST_VARIABLE_REFERENCE) {
         return raise_error(
@@ -1740,13 +1750,10 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
     // Access the ArrayValue by reference
     ArrayValue *array = &var->value.data.array;
 
-    // For append & prepend, interpret the operand
-    InterpretResult operand_res;
-    if (strcmp(operator, "^+") == 0 || strcmp(operator, "+^") == 0) {
-        operand_res = interpret_node(operand_node, env);
-        if (operand_res.is_error) {
-            return operand_res;
-        }
+    // Interpret the operand
+    InterpretResult operand_res = interpret_node(rhs_node, env);
+    if (operand_res.is_error) {
+        return operand_res;
     }
 
     // Perform operation based on operator
