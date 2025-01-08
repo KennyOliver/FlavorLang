@@ -1493,6 +1493,8 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
                 return builtin_file_write(node, env);
             } else if (strcmp(func->name, "garnish_file") == 0) {
                 return builtin_file_append(node, env);
+            } else if (strcmp(func->name, "length") == 0) {
+                return builtin_length(node, env);
             } else {
                 return raise_error("Unknown built-in function `%s`\n",
                                    func->name);

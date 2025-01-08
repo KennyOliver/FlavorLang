@@ -715,3 +715,55 @@ InterpretResult builtin_file_write(ASTNode *node, Environment *env) {
 InterpretResult builtin_file_append(ASTNode *node, Environment *env) {
     return helper_file_writer(node, env, true);
 }
+
+/**
+ * @brief Built-in function to calculate the length of an array or string.
+ *
+ * @param node The AST node representing the function call.
+ * @param env  The current environment.
+ * @return InterpretResult containing the length as an integer or an error.
+ */
+InterpretResult builtin_length(ASTNode *node, Environment *env) {
+    // Ensure the function call has exactly one argument
+    size_t num_args = 0;
+    ASTNode *arg_node = node->function_call.arguments;
+    ASTNode *temp = arg_node;
+    while (temp) {
+        num_args++;
+        temp = temp->next;
+    }
+
+    if (num_args != 1) {
+        return raise_error(
+            "`length()` expects exactly one argument, but %zu were given.\n",
+            num_args);
+    }
+
+    // Interpret the single argument
+    InterpretResult arg_res = interpret_node(arg_node, env);
+    if (arg_res.is_error) {
+        // Propagate the error
+        return arg_res;
+    }
+
+    LiteralValue lv = arg_res.value;
+
+    // Initialize the result
+    LiteralValue result;
+    result.type = TYPE_INTEGER;
+
+    // Determine the type of the argument and calculate length accordingly
+    if (lv.type == TYPE_STRING) {
+        result.data.integer = (INT_SIZE)strlen(lv.data.string);
+    } else if (lv.type == TYPE_ARRAY) {
+        result.data.integer = (INT_SIZE)lv.data.array.count;
+    } else {
+        // Unsupported type
+        return raise_error("`length()` expects an array or a string as an "
+                           "argument, but received type `%d`.\n",
+                           lv.type);
+    }
+
+    // Return the length as a LiteralValue
+    return make_result(result, false, false);
+}

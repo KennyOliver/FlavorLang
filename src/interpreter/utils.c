@@ -54,8 +54,9 @@ void initialize_builtin_function(Environment *env, const char *name) {
 
 void initialize_all_builtin_functions(Environment *env) {
     const char *builtin_functions[] = {
-        "string", "float",    "int",        "sample",     "serve",       "burn",
-        "random", "get_time", "taste_file", "plate_file", "garnish_file"};
+        "string",     "float",      "int",          "sample",
+        "serve",      "burn",       "random",       "get_time",
+        "taste_file", "plate_file", "garnish_file", "length"};
 
     for (size_t i = 0;
          i < sizeof(builtin_functions) / sizeof(builtin_functions[0]); i++) {

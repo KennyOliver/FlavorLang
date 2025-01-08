@@ -15,6 +15,7 @@ typedef enum {
     ARG_TYPE_FLOAT,
     ARG_TYPE_STRING,
     ARG_TYPE_BOOLEAN,
+    ARG_TYPE_ARRAY,
 } ArgType;
 typedef struct {
     ArgType type;  // expected argument type
@@ -31,6 +32,7 @@ InterpretResult builtin_time(void);
 InterpretResult builtin_file_read(ASTNode *node, Environment *env);
 InterpretResult builtin_file_write(ASTNode *node, Environment *env);
 InterpretResult builtin_file_append(ASTNode *node, Environment *env);
+InterpretResult builtin_length(ASTNode *node, Environment *env);
 
 // Helpers
 InterpretResult interpret_arguments(ASTNode *node, Environment *env,
