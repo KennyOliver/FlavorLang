@@ -7,17 +7,80 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Global flags
-bool minify_flag = false;
+// Structure to hold command-line options
+typedef struct {
+    bool minify;
+    char *filename;
+} Options;
+
+// Function prototypes
+void parse_cli_args(int argc, char *argv[], Options *options);
+void print_usage(const char *prog_name);
+void print_logo_from_file(const char *filename);
+char *generate_minified_filename(const char *input_filename);
+void minify_tokens(Token *tokens, const char *output_file);
+void print_about(void);
+
+// Print usage instructions
+void print_usage(const char *prog_name) {
+    fprintf(stderr, "Usage: `%s <file.flv> [--debug | --minify]`\n", prog_name);
+    fprintf(stderr, "Note: Combining --debug and --minify is invalid.\n");
+}
 
 // Parse command-line arguments
-void parse_cli_args(int argc, char *argv[]) {
+void parse_cli_args(int argc, char *argv[], Options *options) {
+    if (argc < 2) {
+        fprintf(stderr, "Error: No `.flv` source file provided.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    debug_flag = false;
+    options->minify = false;
+    options->filename = NULL;
+
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--debug") == 0) {
+            if (options->minify) {
+                fprintf(stderr,
+                        "Error: Cannot use --debug and --minify together.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
             debug_flag = true;
         } else if (strcmp(argv[i], "--minify") == 0) {
-            minify_flag = true;
+            if (debug_flag) {
+                fprintf(stderr,
+                        "Error: Cannot use --debug and --minify together.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            options->minify = true;
+        } else if (argv[i][0] == '-') {
+            fprintf(stderr, "Error: Unknown option '%s'.\n", argv[i]);
+            print_usage(argv[0]);
+            exit(EXIT_FAILURE);
+        } else {
+            if (options->filename != NULL) {
+                fprintf(stderr, "Error: Multiple input files provided.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            options->filename = argv[i];
         }
+    }
+
+    if (options->filename == NULL) {
+        fprintf(stderr, "Error: No `.flv` source file provided.\n");
+        print_usage(argv[0]);
+        exit(EXIT_FAILURE);
+    }
+
+    // Validate file extension
+    const char *dot = strrchr(options->filename, '.');
+    if (!dot || strcmp(dot, ".flv") != 0) {
+        fprintf(stderr, "Error: Input file must have a `.flv` extension.\n");
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -25,7 +88,7 @@ void parse_cli_args(int argc, char *argv[]) {
 void print_logo_from_file(const char *filename) {
     FILE *file = fopen(filename, "r");
     if (file == NULL) {
-        perror("Error opening file");
+        perror("Error opening logo file");
         return;
     }
 
@@ -39,38 +102,31 @@ void print_logo_from_file(const char *filename) {
 
 // Generate minified filename
 char *generate_minified_filename(const char *input_filename) {
-    // Find the last occurrence of '.'
     const char *dot = strrchr(input_filename, '.');
+    size_t min_filename_len;
+
     if (!dot || dot == input_filename) {
         // No extension found, append .min.flv
-        size_t len = strlen(input_filename) + 9; // ".min.flv" + null terminator
-        char *min_filename = malloc(len);
-        if (!min_filename) {
-            perror("Memory allocation failed");
-            exit(EXIT_FAILURE);
-        }
-        snprintf(min_filename, len, "%s.min.flv", input_filename);
-        return min_filename;
+        min_filename_len = strlen(input_filename) + strlen(".min.flv") + 1;
+    } else {
+        // Calculate position to insert ".min"
+        size_t basename_len = dot - input_filename;
+        min_filename_len = basename_len + strlen(".min") + strlen(dot) + 1;
     }
 
-    // Calculate position to insert ".min"
-    size_t basename_len = dot - input_filename;
-    size_t min_filename_len =
-        basename_len + 5 + strlen(dot) +
-        1; // ".min" + original extension + null terminator
     char *min_filename = malloc(min_filename_len);
     if (!min_filename) {
         perror("Memory allocation failed");
         exit(EXIT_FAILURE);
     }
 
-    // Copy the base name
-    strncpy(min_filename, input_filename, basename_len);
-    min_filename[basename_len] = '\0';
-
-    // Append ".min" and the original extension
-    snprintf(min_filename + basename_len, min_filename_len - basename_len,
-             ".min%s", dot);
+    if (!dot || dot == input_filename) {
+        snprintf(min_filename, min_filename_len, "%s.min.flv", input_filename);
+    } else {
+        size_t basename_len = dot - input_filename;
+        snprintf(min_filename, min_filename_len, "%.*s.min%s",
+                 (int)basename_len, input_filename, dot);
+    }
 
     return min_filename;
 }
@@ -79,7 +135,7 @@ char *generate_minified_filename(const char *input_filename) {
 void minify_tokens(Token *tokens, const char *output_file) {
     FILE *output = fopen(output_file, "w");
     if (!output) {
-        perror("Error opening output file");
+        perror("Error opening output file for minification");
         exit(EXIT_FAILURE);
     }
 
@@ -101,21 +157,25 @@ void minify_tokens(Token *tokens, const char *output_file) {
 
         // Add necessary spacing between tokens
         if (next->type != TOKEN_EOF) {
+            bool add_space = false;
+
             if (current->type == TOKEN_KEYWORD &&
                 next->type == TOKEN_IDENTIFIER) {
-                fputc(' ', output);
+                add_space = true;
+            } else if ((current->type == TOKEN_IDENTIFIER ||
+                        current->type == TOKEN_STRING ||
+                        current->type == TOKEN_INTEGER ||
+                        current->type == TOKEN_FLOAT ||
+                        current->type == TOKEN_BOOLEAN) &&
+                       (next->type == TOKEN_IDENTIFIER ||
+                        next->type == TOKEN_STRING ||
+                        next->type == TOKEN_INTEGER ||
+                        next->type == TOKEN_FLOAT ||
+                        next->type == TOKEN_BOOLEAN)) {
+                add_space = true;
             }
-            // Space between consecutive identifiers/literals
-            else if ((current->type == TOKEN_IDENTIFIER ||
-                      current->type == TOKEN_STRING ||
-                      current->type == TOKEN_INTEGER ||
-                      current->type == TOKEN_FLOAT ||
-                      current->type == TOKEN_BOOLEAN) &&
-                     (next->type == TOKEN_IDENTIFIER ||
-                      next->type == TOKEN_STRING ||
-                      next->type == TOKEN_INTEGER ||
-                      next->type == TOKEN_FLOAT ||
-                      next->type == TOKEN_BOOLEAN)) {
+
+            if (add_space) {
                 fputc(' ', output);
             }
         }
@@ -147,56 +207,21 @@ void print_about(void) {
 }
 
 int main(int argc, char **argv) {
-    // Check for `--about` flag
+    // Handle --about flag separately
     if (argc == 2 && strcmp(argv[1], "--about") == 0) {
         print_about();
-        return 0; // Exit after printing "about" info
+        return EXIT_SUCCESS;
     }
 
-    // Parse command-line arguments for flags
-    parse_cli_args(argc, argv);
-
-    // Validate input file arguments
-    // Determine the position of the input filename
-    int filename_index = -1;
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--debug") != 0 &&
-            strcmp(argv[i], "--minify") != 0) {
-            filename_index = i;
-            break;
-        }
-    }
-
-    if (filename_index == -1) {
-        fprintf(stderr, "Usage: `%s <file.flv> [--debug] [--minify]`\n",
-                argv[0]);
-        fprintf(stderr, "Reason: no `.flv` source file was provided\n");
-        return 1;
-    } else {
-        // Check if there are multiple input files
-        int input_file_count = 0;
-        for (int i = 1; i < argc; i++) {
-            if (strcmp(argv[i], "--debug") != 0 &&
-                strcmp(argv[i], "--minify") != 0) {
-                input_file_count++;
-            }
-        }
-        if (input_file_count > 1) {
-            fprintf(stderr, "Usage: `%s <file.flv> [--debug] [--minify]`\n",
-                    argv[0]);
-            fprintf(stderr, "Reason: FlavorLang currently only accepts one "
-                            "`.flv` source file\n");
-            return 1;
-        }
-    }
-
-    const char *filename = argv[filename_index];
+    // Parse command-line arguments
+    Options options;
+    parse_cli_args(argc, argv, &options);
 
     // Read source `.flv` file
-    char *source = read_file(filename);
+    char *source = read_file(options.filename);
     if (!source) {
-        fprintf(stderr, "Error: Could not read file '%s'\n", filename);
-        return 1;
+        fprintf(stderr, "Error: Could not read file '%s'\n", options.filename);
+        return EXIT_FAILURE;
     }
 
     // Tokenize
@@ -204,9 +229,23 @@ int main(int argc, char **argv) {
     if (!tokens) {
         fprintf(stderr, "Error: Tokenization failed\n");
         free(source);
-        return 1;
+        return EXIT_FAILURE;
     }
 
+    // If --minify flag is set, perform minification and exit
+    if (options.minify) {
+        char *minified_filename = generate_minified_filename(options.filename);
+        minify_tokens(tokens, minified_filename);
+        printf("Minified script written to '%s'\n", minified_filename);
+        free(minified_filename);
+
+        // Clean up memory
+        free(tokens);
+        free(source);
+        return EXIT_SUCCESS;
+    }
+
+    // If --debug flag is set, print debug information
     if (debug_flag) {
         debug_print_tokens(tokens);
         debug_print_basic("Lexing complete!\n\n");
@@ -230,13 +269,16 @@ int main(int argc, char **argv) {
         debug_print_basic("Execution complete!\n");
     }
 
-    // Minify if flag is set
-    if (minify_flag) {
-        char *minified_filename = generate_minified_filename(filename);
+    // Minify if flag is set (This check is redundant now since we already
+    // handled minify above)
+    /*
+    if (options.minify) {
+        char *minified_filename = generate_minified_filename(options.filename);
         minify_tokens(tokens, minified_filename);
         printf("Minified script written to '%s'\n", minified_filename);
         free(minified_filename);
     }
+    */
 
     // Clean up memory
     free(tokens);
@@ -244,5 +286,5 @@ int main(int argc, char **argv) {
     free_environment(&env);
     free_ast(ast);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
