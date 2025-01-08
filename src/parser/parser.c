@@ -173,6 +173,7 @@ ASTNode *parse_variable_assignment(ParserState *state) {
 
     // Parse the left-hand side (LHS) expression
     ASTNode *lhs = parse_expression(state);
+    debug_print_par("Parsed LHS expression\n");
 
     // Expect `=` operator
     Token *op_token = get_current_token(state);
@@ -181,11 +182,12 @@ ASTNode *parse_variable_assignment(ParserState *state) {
         parser_error("Expected `=` operator after variable name or slice",
                      op_token);
     }
+    debug_print_par("Found '=' operator\n");
     advance_token(state); // consume `=`
 
     // Parse the expression on the right-hand side (RHS)
     ASTNode *rhs = parse_expression(state);
-    debug_print_par("Parsed expression for assignment\n");
+    debug_print_par("Parsed RHS expression\n");
 
     // Expect `;` delimiter
     Token *delimiter = get_current_token(state);
@@ -968,33 +970,32 @@ bool is_assignment(ParserState *state) {
     if (state->current->type != TOKEN_IDENTIFIER)
         return false;
 
-    // Peek the next token
-    Token *next = peek_next_token(state);
-    if (!next)
-        return false;
+    // Start checking after the identifier
+    size_t temp_token = state->current_token + 1;
+    Token *tokens = state->tokens;
 
-    // Case 1: identifier '='
-    if (next->type == TOKEN_OPERATOR && strcmp(next->lexeme, "=") == 0)
-        return true;
+    // Traverse any number of `[ expression ]` sequences
+    while (tokens[temp_token].type == TOKEN_SQ_BRACKET_OPEN) {
+        temp_token++; // consume `[`
 
-    // Case 2: identifier '[' array_operator ']' '='
-    if (next->type == TOKEN_SQ_BRACKET_OPEN) {
-        // Peek two tokens ahead (array operator)
-        Token *array_op = peek_ahead(state, 2);
-        if (array_op && is_array_operator(array_op)) {
-            // Peek three tokens ahead (']')
-            Token *after_bracket = peek_ahead(state, 3);
-            if (after_bracket &&
-                after_bracket->type == TOKEN_SQ_BRACKET_CLOSE) {
-                // Peek four tokens ahead ('=')
-                Token *equals = peek_ahead(state, 4);
-                if (equals && equals->type == TOKEN_OPERATOR &&
-                    strcmp(equals->lexeme, "=") == 0)
-                    return true;
-            }
+        // Traverse tokens until `]` is found
+        while (tokens[temp_token].type != TOKEN_SQ_BRACKET_CLOSE &&
+               tokens[temp_token].type != TOKEN_EOF) {
+            temp_token++;
+        }
+
+        if (tokens[temp_token].type == TOKEN_SQ_BRACKET_CLOSE) {
+            temp_token++; // consume `]`
+        } else {
+            // Unmatched `[` found
+            return false;
         }
     }
 
-    // Not an assignment
+    // After traversing array indices, check if the next token is `=`
+    if (tokens[temp_token].type == TOKEN_OPERATOR &&
+        strcmp(tokens[temp_token].lexeme, "=") == 0)
+        return true;
+
     return false;
 }

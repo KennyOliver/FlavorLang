@@ -23,6 +23,8 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 15. [Get Current Year with `get_time()`](#15)
 16. [Ternary Operator](#16)
 17. [Nested Function Application](#17)
+18. [Basic Arrays & Operations](#18)
+19. [2D Arrays](#19)
 
 ---
 
@@ -336,6 +338,156 @@ create test(num, func_a, func_b) {
 
 let a = test(10, times_2, times_3); # 180
 serve(a);
+```
+
+### 18. Basic Arrays & Operations <a id="18"></a>
+
+```py
+# Initialize test array
+let array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+serve("Initial array:", array);
+
+# Element Access
+serve("Accessing 6th element (index 5):", array[5]);
+
+# Append
+array[^+] = 11;
+serve("Array after appending 11:", array);
+
+# Prepend
+array[+^] = 0;
+serve("Array after prepending 0:", array);
+
+# Remove Last Element
+serve("Removing last element:", array[^-]);
+serve("Array after removing last element:", array);
+
+# Remove First Element
+serve("Removing first element:", array[-^]);
+serve("Array after removing first element:", array);
+
+# Slicing
+serve("Slice from index 0 to 5:", array[0:5]);
+serve("Reversed array:", array[::-1]);
+serve("Slice from index 3 to end:", array[3:]);
+serve("Slice from start to index 8:", array[:8]);
+serve("Slice from index 3 to 8, skipping every 2nd element:", array[3:8:2]);
+serve("Slice from index 8 to 3, skipping every 2nd element (reverse):", array[8:3:-2]);
+serve("Slice from index 3 to start (reversed):", array[3::-1]);
+serve("Slice from end towards index 8 (exclusive, reversed):", array[:8:-1]);
+serve("Slice entire array, skipping every 2nd element:", array[::2]);
+serve("Reverse array, skipping every 3rd element:", array[::-3]);
+
+# Test completed
+serve("Array operation tests complete!");
+
+# Initialize const (immutable) array
+const const_array = [10, 20, 30, 40, 50];
+serve("Initial const array:", const_array);
+
+# Attempt mutation
+try {
+    const_array[^+] = 60; # Trying to append to const array
+    serve("This should not be shown; const array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const array.");
+}
+
+# Confirm immutability
+serve("Const array remains unchanged:", const_array);
+
+# Try to remove element
+try {
+    const_array[^-]; # Attempting to remove the last element
+    serve("This should not be shown; const array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const array.");
+}
+
+# Final confirmation
+serve("Const array is still:", const_array);
+
+# Test completed
+serve("Immutable array tests complete!");
+```
+
+### 19. 2D Arrays <a id="19"></a>
+
+```py
+# Test for array length
+let array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+serve("Initial array:", array);
+serve("Length of array:", length(array));
+
+# Test compound slicing
+serve("Original array:", array);
+serve("Double slice (first 5, then reverse):", (array[0:5])[::-1]);
+serve("Triple slice (first 5, skip every second, then reverse):", ((array[0:5])[::2])[::-1]);
+
+# Test declaring and using 2D arrays
+let array2D = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+serve("2D array:", array2D);
+
+# Access individual elements
+serve("Element at (2, 2):", array2D[1][1]);
+serve("Element at (3, 3):", array2D[2][2]);
+
+# Modify elements in a 2D array
+array2D[0][0] = 10;
+serve("2D array after modifying (1, 1) to 10:", array2D);
+
+# Test slicing on rows
+serve("First row:", array2D[0]);
+serve("Last row reversed:", array2D[2][::-1]);
+
+# Test slicing on columns (manual transpose-like slicing)
+let first_column = [array2D[0][0], array2D[1][0], array2D[2][0]];
+serve("First column:", first_column);
+
+let second_column_reversed = [array2D[2][1], array2D[1][1], array2D[0][1]];
+serve("Second column reversed:", second_column_reversed);
+
+# Test length of 2D array and its rows
+serve("Number of rows:", length(array2D));
+serve("Number of elements in first row:", length(array2D[0]));
+
+# Immutable 2D arrays
+const const_2D_array = [
+    [10, 20, 30],
+    [40, 50, 60],
+    [70, 80, 90]
+];
+serve("Immutable 2D array:", const_2D_array);
+
+# Attempt mutation on immutable 2D array
+try {
+    const_2D_array[0][0] = 100; # Trying to modify element
+    serve("This should not be shown; const 2D array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const 2D array.");
+}
+
+# Confirm immutability
+serve("Const 2D array remains unchanged:", const_2D_array);
+
+# Final confirmation
+serve("Immutable 2D array tests complete!");
+
+# Test length of a mixed array
+let mixed_array = [1, "two", [3, 4], [5, 6]];
+serve("Mixed array:", mixed_array);
+serve("Length of mixed array:", length(mixed_array));
+
+# Compound operations on mixed array
+serve("First element of nested array (3, 4):", mixed_array[2][0]);
+serve("Length of nested array:", length(mixed_array[2]));
+
+# Test completed
+serve("All array operation tests complete!");
 ```
 
 ---

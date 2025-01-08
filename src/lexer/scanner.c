@@ -119,6 +119,19 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
+            // Handle nested array
+            if (inner_c == '[') {
+                // Recursively scan the nested array
+                scan_array(state, tokens, token_count, capacity);
+                continue;
+            }
+
+            // Handle string literals
+            if (inner_c == '"') {
+                scan_string(state, tokens, token_count, capacity);
+                continue;
+            }
+
             // Handle special array operations first
             if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
                 // Peek the next character
@@ -136,7 +149,7 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                     state->pos += 2; // Move past the two-character operator
                     continue;
                 }
-                // **Handle negative numbers (e.g., -1) within slicing**
+                // Handle negative numbers (e.g., `-1`) within slicing
                 else if (inner_c == '-' && (state->pos + 1 < state->length) &&
                          isdigit(state->source[state->pos + 1])) {
                     // Treat '-' as part of a negative number
@@ -150,6 +163,13 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                     state->pos++;
                     continue;
                 }
+            }
+
+            // Handle identifiers
+            if (is_valid_identifier_start(inner_c)) {
+                scan_identifier_or_keyword(state, tokens, token_count,
+                                           capacity);
+                continue;
             }
 
             // Handle numbers (including negative numbers) after array operators

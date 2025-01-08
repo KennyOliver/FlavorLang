@@ -34,8 +34,16 @@ InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,
                                            Environment *env);
 InterpretResult interpret_try(ASTNode *node, Environment *env);
+
+// Arrays
+typedef struct {
+    ArrayValue *array; // Pointer to target array where assignment occurs
+    INT_SIZE index;    // Index in target array to assign new value
+} AssignmentTargetInfo;
 InterpretResult interpret_array_literal(ASTNode *node, Environment *env);
 InterpretResult interpret_array_operation(ASTNode *node, Environment *env);
+InterpretResult collect_indices(ASTNode *node, Environment *env,
+                                INT_SIZE **indices, size_t *count);
 InterpretResult interpret_array_index_access(ASTNode *node, Environment *env);
 InterpretResult interpret_array_index_assignment(ASTNode *node,
                                                  Environment *env,

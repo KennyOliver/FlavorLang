@@ -204,9 +204,9 @@ npx vsce package
 #### 3. Install in VS Code
 
 - Open VS Code.
-- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>&#8984;</kbd>+<kbd>&#8679;</kbd>+<kbd>P</kbd> on macOS) and select _`Extensions: Install from VSIX…`_.
+- Press <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>P</kbd> (or <kbd>&#8984;</kbd>+<kbd>&#8679;</kbd>+<kbd>P</kbd> on macOS) and select <kbd>Extensions: Install from VSIX…</kbd>.
 - Select the generated `.vsix` file within the `vscode-extension` folder.
-- Restart your extensions via the popup notificaiton.
+- Restart your extensions via the popup notification.
 
 ---
 
