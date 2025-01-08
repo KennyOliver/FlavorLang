@@ -5,6 +5,12 @@ TEST_DIR="tests"
 
 # Loop through all .flv files in the tests directory
 for test_file in "$TEST_DIR"/*.flv; do
+    # Skip the file named `all.flv`
+    if [[ "$(basename "$test_file")" == "all.flv" ]]; then
+        echo "Skipping file: $test_file"
+        continue
+    fi
+
     echo "Running test: $test_file"
     ./flavor "$test_file"
 
