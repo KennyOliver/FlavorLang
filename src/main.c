@@ -87,13 +87,11 @@ void minify_tokens(Token *tokens, const char *output_file) {
     Token *next = tokens + 1;
 
     while (current->type != TOKEN_EOF) {
-
-        // Handle different token types
         switch (current->type) {
         case TOKEN_STRING:
-            fputc('"', output);             // Opening quote
-            fputs(current->lexeme, output); // String content
-            fputc('"', output);             // Closing quote
+            fputc('"', output); // Opening quote
+            fputs(current->lexeme, output);
+            fputc('"', output); // Closing quote
             break;
 
         default:
@@ -103,13 +101,11 @@ void minify_tokens(Token *tokens, const char *output_file) {
 
         // Add necessary spacing between tokens
         if (next->type != TOKEN_EOF) {
-            // Space after keywords (e.g., `const`) before identifiers
             if (current->type == TOKEN_KEYWORD &&
                 next->type == TOKEN_IDENTIFIER) {
                 fputc(' ', output);
             }
-            // Space between consecutive identifiers/literals (excluding
-            // operators)
+            // Space between consecutive identifiers/literals
             else if ((current->type == TOKEN_IDENTIFIER ||
                       current->type == TOKEN_STRING ||
                       current->type == TOKEN_INTEGER ||
@@ -122,7 +118,6 @@ void minify_tokens(Token *tokens, const char *output_file) {
                       next->type == TOKEN_BOOLEAN)) {
                 fputc(' ', output);
             }
-            // **Removed**: Conditions adding spaces around operators
         }
 
         current++;
