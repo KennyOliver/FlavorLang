@@ -72,3 +72,33 @@ serve("Length of nested array:", length(mixed_array[2]));
 
 # Test completed
 serve("All array operation tests complete!");
+
+
+# EXPECTED OUTPUT
+#
+# Initial array: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
+# Length of array: 10 
+# Original array: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] 
+# Double slice (first 5, then reverse): [5, 4, 3, 2, 1] 
+# Triple slice (first 5, skip every second, then reverse): [5, 3, 1] 
+# 2D array: [[1, 2, 3], [4, 5, 6], [7, 8, 9]] 
+# Element at (2, 2): 5 
+# Element at (3, 3): 9 
+# 2D array after modifying (1, 1) to 10: [[10, 2, 3], [4, 5, 6], [7, 8, 9]] 
+# First row: [10, 2, 3] 
+# Last row reversed: [9, 8, 7] 
+# First column: [10, 4, 7] 
+# Second column reversed: [8, 5, 2] 
+# Number of rows: 3 
+# Number of elements in first row: 3 
+# Immutable 2D array: [[10, 20, 30], [40, 50, 60], [70, 80, 90]] 
+# Error: Cannot mutate a constant array `const_2D_array`.
+# 
+# Caught error: Cannot mutate a const 2D array. 
+# Const 2D array remains unchanged: [[10, 20, 30], [40, 50, 60], [70, 80, 90]] 
+# Immutable 2D array tests complete! 
+# Mixed array: [1, "two", [3, 4], [5, 6]] 
+# Length of mixed array: 4 
+# First element of nested array (3, 4): 3 
+# Length of nested array: 2 
+# All array operation tests complete! 
