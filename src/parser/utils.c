@@ -147,6 +147,7 @@ void free_ast(ASTNode *node) {
         case AST_CATCH:
         case AST_FINALLY:
         case AST_VARIABLE_REFERENCE:
+        case AST_BREAK:
             // No dynamic memory to free
             break;
 
