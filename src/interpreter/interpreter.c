@@ -408,6 +408,59 @@ InterpretResult handle_string_concatenation(InterpretResult left,
     return make_result(lv_result, false, false);
 }
 
+/**
+ * @brief Concatenates two arrays and returns the resulting array.
+ *
+ * @param left_res The left-hand side array.
+ * @param right_res The right-hand side array.
+ * @return InterpretResult The result of the concatenation or an error.
+ */
+InterpretResult handle_array_concatenation(InterpretResult left_res,
+                                           InterpretResult right_res) {
+    // Ensure both operands are arrays
+    if (left_res.value.type != TYPE_ARRAY ||
+        right_res.value.type != TYPE_ARRAY) {
+        return raise_error(
+            "Array concatenation requires both operands to be arrays.\n");
+    }
+
+    ArrayValue *left_array = &left_res.value.data.array;
+    ArrayValue *right_array = &right_res.value.data.array;
+
+    // Calculate the new size
+    size_t new_count = left_array->count + right_array->count;
+    size_t new_capacity = left_array->capacity + right_array->capacity;
+
+    // Allocate memory for the new array elements
+    LiteralValue *new_elements = malloc(new_capacity * sizeof(LiteralValue));
+    if (!new_elements) {
+        return raise_error(
+            "Memory allocation failed during array concatenation.\n");
+    }
+
+    // Copy elements from the left array
+    for (size_t i = 0; i < left_array->count; i++) {
+        new_elements[i] = left_array->elements[i];
+    }
+
+    // Copy elements from the right array
+    for (size_t i = 0; i < right_array->count; i++) {
+        new_elements[left_array->count + i] = right_array->elements[i];
+    }
+
+    // Create the new concatenated array
+    ArrayValue concatenated_array;
+    concatenated_array.count = new_count;
+    concatenated_array.capacity = new_capacity;
+    concatenated_array.elements = new_elements;
+
+    LiteralValue result;
+    result.type = TYPE_ARRAY;
+    result.data.array = concatenated_array;
+
+    return make_result(result, false, false);
+}
+
 // Helper function to handle numeric operations and comparisons
 InterpretResult handle_numeric_operator(const char *op,
                                         InterpretResult left_res,
@@ -529,6 +582,14 @@ InterpretResult handle_numeric_operator(const char *op,
 InterpretResult evaluate_operator(const char *op, InterpretResult left_res,
                                   InterpretResult right_res) {
     debug_print_int("Operator: `%s`\n", op);
+
+    // Handle array concatenation with "+" operator
+    if (strcmp(op, "+") == 0) {
+        if (left_res.value.type == TYPE_ARRAY &&
+            right_res.value.type == TYPE_ARRAY) {
+            return handle_array_concatenation(left_res, right_res);
+        }
+    }
 
     // Handle string concatenation with "+" operator
     if (strcmp(op, "+") == 0 && (left_res.value.type == TYPE_STRING ||
