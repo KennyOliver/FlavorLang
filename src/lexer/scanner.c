@@ -169,6 +169,19 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
             if (is_valid_identifier_start(inner_c)) {
                 scan_identifier_or_keyword(state, tokens, token_count,
                                            capacity);
+                // After scanning identifier, check for '(' to identify function
+                // calls
+                if (state->pos < state->length &&
+                    state->source[state->pos] == '(') {
+                    // Convert the last token to TOKEN_FUNCTION_NAME
+                    if (*token_count > 0) {
+                        (*tokens)[*token_count - 1].type = TOKEN_FUNCTION_NAME;
+                    }
+                    // Append the '(' token
+                    append_token(tokens, token_count, capacity,
+                                 TOKEN_PAREN_OPEN, "(", state->line);
+                    state->pos++;
+                }
                 continue;
             }
 
@@ -177,6 +190,20 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 (inner_c == '-' && state->pos + 1 < state->length &&
                  isdigit(state->source[state->pos + 1]))) {
                 scan_number(state, tokens, token_count, capacity);
+                continue;
+            }
+
+            // Handle parentheses
+            if (inner_c == '(') {
+                append_token(tokens, token_count, capacity, TOKEN_PAREN_OPEN,
+                             "(", state->line);
+                state->pos++;
+                continue;
+            }
+            if (inner_c == ')') {
+                append_token(tokens, token_count, capacity, TOKEN_PAREN_CLOSE,
+                             ")", state->line);
+                state->pos++;
                 continue;
             }
 
@@ -211,8 +238,6 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
         } else {
             token_error("Unmatched opening bracket `[`", state->line);
         }
-    } else if (c == ']') {
-        token_error("Unmatched closing bracket `]`", state->line);
     }
 }
 
