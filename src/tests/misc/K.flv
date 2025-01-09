@@ -5,6 +5,6 @@ const b = [random, random, random];
 
 serve(a);
 
-for i in 1..(length(b)) {
-    serve(b[i](1, 2));
+for i in 0..(length(b)) {
+    serve(b[i](1.0, 2.0));
 }

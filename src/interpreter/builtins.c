@@ -285,7 +285,7 @@ void print_literal_value(LiteralValue lv) {
         printf("]");
         break;
     case TYPE_FUNCTION:
-        printf("<Function %s>", lv.data.function_ptr->name);
+        printf("<Function %s>", lv.data.function_name);
         break;
     case TYPE_ERROR:
         printf("<Error>");

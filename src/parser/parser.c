@@ -950,7 +950,6 @@ ASTNode *parse_finally_block(ParserState *state) {
  */
 Token *peek_ahead(ParserState *state, size_t n) {
     size_t target = state->current_token + n;
-    // Assuming tokens are terminated with TOKEN_EOF
     // Return the last token if target exceeds the array
     return &state->tokens[target];
 }

@@ -793,8 +793,7 @@ Variable *get_variable(Environment *env, const char *variable_name) {
                     debug_print_int(
                         "Variable found: `%s` with function reference `%s`\n",
                         variable_name,
-                        current_env->variables[i]
-                            .value.data.function_ptr->name);
+                        current_env->variables[i].value.data.function_name);
                     break;
                 case TYPE_ARRAY:
                     debug_print_int(
@@ -827,16 +826,33 @@ InterpretResult add_variable(Environment *env, Variable var) {
                                    var.variable_name);
             }
 
-            // Update the value of the existing variable
-            if (env->variables[i].value.type == TYPE_STRING &&
-                env->variables[i].value.data.string) {
-                free(env->variables[i].value.data.string);
+            // If assigning a function, ensure to store the function name
+            if (var.value.type == TYPE_FUNCTION) {
+                // Free previous string if necessary
+                if (env->variables[i].value.type == TYPE_STRING &&
+                    env->variables[i].value.data.string) {
+                    free(env->variables[i].value.data.string);
+                }
+
+                // Store function name
+                env->variables[i].value.type = TYPE_FUNCTION;
+                env->variables[i].value.data.function_name =
+                    strdup(var.value.data.function_name);
+                if (!env->variables[i].value.data.function_name) {
+                    return raise_error(
+                        "Memory allocation failed for function name `%s`.\n",
+                        var.variable_name);
+                }
+            } else {
+                // Non-function types: directly assign
+                if (env->variables[i].value.type == TYPE_STRING &&
+                    env->variables[i].value.data.string) {
+                    free(env->variables[i].value.data.string);
+                }
+                env->variables[i].value = var.value;
             }
 
-            env->variables[i].value = var.value;
             // Do not modify is_constant when updating existing variable
-            // env->variables[i].is_constant = var.is_constant;
-
             debug_print_int("Updated variable `%s` with is_constant=%d\n",
                             var.variable_name, env->variables[i].is_constant);
 
@@ -879,8 +895,13 @@ InterpretResult add_variable(Environment *env, Variable var) {
         }
     } else if (var.value.type == TYPE_FUNCTION) {
         env->variables[env->variable_count].value.type = TYPE_FUNCTION;
-        env->variables[env->variable_count].value.data.function_ptr =
-            var.value.data.function_ptr;
+        env->variables[env->variable_count].value.data.function_name =
+            strdup(var.value.data.function_name);
+        if (!env->variables[env->variable_count].value.data.function_name) {
+            return raise_error(
+                "Memory allocation failed for function name `%s`.\n",
+                var.variable_name);
+        }
     } else {
         env->variables[env->variable_count].value = var.value;
     }
@@ -1406,7 +1427,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
 
     // Initialize param_list as NULL
     ASTFunctionParameter *param_list = NULL;
-    ASTFunctionParameter *param_tail = NULL; // keep track of the last parameter
+    ASTFunctionParameter *param_tail = NULL; // Keep track of the last parameter
 
     // Copy parameters
     ASTFunctionParameter *param = node->function_declaration.parameters;
@@ -1417,12 +1438,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
                 "Error: Memory allocation failed for function parameter\n");
         }
 
-        new_param->parameter_name = strdup(param->parameter_name);
-        if (!new_param->parameter_name) {
-            free(new_param);
-            fatal_error("Memory allocation failed for parameter name\n");
-        }
-
+        new_param->parameter_name = safe_strdup(param->parameter_name);
         new_param->next = NULL;
 
         // Add to list
@@ -1437,23 +1453,25 @@ InterpretResult interpret_function_declaration(ASTNode *node,
         param = param->next;
     }
 
-    Function func = {.name = strdup(node->function_declaration.name),
+    Function func = {.name = safe_strdup(node->function_declaration.name),
                      .parameters = param_list,
                      .body = node->function_declaration.body,
                      .is_builtin = false};
 
     add_function(env, func);
 
-    // Also add the function as a variable holding its reference
+    // Also add the function as a variable holding its name
     LiteralValue func_ref = {.type = TYPE_FUNCTION,
-                             .data.function_ptr =
-                                 &env->functions[env->function_count - 1]};
+                             .data.function_name = safe_strdup(func.name)};
 
-    Variable var = {.variable_name = strdup(func.name),
+    Variable var = {.variable_name = safe_strdup(func.name),
                     .value = func_ref,
                     .is_constant = false};
 
-    add_variable(env, var);
+    InterpretResult add_var_res = add_variable(env, var);
+    if (add_var_res.is_error) {
+        fatal_error("Failed to register function variable `%s`.\n", func.name);
+    }
 
     return make_result(create_default_value(), false, false);
 }
@@ -1473,76 +1491,57 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         return func_ref_result; // Propagate the error
     }
 
-    if (func_ref_result.value.type != TYPE_STRING &&
-        func_ref_result.value.type != TYPE_FUNCTION) {
+    const char *func_name = NULL;
+    Function *func = NULL;
+
+    if (func_ref_result.value.type == TYPE_FUNCTION) {
+        // If it's a function type, get the name
+        func_name = func_ref_result.value.data.function_name;
+    } else if (func_ref_result.value.type == TYPE_STRING) {
+        // If it's a string, use it directly
+        func_name = func_ref_result.value.data.string;
+    } else {
         return raise_error(
             "Function reference must evaluate to a string or function.\n");
     }
 
-    const char *func_name = NULL;
-    Function *func = NULL;
-
-    if (func_ref_result.value.type == TYPE_STRING) {
-        func_name = func_ref_result.value.data.string;
-
-        // 1) Try looking up the function in the functions array (built-in or
-        // global user-defined)
-        func = get_function(env, func_name);
-        if (func) {
-            if (func->is_builtin) {
-                // Handle built-in functions
-                if (strcmp(func->name, "sample") == 0) {
-                    return builtin_input(node, env);
-                } else if (strcmp(func->name, "serve") == 0) {
-                    return builtin_output(node, env);
-                } else if (strcmp(func->name, "burn") == 0) {
-                    return builtin_error(node, env);
-                } else if (strcmp(func->name, "random") == 0) {
-                    return builtin_random(node, env);
-                } else if (strcmp(func->name, "string") == 0 ||
-                           strcmp(func->name, "int") == 0 ||
-                           strcmp(func->name, "float") == 0) {
-                    return builtin_cast(node, env);
-                } else if (strcmp(func->name, "get_time") == 0) {
-                    return builtin_time();
-                } else if (strcmp(func->name, "taste_file") == 0) {
-                    return builtin_file_read(node, env);
-                } else if (strcmp(func->name, "plate_file") == 0) {
-                    return builtin_file_write(node, env);
-                } else if (strcmp(func->name, "garnish_file") == 0) {
-                    return builtin_file_append(node, env);
-                } else if (strcmp(func->name, "length") == 0) {
-                    return builtin_length(node, env);
-                } else {
-                    return raise_error("Unknown built-in function `%s`\n",
-                                       func->name);
-                }
-            } else {
-                // Handle user-defined functions in the functions array
-                return call_user_defined_function(func, node, env);
-            }
-        }
-
-        // 2) If not found in functions array, check if it's a variable holding
-        // a function reference
-        Variable *func_var = get_variable(env, func_name);
-        if (func_var && func_var->value.type == TYPE_FUNCTION) {
-            Function *func_ref = func_var->value.data.function_ptr;
-            // Delegate to call_user_defined_function
-            return call_user_defined_function(func_ref, node, env);
-        }
-
-        // 3) If not found in either, raise an error
+    // Lookup the function by name
+    func = get_function(env, func_name);
+    if (!func) {
         return raise_error("Undefined function `%s`\n", func_name);
-    } else if (func_ref_result.value.type == TYPE_FUNCTION) {
-        // Function reference directly
-        func = func_ref_result.value.data.function_ptr;
-        return call_user_defined_function(func, node, env);
     }
 
-    // If function reference is neither string nor function, raise an error
-    return raise_error(
-        "Function reference must evaluate to a string or function.\n");
+    if (func->is_builtin) {
+        // Handle built-in functions
+        if (strcmp(func->name, "sample") == 0) {
+            return builtin_input(node, env);
+        } else if (strcmp(func->name, "serve") == 0) {
+            return builtin_output(node, env);
+        } else if (strcmp(func->name, "burn") == 0) {
+            return builtin_error(node, env);
+        } else if (strcmp(func->name, "random") == 0) {
+            return builtin_random(node, env);
+        } else if (strcmp(func->name, "string") == 0 ||
+                   strcmp(func->name, "int") == 0 ||
+                   strcmp(func->name, "float") == 0) {
+            return builtin_cast(node, env);
+        } else if (strcmp(func->name, "get_time") == 0) {
+            return builtin_time();
+        } else if (strcmp(func->name, "taste_file") == 0) {
+            return builtin_file_read(node, env);
+        } else if (strcmp(func->name, "plate_file") == 0) {
+            return builtin_file_write(node, env);
+        } else if (strcmp(func->name, "garnish_file") == 0) {
+            return builtin_file_append(node, env);
+        } else if (strcmp(func->name, "length") == 0) {
+            return builtin_length(node, env);
+        } else {
+            return raise_error("Unknown built-in function `%s`\n", func->name);
+        }
+    } else {
+        // Handle user-defined functions
+        return call_user_defined_function(func, node, env);
+    }
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {

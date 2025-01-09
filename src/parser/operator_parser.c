@@ -290,8 +290,7 @@ ASTNode *parse_argument_list(ParserState *state) {
 bool match_operator(ParserState *state, const char *op) {
     Token *current = get_current_token(state);
     if (current->type == TOKEN_OPERATOR && strcmp(current->lexeme, op) == 0) {
-        state->previous =
-            current; // Assuming ParserState has a 'previous' field
+        state->previous = current;
         advance_token(state);
         return true;
     }
