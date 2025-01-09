@@ -1,0 +1,10 @@
+serve(length("hello"));
+
+const a = [random(), random(), random()];
+const b = [random, random, random];
+
+serve(a);
+
+for i in 1..(length(b)) {
+    serve(b[i](1, 2));
+}
