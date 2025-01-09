@@ -8,3 +8,13 @@ serve(a);
 for i in 0..(length(b)) {
     serve(b[i](1, 2));
 }
+
+create my_func(x, y, z) {
+    deliver x * y * z;
+}
+
+const c = [my_func, my_func, my_func, my_func];
+
+for i in 0..(length(c)) {
+    serve(c[i](0.5, 3, i));
+}
