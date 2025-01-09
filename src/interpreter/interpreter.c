@@ -822,7 +822,7 @@ InterpretResult add_variable(Environment *env, Variable var) {
             if (env->variables[i].is_constant) {
                 debug_print_int("Attempted to reassign to constant `%s`\n",
                                 var.variable_name);
-                return raise_error("Error: Cannot reassign to constant `%s`.\n",
+                return raise_error("Cannot reassign to constant `%s`.\n",
                                    var.variable_name);
             }
 
@@ -1606,18 +1606,7 @@ InterpretResult interpret_try(ASTNode *node, Environment *env) {
 
         while (catch && !handled) {
             Environment catch_env;
-            init_environment(&catch_env);
-
-            // Copy global functions to rescue environment
-            for (size_t i = 0; i < env->function_count; i++) {
-                Function *global_func = &env->functions[i];
-                Function func_copy = {.name = strdup(global_func->name),
-                                      .parameters = copy_function_parameters(
-                                          global_func->parameters),
-                                      .body = copy_ast_node(global_func->body),
-                                      .is_builtin = global_func->is_builtin};
-                add_function(&catch_env, func_copy);
-            }
+            init_environment_with_parent(&catch_env, env);
 
             // If there's an error variable, bind the exception to it
             if (catch->error_variable) {
