@@ -17,3 +17,8 @@ serve(int_str);
 
 const int_int = 1 + 2;
 serve(int_int);
+
+const array1 = [1, 2, 3];
+const array2 = [4, 5, 6];
+const array_concatenation_result = array1 + array2;
+serve(array_concatenation_result); # [1, 2, 3, 4, 5, 6]
