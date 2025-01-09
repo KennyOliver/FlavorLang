@@ -113,8 +113,8 @@ typedef struct {
 
 // AST Function Call Node
 typedef struct {
-    char *name;
-    struct ASTNode *arguments; // Function call arguments
+    struct ASTNode *function_ref; // Expression representing the function
+    struct ASTNode *arguments;    // Function call arguments
 } ASTFunctionCall;
 
 // AST Function Return Node

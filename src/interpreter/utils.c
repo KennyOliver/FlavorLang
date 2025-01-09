@@ -44,12 +44,25 @@ void fatal_error(const char *format, ...) {
 
 void initialize_builtin_function(Environment *env, const char *name) {
     Function func;
-    memset(&func, 0, sizeof(Function)); // zero out for safety
-    func.name = strdup(name);
+    memset(&func, 0, sizeof(Function)); // Zero out for safety
+    func.name = safe_strdup(name);
     func.parameters = NULL;
     func.body = NULL;
     func.is_builtin = true;
     add_function(env, func);
+
+    // Add a variable referencing this built-in function by name
+    Variable var;
+    var.variable_name = safe_strdup(name);
+    var.is_constant = false;
+    var.value.type = TYPE_FUNCTION;
+    var.value.data.function_name = safe_strdup(name); // Store function name
+
+    InterpretResult add_var_res = add_variable(env, var);
+    if (add_var_res.is_error) {
+        fatal_error("Failed to register built-in function variable `%s`.\n",
+                    name);
+    }
 }
 
 void initialize_all_builtin_functions(Environment *env) {
@@ -260,9 +273,26 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_FUNCTION_CALL:
-        new_node->function_call.name = safe_strdup(node->function_call.name);
+        // Deep copy function reference
+        new_node->function_call.function_ref =
+            copy_ast_node(node->function_call.function_ref);
+        if (!new_node->function_call.function_ref &&
+            node->function_call.function_ref != NULL) {
+            // Handle memory allocation failure
+            free(new_node);
+            return NULL;
+        }
+
+        // Deep copy function arguments
         new_node->function_call.arguments =
             copy_ast_node(node->function_call.arguments);
+        if (!new_node->function_call.arguments &&
+            node->function_call.arguments != NULL) {
+            // Handle memory allocation failure
+            free(new_node->function_call.function_ref);
+            free(new_node);
+            return NULL;
+        }
         break;
 
     case AST_FUNCTION_RETURN:
@@ -445,14 +475,9 @@ ASTCatchNode *copy_catch_node(ASTCatchNode *catch_node) {
 }
 
 void add_function(Environment *env, Function func) {
-    // Check if this function name already exists in env
-    for (size_t i = 0; i < env->function_count; i++) {
-        if (strcmp(env->functions[i].name, func.name) == 0) {
-            // We already have this function, so just skip
-            // or optionally do an "update" logic if you prefer.
-            debug_print_int("Skipping re-add of function `%s`\n", func.name);
-            return;
-        }
+    // Ensure the function name is unique
+    if (get_function(env, func.name)) {
+        fatal_error("Function `%s` is already defined.\n", func.name);
     }
 
     // Ensure `functions` is initialized if not ...
@@ -476,11 +501,7 @@ void add_function(Environment *env, Function func) {
         env->function_capacity = new_capacity;
     }
 
-    if (!func.name) {
-        fatal_error("Function name is `NULL` or invalid.\n");
-    }
-
-    // Create a deep copy
+    // Deep copy function details
     Function *stored_func = &env->functions[env->function_count++];
     stored_func->parameters = copy_function_parameters(func.parameters);
     stored_func->body = copy_ast_node(func.body);
@@ -488,7 +509,6 @@ void add_function(Environment *env, Function func) {
 
     stored_func->name = strdup(func.name);
     if (!stored_func->name) {
-        free(stored_func);
         fatal_error("Memory allocation failed for function name.\n");
     }
 

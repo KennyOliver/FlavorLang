@@ -285,7 +285,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
     } else if (current->type == TOKEN_FUNCTION_NAME ||
                current->type == TOKEN_IDENTIFIER) {
         // Handle variable or function call
-        ASTNode *node = create_variable_node(current->lexeme);
+        ASTNode *node = create_variable_reference_node(current->lexeme);
         advance_token(state);
 
         // Handle array indexing or slicing
@@ -820,30 +820,30 @@ ASTNode *parse_function_declaration(ParserState *state) {
 }
 
 ASTNode *parse_function_call(ParserState *state) {
-    Token *name = get_current_token(state);
-
-    if (name->type != TOKEN_FUNCTION_NAME && name->type != TOKEN_IDENTIFIER) {
-        parser_error("Expected a function reference or identifier", name);
+    Token *current = get_current_token(state);
+    if (current->type != TOKEN_FUNCTION_NAME) {
+        parser_error("Expected function name", current);
     }
 
+    // Create a variable reference node for the function name
+    ASTNode *function_ref = create_variable_reference_node(current->lexeme);
+    advance_token(state); // consume function name token
+
+    expect_token(state, TOKEN_PAREN_OPEN,
+                 "Expected `(` after function reference");
+    ASTNode *arguments = parse_argument_list(state);
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
+
+    // Create function call AST node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
-    debug_print_par("AST_FUNCTION_CALL: %s\n", name->lexeme);
-
-    node->function_call.name = strdup(name->lexeme);
-    node->function_call.arguments = NULL;
-
-    advance_token(state);
-
-    // Parse arguments (if any)
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after function name");
-    node->function_call.arguments = parse_argument_list(state);
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
-
+    node->function_call.function_ref = function_ref;
+    node->function_call.arguments = arguments;
     node->next = NULL;
+
     return node;
 }
 
@@ -950,7 +950,6 @@ ASTNode *parse_finally_block(ParserState *state) {
  */
 Token *peek_ahead(ParserState *state, size_t n) {
     size_t target = state->current_token + n;
-    // Assuming tokens are terminated with TOKEN_EOF
     // Return the last token if target exceeds the array
     return &state->tokens[target];
 }

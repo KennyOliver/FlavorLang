@@ -25,6 +25,7 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 17. [Nested Function Application](#17)
 18. [Basic Arrays & Operations](#18)
 19. [2D Arrays](#19)
+20. [Call Functions by Reference (Even in Arrays)](#20)
 
 ---
 
@@ -488,6 +489,31 @@ serve("Length of nested array:", length(mixed_array[2]));
 
 # Test completed
 serve("All array operation tests complete!");
+```
+
+### 20. Call Functions by Reference (Even in Arrays) <a id="20"></a>
+
+```js
+serve(length("hello"));
+
+const a = [random(), random(), random()];
+const b = [random, random, random];
+
+serve(a);
+
+for i in 0..(length(b)) {
+    serve(b[i](1, 2));
+}
+
+create my_func(x, y, z) {
+    deliver x * y * z;
+}
+
+const c = [my_func, my_func, my_func, my_func];
+
+for i in 0..(length(c)) {
+    serve(c[i](0.5, 3, i));
+}
 ```
 
 ---

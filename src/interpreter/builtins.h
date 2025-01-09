@@ -16,6 +16,7 @@ typedef enum {
     ARG_TYPE_STRING,
     ARG_TYPE_BOOLEAN,
     ARG_TYPE_ARRAY,
+    ARG_TYPE_NUMERIC // Either float or int
 } ArgType;
 typedef struct {
     size_t num_types; // number of acceptable types

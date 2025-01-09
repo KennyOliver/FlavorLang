@@ -18,6 +18,8 @@ bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
         return lit_type == TYPE_BOOLEAN;
     case ARG_TYPE_ARRAY:
         return lit_type == TYPE_ARRAY;
+    case ARG_TYPE_NUMERIC:
+        return (lit_type == TYPE_INTEGER) || (lit_type == TYPE_FLOAT);
     default:
         return false; // Unknown ArgType
     }
@@ -55,6 +57,15 @@ InterpretResult interpret_arguments(ASTNode *node, Environment *env,
             case ARG_TYPE_FLOAT:
                 *((FLOAT_SIZE *)current_spec.out_ptr) = lv.data.floating_point;
                 break;
+            case ARG_TYPE_NUMERIC:
+                if (lv.type == TYPE_INTEGER) {
+                    *((FLOAT_SIZE *)current_spec.out_ptr) =
+                        (FLOAT_SIZE)lv.data.integer;
+                } else { // TYPE_FLOAT
+                    *((FLOAT_SIZE *)current_spec.out_ptr) =
+                        lv.data.floating_point;
+                }
+                break;
             case ARG_TYPE_STRING:
                 *((char **)current_spec.out_ptr) = lv.data.string;
                 break;
@@ -70,13 +81,16 @@ InterpretResult interpret_arguments(ASTNode *node, Environment *env,
             }
         } else {
             // Construct a string of expected type for the error message
-            char expected_type[32] = "";
+            char expected_type[64] = "";
             switch (current_spec.type) {
             case ARG_TYPE_INTEGER:
                 strcpy(expected_type, "integer");
                 break;
             case ARG_TYPE_FLOAT:
                 strcpy(expected_type, "float");
+                break;
+            case ARG_TYPE_NUMERIC:
+                strcpy(expected_type, "numeric (integer or float)");
                 break;
             case ARG_TYPE_STRING:
                 strcpy(expected_type, "string");
@@ -185,7 +199,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
-// Built-in `random()` function with 0, 1, or 2 arguments
+// Built-in `random()` function with 0, 1, or 2 numeric arguments
 InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L; // default min
     FLOAT_SIZE max = 1.0L; // default max
@@ -199,15 +213,15 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
         temp = temp->next;
     }
     if (num_args > 2) {
-        return raise_error(
-            "`random()` takes at most 2 arguments, but %zu provided.\n",
-            num_args);
+        return raise_error("`random()` takes at most 2 numeric arguments "
+                           "(integer or float), but %zu provided.\n",
+                           num_args);
     }
 
     if (num_args == 1) {
         // One argument provided: set max, min remains 0.0
         ArgumentSpec specs[1];
-        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &max;
 
         InterpretResult args_res = interpret_arguments(arg_node, env, 1, specs);
@@ -217,9 +231,9 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     } else if (num_args == 2) {
         // Two arguments provided: set min and max
         ArgumentSpec specs[2];
-        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &min;
-        specs[1].type = ARG_TYPE_FLOAT;
+        specs[1].type = ARG_TYPE_NUMERIC;
         specs[1].out_ptr = &max;
 
         InterpretResult args_res = interpret_arguments(arg_node, env, 2, specs);
@@ -285,7 +299,7 @@ void print_literal_value(LiteralValue lv) {
         printf("]");
         break;
     case TYPE_FUNCTION:
-        printf("<Function %s>", lv.data.function_ptr->name);
+        printf("<Function %s>", lv.data.function_name);
         break;
     case TYPE_ERROR:
         printf("<Error>");
@@ -416,19 +430,28 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
 
-    char *cast_type = strdup(node->function_call.name);
+    // Extract the cast type from function_ref
+    ASTNode *func_ref = node->function_call.function_ref;
+    if (func_ref->type != AST_VARIABLE_REFERENCE) {
+        return raise_error("`builtin_cast()` expects the function reference to "
+                           "be a variable name.\n");
+    }
+
+    char *cast_type = strdup(func_ref->variable_name);
     if (!cast_type) {
         return raise_error("No cast type provided to `builtin_cast()`.\n");
     }
 
     ASTNode *arg_node = node->function_call.arguments;
     if (!arg_node) {
+        free(cast_type);
         return raise_error(
             "No expression provided for cast in `builtin_cast()`.\n");
     }
 
     // Ensure there's only one argument
     if (arg_node->next != NULL) {
+        free(cast_type);
         return raise_error("`%s` cast function takes exactly one argument.\n",
                            cast_type);
     }
@@ -438,6 +461,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     // Interpret the expression to be casted
     InterpretResult expr_result = interpret_node(expr, env);
     if (expr_result.is_error) {
+        free(cast_type);
         return expr_result; // Propagate the error
     }
 
@@ -474,10 +498,12 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.string = strdup(original.data.string);
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for string cast.\n");
         }
 
         if (!cast_val.data.string) {
+            free(cast_type);
             return raise_error(
                 "Memory allocation failed during string cast.\n");
         }
@@ -491,6 +517,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
         case TYPE_STRING: {
             INT_SIZE temp;
             if (!is_valid_int(original.data.string, &temp)) {
+                free(cast_type);
                 return raise_error("Cannot cast string \"%s\" to int.\n",
                                    original.data.string);
             }
@@ -507,6 +534,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.integer = original.data.integer;
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for int cast.\n");
         }
 
@@ -519,6 +547,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
         case TYPE_STRING: {
             FLOAT_SIZE temp;
             if (!is_valid_float(original.data.string, &temp)) {
+                free(cast_type);
                 return raise_error("Cannot cast string \"%s\" to float.\n",
                                    original.data.string);
             }
@@ -535,14 +564,17 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.floating_point = original.data.floating_point;
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for float cast.\n");
         }
 
         result_res.value = cast_val;
     } else {
+        free(cast_type);
         return raise_error("Unsupported cast type: `%s`\n", cast_type);
     }
 
+    free(cast_type);
     return result_res;
 }
 

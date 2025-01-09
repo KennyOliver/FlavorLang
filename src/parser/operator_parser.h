@@ -27,7 +27,8 @@ bool match_operator(ParserState *state, const char *op);
 ASTNode *create_binary_op_node(char *operator, ASTNode * left, ASTNode *right);
 ASTNode *create_unary_op_node(char *operator, ASTNode * operand);
 ASTNode *create_literal_node(Token *token);
-ASTNode *create_variable_node(char *name);
-ASTNode *create_function_call_node(char *name, ASTNode *args);
+ASTNode *create_function_call_node(ASTNode *function_ref, ASTNode *args);
+ASTNode *parse_function_call_on_expression(ParserState *state,
+                                           ASTNode *function_ref);
 
 #endif

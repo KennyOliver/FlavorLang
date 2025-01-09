@@ -3,6 +3,7 @@
 
 #include "../debug/debug.h"
 #include "../shared/ast_types.h"
+#include "interpreter.h"
 #include "interpreter_types.h"
 #include <stdarg.h>
 #include <stdio.h>

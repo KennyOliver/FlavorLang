@@ -71,8 +71,11 @@ void free_ast(ASTNode *node) {
             break;
 
         case AST_FUNCTION_CALL:
-            free(node->function_call.name);
-            free_ast(node->function_call.arguments);
+            free_ast(node->function_call.function_ref);
+
+            if (node->function_call.arguments) {
+                free_ast(node->function_call.arguments);
+            }
             break;
 
         case AST_FUNCTION_RETURN:
@@ -225,10 +228,22 @@ void print_ast(ASTNode *node, int depth) {
                 break;
 
             case AST_FUNCTION_CALL:
-                printf("Function Call: %s\n", node->function_call.name);
+                printf("Function Call:\n");
+
+                // Print function reference expression
+                print_indent(depth + 1);
+                printf("Function Reference:\n");
+                print_ast(node->function_call.function_ref, depth + 2);
+
+                // Print arguments
                 print_indent(depth + 1);
                 printf("Arguments:\n");
-                print_ast(node->function_call.arguments, depth + 2);
+                if (node->function_call.arguments) {
+                    print_ast(node->function_call.arguments, depth + 2);
+                } else {
+                    print_indent(depth + 2);
+                    printf("None\n");
+                }
                 break;
 
             case AST_FUNCTION_RETURN:

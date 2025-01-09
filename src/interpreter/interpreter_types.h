@@ -41,11 +41,11 @@ typedef struct LiteralValue {
     LiteralType type;
     union {
         char *string;
-        long double floating_point; // Assuming FLOAT_SIZE is long double
-        long long integer;          // Assuming INT_SIZE is long long
+        long double floating_point;
+        long long integer;
         bool boolean;
-        struct Function *function_ptr;
-        struct ArrayValue array; // **By value**
+        char *function_name;
+        struct ArrayValue array; // By value
     } data;
 } LiteralValue;
 
