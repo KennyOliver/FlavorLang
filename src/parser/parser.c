@@ -820,15 +820,21 @@ ASTNode *parse_function_declaration(ParserState *state) {
 }
 
 ASTNode *parse_function_call(ParserState *state) {
-    // Parse the function reference as an expression
-    ASTNode *function_ref = parse_operator_expression(state);
+    Token *current = get_current_token(state);
+    if (current->type != TOKEN_FUNCTION_NAME) {
+        parser_error("Expected function name", current);
+    }
+
+    // Create a variable reference node for the function name
+    ASTNode *function_ref = create_variable_reference_node(current->lexeme);
+    advance_token(state); // consume function name token
+
     expect_token(state, TOKEN_PAREN_OPEN,
                  "Expected `(` after function reference");
-    // Parse arguments (if any)
     ASTNode *arguments = parse_argument_list(state);
     expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
 
-    // Create the function call AST node
+    // Create function call AST node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
