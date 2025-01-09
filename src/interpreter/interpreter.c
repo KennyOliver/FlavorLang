@@ -822,7 +822,7 @@ InterpretResult add_variable(Environment *env, Variable var) {
             if (env->variables[i].is_constant) {
                 debug_print_int("Attempted to reassign to constant `%s`\n",
                                 var.variable_name);
-                return raise_error("Error: Cannot reassign to constant `%s`.\n",
+                return raise_error("Cannot reassign to constant `%s`.\n",
                                    var.variable_name);
             }
 

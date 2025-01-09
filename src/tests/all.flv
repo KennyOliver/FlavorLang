@@ -274,8 +274,8 @@ create test(num, func_a, func_b) {
     deliver func_b(func_a(func_b(num)));
 }
 
-let a = test(10, times_2, times_3); # 180
-serve(a);
+let calc17_result = test(10, times_2, times_3); # 180
+serve(calc17_result);
 
 # ==================================================
 # 18
