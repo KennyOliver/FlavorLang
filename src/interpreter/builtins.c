@@ -18,6 +18,8 @@ bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
         return lit_type == TYPE_BOOLEAN;
     case ARG_TYPE_ARRAY:
         return lit_type == TYPE_ARRAY;
+    case ARG_TYPE_NUMERIC:
+        return (lit_type == TYPE_INTEGER) || (lit_type == TYPE_FLOAT);
     default:
         return false; // Unknown ArgType
     }
@@ -55,6 +57,15 @@ InterpretResult interpret_arguments(ASTNode *node, Environment *env,
             case ARG_TYPE_FLOAT:
                 *((FLOAT_SIZE *)current_spec.out_ptr) = lv.data.floating_point;
                 break;
+            case ARG_TYPE_NUMERIC:
+                if (lv.type == TYPE_INTEGER) {
+                    *((FLOAT_SIZE *)current_spec.out_ptr) =
+                        (FLOAT_SIZE)lv.data.integer;
+                } else { // TYPE_FLOAT
+                    *((FLOAT_SIZE *)current_spec.out_ptr) =
+                        lv.data.floating_point;
+                }
+                break;
             case ARG_TYPE_STRING:
                 *((char **)current_spec.out_ptr) = lv.data.string;
                 break;
@@ -70,13 +81,16 @@ InterpretResult interpret_arguments(ASTNode *node, Environment *env,
             }
         } else {
             // Construct a string of expected type for the error message
-            char expected_type[32] = "";
+            char expected_type[64] = "";
             switch (current_spec.type) {
             case ARG_TYPE_INTEGER:
                 strcpy(expected_type, "integer");
                 break;
             case ARG_TYPE_FLOAT:
                 strcpy(expected_type, "float");
+                break;
+            case ARG_TYPE_NUMERIC:
+                strcpy(expected_type, "numeric (integer or float)");
                 break;
             case ARG_TYPE_STRING:
                 strcpy(expected_type, "string");
