@@ -37,17 +37,19 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### `docs/`
 
-5. [Syntax Examples](docs/syntax_examples.md)
+5. [Standard Library](docs/standard_library.md)
 
-6. [Debugging](docs/debugging.md)
+6. [Syntax Examples](docs/syntax_examples.md)
 
-7. [Language Design](docs/language_design.md)
+7. [Debugging](docs/debugging.md)
 
-8. [Lexer](docs/lexer.md)
+8. [Language Design](docs/language_design.md)
 
-9. [Parser](docs/parser.md)
+9. [Lexer](docs/lexer.md)
 
-10. [Interpreter](docs/interpreter.md)
+10. [Parser](docs/parser.md)
+
+11. [Interpreter](docs/interpreter.md)
 
 ---
 
