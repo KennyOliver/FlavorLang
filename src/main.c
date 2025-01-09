@@ -285,17 +285,6 @@ int main(int argc, char **argv) {
         debug_print_basic("Execution complete!\n");
     }
 
-    // Minify if flag is set (This check is redundant now since we already
-    // handled minify above)
-    /*
-    if (options.minify) {
-        char *minified_filename = generate_minified_filename(options.filename);
-        minify_tokens(tokens, minified_filename);
-        printf("Minified script written to '%s'\n", minified_filename);
-        free(minified_filename);
-    }
-    */
-
     // Clean up memory
     free(tokens);
     free(source);
