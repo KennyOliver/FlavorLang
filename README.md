@@ -171,9 +171,7 @@ $ flavor --about              # About FlavorLang
 
 ### Installation Instructions
 
-#### 1. Download & Extract the ZIP
-
-[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+#### 1. Download & Extract the ZIP ([FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases))
 
 #### 2. Open VS Code and Navigate to the Extensions Tab
 
