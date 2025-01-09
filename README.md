@@ -177,9 +177,7 @@ $ flavor --about              # About FlavorLang
 
 #### 3. Click the <kbd>...</kbd> Menu and Select <kbd>Install from VSIX...</kbd>
 
-#### 4. Select the File in Finder or your File Explorer
-
-#### 5. Restart your Extensions via the Popup Notification
+#### 4. Restart your Extensions via the Popup Notification
 
 ### Make it Yourself
 
