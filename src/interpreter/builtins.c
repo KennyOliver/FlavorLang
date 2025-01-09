@@ -199,7 +199,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
     return make_result(result, false, false);
 }
 
-// Built-in `random()` function with 0, 1, or 2 arguments
+// Built-in `random()` function with 0, 1, or 2 numeric arguments
 InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L; // default min
     FLOAT_SIZE max = 1.0L; // default max
@@ -213,15 +213,15 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
         temp = temp->next;
     }
     if (num_args > 2) {
-        return raise_error(
-            "`random()` takes at most 2 arguments, but %zu provided.\n",
-            num_args);
+        return raise_error("`random()` takes at most 2 numeric arguments "
+                           "(integer or float), but %zu provided.\n",
+                           num_args);
     }
 
     if (num_args == 1) {
         // One argument provided: set max, min remains 0.0
         ArgumentSpec specs[1];
-        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &max;
 
         InterpretResult args_res = interpret_arguments(arg_node, env, 1, specs);
@@ -231,9 +231,9 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     } else if (num_args == 2) {
         // Two arguments provided: set min and max
         ArgumentSpec specs[2];
-        specs[0].type = ARG_TYPE_FLOAT;
+        specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &min;
-        specs[1].type = ARG_TYPE_FLOAT;
+        specs[1].type = ARG_TYPE_NUMERIC;
         specs[1].out_ptr = &max;
 
         InterpretResult args_res = interpret_arguments(arg_node, env, 2, specs);
