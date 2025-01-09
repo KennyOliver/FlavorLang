@@ -196,7 +196,7 @@ $ npm install
 
 #### 2. Package the Extension
 
-Use vsce (Visual Studio Code Extension Manager) to build the `.vsix` package:
+Use `vsce` (Visual Studio Code Extension Manager) to build the `.vsix` package:
 
 ```bash
 $ npx vsce package
