@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 // Helper function to check if a LiteralType matches an ArgType
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
@@ -812,5 +817,50 @@ InterpretResult builtin_length(ASTNode *node, Environment *env) {
     }
 
     // Return the length as a LiteralValue
+    return make_result(result, false, false);
+}
+
+/**
+ * @brief Built-in function to sleep (pause execution) for a given time (in
+ * milliseconds).
+ *
+ * @param node The AST node representing the function call.
+ * @param env  The current environment.
+ * @return InterpretResult with a default value.
+ */
+InterpretResult builtin_sleep(ASTNode *node, Environment *env) {
+    // Define expected arguments: exactly one integer (> 0).
+    INT_SIZE ms;
+
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_INTEGER;
+    specs[0].out_ptr = &ms;
+
+    // Interpret arguments
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        return args_res;
+    }
+
+    // Validate the argument
+    if (ms <= 0) {
+        return raise_error("`sleep` requires a positive integer argument "
+                           "representing milliseconds.\n");
+    }
+
+// Perform the sleep based on the platform
+#ifdef _WIN32
+    Sleep((DWORD)ms); // sleep takes milliseconds on Windows
+#else
+    if (ms > (INT_MAX / 1000)) {
+        return raise_error("`sleep` argument is too large.\n");
+    }
+
+    useconds_t us = (useconds_t)(ms * 1000); // usleep needs microseconds
+    usleep(us);
+#endif
+
+    LiteralValue result = create_default_value();
     return make_result(result, false, false);
 }

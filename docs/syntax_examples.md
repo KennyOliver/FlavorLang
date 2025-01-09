@@ -26,6 +26,7 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 18. [Basic Arrays & Operations](#18)
 19. [2D Arrays](#19)
 20. [Call Functions by Reference (Even in Arrays)](#20)
+21. [Sleep](#21)
 
 ---
 
@@ -513,6 +514,15 @@ const c = [my_func, my_func, my_func, my_func];
 
 for i in 0..(length(c)) {
     serve(c[i](0.5, 3, i));
+}
+```
+
+### 21. Sleep <a id="21"></a>
+
+```js
+for i in 100..=1 by -5 {
+    serve(i);
+    sleep(i * 10);
 }
 ```
 
