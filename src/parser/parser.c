@@ -285,7 +285,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
     } else if (current->type == TOKEN_FUNCTION_NAME ||
                current->type == TOKEN_IDENTIFIER) {
         // Handle variable or function call
-        ASTNode *node = create_variable_node(current->lexeme);
+        ASTNode *node = create_variable_reference_node(current->lexeme);
         advance_token(state);
 
         // Handle array indexing or slicing
@@ -820,30 +820,24 @@ ASTNode *parse_function_declaration(ParserState *state) {
 }
 
 ASTNode *parse_function_call(ParserState *state) {
-    Token *name = get_current_token(state);
+    // Parse the function reference as an expression
+    ASTNode *function_ref = parse_operator_expression(state);
+    expect_token(state, TOKEN_PAREN_OPEN,
+                 "Expected `(` after function reference");
+    // Parse arguments (if any)
+    ASTNode *arguments = parse_argument_list(state);
+    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
 
-    if (name->type != TOKEN_FUNCTION_NAME && name->type != TOKEN_IDENTIFIER) {
-        parser_error("Expected a function reference or identifier", name);
-    }
-
+    // Create the function call AST node
     ASTNode *node = malloc(sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FUNCTION_CALL;
-    debug_print_par("AST_FUNCTION_CALL: %s\n", name->lexeme);
-
-    node->function_call.name = strdup(name->lexeme);
-    node->function_call.arguments = NULL;
-
-    advance_token(state);
-
-    // Parse arguments (if any)
-    expect_token(state, TOKEN_PAREN_OPEN, "Expected `(` after function name");
-    node->function_call.arguments = parse_argument_list(state);
-    expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
-
+    node->function_call.function_ref = function_ref;
+    node->function_call.arguments = arguments;
     node->next = NULL;
+
     return node;
 }
 

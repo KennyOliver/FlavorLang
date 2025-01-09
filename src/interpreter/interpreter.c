@@ -1461,61 +1461,88 @@ InterpretResult interpret_function_declaration(ASTNode *node,
 InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
     debug_print_int("Starting function call interpretation\n");
 
-    if (!node || !node->function_call.name) {
+    if (!node || node->type != AST_FUNCTION_CALL ||
+        !node->function_call.function_ref) {
         return raise_error("Invalid function call");
     }
 
-    const char *func_name = node->function_call.name;
+    // Interpret the function reference to get the function name
+    InterpretResult func_ref_result =
+        interpret_node(node->function_call.function_ref, env);
+    if (func_ref_result.is_error) {
+        return func_ref_result; // Propagate the error
+    }
 
-    // 1) Try looking up the function in the functions array (built-in or global
-    // user-defined)
-    Function *func = get_function(env, func_name);
-    if (func) {
-        if (func->is_builtin) {
-            // Handle built-in functions
-            if (strcmp(func->name, "sample") == 0) {
-                return builtin_input(node, env);
-            } else if (strcmp(func->name, "serve") == 0) {
-                return builtin_output(node, env);
-            } else if (strcmp(func->name, "burn") == 0) {
-                return builtin_error(node, env);
-            } else if (strcmp(func->name, "random") == 0) {
-                return builtin_random(node, env);
-            } else if (strcmp(func->name, "string") == 0 ||
-                       strcmp(func->name, "int") == 0 ||
-                       strcmp(func->name, "float") == 0) {
-                return builtin_cast(node, env);
-            } else if (strcmp(func->name, "get_time") == 0) {
-                return builtin_time();
-            } else if (strcmp(func->name, "taste_file") == 0) {
-                return builtin_file_read(node, env);
-            } else if (strcmp(func->name, "plate_file") == 0) {
-                return builtin_file_write(node, env);
-            } else if (strcmp(func->name, "garnish_file") == 0) {
-                return builtin_file_append(node, env);
-            } else if (strcmp(func->name, "length") == 0) {
-                return builtin_length(node, env);
+    if (func_ref_result.value.type != TYPE_STRING &&
+        func_ref_result.value.type != TYPE_FUNCTION) {
+        return raise_error(
+            "Function reference must evaluate to a string or function.\n");
+    }
+
+    const char *func_name = NULL;
+    Function *func = NULL;
+
+    if (func_ref_result.value.type == TYPE_STRING) {
+        func_name = func_ref_result.value.data.string;
+
+        // 1) Try looking up the function in the functions array (built-in or
+        // global user-defined)
+        func = get_function(env, func_name);
+        if (func) {
+            if (func->is_builtin) {
+                // Handle built-in functions
+                if (strcmp(func->name, "sample") == 0) {
+                    return builtin_input(node, env);
+                } else if (strcmp(func->name, "serve") == 0) {
+                    return builtin_output(node, env);
+                } else if (strcmp(func->name, "burn") == 0) {
+                    return builtin_error(node, env);
+                } else if (strcmp(func->name, "random") == 0) {
+                    return builtin_random(node, env);
+                } else if (strcmp(func->name, "string") == 0 ||
+                           strcmp(func->name, "int") == 0 ||
+                           strcmp(func->name, "float") == 0) {
+                    return builtin_cast(node, env);
+                } else if (strcmp(func->name, "get_time") == 0) {
+                    return builtin_time();
+                } else if (strcmp(func->name, "taste_file") == 0) {
+                    return builtin_file_read(node, env);
+                } else if (strcmp(func->name, "plate_file") == 0) {
+                    return builtin_file_write(node, env);
+                } else if (strcmp(func->name, "garnish_file") == 0) {
+                    return builtin_file_append(node, env);
+                } else if (strcmp(func->name, "length") == 0) {
+                    return builtin_length(node, env);
+                } else {
+                    return raise_error("Unknown built-in function `%s`\n",
+                                       func->name);
+                }
             } else {
-                return raise_error("Unknown built-in function `%s`\n",
-                                   func->name);
+                // Handle user-defined functions in the functions array
+                return call_user_defined_function(func, node, env);
             }
-        } else {
-            // Handle user-defined functions in the functions array
-            return call_user_defined_function(func, node, env);
         }
+
+        // 2) If not found in functions array, check if it's a variable holding
+        // a function reference
+        Variable *func_var = get_variable(env, func_name);
+        if (func_var && func_var->value.type == TYPE_FUNCTION) {
+            Function *func_ref = func_var->value.data.function_ptr;
+            // Delegate to call_user_defined_function
+            return call_user_defined_function(func_ref, node, env);
+        }
+
+        // 3) If not found in either, raise an error
+        return raise_error("Undefined function `%s`\n", func_name);
+    } else if (func_ref_result.value.type == TYPE_FUNCTION) {
+        // Function reference directly
+        func = func_ref_result.value.data.function_ptr;
+        return call_user_defined_function(func, node, env);
     }
 
-    // 2) If not found in functions array, check if it's a variable holding
-    // a function reference
-    Variable *func_var = get_variable(env, func_name);
-    if (func_var && func_var->value.type == TYPE_FUNCTION) {
-        Function *func_ref = func_var->value.data.function_ptr;
-        // Delegate to call_user_defined_function
-        return call_user_defined_function(func_ref, node, env);
-    }
-
-    // 3) If not found in either, raise an error
-    return raise_error("Undefined function `%s`\n", func_name);
+    // If function reference is neither string nor function, raise an error
+    return raise_error(
+        "Function reference must evaluate to a string or function.\n");
 }
 
 InterpretResult interpret_ternary(ASTNode *node, Environment *env) {

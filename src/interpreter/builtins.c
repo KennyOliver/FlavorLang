@@ -416,19 +416,28 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             "`builtin_cast()` expects an `AST_FUNCTION_CALL` node.\n");
     }
 
-    char *cast_type = strdup(node->function_call.name);
+    // Extract the cast type from function_ref
+    ASTNode *func_ref = node->function_call.function_ref;
+    if (func_ref->type != AST_VARIABLE_REFERENCE) {
+        return raise_error("`builtin_cast()` expects the function reference to "
+                           "be a variable name.\n");
+    }
+
+    char *cast_type = strdup(func_ref->variable_name);
     if (!cast_type) {
         return raise_error("No cast type provided to `builtin_cast()`.\n");
     }
 
     ASTNode *arg_node = node->function_call.arguments;
     if (!arg_node) {
+        free(cast_type);
         return raise_error(
             "No expression provided for cast in `builtin_cast()`.\n");
     }
 
     // Ensure there's only one argument
     if (arg_node->next != NULL) {
+        free(cast_type);
         return raise_error("`%s` cast function takes exactly one argument.\n",
                            cast_type);
     }
@@ -438,6 +447,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
     // Interpret the expression to be casted
     InterpretResult expr_result = interpret_node(expr, env);
     if (expr_result.is_error) {
+        free(cast_type);
         return expr_result; // Propagate the error
     }
 
@@ -474,10 +484,12 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.string = strdup(original.data.string);
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for string cast.\n");
         }
 
         if (!cast_val.data.string) {
+            free(cast_type);
             return raise_error(
                 "Memory allocation failed during string cast.\n");
         }
@@ -491,6 +503,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
         case TYPE_STRING: {
             INT_SIZE temp;
             if (!is_valid_int(original.data.string, &temp)) {
+                free(cast_type);
                 return raise_error("Cannot cast string \"%s\" to int.\n",
                                    original.data.string);
             }
@@ -507,6 +520,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.integer = original.data.integer;
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for int cast.\n");
         }
 
@@ -519,6 +533,7 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
         case TYPE_STRING: {
             FLOAT_SIZE temp;
             if (!is_valid_float(original.data.string, &temp)) {
+                free(cast_type);
                 return raise_error("Cannot cast string \"%s\" to float.\n",
                                    original.data.string);
             }
@@ -535,14 +550,17 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
             cast_val.data.floating_point = original.data.floating_point;
             break;
         default:
+            free(cast_type);
             return raise_error("Unsupported type for float cast.\n");
         }
 
         result_res.value = cast_val;
     } else {
+        free(cast_type);
         return raise_error("Unsupported cast type: `%s`\n", cast_type);
     }
 
+    free(cast_type);
     return result_res;
 }
 

@@ -260,9 +260,26 @@ ASTNode *copy_ast_node(ASTNode *node) {
         break;
 
     case AST_FUNCTION_CALL:
-        new_node->function_call.name = safe_strdup(node->function_call.name);
+        // Deep copy function reference
+        new_node->function_call.function_ref =
+            copy_ast_node(node->function_call.function_ref);
+        if (!new_node->function_call.function_ref &&
+            node->function_call.function_ref != NULL) {
+            // Handle memory allocation failure
+            free(new_node);
+            return NULL;
+        }
+
+        // Deep copy function arguments
         new_node->function_call.arguments =
             copy_ast_node(node->function_call.arguments);
+        if (!new_node->function_call.arguments &&
+            node->function_call.arguments != NULL) {
+            // Handle memory allocation failure
+            free(new_node->function_call.function_ref);
+            free(new_node);
+            return NULL;
+        }
         break;
 
     case AST_FUNCTION_RETURN:
