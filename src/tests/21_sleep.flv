@@ -1,0 +1,4 @@
+for i in 1000..=1 by 5 {
+    serve(i);
+    sleep(i * 1);
+}
