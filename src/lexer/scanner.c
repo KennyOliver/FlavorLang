@@ -144,9 +144,10 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
-            // Handle special array operations first
-            if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
-                // Peek the next character
+            // Handle special array operations
+            if (inner_c == '^') {
+                // For '^', check if the next char forms a two-character array
+                // operator (e.g., "^+", "^-", "^^")
                 char next_c = (state->pos + 1 < state->length)
                                   ? state->source[state->pos + 1]
                                   : '\0';
@@ -160,19 +161,32 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                     free(op);
                     state->pos += 2; // Move past the two-character operator
                     continue;
+                } else {
+                    // If '^' appears alone, treat it as a normal operator
+                    scan_operator(state, tokens, token_count, capacity);
+                    continue;
                 }
-                // Handle negative numbers (e.g., `-1`) within slicing
-                else if (inner_c == '-' && (state->pos + 1 < state->length) &&
-                         isdigit(state->source[state->pos + 1])) {
-                    // Treat '-' as part of a negative number
+            } else if (inner_c == '+' || inner_c == '-') {
+                char next_c = (state->pos + 1 < state->length)
+                                  ? state->source[state->pos + 1]
+                                  : '\0';
+                // Check if '-' is starting a negative number
+                if (inner_c == '-' && isdigit(next_c)) {
                     scan_number(state, tokens, token_count, capacity);
                     continue;
-                } else {
-                    // Single-character array operator (if valid)
-                    char op[2] = {inner_c, '\0'};
+                }
+                // If '+' or '-' is followed by '^', then it forms a
+                // two-character array operator (like "+^" or "-^")
+                if (next_c == '^') {
+                    char *op = strndup(&state->source[state->pos], 2);
                     append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
                                  op, state->line);
-                    state->pos++;
+                    free(op);
+                    state->pos += 2; // Move past the two-character operator
+                    continue;
+                } else {
+                    // Otherwise, treat it as a normal operator
+                    scan_operator(state, tokens, token_count, capacity);
                     continue;
                 }
             }
