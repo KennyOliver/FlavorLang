@@ -119,6 +119,18 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
+            // Handle comments starting with `#`
+            if (inner_c == '#') {
+                scan_comment(state);
+                // After scan_comment, current character is either '\n' or '\0'
+                if (state->pos < state->length &&
+                    state->source[state->pos] == '\n') {
+                    state->line++;
+                    state->pos++; // Move past the newline
+                }
+                continue;
+            }
+
             // Handle nested array
             if (inner_c == '[') {
                 // Recursively scan the nested array
