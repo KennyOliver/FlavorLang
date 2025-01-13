@@ -243,14 +243,83 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
 
 void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
                  size_t *capacity) {
-    size_t start = ++(state->pos); // skip opening quote
-    while (state->pos < state->length && state->source[state->pos] != '"') {
+    size_t start = ++(state->pos); // Skip the opening quote
+    bool is_escaped = false;
+
+    while (state->pos < state->length) {
+        char current_char = state->source[state->pos];
+
+        if (is_escaped) {
+            // Skip the current character as it's escaped
+            is_escaped = false;
+            state->pos++;
+            continue;
+        }
+
+        if (current_char == '\\') {
+            is_escaped = true;
+            state->pos++;
+            continue;
+        }
+
+        if (current_char == '"') {
+            break; // End of string
+        }
+
+        // Handle newline characters within strings if allowed
+        if (current_char == '\n') {
+            token_error("Unterminated string literal (newline encountered)",
+                        state->line);
+        }
+
         state->pos++;
     }
+
     if (state->pos >= state->length || state->source[state->pos] != '"') {
         token_error("Unterminated string literal", state->line);
     }
-    char *lexeme = strndup(&state->source[start], state->pos - start);
+
+    // Extract the string content, handling escape sequences as needed
+    size_t lexeme_length = state->pos - start;
+    char *lexeme = malloc(lexeme_length + 1); // +1 for null terminator
+    if (!lexeme) {
+        token_error("Memory allocation failed for string lexeme", state->line);
+    }
+
+    size_t lexeme_pos = 0;
+    is_escaped = false;
+    for (size_t i = start; i < state->pos; i++) {
+        char c = state->source[i];
+        if (is_escaped) {
+            switch (c) {
+            case 'n':
+                lexeme[lexeme_pos++] = '\n';
+                break;
+            case 't':
+                lexeme[lexeme_pos++] = '\t';
+                break;
+            case '\\':
+                lexeme[lexeme_pos++] = '\\';
+                break;
+            case '"':
+                lexeme[lexeme_pos++] = '"';
+                break;
+            default:
+                // If the escape sequence is unrecognized, keep the backslash
+                lexeme[lexeme_pos++] = '\\';
+                lexeme[lexeme_pos++] = c;
+                break;
+            }
+            is_escaped = false;
+        } else if (c == '\\') {
+            is_escaped = true;
+        } else {
+            lexeme[lexeme_pos++] = c;
+        }
+    }
+
+    lexeme[lexeme_pos] = '\0'; // Null-terminate the string
+
     append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme,
                  state->line);
     free(lexeme);
