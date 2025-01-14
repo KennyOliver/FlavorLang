@@ -78,7 +78,7 @@ create brainf_interpreter(code) {
         } elif command == "." {
             let ascii_val = data_tape[data_ptr];
             let character = chr(ascii_val);
-            serve(character);
+            serve(character, False);
         } elif command == "," {
             serve("Input a character:");
             let input_char = sample();
