@@ -13,6 +13,8 @@ else
     ASAN_OPTIONS = halt_on_error=0:log_path=asan_log
 endif
 
+LDFLAGS += -lm
+
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug
 OBJ_DIR = obj
