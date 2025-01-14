@@ -475,3 +475,16 @@ serve(string_to_index[3]);  # expect 'l'
 serve(string_to_index[8:]);  # expect 'lrld!'
 serve(string_to_index[2::2]);  # expect 'lowrd'
 serve(string_to_index[::-1]);  # expect '!dlrow olleH'
+
+
+# ==================================================
+# 23
+# ==================================================
+
+serve(1);                      # Output: "1\n"
+serve(1, "test");              # Output: "1 test\n"
+serve(1, False);               # Output: "1"
+serve(1, 2, 3, False);         # Output: "1 2 3"
+serve("Hello", True);          # Output: "Hello\n"
+serve("Hello", "World");       # Output: "Hello World\n"
+serve(1.5, 42, "text", True);  # Output: "1.5 42 text\n"
