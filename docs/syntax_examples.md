@@ -27,6 +27,7 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 19. [2D Arrays](#19)
 20. [Call Functions by Reference (Even in Arrays)](#20)
 21. [Sleep](#21)
+22. [String Indexing](#22)
 
 ---
 
@@ -524,6 +525,16 @@ for i in 100..=1 by -5 {
     serve(i);
     sleep(i * 10);
 }
+```
+
+### 22. String Indexing <a id="22"></a>
+
+```py
+const string_to_index = "Hello world!";
+serve(string_to_index[3]);  # expect 'l'
+serve(string_to_index[8:]);  # expect 'lrld!'
+serve(string_to_index[2::2]);  # expect 'lowrd'
+serve(string_to_index[::-1]);  # expect '!dlrow olleH'
 ```
 
 ---

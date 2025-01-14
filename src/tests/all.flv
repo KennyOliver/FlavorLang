@@ -475,4 +475,3 @@ serve(string_to_index[3]);  # expect 'l'
 serve(string_to_index[8:]);  # expect 'lrld!'
 serve(string_to_index[2::2]);  # expect 'lowrd'
 serve(string_to_index[::-1]);  # expect '!dlrow olleH'
-
