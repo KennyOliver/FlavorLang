@@ -1,5 +1,6 @@
 #include "builtins.h"
 #include "../interpreter/interpreter.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -144,6 +145,22 @@ void print_formatted_string(const char *str) {
             case '"':
                 putchar('"');
                 break;
+            case 'x': {
+                // Handle \xNN where NN is two-digit hex number
+                char hex_buffer[3] = {0};
+                if (isxdigit(*(p + 1)) && isxdigit(*(p + 2))) {
+                    hex_buffer[0] = *(p + 1);
+                    hex_buffer[1] = *(p + 2);
+                    char decoded_char = (char)strtol(hex_buffer, NULL, 16);
+                    putchar(decoded_char);
+                    p += 2; // skip the two hex digits
+                } else {
+                    // If malformed, print as-is
+                    putchar('\\');
+                    putchar('x');
+                }
+                break;
+            }
             default:
                 putchar('\\'); // print the backslash
                 putchar(*p);   // print the unrecognized character that follows
