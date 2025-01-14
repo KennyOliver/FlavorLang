@@ -2,7 +2,6 @@
 CC = clang
 CFLAGS = -fsanitize=address -fsanitize=undefined -g -Wall -Wextra -pedantic
 LDFLAGS = -fsanitize=address -fsanitize=undefined
-ASAN_OPTIONS = halt_on_error=0:log_path=asan_log
 
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug
@@ -18,7 +17,7 @@ all: $(BIN)
 
 # Build the executable
 $(BIN): $(OBJS)
-	$(ASAN_OPTIONS) $(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: %.c
