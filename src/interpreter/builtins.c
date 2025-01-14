@@ -381,6 +381,18 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
                 snprintf(temp_buffer, sizeof(temp_buffer), "%s",
                          lv.data.boolean ? "True" : "False");
                 break;
+            case TYPE_ARRAY:
+                printf("[");
+                for (size_t i = 0; i < lv.data.array.count; i++) {
+                    LiteralValue elem = lv.data.array.elements[i];
+                    print_literal_value(elem);
+
+                    if (i < lv.data.array.count - 1) {
+                        printf(", ");
+                    }
+                }
+                printf("]");
+                break;
             default:
                 snprintf(temp_buffer, sizeof(temp_buffer), "<Unsupported>");
                 break;
@@ -827,9 +839,9 @@ InterpretResult builtin_length(ASTNode *node, Environment *env) {
     }
 
     if (num_args != 1) {
-        return raise_error(
-            "`length()` expects exactly one argument, but %zu were given.\n",
-            num_args);
+        return raise_error("`length()` expects exactly one argument, but "
+                           "%zu were given.\n",
+                           num_args);
     }
 
     // Interpret the single argument

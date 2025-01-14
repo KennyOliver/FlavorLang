@@ -1445,7 +1445,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
     if (param || arg) {
         free_environment(&local_env);
         return raise_error(
-            "Error: Argument count mismatch when calling function `%s`\n",
+            "Argument count mismatch when calling function `%s`\n",
             func_ref->name);
     }
 
@@ -1462,8 +1462,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
         }
         if (r.did_break) {
             free_environment(&local_env);
-            return raise_error(
-                "Error: 'break' statement outside of loop or switch.\n");
+            return r;
         }
         if (r.is_error) {
             free_environment(&local_env);
@@ -1495,8 +1494,7 @@ InterpretResult interpret_function_declaration(ASTNode *node,
     while (param) {
         ASTFunctionParameter *new_param = malloc(sizeof(ASTFunctionParameter));
         if (!new_param) {
-            fatal_error(
-                "Error: Memory allocation failed for function parameter\n");
+            fatal_error("Memory allocation failed for function parameter\n");
         }
 
         new_param->parameter_name = safe_strdup(param->parameter_name);
