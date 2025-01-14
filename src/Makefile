@@ -1,6 +1,17 @@
 # Compiler and Flags
 CC = clang
-CFLAGS = -fsanitize=address -fsanitize=undefined -g -Wall -Wextra -pedantic
+
+# Check if running in GitHub Actions
+ifeq ($(GITHUB_ACTIONS),true)
+    # CI build flags (no sanitizers)
+    CFLAGS = -g -Wall -Wextra -pedantic
+    LDFLAGS =
+else
+    # Local build flags (with sanitizers)
+    CFLAGS = -fsanitize=address -fsanitize=undefined -g -Wall -Wextra -pedantic
+    LDFLAGS = -fsanitize=address -fsanitize=undefined
+    ASAN_OPTIONS = halt_on_error=0:log_path=asan_log
+endif
 
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug
@@ -16,7 +27,7 @@ all: $(BIN)
 
 # Build the executable
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: %.c
