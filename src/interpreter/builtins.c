@@ -331,11 +331,19 @@ void print_literal_value(LiteralValue lv) {
     }
 }
 
-// Built-in `serve()` function for printing
+// Built-in `serve()` function for printing with optional newline control
 InterpretResult builtin_output(ASTNode *node, Environment *env) {
     debug_print_int("builtin_output() called\n");
 
     ASTNode *arg_node = node->function_call.arguments;
+
+    bool add_newline = true; // by default
+
+    // Buffer to store all arguments as strings
+    char output_buffer[1024] = {0};
+    size_t buffer_index = 0;
+
+    // Iterate through arguments
     while (arg_node != NULL) {
         InterpretResult r = interpret_node(arg_node, env);
         if (r.is_error) {
@@ -344,51 +352,67 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
 
         LiteralValue lv = r.value;
 
-        switch (lv.type) {
-        case TYPE_FLOAT:
-            if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
-                printf("%.1Lf", lv.data.floating_point);
-            } else {
-                printf("%Lf", lv.data.floating_point);
-            }
-            break;
-        case TYPE_INTEGER:
-            printf("%lld", lv.data.integer);
-            break;
-        case TYPE_STRING:
-            print_formatted_string(lv.data.string);
-            break;
-        case TYPE_BOOLEAN:
-            printf("%s", lv.data.boolean ? "True" : "False");
-            break;
-        case TYPE_ARRAY:
-            printf("[");
-            for (size_t i = 0; i < lv.data.array.count; i++) {
-                LiteralValue elem = lv.data.array.elements[i];
-                print_literal_value(elem);
+        // If last argument & is boolean, check for newline control
+        if (arg_node->next == NULL && lv.type == TYPE_BOOLEAN) {
+            add_newline = lv.data.boolean;
+        } else {
+            // Append the current argument's string representation to the buffer
+            char temp_buffer[128] = {0};
 
-                if (i < lv.data.array.count - 1) {
-                    printf(", ");
+            switch (lv.type) {
+            case TYPE_FLOAT:
+                if ((INT_SIZE)lv.data.floating_point ==
+                    lv.data.floating_point) {
+                    snprintf(temp_buffer, sizeof(temp_buffer), "%.1Lf",
+                             lv.data.floating_point);
+                } else {
+                    snprintf(temp_buffer, sizeof(temp_buffer), "%Lf",
+                             lv.data.floating_point);
                 }
+                break;
+            case TYPE_INTEGER:
+                snprintf(temp_buffer, sizeof(temp_buffer), "%lld",
+                         lv.data.integer);
+                break;
+            case TYPE_STRING:
+                print_formatted_string(lv.data.string);
+                break;
+            case TYPE_BOOLEAN:
+                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
+                         lv.data.boolean ? "True" : "False");
+                break;
+            default:
+                snprintf(temp_buffer, sizeof(temp_buffer), "<Unsupported>");
+                break;
             }
-            printf("]");
-            break;
-        case TYPE_ERROR:
-            fprintf(
-                stderr,
-                "Error: Invalid literal type in `serve()` (`TYPE_ERROR`).\n");
-            break;
-        default:
-            fprintf(stderr, "Error: Unknown literal type in `serve()`.\n");
-            break;
+
+            // Append to the output buffer with a space if needed
+            size_t temp_len = strlen(temp_buffer);
+            if (buffer_index + temp_len + 1 < sizeof(output_buffer)) {
+                if (buffer_index > 0) {
+                    output_buffer[buffer_index++] =
+                        ' '; // Add space between arguments
+                }
+                strcpy(&output_buffer[buffer_index], temp_buffer);
+                buffer_index += temp_len;
+            } else {
+                return raise_error("Output buffer overflow in `serve()`.\n");
+            }
         }
-        printf(" "); // Space padding
+
         arg_node = arg_node->next;
     }
-    printf("\n");
 
-    LiteralValue lv = {.type = TYPE_INTEGER,
-                       .data.integer = 0}; // return 0 as default
+    // Print final output buffer
+    printf("%s", output_buffer);
+
+    // Add newline if flag is true
+    if (add_newline) {
+        printf("\n");
+    }
+
+    // Return default value
+    LiteralValue lv = {.type = TYPE_INTEGER, .data.integer = 0};
     return make_result(lv, false, false);
 }
 
