@@ -1731,6 +1731,10 @@ InterpretResult interpret_try(ASTNode *node, Environment *env) {
     return result;
 }
 
+// ==================================================
+// ARRAYS
+// ==================================================
+
 /**
  * @brief Interprets array literals like `[1, 2, 3]`.
  *
@@ -1931,11 +1935,12 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
 }
 
 /**
- * @brief Handles accessing array elements like `array[2]`.
+ * @brief Handles accessing array or string elements like `array[2]` or
+ * `string[2]`.
  *
- * @param node
- * @param env
- * @return InterpretResult
+ * @param node The AST node for index access.
+ * @param env  The current environment.
+ * @return InterpretResult containing the accessed element.
  */
 InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
     if (node->type != AST_ARRAY_INDEX_ACCESS) {
@@ -1945,42 +1950,75 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
     ASTNode *array_node = node->array_index_access.array;
     ASTNode *index_node = node->array_index_access.index;
 
-    // Interpret the array
+    // Interpret the array (or string) expression
     InterpretResult array_res = interpret_node(array_node, env);
     if (array_res.is_error) {
         return array_res;
     }
 
-    if (array_res.value.type != TYPE_ARRAY) {
-        return raise_error("Index access requires an array operand.\n");
+    // First, handle the case where the operand is a string
+    if (array_res.value.type == TYPE_STRING) {
+        InterpretResult index_res = interpret_node(index_node, env);
+        if (index_res.is_error) {
+            return index_res;
+        }
+        if (index_res.value.type != TYPE_INTEGER) {
+            return raise_error("String index must be an integer.\n");
+        }
+        INT_SIZE idx = index_res.value.data.integer;
+        const char *str = array_res.value.data.string;
+        size_t len = strlen(str);
+
+        // Handle negative indices (e.g., `-1` refers to the last character)
+        if (idx < 0) {
+            idx = (INT_SIZE)len + idx;
+        }
+        if (idx < 0 || (size_t)idx >= len) {
+            return raise_error("String index `%lld` out of bounds.\n", idx);
+        }
+
+        // Extract the character at the specified index
+        char single[2];
+        single[0] = str[idx];
+        single[1] = '\0';
+
+        // Wrap the character into a new LiteralValue (string)
+        LiteralValue element;
+        element.type = TYPE_STRING;
+        element.data.string = strdup(single);
+        if (!element.data.string) {
+            return raise_error(
+                "Memory allocation failed in string indexing.\n");
+        }
+        return make_result(element, false, false);
     }
 
-    // Access the ArrayValue by reference
+    // Otherwise, expect the operand to be an array
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error(
+            "Index access requires an array or string operand.\n");
+    }
     ArrayValue *array = &array_res.value.data.array;
 
-    // Interpret the index
+    // Interpret the index expression
     InterpretResult index_res = interpret_node(index_node, env);
     if (index_res.is_error) {
         return index_res;
     }
-
-    // Index must be integer
     if (index_res.value.type != TYPE_INTEGER) {
         return raise_error("Array index must be an integer.\n");
     }
-
     INT_SIZE index = index_res.value.data.integer;
 
-    // Handle negative indices (e.g., -1 refers to the last element)
+    // Handle negative indices for arrays
     if (index < 0) {
         index = (INT_SIZE)array->count + index;
     }
-
     if (index < 0 || (size_t)index >= array->count) {
         return raise_error("Array index `%lld` out of bounds.\n", index);
     }
 
-    // Access the element
+    // Access the element and return it
     LiteralValue element = array->elements[index];
     return make_result(element, false, false);
 }
@@ -2158,40 +2196,44 @@ int get_variable_index(Environment *env, const char *variable_name) {
 }
 
 /**
- * @brief Handles slicing arrays like `array[1:4]`.
+ * @brief Handles slicing arrays or strings like `array[1:4]` or `string[1:4]`.
  *
- * @param node
- * @param env
- * @return InterpretResult
+ * For strings, slicing returns a new substring.
+ *
+ * @param node The AST node for slice access.
+ * @param env  The current environment.
+ * @return InterpretResult containing the slice.
  */
 InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     if (node->type != AST_ARRAY_SLICE_ACCESS) {
         return raise_error("Expected AST_ARRAY_SLICE_ACCESS node.\n");
     }
 
-    ASTNode *array_node = node->array_slice_access.array;
+    ASTNode *operand_node = node->array_slice_access.array;
     ASTNode *start_node = node->array_slice_access.start;
     ASTNode *end_node = node->array_slice_access.end;
     ASTNode *step_node = node->array_slice_access.step;
 
-    // Interpret array
-    InterpretResult array_res = interpret_node(array_node, env);
-    if (array_res.is_error) {
-        return array_res;
+    // Interpret the operand (array or string)
+    InterpretResult operand_res = interpret_node(operand_node, env);
+    if (operand_res.is_error) {
+        return operand_res;
     }
 
-    if (array_res.value.type != TYPE_ARRAY) {
-        return raise_error("Slice access requires an array operand.\n");
+    bool isString = (operand_res.value.type == TYPE_STRING);
+    size_t total_count;
+    if (isString) {
+        total_count = strlen(operand_res.value.data.string);
+    } else if (operand_res.value.type == TYPE_ARRAY) {
+        total_count = operand_res.value.data.array.count;
+    } else {
+        return raise_error(
+            "Slice access requires an array or string operand.\n");
     }
 
-    // Access ArrayValue by reference
-    ArrayValue *array = &array_res.value.data.array;
-    size_t array_count = array->count;
+    debug_print_int("Operand has %zu elements/characters.\n", total_count);
 
-    debug_print_int("Array `%s` has %zu elements.\n", array_node->variable_name,
-                    array_count);
-
-    // Interpret the step first to determine default start and end
+    // Interpret the step first to determine defaults
     FLOAT_SIZE step_val = 1.0; // default step
     if (step_node) {
         InterpretResult step_res = interpret_node(step_node, env);
@@ -2206,28 +2248,22 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
                        ? (FLOAT_SIZE)step_res.value.data.integer
                        : step_res.value.data.floating_point;
     }
-
     if (step_val == 0.0) {
         return raise_error("Slice step cannot be zero.\n");
     }
 
-    debug_print_int(
-        "Slice parameters: start_node=%p, end_node=%p, step_val=%Lf\n",
-        start_node, end_node, step_val);
-
     // Set default start and end based on step direction
-    FLOAT_SIZE start_val;
-    FLOAT_SIZE end_val;
+    FLOAT_SIZE default_start, default_end;
     if (step_val > 0) {
-        start_val = 0.0;                   // Default start for positive step
-        end_val = (FLOAT_SIZE)array_count; // Default end for positive step
-    } else {                               // step_val < 0
-        start_val =
-            (FLOAT_SIZE)(array_count - 1); // Default start for negative step
-        end_val = -1.0;                    // Default end for negative step
+        default_start = 0.0;
+        default_end = (FLOAT_SIZE)total_count;
+    } else {
+        default_start = (FLOAT_SIZE)(total_count - 1);
+        default_end = -1.0;
     }
 
-    // Interpret start if provided
+    // Interpret start expression if provided; otherwise use default
+    FLOAT_SIZE start_val = default_start;
     if (start_node) {
         InterpretResult start_res = interpret_node(start_node, env);
         if (start_res.is_error) {
@@ -2239,12 +2275,11 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         }
         start_val = (start_res.value.type == TYPE_INTEGER)
                         ? (FLOAT_SIZE)start_res.value.data.integer
-                    : (step_val > 0)
-                        ? floor(start_res.value.data.floating_point)
-                        : ceil(start_res.value.data.floating_point);
+                        : start_res.value.data.floating_point;
     }
 
-    // Interpret end if provided
+    // Interpret end expression if provided; otherwise use default
+    FLOAT_SIZE end_val = default_end;
     if (end_node) {
         InterpretResult end_res = interpret_node(end_node, env);
         if (end_res.is_error) {
@@ -2256,56 +2291,54 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         }
         end_val = (end_res.value.type == TYPE_INTEGER)
                       ? (FLOAT_SIZE)end_res.value.data.integer
-                  : (step_val > 0) ? ceil(end_res.value.data.floating_point)
-                                   : floor(end_res.value.data.floating_point);
+                      : end_res.value.data.floating_point;
     }
 
-    debug_print_int("Interpreted slice values: start_val=%Lf, end_val=%Lf\n",
-                    start_val, end_val);
+    debug_print_int(
+        "Interpreted slice values: start_val=%Lf, end_val=%Lf, step_val=%Lf\n",
+        start_val, end_val, step_val);
 
     // Convert to integer indices
     INT_SIZE start_index = (INT_SIZE)floor(start_val);
     INT_SIZE end_index = (INT_SIZE)ceil(end_val);
     INT_SIZE step = (INT_SIZE)step_val;
 
-    // Handle negative indices based on step direction
+    // Adjust negative indices:
     if (step > 0) {
         if (start_index < 0)
-            start_index += (INT_SIZE)array_count;
+            start_index += (INT_SIZE)total_count;
         if (end_index < 0)
-            end_index += (INT_SIZE)array_count;
-    } else { // step < 0
+            end_index += (INT_SIZE)total_count;
+    } else {
+        // For negative step, adjust start index only; leave end_index
+        // as-is
         if (start_index < 0)
-            start_index += (INT_SIZE)array_count;
-        // Do NOT adjust end_index for negative steps
+            start_index += (INT_SIZE)total_count;
+    }
+
+    // Clamp indices
+    if (step > 0) {
+        if (start_index < 0)
+            start_index = 0;
+        if ((size_t)start_index > total_count)
+            start_index = total_count;
+        if (end_index < 0)
+            end_index = 0;
+        if ((size_t)end_index > total_count)
+            end_index = total_count;
+    } else {
+        if (start_index >= (INT_SIZE)total_count)
+            start_index = (INT_SIZE)total_count - 1;
+        if (start_index < 0)
+            start_index = (INT_SIZE)total_count - 1;
+        // For negative steps, do not clamp end_index; use as-is
     }
 
     debug_print_int(
         "Converted indices: start_index=%lld, end_index=%lld, step=%lld\n",
         start_index, end_index, step);
 
-    // Clamp indices based on step direction
-    if (step > 0) {
-        if (start_index < 0)
-            start_index = 0;
-        if ((size_t)start_index > array_count)
-            start_index = array_count;
-        if (end_index < 0)
-            end_index = 0;
-        if ((size_t)end_index > array_count)
-            end_index = array_count;
-    } else { // step < 0
-        if (start_index >= (INT_SIZE)array_count)
-            start_index = (INT_SIZE)array_count - 1;
-        if (start_index < 0)
-            start_index = (INT_SIZE)array_count - 1;
-        if (end_index < -1)
-            end_index = -1;
-        if (end_index >= (INT_SIZE)array_count)
-            end_index = -1;
-    }
-
-    // Determine the number of elements in the slice
+    // Calculate the count of elements in the slice
     size_t slice_count = 0;
     if (step > 0) {
         if (start_index >= end_index) {
@@ -2318,49 +2351,84 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             slice_count = 0;
         } else {
             slice_count =
-                (size_t)((start_index - end_index - step - 1) / (-step));
+                (size_t)((start_index - end_index + (-step) - 1) / (-step));
         }
     }
 
     debug_print_int("Calculated slice_count=%zu\n", slice_count);
 
-    // Initialize the slice array
-    ArrayValue slice;
-    slice.count = 0;
-    slice.capacity = slice_count > 4 ? slice_count : 4;
-    slice.elements = malloc(slice.capacity * sizeof(LiteralValue));
-    if (!slice.elements) {
-        return raise_error("Memory allocation failed for array slice.\n");
-    }
-
-    // Populate the slice
-    for (INT_SIZE i = start_index;
-         (step > 0 && i < end_index) || (step < 0 && i > end_index);
-         i += step) {
-        debug_print_int("Loop iteration: i=%lld\n", i);
-
-        if (i < 0 || (size_t)i >= array_count) {
-            debug_print_int("Index out of bounds: i=%lld, array_count=%zu\n", i,
-                            array_count);
-            break;
+    // Branch based on operand type
+    if (!isString) {
+        // Operand is an array
+        ArrayValue slice;
+        slice.count = 0;
+        slice.capacity = slice_count > 4 ? slice_count : 4;
+        slice.elements = malloc(slice.capacity * sizeof(LiteralValue));
+        if (!slice.elements) {
+            return raise_error("Memory allocation failed for array slice.\n");
         }
-        slice.elements[slice.count++] = array->elements[i];
-        if (slice.elements[slice.count - 1].type == TYPE_INTEGER) {
-            debug_print_int("Added element: %lld (count=%zu)\n",
-                            slice.elements[slice.count - 1].data.integer,
-                            slice.count);
-        } else {
-            debug_print_int("Added element of non-integer type (count=%zu)\n",
-                            slice.count);
+
+        // For arrays, use the array field
+        for (INT_SIZE i = start_index;
+             (step > 0 && i < end_index) || (step < 0 && i > end_index);
+             i += step) {
+            if (i < 0 || (size_t)i >= total_count) {
+                break;
+            }
+            if (slice.count == slice.capacity) {
+                size_t new_capacity = slice.capacity * 2;
+                LiteralValue *new_elements = realloc(
+                    slice.elements, new_capacity * sizeof(LiteralValue));
+                if (!new_elements) {
+                    free(slice.elements);
+                    return raise_error("Memory allocation failed while "
+                                       "expanding slice array.\n");
+                }
+                slice.elements = new_elements;
+                slice.capacity = new_capacity;
+            }
+            slice.elements[slice.count++] =
+                operand_res.value.data.array.elements[i];
         }
+
+        LiteralValue result;
+        result.type = TYPE_ARRAY;
+        result.data.array = slice;
+        return make_result(result, false, false);
+    } else {
+        // Operand is a string
+        const char *str = operand_res.value.data.string;
+        size_t str_len = strlen(str);
+
+        // Compute the number of characters to extract
+        size_t char_count = 0;
+        for (INT_SIZE i = start_index;
+             (step > 0 && i < end_index) || (step < 0 && i > end_index);
+             i += step) {
+            if (i < 0 || (size_t)i >= str_len) {
+                break;
+            }
+            char_count++;
+        }
+
+        char *sub = malloc(char_count + 1);
+        if (!sub) {
+            return raise_error("Memory allocation failed for string slice.\n");
+        }
+        size_t pos = 0;
+        for (INT_SIZE i = start_index;
+             (step > 0 && i < end_index) || (step < 0 && i > end_index);
+             i += step) {
+            if (i < 0 || (size_t)i >= str_len) {
+                break;
+            }
+            sub[pos++] = str[i];
+        }
+        sub[pos] = '\0';
+
+        LiteralValue result;
+        result.type = TYPE_STRING;
+        result.data.string = sub;
+        return make_result(result, false, false);
     }
-
-    debug_print_int("Final slice count=%zu\n", slice.count);
-
-    // Create the slice LiteralValue
-    LiteralValue result;
-    result.type = TYPE_ARRAY;
-    result.data.array = slice; // by value
-
-    return make_result(result, false, false);
 }
