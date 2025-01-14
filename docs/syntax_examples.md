@@ -28,6 +28,7 @@ These are examples showcasing the unique (& fun) syntax of FlavorLang. They give
 20. [Call Functions by Reference (Even in Arrays)](#20)
 21. [Sleep](#21)
 22. [String Indexing](#22)
+23. [Print with/without New Line](#23)
 
 ---
 
@@ -535,6 +536,18 @@ serve(string_to_index[3]);  # expect 'l'
 serve(string_to_index[8:]);  # expect 'lrld!'
 serve(string_to_index[2::2]);  # expect 'lowrd'
 serve(string_to_index[::-1]);  # expect '!dlrow olleH'
+```
+
+### 23. Print with/without New Line <a id="23"></a>
+
+```py
+serve(1);                      # Output: "1\n"
+serve(1, "test");              # Output: "1 test\n"
+serve(1, False);               # Output: "1"
+serve(1, 2, 3, False);         # Output: "1 2 3"
+serve("Hello", True);          # Output: "Hello\n"
+serve("Hello", "World");       # Output: "Hello World\n"
+serve(1.5, 42, "text", True);  # Output: "1.5 42 text\n"
 ```
 
 ---
