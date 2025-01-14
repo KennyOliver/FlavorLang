@@ -1,7 +1,6 @@
 # Compiler and Flags
 CC = clang
 CFLAGS = -fsanitize=address -fsanitize=undefined -g -Wall -Wextra -pedantic
-LDFLAGS = -fsanitize=address -fsanitize=undefined
 
 # Directories
 SRC_DIRS = . shared lexer parser interpreter debug
@@ -17,7 +16,7 @@ all: $(BIN)
 
 # Build the executable
 $(BIN): $(OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $@ $^
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: %.c
