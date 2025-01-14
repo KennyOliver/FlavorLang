@@ -1931,11 +1931,12 @@ InterpretResult interpret_array_operation(ASTNode *node, Environment *env) {
 }
 
 /**
- * @brief Handles accessing array elements like `array[2]`.
+ * @brief Handles accessing array or string elements like `array[2]` or
+ * `string[2]`.
  *
- * @param node
- * @param env
- * @return InterpretResult
+ * @param node The AST node for index access.
+ * @param env  The current environment.
+ * @return InterpretResult containing the accessed element.
  */
 InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
     if (node->type != AST_ARRAY_INDEX_ACCESS) {
@@ -1945,42 +1946,75 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
     ASTNode *array_node = node->array_index_access.array;
     ASTNode *index_node = node->array_index_access.index;
 
-    // Interpret the array
+    // Interpret the array (or string) expression
     InterpretResult array_res = interpret_node(array_node, env);
     if (array_res.is_error) {
         return array_res;
     }
 
-    if (array_res.value.type != TYPE_ARRAY) {
-        return raise_error("Index access requires an array operand.\n");
+    // First, handle the case where the operand is a string
+    if (array_res.value.type == TYPE_STRING) {
+        InterpretResult index_res = interpret_node(index_node, env);
+        if (index_res.is_error) {
+            return index_res;
+        }
+        if (index_res.value.type != TYPE_INTEGER) {
+            return raise_error("String index must be an integer.\n");
+        }
+        INT_SIZE idx = index_res.value.data.integer;
+        const char *str = array_res.value.data.string;
+        size_t len = strlen(str);
+
+        // Handle negative indices (e.g., `-1` refers to the last character)
+        if (idx < 0) {
+            idx = (INT_SIZE)len + idx;
+        }
+        if (idx < 0 || (size_t)idx >= len) {
+            return raise_error("String index `%lld` out of bounds.\n", idx);
+        }
+
+        // Extract the character at the specified index
+        char single[2];
+        single[0] = str[idx];
+        single[1] = '\0';
+
+        // Wrap the character into a new LiteralValue (string)
+        LiteralValue element;
+        element.type = TYPE_STRING;
+        element.data.string = strdup(single);
+        if (!element.data.string) {
+            return raise_error(
+                "Memory allocation failed in string indexing.\n");
+        }
+        return make_result(element, false, false);
     }
 
-    // Access the ArrayValue by reference
+    // Otherwise, expect the operand to be an array
+    if (array_res.value.type != TYPE_ARRAY) {
+        return raise_error(
+            "Index access requires an array or string operand.\n");
+    }
     ArrayValue *array = &array_res.value.data.array;
 
-    // Interpret the index
+    // Interpret the index expression
     InterpretResult index_res = interpret_node(index_node, env);
     if (index_res.is_error) {
         return index_res;
     }
-
-    // Index must be integer
     if (index_res.value.type != TYPE_INTEGER) {
         return raise_error("Array index must be an integer.\n");
     }
-
     INT_SIZE index = index_res.value.data.integer;
 
-    // Handle negative indices (e.g., -1 refers to the last element)
+    // Handle negative indices for arrays
     if (index < 0) {
         index = (INT_SIZE)array->count + index;
     }
-
     if (index < 0 || (size_t)index >= array->count) {
         return raise_error("Array index `%lld` out of bounds.\n", index);
     }
 
-    // Access the element
+    // Access the element and return it
     LiteralValue element = array->elements[index];
     return make_result(element, false, false);
 }
