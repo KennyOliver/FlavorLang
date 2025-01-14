@@ -97,8 +97,6 @@ create brainf_interpreter(code) {
         # Increment program pointer
         program_ptr = program_ptr + 1;
     }
-
-    deliver output;  # Return the accumulated output (if any) at the end
 }
 
 # Helper function to convert ASCII value to single-character string
@@ -179,4 +177,4 @@ let hello_world_bf = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..
 
 serve("Executing Brainf Interpreter for 'Hello World!':");
 brainf_interpreter(hello_world_bf);
-serve("\nExecution Complete.");
+serve("Brainf Execution Complete.");
