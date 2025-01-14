@@ -146,8 +146,7 @@ create ord(char_str) {
     let ascii_val = -1;
     for i in 0..(length(ascii_chars) - 1) {
         let current_char = ascii_chars[i];
-        let is_equal = char_str_equals(char_str, current_char);
-        if is_equal == True {
+        if char_str == current_char {
             ascii_val = i;
             break;
         }
@@ -157,15 +156,6 @@ create ord(char_str) {
         deliver ascii_val;
     } else {
         deliver 63; # ASCII for '?'
-    }
-}
-
-# Helper function to compare two single-character strings
-create char_str_equals(a, b) {
-    if a == b {
-        deliver True;
-    } else {
-        deliver False;
     }
 }
 
