@@ -296,6 +296,7 @@ create test(num, func_a, func_b) {
 let calc17_result = test(10, times_2, times_3); # 180
 serve(calc17_result);
 
+
 # ==================================================
 # 18
 # ==================================================
@@ -365,3 +366,113 @@ serve("Const array is still:", const_array);
 
 # Test completed
 serve("Immutable array tests complete!");
+
+
+# ==================================================
+# 19
+# ==================================================
+
+# Test for array length
+let array = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+serve("Initial array:", array);
+serve("Length of array:", length(array));
+
+# Test compound slicing
+serve("Original array:", array);
+serve("Double slice (first 5, then reverse):", (array[0:5])[::-1]);
+serve("Triple slice (first 5, skip every second, then reverse):", ((array[0:5])[::2])[::-1]);
+
+# Test declaring and using 2D arrays
+let array2D = [
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9]
+];
+serve("2D array:", array2D);
+
+# Access individual elements
+serve("Element at (2, 2):", array2D[1][1]);
+serve("Element at (3, 3):", array2D[2][2]);
+
+# Modify elements in a 2D array
+array2D[0][0] = 10;
+serve("2D array after modifying (1, 1) to 10:", array2D);
+
+# Test slicing on rows
+serve("First row:", array2D[0]);
+serve("Last row reversed:", array2D[2][::-1]);
+
+# Test slicing on columns (manual transpose-like slicing)
+let first_column = [array2D[0][0], array2D[1][0], array2D[2][0]];
+serve("First column:", first_column);
+
+let second_column_reversed = [array2D[2][1], array2D[1][1], array2D[0][1]];
+serve("Second column reversed:", second_column_reversed);
+
+# Test length of 2D array and its rows
+serve("Number of rows:", length(array2D));
+serve("Number of elements in first row:", length(array2D[0]));
+
+# Immutable 2D arrays
+const const_2D_array = [
+    [10, 20, 30],
+    [40, 50, 60],
+    [70, 80, 90]
+];
+serve("Immutable 2D array:", const_2D_array);
+
+# Attempt mutation on immutable 2D array
+try {
+    const_2D_array[0][0] = 100; # Trying to modify element
+    serve("This should not be shown; const 2D array was mutated!");
+} rescue {
+    serve("Caught error: Cannot mutate a const 2D array.");
+}
+
+
+# ==================================================
+# 20
+# ==================================================
+
+serve(length("hello"));
+
+const a20 = [random(), random(), random()];
+const b20 = [random, random, random];
+
+serve(a20);
+
+for i in 0..(length(b)) {
+    serve(b20[i](1, 2));
+}
+
+create my_func(x, y, z) {
+    deliver x * y * z;
+}
+
+const c20 = [my_func, my_func, my_func, my_func];
+
+for i in 0..(length(c20)) {
+    serve(c20[i](0.5, 3, i));
+}
+
+
+# ==================================================
+# 21
+# ==================================================
+
+for i in 100..=1 by -5 {
+    serve(i);
+    sleep(i * 10);
+}
+
+
+# ==================================================
+# 22
+# ==================================================
+
+const string_to_index = "Hello world!";
+serve(string_to_index[3]);  # expect 'l'
+serve(string_to_index[8:]);  # expect 'lrld!'
+serve(string_to_index[2::2]);  # expect 'lowrd'
+serve(string_to_index[::-1]);  # expect '!dlrow olleH'
+
