@@ -454,13 +454,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
         fatal_error("Unknown ASTNodeType encountered in `copy_ast_node`.\n");
     }
 
-    // Add validation before recursive copy of next node
-    if (node->next && (uintptr_t)node->next & 0x7) {
-        fatal_error("Encountered misaligned next pointer in copy_ast_node");
-        free(new_node);
-        return NULL;
-    }
-
     new_node->next = copy_ast_node(node->next);
 
     return new_node;
