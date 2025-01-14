@@ -129,7 +129,8 @@ void free_environment(Environment *env) {
     // Free variables
     for (size_t i = 0; i < env->variable_count; i++) {
         free(env->variables[i].variable_name);
-        if (env->variables[i].value.type == TYPE_STRING) {
+        if (env->variables[i].value.type == TYPE_STRING &&
+            env->variables[i].value.data.string) {
             free(env->variables[i].value.data.string);
         }
     }
@@ -137,15 +138,13 @@ void free_environment(Environment *env) {
 
     // Free functions
     for (size_t i = 0; i < env->function_count; i++) {
-        // Free function name
+        // Free function name and parameters
         free(env->functions[i].name);
-
-        // Free function parameters
         free_parameter_list(env->functions[i].parameters);
-
-        // Free function body if user-defined
+        // Only free the AST if you’re completely done with it!
         if (!env->functions[i].is_builtin && env->functions[i].body) {
             free(env->functions[i].body);
+            env->functions[i].body = NULL;
         }
     }
     free(env->functions);
@@ -244,8 +243,15 @@ ASTCaseNode *copy_ast_case_node(ASTCaseNode *case_node) {
 }
 
 ASTNode *copy_ast_node(ASTNode *node) {
-    if (!node)
+    if (!node) {
         return NULL;
+    }
+
+    // Validation check for corrupted pointers
+    if ((uintptr_t)node & 0x7) { // Check for misaligned pointer
+        fatal_error("Encountered misaligned node pointer in copy_ast_node");
+        return NULL;
+    }
 
     debug_print_int("Copying ASTNode of type %d at %p\n", node->type,
                     (void *)node);
@@ -255,7 +261,15 @@ ASTNode *copy_ast_node(ASTNode *node) {
         fatal_error("Memory allocation failed in `copy_ast_node`\n");
     }
 
+    // Copy type first & validate it
     new_node->type = node->type;
+    if (new_node->type < AST_VAR_DECLARATION ||
+        new_node->type > AST_VARIABLE_REFERENCE) {
+        fatal_error("Invalid node type %d encountered in copy_ast_node\n",
+                    new_node->type);
+        free(new_node);
+        return NULL;
+    }
 
     switch (node->type) {
     case AST_ASSIGNMENT:
@@ -438,6 +452,13 @@ ASTNode *copy_ast_node(ASTNode *node) {
 
     default:
         fatal_error("Unknown ASTNodeType encountered in `copy_ast_node`.\n");
+    }
+
+    // Add validation before recursive copy of next node
+    if (node->next && (uintptr_t)node->next & 0x7) {
+        fatal_error("Encountered misaligned next pointer in copy_ast_node");
+        free(new_node);
+        return NULL;
     }
 
     new_node->next = copy_ast_node(node->next);

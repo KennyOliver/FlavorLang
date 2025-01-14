@@ -123,7 +123,7 @@ ASTNode *parse_declaration(ParserState *state, ASTNodeType type) {
                      : "Expected `;` after variable declaration");
 
     // Create AST node based on type
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for declaration node",
                      get_current_token(state));
@@ -201,7 +201,7 @@ ASTNode *parse_variable_assignment(ParserState *state) {
     debug_print_par("Consumed `;` after variable assignment\n");
 
     // Create AST Assignment Node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for assignment node",
                      get_current_token(state));
@@ -226,7 +226,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
 
         // Check if it's a number
         if (next->type == TOKEN_INTEGER || next->type == TOKEN_FLOAT) {
-            ASTNode *node = malloc(sizeof(ASTNode));
+            ASTNode *node = calloc(1, sizeof(ASTNode));
             if (!node) {
                 parser_error("Memory allocation failed", current);
             }
@@ -254,7 +254,7 @@ ASTNode *parse_literal_or_identifier(ParserState *state) {
     // Handle literals
     if (current->type == TOKEN_FLOAT || current->type == TOKEN_INTEGER ||
         current->type == TOKEN_STRING || current->type == TOKEN_BOOLEAN) {
-        ASTNode *node = malloc(sizeof(ASTNode));
+        ASTNode *node = calloc(1, sizeof(ASTNode));
         if (!node) {
             parser_error("Memory allocation failed", current);
         }
@@ -313,7 +313,7 @@ ASTNode *parse_expression(ParserState *state) {
 ASTNode *parse_function_return(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `deliver` keyword");
 
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -398,7 +398,7 @@ ASTNode *parse_block(ParserState *state) {
 
 ASTNode *parse_conditional_block(ParserState *state) {
     // Allocate the node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -444,7 +444,7 @@ ASTNode *parse_conditional_block(ParserState *state) {
 }
 
 ASTNode *parse_while_loop(ParserState *state) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -466,7 +466,7 @@ ASTNode *parse_while_loop(ParserState *state) {
 ASTNode *parse_for_loop(ParserState *state) {
     debug_print_par("Parsing a `for` loop...\n");
 
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -573,7 +573,7 @@ ASTNode *parse_break_statement(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `break` keyword");
     expect_token(state, TOKEN_DELIMITER, "Expected `;` after break");
 
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -618,7 +618,7 @@ ASTNode *parse_case_body(ParserState *state) {
 }
 
 ASTNode *parse_switch_block(ParserState *state) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -769,7 +769,7 @@ ASTNode *parse_function_declaration(ParserState *state) {
     }
 
     // Create the function declaration node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for function declaration node",
                      name);
@@ -835,7 +835,7 @@ ASTNode *parse_function_call(ParserState *state) {
     expect_token(state, TOKEN_PAREN_CLOSE, "Expected `)` after argument list");
 
     // Create function call AST node
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
@@ -882,7 +882,7 @@ ASTNode *parse_try_block(ParserState *state) {
         try_block.finally_block = finally_body;
     }
 
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for `try` block",
                      get_current_token(state));
