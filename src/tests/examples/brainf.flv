@@ -167,6 +167,6 @@ create ord(char_str) {
 # Example Brainf code: "Hello World!"
 let hello_world_bf = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..+++.>++.<<+++++++++++++++.>.+++.------.--------.>+.>.";
 
-serve("Executing Brainf Interpreter for 'Hello World!':");
+serve("Executing Brainf Interpreter for 'Hello World!'");
 brainf_interpreter(hello_world_bf);
 serve("Brainf Execution Complete!");
