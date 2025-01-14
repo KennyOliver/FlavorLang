@@ -1,3 +1,10 @@
+# Brainf Interpreter
+
+---
+
+## [`brainf.flv`](../src/tests/examples/brainf.flv)
+
+```
 # ==================================================
 # 🧠 Brainf Interpreter in FlavorLang
 # ==================================================
@@ -6,7 +13,7 @@ create brainf_interpreter(code) {
     # Step 1: Preprocess the code to map brackets
     let code_length = length(code);
     let loop_stack = [];
-    
+
     # Preallocate arrays for loop mappings with a size equal to code_length
     let loop_start_to_end = [];
     let loop_end_to_start = [];
@@ -101,7 +108,7 @@ create brainf_interpreter(code) {
         # Increment program pointer
         program_ptr = program_ptr + 1;
     }
-    
+
     deliver "Execution Finished";  # Return a confirmation value
 }
 
@@ -113,11 +120,11 @@ create chr(ascii_val) {
         "\x08", "\x09", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F",
         "\x10", "\x11", "\x12", "\x13", "\x14", "\x15", "\x16", "\x17",
         "\x18", "\x19", "\x1A", "\x1B", "\x1C", "\x1D", "\x1E", "\x1F",
-        " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", 
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?", 
-        "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", 
-        "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_", 
-        "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", 
+        " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?",
+        "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+        "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_",
+        "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
         "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", "\x7F"
     ];
 
@@ -135,11 +142,11 @@ create ord(char_str) {
         "\x08", "\x09", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F",
         "\x10", "\x11", "\x12", "\x13", "\x14", "\x15", "\x16", "\x17",
         "\x18", "\x19", "\x1A", "\x1B", "\x1C", "\x1D", "\x1E", "\x1F",
-        " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", 
-        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?", 
-        "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", 
-        "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_", 
-        "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", 
+        " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/",
+        "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ":", ";", "<", "=", ">", "?",
+        "@", "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+        "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z", "[", "\\", "]", "^", "_",
+        "`", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o",
         "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", "\x7F"
     ];
 
@@ -180,3 +187,12 @@ let hello_world_bf = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..
 serve("Executing Brainf Interpreter for 'Hello World!':");
 brainf_interpreter(hello_world_bf);
 serve("Brainf Execution Complete!");
+```
+
+---
+
+## License
+
+This project is licensed under the Apache 2.0 License &mdash; see the [LICENSE](../LICENSE) file for details.
+
+&copy; 2024-2025 Kenneth Oliver. All rights reserved.

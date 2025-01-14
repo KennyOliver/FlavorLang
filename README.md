@@ -41,15 +41,17 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 6. [Syntax Examples](docs/syntax_examples.md)
 
-7. [Debugging](docs/debugging.md)
+7. [Brainf Interpreter](docs/brainf_interpreter.md)
 
-8. [Language Design](docs/language_design.md)
+8. [Debugging](docs/debugging.md)
 
-9. [Lexer](docs/lexer.md)
+9. [Language Design](docs/language_design.md)
 
-10. [Parser](docs/parser.md)
+10. [Lexer](docs/lexer.md)
 
-11. [Interpreter](docs/interpreter.md)
+11. [Parser](docs/parser.md)
+
+12. [Interpreter](docs/interpreter.md)
 
 ---
 
