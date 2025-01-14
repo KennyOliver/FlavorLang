@@ -1731,6 +1731,10 @@ InterpretResult interpret_try(ASTNode *node, Environment *env) {
     return result;
 }
 
+// ==================================================
+// ARRAYS
+// ==================================================
+
 /**
  * @brief Interprets array literals like `[1, 2, 3]`.
  *
@@ -2194,6 +2198,8 @@ int get_variable_index(Environment *env, const char *variable_name) {
 /**
  * @brief Handles slicing arrays or strings like `array[1:4]` or `string[1:4]`.
  *
+ * For strings, slicing returns a new substring.
+ *
  * @param node The AST node for slice access.
  * @param env  The current environment.
  * @return InterpretResult containing the slice.
@@ -2246,7 +2252,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         return raise_error("Slice step cannot be zero.\n");
     }
 
-    // Set default start & end based on step direction
+    // Set default start and end based on step direction
     FLOAT_SIZE default_start, default_end;
     if (step_val > 0) {
         default_start = 0.0;
@@ -2256,7 +2262,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         default_end = -1.0;
     }
 
-    // Interpret start expression if provided
+    // Interpret start expression if provided; otherwise use default
     FLOAT_SIZE start_val = default_start;
     if (start_node) {
         InterpretResult start_res = interpret_node(start_node, env);
@@ -2272,7 +2278,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
                         : start_res.value.data.floating_point;
     }
 
-    // Interpret end expression if provided
+    // Interpret end expression if provided; otherwise use default
     FLOAT_SIZE end_val = default_end;
     if (end_node) {
         InterpretResult end_res = interpret_node(end_node, env);
@@ -2297,15 +2303,20 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
     INT_SIZE end_index = (INT_SIZE)ceil(end_val);
     INT_SIZE step = (INT_SIZE)step_val;
 
-    // Adjust negative indices
-    if (start_index < 0) {
-        start_index += (INT_SIZE)total_count;
-    }
-    if (end_index < 0) {
-        end_index += (INT_SIZE)total_count;
+    // Adjust negative indices:
+    if (step > 0) {
+        if (start_index < 0)
+            start_index += (INT_SIZE)total_count;
+        if (end_index < 0)
+            end_index += (INT_SIZE)total_count;
+    } else {
+        // For negative step, adjust start index only; leave end_index
+        // as-is
+        if (start_index < 0)
+            start_index += (INT_SIZE)total_count;
     }
 
-    // Clamp indices (for arrays or strings)
+    // Clamp indices
     if (step > 0) {
         if (start_index < 0)
             start_index = 0;
@@ -2315,12 +2326,12 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             end_index = 0;
         if ((size_t)end_index > total_count)
             end_index = total_count;
-    } else { // step < 0
+    } else {
         if (start_index >= (INT_SIZE)total_count)
             start_index = (INT_SIZE)total_count - 1;
         if (start_index < 0)
             start_index = (INT_SIZE)total_count - 1;
-        // For negative steps, end_index is used as-is
+        // For negative steps, do not clamp end_index; use as-is
     }
 
     debug_print_int(
@@ -2346,9 +2357,9 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
 
     debug_print_int("Calculated slice_count=%zu\n", slice_count);
 
-    // Branch depending on operand type
+    // Branch based on operand type
     if (!isString) {
-        // Operand is an array.
+        // Operand is an array
         ArrayValue slice;
         slice.count = 0;
         slice.capacity = slice_count > 4 ? slice_count : 4;
@@ -2357,7 +2368,7 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
             return raise_error("Memory allocation failed for array slice.\n");
         }
 
-        // Here we use operand_res since it holds the array.
+        // For arrays, use the array field
         for (INT_SIZE i = start_index;
              (step > 0 && i < end_index) || (step < 0 && i > end_index);
              i += step) {
@@ -2376,7 +2387,6 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
                 slice.elements = new_elements;
                 slice.capacity = new_capacity;
             }
-            // Use the array elements from operand_res.
             slice.elements[slice.count++] =
                 operand_res.value.data.array.elements[i];
         }
@@ -2386,11 +2396,11 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         result.data.array = slice;
         return make_result(result, false, false);
     } else {
-        // Operand is a string.
+        // Operand is a string
         const char *str = operand_res.value.data.string;
         size_t str_len = strlen(str);
 
-        // Compute the number of characters to extract.
+        // Compute the number of characters to extract
         size_t char_count = 0;
         for (INT_SIZE i = start_index;
              (step > 0 && i < end_index) || (step < 0 && i > end_index);
