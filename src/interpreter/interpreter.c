@@ -1462,8 +1462,7 @@ InterpretResult call_user_defined_function(Function *func_ref,
         }
         if (r.did_break) {
             free_environment(&local_env);
-            return raise_error(
-                "'break' statement outside of loop or switch.\n");
+            return r;
         }
         if (r.is_error) {
             free_environment(&local_env);
