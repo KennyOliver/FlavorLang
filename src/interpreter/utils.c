@@ -247,12 +247,6 @@ ASTNode *copy_ast_node(ASTNode *node) {
         return NULL;
     }
 
-    // Validation check for corrupted pointers
-    if ((uintptr_t)node & 0x7) { // Check for misaligned pointer
-        fatal_error("Encountered misaligned node pointer in copy_ast_node");
-        return NULL;
-    }
-
     debug_print_int("Copying ASTNode of type %d at %p\n", node->type,
                     (void *)node);
 
