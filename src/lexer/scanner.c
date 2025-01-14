@@ -119,6 +119,18 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
+            // Handle comments starting with `#`
+            if (inner_c == '#') {
+                scan_comment(state);
+                // After scan_comment, current character is either '\n' or '\0'
+                if (state->pos < state->length &&
+                    state->source[state->pos] == '\n') {
+                    state->line++;
+                    state->pos++; // Move past the newline
+                }
+                continue;
+            }
+
             // Handle nested array
             if (inner_c == '[') {
                 // Recursively scan the nested array
@@ -132,9 +144,10 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                 continue;
             }
 
-            // Handle special array operations first
-            if (inner_c == '^' || inner_c == '+' || inner_c == '-') {
-                // Peek the next character
+            // Handle special array operations
+            if (inner_c == '^') {
+                // For '^', check if the next char forms a two-character array
+                // operator (e.g., "^+", "^-", "^^")
                 char next_c = (state->pos + 1 < state->length)
                                   ? state->source[state->pos + 1]
                                   : '\0';
@@ -148,19 +161,32 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
                     free(op);
                     state->pos += 2; // Move past the two-character operator
                     continue;
+                } else {
+                    // If '^' appears alone, treat it as a normal operator
+                    scan_operator(state, tokens, token_count, capacity);
+                    continue;
                 }
-                // Handle negative numbers (e.g., `-1`) within slicing
-                else if (inner_c == '-' && (state->pos + 1 < state->length) &&
-                         isdigit(state->source[state->pos + 1])) {
-                    // Treat '-' as part of a negative number
+            } else if (inner_c == '+' || inner_c == '-') {
+                char next_c = (state->pos + 1 < state->length)
+                                  ? state->source[state->pos + 1]
+                                  : '\0';
+                // Check if '-' is starting a negative number
+                if (inner_c == '-' && isdigit(next_c)) {
                     scan_number(state, tokens, token_count, capacity);
                     continue;
-                } else {
-                    // Single-character array operator (if valid)
-                    char op[2] = {inner_c, '\0'};
+                }
+                // If '+' or '-' is followed by '^', then it forms a
+                // two-character array operator (like "+^" or "-^")
+                if (next_c == '^') {
+                    char *op = strndup(&state->source[state->pos], 2);
                     append_token(tokens, token_count, capacity, TOKEN_ARRAY_OP,
                                  op, state->line);
-                    state->pos++;
+                    free(op);
+                    state->pos += 2; // Move past the two-character operator
+                    continue;
+                } else {
+                    // Otherwise, treat it as a normal operator
+                    scan_operator(state, tokens, token_count, capacity);
                     continue;
                 }
             }
@@ -243,14 +269,83 @@ void scan_array(ScannerState *state, Token **tokens, size_t *token_count,
 
 void scan_string(ScannerState *state, Token **tokens, size_t *token_count,
                  size_t *capacity) {
-    size_t start = ++(state->pos); // skip opening quote
-    while (state->pos < state->length && state->source[state->pos] != '"') {
+    size_t start = ++(state->pos); // Skip the opening quote
+    bool is_escaped = false;
+
+    while (state->pos < state->length) {
+        char current_char = state->source[state->pos];
+
+        if (is_escaped) {
+            // Skip the current character as it's escaped
+            is_escaped = false;
+            state->pos++;
+            continue;
+        }
+
+        if (current_char == '\\') {
+            is_escaped = true;
+            state->pos++;
+            continue;
+        }
+
+        if (current_char == '"') {
+            break; // End of string
+        }
+
+        // Handle newline characters within strings if allowed
+        if (current_char == '\n') {
+            token_error("Unterminated string literal (newline encountered)",
+                        state->line);
+        }
+
         state->pos++;
     }
+
     if (state->pos >= state->length || state->source[state->pos] != '"') {
         token_error("Unterminated string literal", state->line);
     }
-    char *lexeme = strndup(&state->source[start], state->pos - start);
+
+    // Extract the string content, handling escape sequences as needed
+    size_t lexeme_length = state->pos - start;
+    char *lexeme = malloc(lexeme_length + 1); // +1 for null terminator
+    if (!lexeme) {
+        token_error("Memory allocation failed for string lexeme", state->line);
+    }
+
+    size_t lexeme_pos = 0;
+    is_escaped = false;
+    for (size_t i = start; i < state->pos; i++) {
+        char c = state->source[i];
+        if (is_escaped) {
+            switch (c) {
+            case 'n':
+                lexeme[lexeme_pos++] = '\n';
+                break;
+            case 't':
+                lexeme[lexeme_pos++] = '\t';
+                break;
+            case '\\':
+                lexeme[lexeme_pos++] = '\\';
+                break;
+            case '"':
+                lexeme[lexeme_pos++] = '"';
+                break;
+            default:
+                // If the escape sequence is unrecognized, keep the backslash
+                lexeme[lexeme_pos++] = '\\';
+                lexeme[lexeme_pos++] = c;
+                break;
+            }
+            is_escaped = false;
+        } else if (c == '\\') {
+            is_escaped = true;
+        } else {
+            lexeme[lexeme_pos++] = c;
+        }
+    }
+
+    lexeme[lexeme_pos] = '\0'; // Null-terminate the string
+
     append_token(tokens, token_count, capacity, TOKEN_STRING, lexeme,
                  state->line);
     free(lexeme);

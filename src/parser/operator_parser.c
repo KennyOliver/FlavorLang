@@ -30,7 +30,7 @@ ASTNode *parse_ternary(ParserState *state) {
         // Recursively parse expression for `False` branch
         ASTNode *false_expr = parse_ternary(state);
 
-        ASTNode *ternary_node = malloc(sizeof(ASTNode));
+        ASTNode *ternary_node = calloc(1, sizeof(ASTNode));
         if (!ternary_node) {
             parser_error("Memory allocation failed for ternary node", current);
         }
@@ -300,7 +300,7 @@ bool match_operator(ParserState *state, const char *op) {
 // Creation functions
 
 ASTNode *create_binary_op_node(char *operator, ASTNode * left, ASTNode *right) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for binary operation node",
                      NULL);
@@ -314,7 +314,7 @@ ASTNode *create_binary_op_node(char *operator, ASTNode * left, ASTNode *right) {
 }
 
 ASTNode *create_unary_op_node(char *operator, ASTNode * operand) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for unary operation node", NULL);
     }
@@ -326,7 +326,7 @@ ASTNode *create_unary_op_node(char *operator, ASTNode * operand) {
 }
 
 ASTNode *create_literal_node(Token *token) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for literal node", token);
     }
@@ -365,7 +365,7 @@ ASTNode *create_literal_node(Token *token) {
 
 // Create a function call node
 ASTNode *create_function_call_node(ASTNode *function_ref, ASTNode *args) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for function call node", NULL);
     }

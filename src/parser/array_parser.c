@@ -1,7 +1,7 @@
 #include "array_parser.h"
 
 ASTNode *parse_array_literal(ParserState *state) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for array literal",
                      get_current_token(state));
@@ -72,7 +72,7 @@ ASTNode *parse_array_literal(ParserState *state) {
 }
 
 ASTNode *parse_index_access(ASTNode *array, ParserState *state) {
-    ASTNode *node = malloc(sizeof(ASTNode));
+    ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed for index access",
                      get_current_token(state));
