@@ -6,8 +6,14 @@ create brainf_interpreter(code) {
     # Step 1: Preprocess the code to map brackets
     let code_length = length(code);
     let loop_stack = [];
-    let loop_start_to_end = []; # Array where index is start '[', value is end ']'
-    let loop_end_to_start = []; # Array where index is end ']', value is start '['
+    
+    # Preallocate arrays for loop mappings with a size equal to code_length
+    let loop_start_to_end = [];
+    let loop_end_to_start = [];
+    for i in 0..code_length {
+        loop_start_to_end[^+] = -1;
+        loop_end_to_start[^+] = -1;
+    }
 
     for i in 0..(code_length - 1) {
         let char = code[i];
@@ -18,7 +24,7 @@ create brainf_interpreter(code) {
             if stack_length > 0 {
                 let start_index = loop_stack[length(loop_stack) - 1];
                 let new_length = length(loop_stack) - 1;
-                loop_stack = loop_stack[:new_length]; # Correct slicing to remove last element
+                loop_stack = loop_stack[:new_length]; # Remove last element
                 loop_start_to_end[start_index] = i;
                 loop_end_to_start[i] = start_index;
             } else {
@@ -82,21 +88,21 @@ create brainf_interpreter(code) {
             if data_tape[data_ptr] == 0 {
                 # Jump to the command after the matching ']'
                 let jump_to = loop_start_to_end[program_ptr];
-                let new_ptr = jump_to;
-                program_ptr = new_ptr;
+                program_ptr = jump_to;
             }
         } elif command == "]" {
             if data_tape[data_ptr] != 0 {
                 # Jump back to the command after the matching '['
                 let jump_to = loop_end_to_start[program_ptr];
-                let new_ptr = jump_to;
-                program_ptr = new_ptr;
+                program_ptr = jump_to;
             }
         }
 
         # Increment program pointer
         program_ptr = program_ptr + 1;
     }
+    
+    deliver "Execution Finished";  # Return a confirmation value
 }
 
 # Helper function to convert ASCII value to single-character string
@@ -115,8 +121,6 @@ create chr(ascii_val) {
         "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "{", "|", "}", "~", "\x7F"
     ];
 
-    # Since strings cannot be split or sliced, ensure 'ascii_val' is an integer.
-    # Check if 'ascii_val' is within range
     if ascii_val >= 0 && ascii_val < length(ascii_chars) {
         deliver ascii_chars[ascii_val];
     } else {
@@ -126,7 +130,6 @@ create chr(ascii_val) {
 
 # Helper function to convert single-character string to ASCII value
 create ord(char_str) {
-    # Implement a lookup table for ASCII values 0-127
     let ascii_chars = [
         "\x00", "\x01", "\x02", "\x03", "\x04", "\x05", "\x06", "\x07",
         "\x08", "\x09", "\x0A", "\x0B", "\x0C", "\x0D", "\x0E", "\x0F",
@@ -143,7 +146,6 @@ create ord(char_str) {
     let ascii_val = -1;
     for i in 0..(length(ascii_chars) - 1) {
         let current_char = ascii_chars[i];
-        # Compare the input string with current_char
         let is_equal = char_str_equals(char_str, current_char);
         if is_equal == True {
             ascii_val = i;
@@ -160,7 +162,6 @@ create ord(char_str) {
 
 # Helper function to compare two single-character strings
 create char_str_equals(a, b) {
-    # Since strings cannot be split or sliced, compare their entire value
     if a == b {
         deliver True;
     } else {
@@ -177,4 +178,4 @@ let hello_world_bf = "++++++++++[>+++++++>++++++++++>+++>+<<<<-]>++.>+.+++++++..
 
 serve("Executing Brainf Interpreter for 'Hello World!':");
 brainf_interpreter(hello_world_bf);
-serve("Brainf Execution Complete.");
+serve("Brainf Execution Complete!");
