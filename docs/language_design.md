@@ -113,6 +113,8 @@ statement ::= declaration
 declaration ::= variable_declaration
               | constant_declaration
 
+IDENTIFIER ::= [a-zA-Z_][a-zA-Z0-9_]*
+
 variable_declaration ::= "let" IDENTIFIER "=" expression ";"
 constant_declaration ::= "const" IDENTIFIER "=" expression ";"
 
@@ -122,7 +124,7 @@ control_flow ::= if_statement
 
 if_statement ::= "if" expression block
                ( "elif" expression block )*
-               [ "else" block ]
+               ( "else" block )?
 
 loop_statement ::= while_loop | for_loop
 
@@ -136,7 +138,7 @@ range_operator ::= ".." | "..="
 
 function_definition ::= "create" IDENTIFIER "(" parameter_list ")" block
 
-parameter_list ::= [ IDENTIFIER { "," IDENTIFIER } ]
+parameter_list ::= ( IDENTIFIER ( "," IDENTIFIER )* )?
 
 block ::= "{" statement* "}"
 
@@ -157,11 +159,11 @@ operator ::= "+" | "-" | "*" | "/" | "%"
 
 function_call ::= IDENTIFIER "(" argument_list ")"
 
-argument_list ::= [ expression { "," expression } ]
+argument_list ::= ( expression ( "," expression )* )?
 
 array_expression ::= "[" argument_list "]"
 
-error_handling ::= try_block rescue_block [ finish_block ]
+error_handling ::= "try" block "rescue" block ( "finish" block )?
 
 try_block ::= "try" block
 
