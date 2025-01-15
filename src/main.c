@@ -1,25 +1,4 @@
-#include "debug/debug.h"
-#include "interpreter/interpreter.h"
-#include "lexer/lexer.h"
-#include "parser/parser.h"
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-// Structure to hold command-line options
-typedef struct {
-    bool minify;
-    char *filename;
-} Options;
-
-// Function prototypes
-void parse_cli_args(int argc, char *argv[], Options *options);
-void print_usage(const char *prog_name);
-void print_logo_from_file(const char *filename);
-char *generate_minified_filename(const char *input_filename);
-void minify_tokens(Token *tokens, const char *output_file);
-void print_about(void);
+#include "main.h"
 
 // Print usage instructions
 void print_usage(const char *prog_name) {
@@ -43,7 +22,7 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
         if (strcmp(argv[i], "--debug") == 0) {
             if (options->minify) {
                 fprintf(stderr,
-                        "Error: Cannot use --debug and --minify together.\n");
+                        "Error: Cannot use `--debug` & `--minify` together.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
@@ -51,7 +30,7 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
         } else if (strcmp(argv[i], "--minify") == 0) {
             if (debug_flag) {
                 fprintf(stderr,
-                        "Error: Cannot use --debug and --minify together.\n");
+                        "Error: Cannot use `--debug` & `--minify` together.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
@@ -84,20 +63,11 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
     }
 }
 
-// Print logo from a file
-void print_logo_from_file(const char *filename) {
-    FILE *file = fopen(filename, "r");
-    if (file == NULL) {
-        perror("Error opening logo file");
-        return;
+// Print FlavorLang logo
+void print_logo(void) {
+    for (int i = 0; FLAVOR_LOGO[i] != NULL; i++) {
+        printf("%s", FLAVOR_LOGO[i]);
     }
-
-    char buffer[256];
-    while (fgets(buffer, sizeof(buffer), file) != NULL) {
-        printf("%s", buffer);
-    }
-
-    fclose(file);
 }
 
 // Generate minified filename
@@ -206,7 +176,7 @@ void minify_tokens(Token *tokens, const char *output_file) {
 // Print about information
 void print_about(void) {
     printf("\n");
-    print_logo_from_file("../logo/logo.txt");
+    print_logo();
     printf("\n");
     const char *border =
         "+-------------------------------------------------+\n";
