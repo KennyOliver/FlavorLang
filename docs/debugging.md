@@ -6,29 +6,15 @@ The FlavorLang interpreter provides comprehensive debugging capabilities through
 
 ---
 
-## 📖 Table of Contents
+## Table of Contents
 
 1. [Using the Debug Flag](#using-the-debug-flag)
 2. [Debugging Stages](#debugging-stages)
-   - [Tokenization Stage `[DEBUG TOK]`](#1-tokenization-stage-debug-tok)
-   - [Parsing Stage `[DEBUG PRS]`](#2-parsing-stage-debug-prs)
-   - [Interpretation Stage `[DEBUG INT]`](#3-interpretation-stage-debug-int)
 3. [Example Debug Session](#example-debug-session)
-   - [Debug Output Explained](#debug-output-explained)
-4. [Common Debug Patterns](#common-debug-patterns)
-   - [Variable Assignment](#1-variable-assignment)
-   - [Conditional Evaluation](#2-conditional-evaluation)
-   - [Function Calls](#3-function-calls)
-5. [Debug Output Format](#debug-output-format)
+4. [Understanding Debug Output](#understanding-debug-output)
+5. [Common Debug Patterns](#common-debug-patterns)
 6. [Tips for Effective Debugging](#tips-for-effective-debugging)
-   - [Incremental Debugging](#incremental-debugging)
-   - [Understanding Token Types](#understanding-token-types)
-   - [Following Control Flow](#following-control-flow)
-   - [Variable State Tracking](#variable-state-tracking)
 7. [Reference](#reference)
-   - [Debug Flag Options](#debug-flag-options)
-   - [Common Debug Messages](#common-debug-messages)
-8. [License](#license)
 
 ---
 
@@ -42,153 +28,219 @@ flavor your_script.flv --debug
 
 ## Debugging Stages
 
-The debugging output is divided into three main stages, each providing different insights into program execution:
+The debugging output is divided into three main stages:
 
 ### 1. Tokenization Stage `[DEBUG TOK]`
 
-Shows how the source code is broken down into individual tokens:
+Shows how source code is broken into tokens. Each token includes:
 
-- Token Type
-- Lexeme (actual content)
 - Line number
+- Token type (numeric ID)
+- Lexeme (actual content)
+
+Example:
+
+```
+[DEBUG TOK] 1 Type: 0 Lex: `let`
+[DEBUG TOK] Type: 1 Lex: `stop_loop`
+[DEBUG TOK] Type: 6 Lex: `=`
+```
 
 ### 2. Parsing Stage `[DEBUG PRS]`
 
-Demonstrates how tokens are organized into an Abstract Syntax Tree (AST):
+Shows AST (Abstract Syntax Tree) construction:
 
 - Block structure
 - Expression parsing
 - Statement organization
 
+Example:
+
+```
+[DEBUG PRS] Current Token: Type=`0`, Lexeme=`let`
+[DEBUG PRS] Starting variable declaration parse
+[DEBUG PRS] Starting to parse block
+```
+
 ### 3. Interpretation Stage `[DEBUG INT]`
 
-Shows the actual execution of the code:
+Shows program execution:
 
-- Variable assignments
-- Condition evaluations
+- Variable operations
 - Function calls
-- Control flow decisions
+- Control flow
+- Expression evaluation
+
+Example:
+
+```
+[DEBUG INT] Added variable `count` with is_constant=0
+[DEBUG INT] Looking up variable: `count`
+[DEBUG INT] Variable found: `count` with value `10`
+```
 
 ## Example Debug Session
 
-Let's examine a simple program with debugging enabled:
+Let's examine a countdown program that demonstrates various language features:
 
-```js
-let temperature = 180;
-
-if temperature >= 170 {
-    serve("Ready to bake!");
+```javascript
+let stop_loop = False;
+let count = 10;
+serve("Preparing for launch!");
+while stop_loop != True {
+    serve(count);
+    if count > 0 {
+        count = count - 1;
+    } else {
+        stop_loop = True;
+    }
 }
+serve("Blast off!");
 ```
 
-### Debug Output Explained
+Normal output:
+
+```
+Preparing for launch!
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Blast off!
+```
+
+### Understanding Debug Output
+
+Key debug messages from each stage:
+
+1. **Tokenization**:
 
 ```bash
-# Tokenization
-[DEBUG TOK] 1     Type: `0`  Lex: `let`           # Variable declaration keyword
-[DEBUG TOK]       Type: `1`  Lex: `temperature`   # Variable identifier
-[DEBUG TOK]       Type: `4`  Lex: `=`            # Assignment operator
-[DEBUG TOK]       Type: `2`  Lex: `180`          # Numeric literal
-[DEBUG TOK]       Type: `5`  Lex: `;`            # Statement terminator
+[DEBUG TOK] 1 Type: 0 Lex: `let`              # Variable declaration
+[DEBUG TOK] Type: 1 Lex: `stop_loop`          # Variable name
+[DEBUG TOK] Type: 6 Lex: `=`                  # Assignment operator
+[DEBUG TOK] Type: 2 Lex: `False`              # Boolean literal
+```
 
-# Parsing
+2. **Parsing**:
+
+```bash
+[DEBUG PRS] Starting variable declaration parse
 [DEBUG PRS] Starting to parse block
-[DEBUG PRS] Parsing variable declaration
-[DEBUG PRS] Parsing conditional statement
+[DEBUG PRS] Parsing token in block: type=`8`, lexeme=`serve`
+```
 
-# Interpretation
-[DEBUG INT] Assigning value to variable 'temperature'
-[DEBUG INT] Evaluating condition: temperature >= 170
-[DEBUG INT] Condition result: true
-[DEBUG INT] Executing conditional block
-Ready to bake!
+3. **Interpretation**:
+
+```bash
+[DEBUG INT] Added variable `stop_loop` with is_constant=0
+[DEBUG INT] Variable found: `count` with value `10`
+[DEBUG INT] Operator: `>`
 ```
 
 ## Common Debug Patterns
 
-### 1. Variable Assignment
+1. **Variable Operations**
 
 ```bash
-[DEBUG TOK] Type: `0` Lex: `let`
-[DEBUG INT] Variable assignment: name='x' value=42
+[DEBUG INT] Added variable `count` with is_constant=0
+[DEBUG INT] Looking up variable: `count`
+[DEBUG INT] Variable found: `count` with value `10`
 ```
 
-### 2. Conditional Evaluation
+2. **Control Flow**
 
 ```bash
-[DEBUG INT] Evaluating condition
-[DEBUG INT] Left operand: 180
-[DEBUG INT] Operator: >=
-[DEBUG INT] Right operand: 170
-[DEBUG INT] Result: true
+[DEBUG INT] Matched: `AST_CONDITIONAL`
+[DEBUG INT] `interpret_conditional()` called
+[DEBUG INT] Operator: `>`
 ```
 
-### 3. Function Calls
+3. **Function Calls**
 
 ```bash
-[DEBUG INT] Function call: 'serve'
-[DEBUG INT] Arguments: ["Ready to bake!"]
+[DEBUG INT] Starting function call interpretation
+[DEBUG INT] Looking up variable: `serve`
+[DEBUG INT] builtin_output() called
 ```
-
-## Debug Output Format
-
-Each debug line follows this format:
-
-```
-[DEBUG XXX] <line_number> <message>
-```
-
-Where:
-
-- `XXX`: Stage identifier (TOK/PRS/INT)
-- `line_number`: Source code line number (when applicable)
-- `message`: Debug information
 
 ## Tips for Effective Debugging
 
-1. **Incremental Debugging**
+1. **Read Token Types**
 
-   - Debug small code sections first
-   - Add complexity gradually
+   - 0: Keywords (`let`, `if`, `while`)
+   - 1: Identifiers (variable names)
+   - 2: Boolean literals (`True`, `False`)
+   - 3: Floating-point number literals
+   - 4: Integer number literals
+   - 5: String literals
+   - 6: Operators (`+`, `-`, `==`, etc.)
+   - 7: Delimiters (e.g., `;`, `,`)
+   - 8: Function names
+   - 9: Function parameter identifiers
+   - 10: Open parentheses (`(`)
+   - 11: Close parentheses (`)`)
+   - 12: Open braces (`{`)
+   - 13: Close braces (`}`)
+   - 14: Colon (`:`)
+   - 15: Array operations (e.g., access)
+   - 16: Open square brackets (`[`)
+   - 17: Close square brackets (`]`)
+   - 18: End of file
 
-2. **Understanding Token Types**
+2. **Track Variable State**
 
-   ```
-   0: Keywords
-   1: Identifiers
-   2: Numbers
-   3: Strings
-   4: Operators
-   5: Punctuation
-   ```
+   - Watch for variable declarations (`Added variable`)
+   - Monitor value changes (`Variable found: with value`)
+   - Check condition evaluations
 
-3. **Following Control Flow**
-
-   - Watch for `[DEBUG INT]` messages showing condition evaluations
-   - Track block entry/exit points
-
-4. **Variable State Tracking**
-   - Monitor variable assignments and modifications
-   - Check value transformations
+3. **Follow Control Flow**
+   - Look for `AST_CONDITIONAL` and `AST_WHILE_LOOP`
+   - Track block entry/exit
+   - Monitor condition evaluations
 
 ## Reference
 
-### Debug Flag Options
+### Token Types
 
-- `--debug`: Full debug output
-- `--debug-tokens`: Tokenization only (in the future)
-- `--debug-parser`: Parsing only (in the future)
-- `--debug-interpreter`: Interpretation only (in the future)
+| ID  | Meaning               | Example              |
+| --- | --------------------- | -------------------- |
+| 0   | Keyword               | `let`, `if`, `while` |
+| 1   | Identifier            | Variable names       |
+| 2   | Boolean               | `True`, `False`      |
+| 3   | Floating-point Number | `3.14`, `2.718`      |
+| 4   | Integer Number        | `10`, `42`           |
+| 5   | String                | `"Hello"`            |
+| 6   | Operator              | `=`, `+`, `-`, `>`   |
+| 7   | Delimiter             | `;`, `,`             |
+| 8   | Function Name         | `serve`              |
+| 9   | Function Parameter    | `x`, `y`             |
+| 10  | Open Parenthesis      | `(`                  |
+| 11  | Close Parenthesis     | `)`                  |
+| 12  | Open Brace            | `{`                  |
+| 13  | Close Brace           | `}`                  |
+| 14  | Colon                 | `:`                  |
+| 15  | Array Operation       | `arr[0]`             |
+| 16  | Open Square Bracket   | `[`                  |
+| 17  | Close Square Bracket  | `]`                  |
+| 18  | End of File           | (None)               |
 
 ### Common Debug Messages
 
-| Message Pattern           | Meaning                          |
-| ------------------------- | -------------------------------- |
-| `Starting to parse block` | Beginning of a new code block    |
-| `Evaluating condition`    | Conditional statement check      |
-| `Variable assignment`     | Value being assigned to variable |
-| `Function call`           | Function invocation              |
-| `Executing block`         | Entering a code block            |
+| Message Pattern          | Meaning                   |
+| ------------------------ | ------------------------- |
+| `Added variable`         | New variable created      |
+| `Looking up variable`    | Variable access           |
+| `Starting function call` | Function invocation       |
+| `Operator:`              | Operation being performed |
+| `Matched: AST_`          | Node type being processed |
 
 ---
 
