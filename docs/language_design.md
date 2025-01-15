@@ -16,6 +16,7 @@ FlavorLang is a programming language designed with a cooking-inspired syntax, co
    - [4. Array Operations](#4-array-operations)
 3. [Grammar Specification](#grammar-specification)
    - [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf)
+   - [EBNF Diagrams](#ebnf-diagrams)
 4. [License](#license)
 
 ---
@@ -72,7 +73,7 @@ FlavorLang is a programming language designed with a cooking-inspired syntax, co
 | ---------- | ----------------------------------- | ------------- |
 | Arithmetic | `+`, `-`, `*`, `/`, `**`, `//`, `%` | Left to right |
 | Comparison | `==`, `!=`, `<`, `<=`, `>`, `>=`    | Left to right |
-| Logical    | `&&`, `\|\|`                        | Left to right |
+| Logical    | `!`, `&&`, `\|\|`                   | Left to right |
 | Range      | `..`, `..=`                         | Left to right |
 | Assignment | `=`                                 | Right to left |
 
@@ -109,6 +110,7 @@ statement ::= declaration
             | function_definition
             | expression_statement
             | error_handling
+            | pattern_matching
 
 declaration ::= variable_declaration
               | constant_declaration
@@ -136,6 +138,12 @@ range ::= expression range_operator expression
 
 range_operator ::= ".." | "..="
 
+switch_statement ::= "check" expression "{" pattern_case* default_case "}"
+pattern_case ::= "is" pattern ":" block
+default_case ::= "else" ":" block
+
+pattern ::= literal | IDENTIFIER | array_expression
+
 function_definition ::= "create" IDENTIFIER "(" parameter_list ")" block
 
 parameter_list ::= ( IDENTIFIER ( "," IDENTIFIER )* )?
@@ -155,13 +163,21 @@ literal ::= NUMBER | STRING | BOOLEAN
 binary_expression ::= expression operator expression
 
 operator ::= "+" | "-" | "*" | "/" | "%"
+           | "**" | "//"
            | "==" | "!=" | "<" | "<=" | ">" | ">="
+           | "&&" | "||" | "!"
 
 function_call ::= IDENTIFIER "(" argument_list ")"
 
 argument_list ::= ( expression ( "," expression )* )?
 
-array_expression ::= "[" argument_list "]"
+array_expression ::= "[" array_elements "]"
+
+array_elements ::= ( expression ( "," expression )* )?
+
+array_operation ::= "array" "[" operation "]"
+operation ::= "^+" | "+^" | "^-" | "-^"
+            | "start:end" | "::step"
 
 error_handling ::= "try" block "rescue" block ( "finish" block )?
 
@@ -195,6 +211,7 @@ statement
            | function_definition
            | expression_statement
            | error_handling
+           | pattern_matching
 ```
 
 referenced by:
@@ -233,6 +250,7 @@ referenced by:
 - function_call
 - function_definition
 - parameter_list
+- pattern
 - variable_declaration
 
 **variable_declaration:**
@@ -354,6 +372,59 @@ referenced by:
 
 - range
 
+**switch_statement:**
+
+![switch_statement](ebnf-diagrams/switch_statement.svg)
+
+```
+switch_statement
+         ::= 'check' expression '{' pattern_case* default_case '}'
+```
+
+referenced by:
+
+- control_flow
+
+**pattern_case:**
+
+![pattern_case](ebnf-diagrams/pattern_case.svg)
+
+```
+pattern_case
+         ::= 'is' pattern ':' block
+```
+
+referenced by:
+
+- switch_statement
+
+**default_case:**
+
+![default_case](ebnf-diagrams/default_case.svg)
+
+```
+default_case
+         ::= 'else' ':' block
+```
+
+referenced by:
+
+- switch_statement
+
+**pattern:**
+
+![pattern](ebnf-diagrams/pattern.svg)
+
+```
+pattern  ::= literal
+           | IDENTIFIER
+           | array_expression
+```
+
+referenced by:
+
+- pattern_case
+
 **function_definition:**
 
 ![function_definition](ebnf-diagrams/function_definition.svg)
@@ -390,11 +461,13 @@ block    ::= '{' statement* '}'
 
 referenced by:
 
+- default_case
 - error_handling
 - finish_block
 - for_loop
 - function_definition
 - if_statement
+- pattern_case
 - rescue_block
 - try_block
 - while_loop
@@ -428,11 +501,13 @@ expression
 referenced by:
 
 - argument_list
+- array_elements
 - binary_expression
 - constant_declaration
 - expression_statement
 - if_statement
 - range
+- switch_statement
 - variable_declaration
 - while_loop
 
@@ -449,6 +524,7 @@ literal  ::= NUMBER
 referenced by:
 
 - expression
+- pattern
 
 **binary_expression:**
 
@@ -473,12 +549,17 @@ operator ::= '+'
            | '*'
            | '/'
            | '%'
+           | '**'
+           | '//'
            | '=='
            | '!='
            | '<'
            | '<='
            | '>'
            | '>='
+           | '&&'
+           | '||'
+           | '!'
 ```
 
 referenced by:
@@ -509,7 +590,6 @@ argument_list
 
 referenced by:
 
-- array_expression
 - function_call
 
 **array_expression:**
@@ -518,12 +598,53 @@ referenced by:
 
 ```ebnf
 array_expression
-         ::= '[' argument_list ']'
+         ::= '[' array_elements ']'
 ```
 
 referenced by:
 
 - expression
+- pattern
+
+**array_elements:**
+
+![array_elements](ebnf-diagrams/array_elements.svg)
+
+```ebnf
+array_elements
+         ::= ( expression ( ',' expression )* )?
+```
+
+referenced by:
+
+- array_expression
+
+**array_operation:**
+
+![array_operation](ebnf-diagrams/array_operation.svg)
+
+```ebnf
+array_operation
+         ::= 'array' '[' operation ']'
+```
+
+**operation:**
+
+![operation](ebnf-diagrams/operation.svg)
+
+```ebnf
+operation
+         ::= '^+'
+           | '+^'
+           | '^-'
+           | '-^'
+           | 'start:end'
+           | '::step'
+```
+
+referenced by:
+
+- array_operation
 
 **error_handling:**
 
