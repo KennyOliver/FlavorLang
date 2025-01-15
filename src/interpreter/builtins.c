@@ -374,9 +374,18 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
                 snprintf(temp_buffer, sizeof(temp_buffer), "%lld",
                          lv.data.integer);
                 break;
-            case TYPE_STRING:
-                print_formatted_string(lv.data.string);
+            case TYPE_STRING: {
+                char *processed = process_escape_sequences(lv.data.string);
+                if (processed) {
+                    snprintf(temp_buffer, sizeof(temp_buffer), "%s", processed);
+                    free(processed);
+                } else {
+                    // Fallback
+                    snprintf(temp_buffer, sizeof(temp_buffer), "%s",
+                             lv.data.string);
+                }
                 break;
+            }
             case TYPE_BOOLEAN:
                 snprintf(temp_buffer, sizeof(temp_buffer), "%s",
                          lv.data.boolean ? "True" : "False");
@@ -651,18 +660,19 @@ InterpretResult builtin_time(void) {
 
 char *process_escape_sequences(const char *input) {
     size_t length = strlen(input);
+
     char *processed = malloc(length + 1);
     if (!processed) {
         perror("Failed to allocate memory for processed string");
         return NULL;
     }
 
-    char *dst = processed;
-    const char *src = input;
+    char *dst = processed;   // destination
+    const char *src = input; // source
 
     while (*src) {
         if (*src == '\\' && *(src + 1)) {
-            src++;
+            src++; // skip backslash
             switch (*src) {
             case 'n':
                 *dst++ = '\n';
@@ -676,12 +686,27 @@ char *process_escape_sequences(const char *input) {
             case 'r':
                 *dst++ = '\r';
                 break;
-            case '\"':
+            case '"':
                 *dst++ = '\"';
                 break;
             case '\'':
                 *dst++ = '\'';
                 break;
+            case 'x': {
+                // Look ahead two characters; if they are hex digits, decode
+                // them.
+                if (isxdigit(*(src + 1)) && isxdigit(*(src + 2))) {
+                    char hex[3] = {*(src + 1), *(src + 2), '\0'};
+                    long value = strtol(hex, NULL, 16);
+                    *dst++ = (char)value;
+                    src += 2; // Skip past the two hex digits
+                } else {
+                    // If the two characters after \x aren’t hex, just output
+                    // "x"
+                    *dst++ = 'x';
+                }
+                break;
+            }
             default:
                 *dst++ = '\\';
                 *dst++ = *src;
@@ -692,7 +717,8 @@ char *process_escape_sequences(const char *input) {
         }
         src++;
     }
-    *dst = '\0'; // NULL-terminate the string
+
+    *dst = '\0'; // NULL-termination
     return processed;
 }
 
