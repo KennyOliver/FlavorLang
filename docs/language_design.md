@@ -4,6 +4,22 @@
 
 FlavorLang is a programming language designed with a cooking-inspired syntax, combining intuitive keywords with robust programming concepts. This document specifies the language's design, syntax, and grammar.
 
+---
+
+## 📖 Table of Contents
+
+1. [Language Design Principles](#language-design-principles)
+2. [Core Language Elements](#core-language-elements)
+   - [1. Keywords](#1-keywords)
+   - [2. Data Types](#2-data-types)
+   - [3. Operators](#3-operators)
+   - [4. Array Operations](#4-array-operations)
+3. [Grammar Specification](#grammar-specification)
+   - [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf)
+4. [License](#license)
+
+---
+
 ## Language Design Principles
 
 1. **Intuitive Syntax**: Culinary-inspired keywords make the language approachable
