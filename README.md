@@ -31,7 +31,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 2. [⚡ Quick Start](#quick-start)
 
-3. [🚀 Execution Flags & Behaviors](#execution-flags--behaviors)
+3. [🚀 Execution Flags &amp; Behaviors](#execution-flags--behaviors)
 
 4. [🎨 Install Syntax Highlighter Extension](#extension)
 
@@ -52,6 +52,8 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 11. [Parser](docs/parser.md)
 
 12. [Interpreter](docs/interpreter.md)
+
+13. [Resources &amp; Inspirations](docs/resources.md)
 
 ---
 
