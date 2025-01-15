@@ -174,6 +174,394 @@ finish_block ::= "finish" block
 
 </details>
 
+### EBNF Diagrams
+
+**program:**
+
+![program](ebnf-diagrams/program.svg)
+
+```ebnf
+program  ::= statement*
+```
+
+**statement:**
+
+![statement](ebnf-diagrams/statement.svg)
+
+```ebnf
+statement
+         ::= declaration
+           | control_flow
+           | function_definition
+           | expression_statement
+           | error_handling
+```
+
+referenced by:
+
+- block
+- program
+
+**declaration:**
+
+![declaration](ebnf-diagrams/declaration.svg)
+
+```ebnf
+declaration
+         ::= variable_declaration
+           | constant_declaration
+```
+
+referenced by:
+
+- statement
+
+**IDENTIFIER:**
+
+![IDENTIFIER](ebnf-diagrams/IDENTIFIER.svg)
+
+```ebnf
+IDENTIFIER
+         ::= [a-zA-Z_] [a-zA-Z0-9_]*
+```
+
+referenced by:
+
+- constant_declaration
+- expression
+- for_loop
+- function_call
+- function_definition
+- parameter_list
+- variable_declaration
+
+**variable_declaration:**
+
+![variable_declaration](ebnf-diagrams/variable_declaration.svg)
+
+```ebnf
+variable_declaration
+         ::= 'let' IDENTIFIER '=' expression ';'
+```
+
+referenced by:
+
+- declaration
+
+**constant_declaration:**
+
+![constant_declaration](ebnf-diagrams/constant_declaration.svg)
+
+```ebnf
+constant_declaration
+         ::= 'const' IDENTIFIER '=' expression ';'
+```
+
+referenced by:
+
+- declaration
+
+**control_flow:**
+
+![control_flow](ebnf-diagrams/control_flow.svg)
+
+```ebnf
+control_flow
+         ::= if_statement
+           | loop_statement
+           | switch_statement
+```
+
+referenced by:
+
+- statement
+
+**if_statement:**
+
+![if_statement](ebnf-diagrams/if_statement.svg)
+
+```ebnf
+if_statement
+         ::= 'if' expression block ( 'elif' expression block )* ( 'else' block )?
+```
+
+referenced by:
+
+- control_flow
+
+**loop_statement:**
+
+![loop_statement](ebnf-diagrams/loop_statement.svg)
+
+```ebnf
+loop_statement
+         ::= while_loop
+           | for_loop
+```
+
+referenced by:
+
+- control_flow
+
+**while_loop:**
+
+![while_loop](ebnf-diagrams/while_loop.svg)
+
+```ebnf
+while_loop
+         ::= 'while' expression block
+```
+
+referenced by:
+
+- loop_statement
+
+**for_loop:**
+
+![for_loop](ebnf-diagrams/for_loop.svg)
+
+```ebnf
+for_loop ::= 'for' IDENTIFIER 'in' range block
+```
+
+referenced by:
+
+- loop_statement
+
+**range:**
+
+![range](ebnf-diagrams/range.svg)
+
+```ebnf
+range    ::= expression range_operator expression
+```
+
+referenced by:
+
+- for_loop
+
+**range_operator:**
+
+![range_operator](ebnf-diagrams/range_operator.svg)
+
+```ebnf
+range_operator
+         ::= '..'
+           | '..='
+```
+
+referenced by:
+
+- range
+
+**function_definition:**
+
+![function_definition](ebnf-diagrams/function_definition.svg)
+
+```ebnf
+function_definition
+         ::= 'create' IDENTIFIER '(' parameter_list ')' block
+```
+
+referenced by:
+
+- statement
+
+**parameter_list:**
+
+![parameter_list](ebnf-diagrams/parameter_list.svg)
+
+```ebnf
+parameter_list
+         ::= ( IDENTIFIER ( ',' IDENTIFIER )* )?
+```
+
+referenced by:
+
+- function_definition
+
+**block:**
+
+![block](ebnf-diagrams/block.svg)
+
+```ebnf
+block    ::= '{' statement* '}'
+```
+
+referenced by:
+
+- error_handling
+- finish_block
+- for_loop
+- function_definition
+- if_statement
+- rescue_block
+- try_block
+- while_loop
+
+**expression_statement:**
+
+![expression_statement](ebnf-diagrams/expression_statement.svg)
+
+```ebnf
+expression_statement
+         ::= expression ';'
+```
+
+referenced by:
+
+- statement
+
+**expression:**
+
+![expression](ebnf-diagrams/expression.svg)
+
+```ebnf
+expression
+         ::= literal
+           | IDENTIFIER
+           | binary_expression
+           | function_call
+           | array_expression
+```
+
+referenced by:
+
+- argument_list
+- binary_expression
+- constant_declaration
+- expression_statement
+- if_statement
+- range
+- variable_declaration
+- while_loop
+
+**literal:**
+
+![literal](ebnf-diagrams/literal.svg)
+
+```ebnf
+literal  ::= NUMBER
+           | STRING
+           | BOOLEAN
+```
+
+referenced by:
+
+- expression
+
+**binary_expression:**
+
+![binary_expression](ebnf-diagrams/binary_expression.svg)
+
+```ebnf
+binary_expression
+         ::= expression operator expression
+```
+
+referenced by:
+
+- expression
+
+**operator:**
+
+![operator](ebnf-diagrams/operator.svg)
+
+```ebnf
+operator ::= '+'
+           | '-'
+           | '*'
+           | '/'
+           | '%'
+           | '=='
+           | '!='
+           | '<'
+           | '<='
+           | '>'
+           | '>='
+```
+
+referenced by:
+
+- binary_expression
+
+**function_call:**
+
+![function_call](ebnf-diagrams/function_call.svg)
+
+```ebnf
+function_call
+         ::= IDENTIFIER '(' argument_list ')'
+```
+
+referenced by:
+
+- expression
+
+**argument_list:**
+
+![argument_list](ebnf-diagrams/argument_list.svg)
+
+```ebnf
+argument_list
+         ::= ( expression ( ',' expression )* )?
+```
+
+referenced by:
+
+- array_expression
+- function_call
+
+**array_expression:**
+
+![array_expression](ebnf-diagrams/array_expression.svg)
+
+```ebnf
+array_expression
+         ::= '[' argument_list ']'
+```
+
+referenced by:
+
+- expression
+
+**error_handling:**
+
+![error_handling](ebnf-diagrams/error_handling.svg)
+
+```ebnf
+error_handling
+         ::= 'try' block 'rescue' block ( 'finish' block )?
+```
+
+referenced by:
+
+- statement
+
+**try_block:**
+
+![try_block](ebnf-diagrams/try_block.svg)
+
+```ebnf
+try_block
+         ::= 'try' block
+```
+
+**rescue_block:**
+
+![rescue_block](ebnf-diagrams/rescue_block.svg)
+
+```ebnf
+rescue_block
+         ::= 'rescue' block
+```
+
+![finish_block](ebnf-diagrams/finish_block.svg)
+
+> [!Note]
+>
+> Generated by [Railroad Diagram Generator][https://bottlecaps.de/rr/ui]
+
 ---
 
 ## License
