@@ -1,157 +1,194 @@
-# Debugging
+# FlavorLang Debugging Guide
+
+## Overview
+
+The FlavorLang interpreter provides comprehensive debugging capabilities through the `--debug` flag. This guide explains how to use debugging features effectively and understand the output at each stage of program execution.
 
 ---
 
-## Table of Contents
+## 📖 Table of Contents
 
-- [Overview](#debugging-overview)
-- [Example Script](#debugging-example-script)
-- [Debug Output Breakdown](#debugging-debug-output-breakdown)
-- [Output With and Without Debugging](#debugging-output-with-and-without-debugging)
+1. [Using the Debug Flag](#using-the-debug-flag)
+2. [Debugging Stages](#debugging-stages)
+   - [Tokenization Stage `[DEBUG TOK]`](#1-tokenization-stage-debug-tok)
+   - [Parsing Stage `[DEBUG PRS]`](#2-parsing-stage-debug-prs)
+   - [Interpretation Stage `[DEBUG INT]`](#3-interpretation-stage-debug-int)
+3. [Example Debug Session](#example-debug-session)
+   - [Debug Output Explained](#debug-output-explained)
+4. [Common Debug Patterns](#common-debug-patterns)
+   - [Variable Assignment](#1-variable-assignment)
+   - [Conditional Evaluation](#2-conditional-evaluation)
+   - [Function Calls](#3-function-calls)
+5. [Debug Output Format](#debug-output-format)
+6. [Tips for Effective Debugging](#tips-for-effective-debugging)
+   - [Incremental Debugging](#incremental-debugging)
+   - [Understanding Token Types](#understanding-token-types)
+   - [Following Control Flow](#following-control-flow)
+   - [Variable State Tracking](#variable-state-tracking)
+7. [Reference](#reference)
+   - [Debug Flag Options](#debug-flag-options)
+   - [Common Debug Messages](#common-debug-messages)
+8. [License](#license)
 
 ---
 
-## Overview <a id="debugging-overview"></a>
+## Using the Debug Flag
 
-In this section, `test3.flv` is used as an example to demonstrate how the `--debug` flag works in the Flavor interpreter. The `--debug` flag provides step-by-step insights into the tokenization, parsing, and execution of the script. This helps developers debug their code and understand the internal processing of statements like `if`, `elif`, `else`, and `serve`.
+To enable debugging, append `--debug` to your FlavorLang command:
 
-## Example Script <a id="debugging-example-script"></a>
+```bash
+flavor your_script.flv --debug
+```
 
-```py
-let oven_temperature = 200;
+## Debugging Stages
 
-if oven_temperature > 180 {
-  serve("The oven is hot!");
-} elif oven_temperature == 180 {
-  serve("The oven is just right!");
-} else {
-  serve("The oven is too cold!");
+The debugging output is divided into three main stages, each providing different insights into program execution:
+
+### 1. Tokenization Stage `[DEBUG TOK]`
+
+Shows how the source code is broken down into individual tokens:
+
+- Token Type
+- Lexeme (actual content)
+- Line number
+
+### 2. Parsing Stage `[DEBUG PRS]`
+
+Demonstrates how tokens are organized into an Abstract Syntax Tree (AST):
+
+- Block structure
+- Expression parsing
+- Statement organization
+
+### 3. Interpretation Stage `[DEBUG INT]`
+
+Shows the actual execution of the code:
+
+- Variable assignments
+- Condition evaluations
+- Function calls
+- Control flow decisions
+
+## Example Debug Session
+
+Let's examine a simple program with debugging enabled:
+
+```js
+let temperature = 180;
+
+if temperature >= 170 {
+    serve("Ready to bake!");
 }
 ```
 
-- This script assigns a value to the variable `oven_temperature` and checks its value using conditional statements.
-- Based on the condition:
-- If the `temperature` is greater than `180`: it serves `"The oven is hot!"`.
-- If the `temperature` equals `180`: it serves `"The oven is just right!"`.
-- Otherwise, it serves `"The oven is too cold!"`.
+### Debug Output Explained
 
-In this case, `test3.flv` will be executed with the `--debug` flag to illustrate how the interpreter tokenizes, parses, and executes the script step by step.
+```bash
+# Tokenization
+[DEBUG TOK] 1     Type: `0`  Lex: `let`           # Variable declaration keyword
+[DEBUG TOK]       Type: `1`  Lex: `temperature`   # Variable identifier
+[DEBUG TOK]       Type: `4`  Lex: `=`            # Assignment operator
+[DEBUG TOK]       Type: `2`  Lex: `180`          # Numeric literal
+[DEBUG TOK]       Type: `5`  Lex: `;`            # Statement terminator
 
-## Debug Output Breakdown <a id="debugging-debug-output-breakdown"></a>
-
-This detailed output helps track variable values, condition evaluations, and the flow of execution, which can be extremely useful for understanding how the interpreter processes and executes your script.
-
-### 1. Tokenization
-
-The lexer splits the script into tokens. Each line in the script generates tokens for variable declarations, conditions, and outputs.
-
-Example:
-
-```
-[DEBUG TOK] 1     Type: `0`  Lex: `let`
-[DEBUG TOK]       Type: `1`  Lex: `oven_temperature`
-[DEBUG TOK]       Type: `4`  Lex: `=`
-[DEBUG TOK]       Type: `2`  Lex: `200`
-[DEBUG TOK]       Type: `5`  Lex: `;`
-```
-
-- **Type**: Describes the kind of token (e.g., keyword, operator, literal).
-- **Lex**: The content of the token.
-
-### 2. Parsing
-
-The parser constructs a logical structure (AST) from the tokens, identifying blocks and conditions.
-
-#### Example
-
-```
+# Parsing
 [DEBUG PRS] Starting to parse block
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`if`
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
+[DEBUG PRS] Parsing variable declaration
+[DEBUG PRS] Parsing conditional statement
+
+# Interpretation
+[DEBUG INT] Assigning value to variable 'temperature'
+[DEBUG INT] Evaluating condition: temperature >= 170
+[DEBUG INT] Condition result: true
+[DEBUG INT] Executing conditional block
+Ready to bake!
 ```
 
-Logs indicate the parsing of each token into structured blocks for execution.
+## Common Debug Patterns
 
-### 3. Interpretation
-
-The interpreter executes the script step by step:
-
-- Assigns values to variables.
-- Evaluates conditional statements.
-- Executes corresponding branches.
-
-#### Example
-
-```
-[DEBUG INT] Matched: `AST_CONDITIONAL`
-[DEBUG INT] `interpret_conditional()` called
-[DEBUG INT] Evaluating `if`/`elif` branch
-[DEBUG INT] Binary operation `200.000000 > 180.000000`
-[DEBUG INT] Condition evaluated to: `1.000000`
-[DEBUG INT] Condition is true, executing branch body
-```
-
-### `serve` in Debug Mode
-
-The `serve` statement is executed as part of the conditional blocks:
-
-#### 1. Tokenization
-
-```
-[DEBUG TOK] 4     Type: `0`  Lex: `serve`
-[DEBUG TOK]       Type: `3`  Lex: `The oven is hot!`
-```
-
-#### 2. Parsing
-
-```
-[DEBUG PRS] Parsing token in block: type=`0`, lexeme=`serve`
-```
-
-#### 3. Interpretation
-
-This:
-
-```
-[DEBUG INT] Matched: `AST_PRINT`
-[DEBUG INT] `interpret_print()`
-```
-
-Displays this message:
-
-```
-The oven is hot!
-```
-
-## Output With and Without Debugging <a id="debugging-output-with-and-without-debugging"></a>
-
-### With Debugging (`--debug`)
-
-Full debug logs for each stage are printed.
+### 1. Variable Assignment
 
 ```bash
-$ flavor tests/test3.flv --debug
-[DEBUG TOK] ...
-[DEBUG INT] ...
-The oven is hot!
+[DEBUG TOK] Type: `0` Lex: `let`
+[DEBUG INT] Variable assignment: name='x' value=42
 ```
 
-### Without Debugging
-
-Only the final output of the script is served.
+### 2. Conditional Evaluation
 
 ```bash
-$ flavor tests/test3.flv
-The oven is hot!
+[DEBUG INT] Evaluating condition
+[DEBUG INT] Left operand: 180
+[DEBUG INT] Operator: >=
+[DEBUG INT] Right operand: 170
+[DEBUG INT] Result: true
 ```
 
-### Running with Debugging
-
-Run this to enable debugging for `test3.flv`.
+### 3. Function Calls
 
 ```bash
-$ flavor tests/test3.flv --debug
+[DEBUG INT] Function call: 'serve'
+[DEBUG INT] Arguments: ["Ready to bake!"]
 ```
+
+## Debug Output Format
+
+Each debug line follows this format:
+
+```
+[DEBUG XXX] <line_number> <message>
+```
+
+Where:
+
+- `XXX`: Stage identifier (TOK/PRS/INT)
+- `line_number`: Source code line number (when applicable)
+- `message`: Debug information
+
+## Tips for Effective Debugging
+
+1. **Incremental Debugging**
+
+   - Debug small code sections first
+   - Add complexity gradually
+
+2. **Understanding Token Types**
+
+   ```
+   0: Keywords
+   1: Identifiers
+   2: Numbers
+   3: Strings
+   4: Operators
+   5: Punctuation
+   ```
+
+3. **Following Control Flow**
+
+   - Watch for `[DEBUG INT]` messages showing condition evaluations
+   - Track block entry/exit points
+
+4. **Variable State Tracking**
+   - Monitor variable assignments and modifications
+   - Check value transformations
+
+## Reference
+
+### Debug Flag Options
+
+- `--debug`: Full debug output
+- `--debug-tokens`: Tokenization only (in the future)
+- `--debug-parser`: Parsing only (in the future)
+- `--debug-interpreter`: Interpretation only (in the future)
+
+### Common Debug Messages
+
+| Message Pattern           | Meaning                          |
+| ------------------------- | -------------------------------- |
+| `Starting to parse block` | Beginning of a new code block    |
+| `Evaluating condition`    | Conditional statement check      |
+| `Variable assignment`     | Value being assigned to variable |
+| `Function call`           | Function invocation              |
+| `Executing block`         | Entering a code block            |
 
 ---
 
