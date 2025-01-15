@@ -93,74 +93,84 @@ FlavorLang is a programming language designed with a cooking-inspired syntax, co
 
 ### Extended Backus-Naur Form (EBNF)
 
+<details>
+
+<summary>
+<b>EBNF Code</b>
+</summary>
+
+<br>
+
 ```ebnf
-program              ::= statement* ;
+program ::= statement*
 
-statement            ::= declaration
-                      | control_flow
-                      | function_definition
-                      | expression_statement
-                      | error_handling ;
+statement ::= declaration
+            | control_flow
+            | function_definition
+            | expression_statement
+            | error_handling
 
-declaration          ::= variable_declaration
-                      | constant_declaration ;
+declaration ::= variable_declaration
+              | constant_declaration
 
-variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-constant_declaration ::= "const" IDENTIFIER "=" expression ";" ;
+variable_declaration ::= "let" IDENTIFIER "=" expression ";"
+constant_declaration ::= "const" IDENTIFIER "=" expression ";"
 
-control_flow         ::= if_statement
-                      | loop_statement
-                      | switch_statement ;
+control_flow ::= if_statement
+               | loop_statement
+               | switch_statement
 
-if_statement         ::= "if" expression block
-                      ("elif" expression block)*
-                      ("else" block)? ;
+if_statement ::= "if" expression block
+               ( "elif" expression block )*
+               [ "else" block ]
 
-loop_statement       ::= while_loop | for_loop ;
+loop_statement ::= while_loop | for_loop
 
-while_loop           ::= "while" expression block ;
+while_loop ::= "while" expression block
 
-for_loop             ::= "for" IDENTIFIER "in" range block ;
+for_loop ::= "for" IDENTIFIER "in" range block
 
-range                ::= expression range_operator expression ;
+range ::= expression range_operator expression
 
-range_operator       ::= ".." | "..=" ;
+range_operator ::= ".." | "..="
 
-function_definition  ::= "create" IDENTIFIER "(" parameter_list ")" block ;
+function_definition ::= "create" IDENTIFIER "(" parameter_list ")" block
 
-parameter_list       ::= (IDENTIFIER ("," IDENTIFIER)*)? ;
+parameter_list ::= [ IDENTIFIER { "," IDENTIFIER } ]
 
-block                ::= "{" statement* "}" ;
+block ::= "{" statement* "}"
 
-expression_statement ::= expression ";" ;
+expression_statement ::= expression ";"
 
-expression           ::= literal
-                      | IDENTIFIER
-                      | binary_expression
-                      | function_call
-                      | array_expression ;
+expression ::= literal
+             | IDENTIFIER
+             | binary_expression
+             | function_call
+             | array_expression
 
-literal              ::= NUMBER | STRING | BOOLEAN ;
+literal ::= NUMBER | STRING | BOOLEAN
 
-binary_expression    ::= expression operator expression ;
+binary_expression ::= expression operator expression
 
-operator             ::= "+" | "-" | "*" | "/" | "%" | "=="
-                      | "!=" | "<" | "<=" | ">" | ">=" ;
+operator ::= "+" | "-" | "*" | "/" | "%"
+           | "==" | "!=" | "<" | "<=" | ">" | ">="
 
-function_call        ::= IDENTIFIER "(" argument_list ")" ;
+function_call ::= IDENTIFIER "(" argument_list ")"
 
-argument_list        ::= (expression ("," expression)*)? ;
+argument_list ::= [ expression { "," expression } ]
 
-array_expression     ::= "[" argument_list "]" ;
+array_expression ::= "[" argument_list "]"
 
-error_handling       ::= try_block rescue_block finish_block? ;
+error_handling ::= try_block rescue_block [ finish_block ]
 
-try_block           ::= "try" block ;
+try_block ::= "try" block
 
-rescue_block        ::= "rescue" block ;
+rescue_block ::= "rescue" block
 
-finish_block        ::= "finish" block ;
+finish_block ::= "finish" block
 ```
+
+</details>
 
 ---
 
