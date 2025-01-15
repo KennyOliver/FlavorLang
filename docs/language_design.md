@@ -1,217 +1,687 @@
-# Language Design
+# FlavorLang Language Design Specification
 
-This `docs/` page details the core design of FlavorLang's syntax, the various data types, and the EBNF of the language.
+## Overview
 
----
-
-## Table of Contents
-
-1. [Syntax Keywords](#syntax-keywords)
-
-2. [Data Types](#data-types)
-
-3. [Arrays](#arrays)
-
-4. [Extended Backus-Naur Form (EBNF)](#ebnf)
+FlavorLang is a programming language designed with a cooking-inspired syntax, combining intuitive keywords with robust programming concepts. This document specifies the language's design, syntax, and grammar.
 
 ---
 
-## Syntax Keywords
+## 📖 Table of Contents
 
-| Keyword   | Usage                        | Description                                                                                 |
-| --------- | ---------------------------- | ------------------------------------------------------------------------------------------- |
-| `let`     | Define variables             | Declares and initializes variables.                                                         |
-| `const`   | Define constants             | Declares and initializes constants.                                                         |
-| `if`      | Conditional logic            | Executes code only if a condition is true.                                                  |
-| `elif`    | Conditional logic fallback   | Executes only if a prior `if` condition is false.                                           |
-| `else`    | Conditional fallback         | Executes code if any prior `if`/`is` conditions are false.                                  |
-| `for`     | For-loop                     | Iterates over a range or sequence, executing a block of code for each step.                 |
-| `in`      | Range declaration            | Specifies the range or sequence to iterate over.                                            |
-| `by`      | Optional step specifier      | Defines the step interval for iteration; defaults to `1`/`-1` (range dependent) if omitted. |
-| `while`   | While-loop                   | Repeatedly runs code while a condition is true.                                             |
-| `check`   | Switch-case equivalent       | Matches a value to multiple cases.                                                          |
-| `is`      | Case clause                  | Defines a case inside `check`.                                                              |
-| `break`   | Exit control flow            | Stops execution of further cases in `check` and exits the current flow.                     |
-| `create`  | Define a function            | Creates a reusable block of logic.                                                          |
-| `deliver` | Return statement             | Returns a value and stops function execution.                                               |
-| `try`     | Try block                    | Executes code that might fail.                                                              |
-| `rescue`  | Catch block                  | Handles errors during execution.                                                            |
-| `finish`  | Finally block                | Optional cleanup & always runs.                                                             |
-| `burn`    | Force exit or raise an error | Stops execution immediately with a message.                                                 |
-| `serve`   | Print or output              | Outputs a value or message immediately.                                                     |
-| `sample`  | Input from console           | Reads user input.                                                                           |
-| `plate`   | Write to file                | Writes data to a file.                                                                      |
-| `garnish` | Append to file               | Appends data to a file.                                                                     |
-| `taste`   | Read from file               | Reads data from a file.                                                                     |
+1. [Language Design Principles](#language-design-principles)
+2. [Core Language Elements](#core-language-elements)
+   - [1. Keywords](#1-keywords)
+   - [2. Data Types](#2-data-types)
+   - [3. Operators](#3-operators)
+   - [4. Array Operations](#4-array-operations)
+3. [Grammar Specification](#grammar-specification)
+   - [Extended Backus-Naur Form (EBNF)](#extended-backus-naur-form-ebnf)
+   - [EBNF Diagrams](#ebnf-diagrams)
+4. [License](#license)
 
 ---
 
-## Data Types
+## Language Design Principles
 
-| Data Type | Capacity/Range                                                 |
-| --------- | -------------------------------------------------------------- |
-| `string`  | Dependent on system memory and encoding (e.g., UTF-8, UTF-16). |
-| `float`   | 64-bit: `±1.7e±308` (double); 128-bit: `±1.1e±4932` (quad).    |
-| `integer` | 64-bit: `±9e18` (quintillion).                                 |
-| `boolean` | `1` for `True`, `0` for `False`.                               |
+1. **Intuitive Syntax**: Culinary-inspired keywords make the language approachable
+2. **Clear Semantics**: Each construct has unambiguous meaning
+3. **Predictable Behavior**: Operations produce consistent results
+4. **Strong Type System**: Type safety without excessive verbosity
+5. **Error Handling**: Comprehensive error management capabilities
 
-### Explanation
+## Core Language Elements
 
-- **string**:
+### 1. Keywords
 
-  In C, the language used to make FlavorLang, strings are null-terminated arrays of characters. The length is limited by system memory and encoding. For example, in UTF-8 encoding, a string can take varying amounts of space per character depending on the character set.
+| Category                 | Keyword   | Description                    | Example                     |
+| ------------------------ | --------- | ------------------------------ | --------------------------- |
+| **Variable Declaration** | `let`     | Mutable variable declaration   | `let x = 5;`                |
+|                          | `const`   | Immutable constant declaration | `const PI = 3.14;`          |
+| **Control Flow**         | `if`      | Conditional execution          | `if condition { ... }`      |
+|                          | `elif`    | Alternative condition          | `elif condition { ... }`    |
+|                          | `else`    | Default condition              | `else { ... }`              |
+|                          | `for`     | Loop iteration                 | `for i in range { ... }`    |
+|                          | `while`   | Conditional loop               | `while condition { ... }`   |
+|                          | `break`   | Exit loop or switch            | `break;`                    |
+| **Pattern Matching**     | `check`   | Pattern matching construct     | `check value { ... }`       |
+|                          | `is`      | Pattern case                   | `is pattern:`               |
+| **Functions**            | `create`  | Function declaration           | `create func() { ... }`     |
+|                          | `deliver` | Return value                   | `deliver result;`           |
+| **Error Handling**       | `try`     | Exception handling             | `try { ... }`               |
+|                          | `rescue`  | Error catching                 | `rescue { ... }`            |
+|                          | `finish`  | Cleanup block                  | `finish { ... }`            |
+|                          | `burn`    | Raise error                    | `burn "Error message";`     |
+| **I/O Operations**       | `serve`   | Output                         | `serve("message");`         |
+|                          | `sample`  | Input                          | `let input = sample();`     |
+|                          | `plate`   | File write                     | `plate_file(path, data);`   |
+|                          | `garnish` | File append                    | `garnish_file(path, data);` |
+|                          | `taste`   | File read                      | `taste_file(path);`         |
 
-- **float**:
+### 2. Data Types
 
-  The `FLOAT_SIZE` type is a `long double`, offering a precision and range larger than the standard `double`. Its range is platform-dependent but typically up to `±1.1e±4932` on 128-bit implementations.
+| Type      | Description        | Internal Representation | Range/Precision    |
+| --------- | ------------------ | ----------------------- | ------------------ |
+| `integer` | Whole numbers      | 64-bit signed           | ±9.2e18            |
+| `float`   | Decimal numbers    | 64/128-bit              | ±1.7e±308 (64-bit) |
+| `string`  | Text sequence      | UTF-8                   | Memory limited     |
+| `boolean` | Truth values       | 1 byte                  | `True`/`False`     |
+| `array`   | Ordered collection | Dynamic                 | Memory limited     |
 
-- **integer**:
+### 3. Operators
 
-  The `INT_SIZE` type is a `long long int` with a range from `−9,223,372,036,854,775,808` to `9,223,372,036,854,775,807`, suitable for large integer values.
+| Category   | Operators                           | Associativity |
+| ---------- | ----------------------------------- | ------------- |
+| Arithmetic | `+`, `-`, `*`, `/`, `**`, `//`, `%` | Left to right |
+| Comparison | `==`, `!=`, `<`, `<=`, `>`, `>=`    | Left to right |
+| Logical    | `!`, `&&`, `\|\|`                   | Left to right |
+| Range      | `..`, `..=`                         | Left to right |
+| Assignment | `=`                                 | Right to left |
 
-- **boolean**:
+### 4. Array Operations
 
-  Booleans are typically stored as `1` (`True`) and `0` (`False`). While logically they are 1-bit, they are typically stored in 1 byte for practical reasons.
+| Operation    | Syntax             | Description            |
+| ------------ | ------------------ | ---------------------- |
+| Access       | `array[index]`     | Get element at index   |
+| Append       | `array[^+]`        | Add to end             |
+| Prepend      | `array[+^]`        | Add to start           |
+| Remove Last  | `array[^-]`        | Remove from end        |
+| Remove First | `array[-^]`        | Remove from start      |
+| Slice        | `array[start:end]` | Get subset             |
+| Reverse      | `array[::-1]`      | Reverse elements       |
+| Step Slice   | `array[::step]`    | Get elements with step |
 
----
+## Grammar Specification
 
-## Arrays
+### Extended Backus-Naur Form (EBNF)
+
+<details>
+
+<summary>
+<b>EBNF Code</b>
+</summary>
+
+<br>
+
+```ebnf
+program ::= statement*
+
+statement ::= declaration
+            | control_flow
+            | function_definition
+            | expression_statement
+            | error_handling
+            | pattern_matching
+
+declaration ::= variable_declaration
+              | constant_declaration
+
+IDENTIFIER ::= [a-zA-Z_][a-zA-Z0-9_]*
+
+variable_declaration ::= "let" IDENTIFIER "=" expression ";"
+constant_declaration ::= "const" IDENTIFIER "=" expression ";"
+
+control_flow ::= if_statement
+               | loop_statement
+               | switch_statement
+
+if_statement ::= "if" expression block
+               ( "elif" expression block )*
+               ( "else" block )?
+
+loop_statement ::= while_loop | for_loop
+
+while_loop ::= "while" expression block
+
+for_loop ::= "for" IDENTIFIER "in" range block
+
+range ::= expression range_operator expression
+
+range_operator ::= ".." | "..="
+
+switch_statement ::= "check" expression "{" pattern_case* default_case "}"
+pattern_case ::= "is" pattern ":" block
+default_case ::= "else" ":" block
+
+pattern ::= literal | IDENTIFIER | array_expression
+
+function_definition ::= "create" IDENTIFIER "(" parameter_list ")" block
+
+parameter_list ::= ( IDENTIFIER ( "," IDENTIFIER )* )?
+
+block ::= "{" statement* "}"
+
+expression_statement ::= expression ";"
+
+expression ::= literal
+             | IDENTIFIER
+             | binary_expression
+             | function_call
+             | array_expression
+
+literal ::= NUMBER | STRING | BOOLEAN
+
+binary_expression ::= expression operator expression
+
+operator ::= "+" | "-" | "*" | "/" | "%"
+           | "**" | "//"
+           | "==" | "!=" | "<" | "<=" | ">" | ">="
+           | "&&" | "||" | "!"
+
+function_call ::= IDENTIFIER "(" argument_list ")"
+
+argument_list ::= ( expression ( "," expression )* )?
+
+array_expression ::= "[" array_elements "]"
+
+array_elements ::= ( expression ( "," expression )* )?
+
+array_operation ::= "array" "[" operation "]"
+operation ::= "^+" | "+^" | "^-" | "-^"
+            | "start:end" | "::step"
+
+error_handling ::= "try" block "rescue" block ( "finish" block )?
+
+try_block ::= "try" block
+
+rescue_block ::= "rescue" block
+
+finish_block ::= "finish" block
+```
+
+</details>
+
+### EBNF Diagrams
+
+**program:**
+
+![program](ebnf-diagrams/program.svg)
+
+```ebnf
+program  ::= statement*
+```
+
+**statement:**
+
+![statement](ebnf-diagrams/statement.svg)
+
+```ebnf
+statement
+         ::= declaration
+           | control_flow
+           | function_definition
+           | expression_statement
+           | error_handling
+           | pattern_matching
+```
+
+referenced by:
+
+- block
+- program
+
+**declaration:**
+
+![declaration](ebnf-diagrams/declaration.svg)
+
+```ebnf
+declaration
+         ::= variable_declaration
+           | constant_declaration
+```
+
+referenced by:
+
+- statement
+
+**IDENTIFIER:**
+
+![IDENTIFIER](ebnf-diagrams/IDENTIFIER.svg)
+
+```ebnf
+IDENTIFIER
+         ::= [a-zA-Z_] [a-zA-Z0-9_]*
+```
+
+referenced by:
+
+- constant_declaration
+- expression
+- for_loop
+- function_call
+- function_definition
+- parameter_list
+- pattern
+- variable_declaration
+
+**variable_declaration:**
+
+![variable_declaration](ebnf-diagrams/variable_declaration.svg)
+
+```ebnf
+variable_declaration
+         ::= 'let' IDENTIFIER '=' expression ';'
+```
+
+referenced by:
+
+- declaration
+
+**constant_declaration:**
+
+![constant_declaration](ebnf-diagrams/constant_declaration.svg)
+
+```ebnf
+constant_declaration
+         ::= 'const' IDENTIFIER '=' expression ';'
+```
+
+referenced by:
+
+- declaration
+
+**control_flow:**
+
+![control_flow](ebnf-diagrams/control_flow.svg)
+
+```ebnf
+control_flow
+         ::= if_statement
+           | loop_statement
+           | switch_statement
+```
+
+referenced by:
+
+- statement
+
+**if_statement:**
+
+![if_statement](ebnf-diagrams/if_statement.svg)
+
+```ebnf
+if_statement
+         ::= 'if' expression block ( 'elif' expression block )* ( 'else' block )?
+```
+
+referenced by:
+
+- control_flow
+
+**loop_statement:**
+
+![loop_statement](ebnf-diagrams/loop_statement.svg)
+
+```ebnf
+loop_statement
+         ::= while_loop
+           | for_loop
+```
+
+referenced by:
+
+- control_flow
+
+**while_loop:**
+
+![while_loop](ebnf-diagrams/while_loop.svg)
+
+```ebnf
+while_loop
+         ::= 'while' expression block
+```
+
+referenced by:
+
+- loop_statement
+
+**for_loop:**
+
+![for_loop](ebnf-diagrams/for_loop.svg)
+
+```ebnf
+for_loop ::= 'for' IDENTIFIER 'in' range block
+```
+
+referenced by:
+
+- loop_statement
+
+**range:**
+
+![range](ebnf-diagrams/range.svg)
+
+```ebnf
+range    ::= expression range_operator expression
+```
+
+referenced by:
+
+- for_loop
+
+**range_operator:**
+
+![range_operator](ebnf-diagrams/range_operator.svg)
+
+```ebnf
+range_operator
+         ::= '..'
+           | '..='
+```
+
+referenced by:
+
+- range
+
+**switch_statement:**
+
+![switch_statement](ebnf-diagrams/switch_statement.svg)
+
+```
+switch_statement
+         ::= 'check' expression '{' pattern_case* default_case '}'
+```
+
+referenced by:
+
+- control_flow
+
+**pattern_case:**
+
+![pattern_case](ebnf-diagrams/pattern_case.svg)
+
+```
+pattern_case
+         ::= 'is' pattern ':' block
+```
+
+referenced by:
+
+- switch_statement
+
+**default_case:**
+
+![default_case](ebnf-diagrams/default_case.svg)
+
+```
+default_case
+         ::= 'else' ':' block
+```
+
+referenced by:
+
+- switch_statement
+
+**pattern:**
+
+![pattern](ebnf-diagrams/pattern.svg)
+
+```
+pattern  ::= literal
+           | IDENTIFIER
+           | array_expression
+```
+
+referenced by:
+
+- pattern_case
+
+**function_definition:**
+
+![function_definition](ebnf-diagrams/function_definition.svg)
+
+```ebnf
+function_definition
+         ::= 'create' IDENTIFIER '(' parameter_list ')' block
+```
+
+referenced by:
+
+- statement
+
+**parameter_list:**
+
+![parameter_list](ebnf-diagrams/parameter_list.svg)
+
+```ebnf
+parameter_list
+         ::= ( IDENTIFIER ( ',' IDENTIFIER )* )?
+```
+
+referenced by:
+
+- function_definition
+
+**block:**
+
+![block](ebnf-diagrams/block.svg)
+
+```ebnf
+block    ::= '{' statement* '}'
+```
+
+referenced by:
+
+- default_case
+- error_handling
+- finish_block
+- for_loop
+- function_definition
+- if_statement
+- pattern_case
+- rescue_block
+- try_block
+- while_loop
+
+**expression_statement:**
+
+![expression_statement](ebnf-diagrams/expression_statement.svg)
+
+```ebnf
+expression_statement
+         ::= expression ';'
+```
+
+referenced by:
+
+- statement
+
+**expression:**
+
+![expression](ebnf-diagrams/expression.svg)
+
+```ebnf
+expression
+         ::= literal
+           | IDENTIFIER
+           | binary_expression
+           | function_call
+           | array_expression
+```
+
+referenced by:
+
+- argument_list
+- array_elements
+- binary_expression
+- constant_declaration
+- expression_statement
+- if_statement
+- range
+- switch_statement
+- variable_declaration
+- while_loop
+
+**literal:**
+
+![literal](ebnf-diagrams/literal.svg)
+
+```ebnf
+literal  ::= NUMBER
+           | STRING
+           | BOOLEAN
+```
+
+referenced by:
+
+- expression
+- pattern
+
+**binary_expression:**
+
+![binary_expression](ebnf-diagrams/binary_expression.svg)
+
+```ebnf
+binary_expression
+         ::= expression operator expression
+```
+
+referenced by:
+
+- expression
+
+**operator:**
+
+![operator](ebnf-diagrams/operator.svg)
+
+```ebnf
+operator ::= '+'
+           | '-'
+           | '*'
+           | '/'
+           | '%'
+           | '**'
+           | '//'
+           | '=='
+           | '!='
+           | '<'
+           | '<='
+           | '>'
+           | '>='
+           | '&&'
+           | '||'
+           | '!'
+```
+
+referenced by:
+
+- binary_expression
+
+**function_call:**
+
+![function_call](ebnf-diagrams/function_call.svg)
+
+```ebnf
+function_call
+         ::= IDENTIFIER '(' argument_list ')'
+```
+
+referenced by:
+
+- expression
+
+**argument_list:**
+
+![argument_list](ebnf-diagrams/argument_list.svg)
+
+```ebnf
+argument_list
+         ::= ( expression ( ',' expression )* )?
+```
+
+referenced by:
+
+- function_call
+
+**array_expression:**
+
+![array_expression](ebnf-diagrams/array_expression.svg)
+
+```ebnf
+array_expression
+         ::= '[' array_elements ']'
+```
+
+referenced by:
+
+- expression
+- pattern
+
+**array_elements:**
+
+![array_elements](ebnf-diagrams/array_elements.svg)
+
+```ebnf
+array_elements
+         ::= ( expression ( ',' expression )* )?
+```
+
+referenced by:
+
+- array_expression
+
+**array_operation:**
+
+![array_operation](ebnf-diagrams/array_operation.svg)
+
+```ebnf
+array_operation
+         ::= 'array' '[' operation ']'
+```
+
+**operation:**
+
+![operation](ebnf-diagrams/operation.svg)
+
+```ebnf
+operation
+         ::= '^+'
+           | '+^'
+           | '^-'
+           | '-^'
+           | 'start:end'
+           | '::step'
+```
+
+referenced by:
+
+- array_operation
+
+**error_handling:**
+
+![error_handling](ebnf-diagrams/error_handling.svg)
+
+```ebnf
+error_handling
+         ::= 'try' block 'rescue' block ( 'finish' block )?
+```
+
+referenced by:
+
+- statement
+
+**try_block:**
+
+![try_block](ebnf-diagrams/try_block.svg)
+
+```ebnf
+try_block
+         ::= 'try' block
+```
+
+**rescue_block:**
+
+![rescue_block](ebnf-diagrams/rescue_block.svg)
+
+```ebnf
+rescue_block
+         ::= 'rescue' block
+```
+
+![finish_block](ebnf-diagrams/finish_block.svg)
 
 > [!Note]
 >
-> All array operations do not mutate original array to reduce confusion.
-
-| **Operation**            | **Syntax**      | **Explanation**                                                                     |
-| ------------------------ | --------------- | ----------------------------------------------------------------------------------- |
-| **Element Access**       | `array[5]`      | Accesses element at index `5`.                                                      |
-| **Append**               | `array[^+]`     | Appends an element to end.                                                          |
-| **Prepend**              | `array[+^]`     | Prepends an element to beginning.                                                   |
-| **Remove Last Element**  | `array[^-]`     | Removes last element.                                                               |
-| **Remove First Element** | `array[-^]`     | Removes first element.                                                              |
-| **Slicing**              | `array[0:5]`    | Slices from index `0` (incl.) to `5` (excl.).                                       |
-|                          | `array[::-1]`   | Reverses using step of `-1`.                                                        |
-|                          | `array[3:]`     | Slices from index `3` (incl.) to end.                                               |
-|                          | `array[:8]`     | Slices from start to index `8` (excl.).                                             |
-|                          | `array[3:8:2]`  | Slices from index `3` (incl.) to `8` (excl.), skipping every 2nd element.           |
-|                          | `array[8:3:-2]` | Slices from index `8` (incl.) to `3` (excl.), skipping every 2nd element (reverse). |
-|                          | `array[3::-1]`  | Slices from index `3` (incl.) to start (reversed).                                  |
-|                          | `array[:8:-1]`  | Slices from end towards index `8` (excl., reversed).                                |
-|                          | `array[::2]`    | Slices entire array, skipping every 2nd element.                                    |
-|                          | `array[::-3]`   | Reverses entire array, skipping every 3rd element.                                  |
-
----
-
-## Extended Backus-Naur Form (EBNF) of FlavorLang's Syntax <a id="ebnf"></a>
-
-```ebnf
-program              ::= statement* ;
-
-statement            ::= variable_declaration
-                       | constant_declaration
-                       | print_statement
-                       | if_statement
-                       | loop_statement
-                       | function_definition
-                       | function_call
-                       | error_handling
-                       | file_operation
-                       | switch_case
-                       | user_input
-                       | random_statement
-                       | type_casting
-                       | return_statement
-                       | raise_error
-                       | array_operation
-                       | comment ;
-
-variable_declaration ::= "let" IDENTIFIER "=" expression ";" ;
-constant_declaration ::= "const" IDENTIFIER "=" expression ";" ;
-
-print_statement      ::= "serve" expression ("," expression)* ";" ;
-
-if_statement         ::= "if" condition block
-                       ("elif" condition block)*
-                       ("else" block)? ;
-
-loop_statement       ::= "while" condition block
-                       | "for" IDENTIFIER "in" range [ "by" step ] block
-                       | "for" "_" "in" range block ;
-
-function_definition  ::= "create" IDENTIFIER parameter_list block ;
-
-function_call        ::= IDENTIFIER "(" [expression ("," expression)*] ")" ;
-
-error_handling       ::= "try" block "rescue" block ;
-
-file_operation       ::= "plate_file" "(" STRING "," expression ")" ";"
-                       | "garnish_file" "(" STRING "," expression ")" ";"
-                       | "taste_file" "(" STRING ")" ";" ;
-
-switch_case          ::= "check" expression "{" case_clause* [ "else" ":" block ] "}" ;
-
-case_clause          ::= "is" expression ":" block
-                       | "is" expression (":" block "break" ";")? ;
-
-user_input           ::= "sample" "(" ")" ";" ;
-
-random_statement     ::= "random" "(" [expression ["," expression]] ")" ";" ;
-
-type_casting         ::= "string" "(" expression ")" ";"
-                       | "int" "(" expression ")" ";"
-                       | "float" "(" expression ")" ";" ;
-
-return_statement     ::= "deliver" expression ";" ;
-
-raise_error          ::= "burn" expression ("," expression)* ";" ;
-
-array_operation      ::= IDENTIFIER "[" expression "]"                # Access
-                       | IDENTIFIER "[" range "]"                     # Slicing
-                       | IDENTIFIER "." function_call                 # Array methods
-                       | "length" "(" IDENTIFIER ")"                  # Length
-                       | "index_of" "(" IDENTIFIER "," expression ")" # Index lookup
-                       | "contains" "(" IDENTIFIER "," expression ")" # Containment
-                       | "append" "(" IDENTIFIER "," expression ")"   # Append
-                       | "prepend" "(" IDENTIFIER "," expression ")"  # Prepend
-                       | "insert" "(" IDENTIFIER "," expression "," expression ")" # Insert
-                       | IDENTIFIER "+" IDENTIFIER ";" ;              # Concatenation
-
-block                ::= "{" statement+ "}" ;
-
-condition            ::= expression comparison_operator expression ;
-
-expression           ::= NUMBER
-                       | STRING
-                       | IDENTIFIER
-                       | boolean
-                       | array_expression
-                       | math_expression
-                       | function_call
-                       | random_statement ;
-
-array_expression     ::= "[" [expression ("," expression)*] "]" ;
-
-math_expression      ::= expression math_operator expression ;
-
-boolean              ::= "True" | "False" ;
-
-comparison_operator  ::= "==" | "!=" | "<" | "<=" | ">" | ">=" ;
-
-math_operator        ::= "+" | "-" | "*" | "**" | "/" | "//" | "%" ;
-
-logical_operator     ::= "&&" | "||" ;
-
-range_operator       ::= ".." | "..=" ;
-
-assignment_operator  ::= "=" ;
-
-parameter_list       ::= "(" [IDENTIFIER ("," IDENTIFIER)*] ")" ;
-
-range                ::= expression range_operator expression ;
-
-step                 ::= expression ;
-
-comment              ::= "#" .* ;
-```
+> Generated by [Railroad Diagram Generator][https://bottlecaps.de/rr/ui]
 
 ---
 

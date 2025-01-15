@@ -17,7 +17,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 ---
 
 > [!IMPORTANT]
-> FlavorLang is currently in **Alpha**. While core functionality is largely stable, new features, syntax, and language designs are subject to change without prior notice.
+> FlavorLang is currently in **Beta**. While core functionality is largely stable, new features, syntax, and language designs are subject to change without prior notice.
 >
 > Please feel free to contribute by reporting any issues or suggestions in the repository's [Issues](https://github.com/KennyOliver/FlavorLang/issues/).
 
@@ -31,15 +31,15 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 2. [⚡ Quick Start](#quick-start)
 
-3. [🚀 Execution Flags & Behaviors](#execution-flags--behaviors)
+3. [🚀 Execution Flags &amp; Behaviors](#execution-flags--behaviors)
 
 4. [🎨 Install Syntax Highlighter Extension](#extension)
 
 ### `docs/`
 
-5. [Standard Library](docs/standard_library.md)
+5. [Tutorial](docs/tutorial.md)
 
-6. [Syntax Examples](docs/syntax_examples.md)
+6. [Standard Library](docs/standard_library.md)
 
 7. [Brainf Interpreter](docs/brainf_interpreter.md)
 
@@ -52,6 +52,8 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 11. [Parser](docs/parser.md)
 
 12. [Interpreter](docs/interpreter.md)
+
+13. [Resources &amp; Inspirations](docs/resources.md)
 
 ---
 
