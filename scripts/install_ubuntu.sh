@@ -10,6 +10,6 @@ chmod +x flavor
 echo "Moving flavor to /usr/local/bin/"
 sudo mv flavor /usr/local/bin/
 
-# Run the executable
-echo "Running FlavorLang interpreter..."
-flavor --about
+# Show how to run the executable
+echo "To run the FlavorLang interpreter:"
+echo "flavor --about"
