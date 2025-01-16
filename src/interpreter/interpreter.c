@@ -1581,8 +1581,7 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
 
     // Handle built-in functions
     if (func->is_builtin) {
-        if ((strcmp(func->name, "cimport") == 0) &&
-            (func->c_function != NULL)) { // externally imported function
+        if (func->c_function != NULL) { // externally imported function
             return func->c_function(node, env);
         } else if (strcmp(func->name, "sample") == 0) {
             return builtin_input(node, env);
