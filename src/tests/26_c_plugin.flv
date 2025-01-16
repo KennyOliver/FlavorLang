@@ -1,0 +1,2 @@
+cimport("myplugin.so", "printSomething");
+printSomething("Hello from plugin!");
