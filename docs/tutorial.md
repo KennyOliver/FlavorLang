@@ -16,6 +16,7 @@ Welcome to FlavorLang! This tutorial will guide you through the fundamentals of 
 8. [Working with Arrays](#working-with-arrays)
 9. [File Operations](#file-operations)
 10. [Standard Library Functions](#standard-library-functions)
+11. [Imports &amp; Exports](#imports-and-exports)
 
 ## Getting Started
 
@@ -261,9 +262,38 @@ let len = length("Hello");         # 5
 sleep(1000);                       # Pause for 1 second
 ```
 
+## Modules: Imports & Exports
+
+FlavorLang supports modularity so you can split your code into separate files and only expose what’s necessary!
+
+### Exporting
+
+Use the `export` keyword to mark functions, variables, or constants as public. Items declared without `export` remain private to the file.
+
+```js
+export create triple(x) {
+    deliver x * 3;
+}
+
+create hiddenFunc() {}
+
+export let someVar = triple(5);
+```
+
+### Importing
+
+To use exported items in another file, use the `import` keyword at the beginning of the file.
+
+```py
+import "24_export.flv";
+
+serve(someVar);       # Output: 15
+serve(hiddenFunc());  # This won't work!
+```
+
 ---
 
-This tutorial covers the main features of FlavorLang. You can now start creating your own programs using these cooking-inspired programming concepts! Remember that like cooking, programming gets better with practice, so don't be afraid to experiment with different combinations of these features.
+This tutorial covers the main features of FlavorLang. You can now start creating your own programs using these culinary programming concepts! Remember that like cooking, programming gets better with practice, so don't be afraid to experiment with different combinations of these features.
 
 ---
 
