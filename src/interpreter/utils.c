@@ -1,5 +1,4 @@
 #include "utils.h"
-#include <errno.h>
 
 InterpretResult raise_error(const char *format, ...) {
     char error_message[1024];
@@ -49,6 +48,11 @@ void initialize_builtin_function(Environment *env, const char *name) {
     func.parameters = NULL;
     func.body = NULL;
     func.is_builtin = true;
+    if (strcmp(name, "cimport") == 0) {
+        func.c_function = builtin_cimport;
+    } else {
+        func.c_function = NULL;
+    }
     add_function(env, func);
 
     // Add a variable referencing this built-in function by name
@@ -69,7 +73,7 @@ void initialize_all_builtin_functions(Environment *env) {
     const char *builtin_functions[] = {
         "string",       "float",  "int",      "sample",     "serve",
         "burn",         "random", "get_time", "taste_file", "plate_file",
-        "garnish_file", "length", "sleep"};
+        "garnish_file", "length", "sleep",    "cimport"};
 
     for (size_t i = 0;
          i < sizeof(builtin_functions) / sizeof(builtin_functions[0]); i++) {

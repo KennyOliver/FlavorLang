@@ -8,12 +8,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Forward declarations
+// Forward declarations for AST types and Environment
 struct ASTFunctionParameter;
 struct ASTNode;
 struct Function;
 typedef struct Environment Environment;
-struct LiteralValue;
 
 // Enum for Literal Types
 typedef enum {
@@ -31,7 +30,7 @@ typedef enum { RETURN_NORMAL, RETURN_ERROR } ReturnType;
 
 // Structure for Array Values
 typedef struct ArrayValue {
-    struct LiteralValue *elements; // Dynamic array of `LiteralValue`s
+    struct LiteralValue *elements; // Dynamic array of LiteralValue
     size_t count;                  // Number of elements
     size_t capacity;               // Allocated capacity
 } ArrayValue;
@@ -45,9 +44,21 @@ typedef struct LiteralValue {
         long long integer;
         bool boolean;
         char *function_name;
-        struct ArrayValue array; // By value
+        ArrayValue array; // By value
     } data;
 } LiteralValue;
+
+// Structure for Interpreted Results
+typedef struct {
+    LiteralValue value; // Using the complete type name
+    bool did_return;    // True if this node caused a function return
+    bool did_break;     // True if this node caused a loop break
+    bool is_error;      // True if this node caused an error
+} InterpretResult;
+
+// FlavorLang cimport function pointer type
+typedef InterpretResult (*FlavorLangCFunc)(struct ASTNode *args,
+                                           Environment *env);
 
 // Structure for Function Results
 typedef struct {
@@ -70,6 +81,7 @@ typedef struct Function {
     struct ASTNode *body;                    // Function body
     FunctionResult return_value;
     bool is_builtin;
+    FlavorLangCFunc c_function;
 } Function;
 
 // Structure for Environment
@@ -91,13 +103,5 @@ struct Environment {
 
     char *script_dir; // Store directory of main script
 };
-
-// Structure for Interpret Results
-typedef struct {
-    LiteralValue value; // Result of interpreting a node
-    bool did_return; // True if this node caused a function return to bubble up
-    bool did_break;  // True if this node caused a loop break to bubble up
-    bool is_error;   // True if this node caused an error
-} InterpretResult;
 
 #endif
