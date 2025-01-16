@@ -16,6 +16,10 @@ CFLAGS += -fPIC -Wall -Wextra -O2
 # so that unresolved symbols are resolved at runtime
 LDFLAGS += -shared -undefined dynamic_lookup
 
+# Tell linker to export all symbols so that plugins
+# loaded later using dlopen/dlsym can resolve them
+LDFLAGS += -rdynamic
+
 # The default target builds the plugin shared object
 all: $(PLUGIN_SO)
 

@@ -982,12 +982,22 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     FlavorLangCFunc func_ptr = NULL;
 
 #if defined(__unix__) || defined(__APPLE__)
-    // Open shared library in lazy mode using resolved/original `lib_path`
-    void *handle = dlopen(lib_path, RTLD_LAZY);
+    char full_lib_path[PATH_MAX];
+    // If lib_path is not absolute, prepend env->script_dir.
+    if (lib_path[0] != '/') {
+        snprintf(full_lib_path, sizeof(full_lib_path), "%s/%s", env->script_dir,
+                 lib_path);
+    } else {
+        strncpy(full_lib_path, lib_path, sizeof(full_lib_path));
+        full_lib_path[sizeof(full_lib_path) - 1] = '\0';
+    }
+
+    // Now open the shared library using the full path.
+    void *handle = dlopen(full_lib_path, RTLD_LAZY);
     if (!handle) {
         return raise_error("dlopen error: %s", dlerror());
     }
-    // Clear any existing errors
+    // Clear any existing errors.
     dlerror();
     func_ptr = (FlavorLangCFunc)dlsym(handle, func_name);
     char *error_msg = dlerror();
