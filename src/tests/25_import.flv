@@ -2,6 +2,22 @@ import "24_export.flv";
 
 serve(someVar);
 
-serve(hiddenFunc());
-serve(hiddenVar);
-serve(hiddenConst);
+try {
+    serve(hiddenFunc());
+} rescue {
+    serve("Hidden function error caught!");
+}
+
+try {
+    serve(hiddenVar);
+} rescue {
+    serve("Hidden variable error caught!");
+}
+
+try {
+    serve(hiddenConst);
+} rescue {
+    serve("Hidden constant error caught!");
+}
+
+# serve(hiddenConst);
