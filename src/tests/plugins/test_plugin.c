@@ -1,6 +1,6 @@
-#include "../interpreter/interpreter_types.h"
-#include "../interpreter/utils.h"
-#include "../shared/ast_types.h"
+#include "../../interpreter/interpreter_types.h"
+#include "../../interpreter/utils.h"
+#include "../../shared/ast_types.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
