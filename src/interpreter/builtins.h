@@ -36,6 +36,7 @@ InterpretResult builtin_file_write(ASTNode *node, Environment *env);
 InterpretResult builtin_file_append(ASTNode *node, Environment *env);
 InterpretResult builtin_length(ASTNode *node, Environment *env);
 InterpretResult builtin_sleep(ASTNode *node, Environment *env);
+InterpretResult builtin_cimport(ASTNode *node, Environment *env);
 
 // Helpers
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type);

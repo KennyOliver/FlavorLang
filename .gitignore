@@ -4,6 +4,7 @@ src/flavor
 src/flavor.dSYM/
 obj
 *.min.flv
+*.so
 
 # VS Code Extension
 vscode-extension/node_modules/

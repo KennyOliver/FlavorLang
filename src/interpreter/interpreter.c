@@ -63,7 +63,6 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
 
     case AST_FUNCTION_CALL: {
         debug_print_int("\tMatched: `AST_FUNCTION_CALL`\n");
-        // interpret_function_call(...) returns an InterpretResult
         result = interpret_function_call(node, env);
         break;
     }
@@ -1580,9 +1579,11 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
         return raise_error("Undefined function `%s`\n", func_name);
     }
 
+    // Handle built-in functions
     if (func->is_builtin) {
-        // Handle built-in functions
-        if (strcmp(func->name, "sample") == 0) {
+        if (func->c_function != NULL) { // externally imported function
+            return func->c_function(node, env);
+        } else if (strcmp(func->name, "sample") == 0) {
             return builtin_input(node, env);
         } else if (strcmp(func->name, "serve") == 0) {
             return builtin_output(node, env);
