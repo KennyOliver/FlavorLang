@@ -40,7 +40,7 @@
       "patterns": [
         {
           "name": "keyword.control.flavorlang",
-          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|rescue|finish|break|continue)\\b"
+          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|rescue|finish|break|continue|import|export)\\b"
         },
         {
           "name": "keyword.other.flavorlang",
