@@ -2442,19 +2442,44 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
 }
 
 void merge_module_exports(Environment *dest_env, Environment *export_env) {
-    for (size_t i = 0; i < export_env->variable_count; i++) {
-        add_variable(dest_env, export_env->variables[i]);
-    }
-    for (size_t i = 0; i < export_env->function_count; i++) {
-        // Only add if not already defined
-        if (!get_function(dest_env, export_env->functions[i].name)) {
-            add_function(dest_env, export_env->functions[i]);
+    // Merge only those whose name is in `exported_symbols`
+    for (size_t j = 0; j < export_env->exported_count; j++) {
+        const char *exported_name = export_env->exported_symbols[j];
+
+        // Check if it's a variable in `export_env`
+        Variable *var = get_variable(export_env, exported_name);
+        if (var) {
+            add_variable(dest_env, *var);
+        }
+
+        // Also check if it's a function in `export_env`
+        Function *fn = get_function(export_env, exported_name);
+        if (fn) {
+            // Only add if not already defined, etc
+            if (!get_function(dest_env, fn->name)) {
+                add_function(dest_env, *fn);
+            }
         }
     }
 }
 
 void register_export(Environment *env, const char *symbol_name) {
     debug_print_int("Registering exported symbol: %s\n", symbol_name);
+
+    // If array is full, reallocate
+    if (env->exported_count == env->exported_capacity) {
+        size_t newcap =
+            env->exported_capacity == 0 ? 4 : env->exported_capacity * 2;
+        char **temp = realloc(env->exported_symbols, newcap * sizeof(char *));
+        if (!temp) {
+            fatal_error("Memory allocation failed while registering export.\n");
+        }
+        env->exported_symbols = temp;
+        env->exported_capacity = newcap;
+    }
+
+    // Store a copy of the exported symbol's name
+    env->exported_symbols[env->exported_count++] = strdup(symbol_name);
 }
 
 InterpretResult interpret_import(ASTNode *node, Environment *env) {
@@ -2468,7 +2493,7 @@ InterpretResult interpret_import(ASTNode *node, Environment *env) {
         return raise_error("Module path is missing in import statement.\n");
     }
 
-    // Check the module cache.
+    // Check module cache
     ModuleCacheEntry *cached = lookup_module_cache(module_path);
     if (cached) {
         debug_print_int("Module '%s' found in cache. Merging exports...\n",
