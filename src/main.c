@@ -193,21 +193,22 @@ void print_about(void) {
 }
 
 int main(int argc, char **argv) {
-    // Handle --about flag separately
-    if (argc == 2 && strcmp(argv[1], "--about") == 0) {
-        print_about();
-        return EXIT_SUCCESS;
-    }
-
-    // Parse command-line arguments
+    // Handle --about flag, parse CLI args, etc.
     Options options;
     parse_cli_args(argc, argv, &options);
 
-    // Read source `.flv` file
-    char *source = read_file(options.filename);
+    // Convert to absolute path.
+    char absolute_path[PATH_MAX];
+    if (!realpath(options.filename, absolute_path)) {
+        perror("Error obtaining absolute path");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read source file using the absolute path.
+    char *source = read_file(absolute_path);
     if (!source) {
-        fprintf(stderr, "Error: Could not read file '%s'\n", options.filename);
-        return EXIT_FAILURE;
+        fprintf(stderr, "Error: Could not read file '%s'\n", absolute_path);
+        exit(EXIT_FAILURE);
     }
 
     // Tokenize
@@ -215,23 +216,20 @@ int main(int argc, char **argv) {
     if (!tokens) {
         fprintf(stderr, "Error: Tokenization failed\n");
         free(source);
-        return EXIT_FAILURE;
+        exit(EXIT_FAILURE);
     }
 
-    // If --minify flag is set, perform minification and exit
+    // Optional: If minify, perform minification.
     if (options.minify) {
-        char *minified_filename = generate_minified_filename(options.filename);
+        char *minified_filename = generate_minified_filename(absolute_path);
         minify_tokens(tokens, minified_filename);
         printf("Minified script written to '%s'\n", minified_filename);
         free(minified_filename);
-
-        // Clean up memory
         free(tokens);
         free(source);
         return EXIT_SUCCESS;
     }
 
-    // If --debug flag is set, print debug information
     if (debug_flag) {
         debug_print_tokens(tokens);
         debug_print_basic("Lexing complete!\n\n");
@@ -245,9 +243,20 @@ int main(int argc, char **argv) {
         debug_print_basic("Finished printing AST\n\n");
     }
 
-    // Create environment
+    // Create environment and store the script's directory.
     Environment env;
     init_environment(&env);
+
+    // Extract the directory part from the absolute path.
+    char path_copy[PATH_MAX];
+    strncpy(path_copy, absolute_path, PATH_MAX);
+    path_copy[PATH_MAX - 1] = '\0'; // ensure null-termination
+    char *dir = dirname(path_copy);
+    env.script_dir = strdup(dir); // <-- New field in Environment
+    if (!env.script_dir) {
+        perror("Failed to allocate memory for script_dir");
+        exit(EXIT_FAILURE);
+    }
 
     // Interpret
     interpret_program(ast, &env);

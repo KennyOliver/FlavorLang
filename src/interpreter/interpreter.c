@@ -2493,19 +2493,20 @@ InterpretResult interpret_import(ASTNode *node, Environment *env) {
         return raise_error("Module path is missing in import statement.\n");
     }
 
-    // Check module cache
-    ModuleCacheEntry *cached = lookup_module_cache(module_path);
-    if (cached) {
-        debug_print_int("Module '%s' found in cache. Merging exports...\n",
-                        module_path);
-        merge_module_exports(env, cached->export_env);
-        return make_result(create_default_value(), false, false);
+    char resolved_path[PATH_MAX];
+    if (module_path[0] == '/') {
+        // It's already an absolute path
+        strncpy(resolved_path, module_path, PATH_MAX);
+    } else {
+        // It's relative
+        snprintf(resolved_path, PATH_MAX, "%s/%s", env->script_dir,
+                 module_path);
     }
 
     // Read file
-    char *source = read_file(module_path);
+    char *source = read_file(resolved_path);
     if (!source) {
-        return raise_error("Failed to read module file: %s\n", module_path);
+        return raise_error("Failed to read module file: %s\n", resolved_path);
     }
 
     // Tokenize & parse module
