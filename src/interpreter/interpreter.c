@@ -144,6 +144,14 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         result = interpret_try(node, env);
         break;
 
+    case AST_CATCH:
+        debug_print_int("\tMatched: `AST_CATCH`\n");
+        break;
+
+    case AST_FINALLY:
+        debug_print_int("\tMatched: `AST_FINALLY`\n");
+        break;
+
     case AST_ARRAY_LITERAL:
         debug_print_int("\tMatched: `AST_ARRAY_LITERAL`\n");
         result = interpret_array_literal(node, env);
