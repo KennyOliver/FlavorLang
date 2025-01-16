@@ -53,6 +53,10 @@ ASTNode *parse_statement(ParserState *state) {
         return parse_function_return(state);
     if (match_token(state, "try"))
         return parse_try_block(state);
+    if (match_token(state, "import"))
+        return parse_import_statement(state);
+    if (match_token(state, "export"))
+        return parse_export_statement(state);
 
     // Handle function calls
     if (token->type == TOKEN_FUNCTION_NAME) {
@@ -997,4 +1001,57 @@ bool is_assignment(ParserState *state) {
         return true;
 
     return false;
+}
+
+ASTNode *parse_import_statement(ParserState *state) {
+    expect_token(state, TOKEN_KEYWORD, "Expected `import` keyword");
+
+    Token *path_token = get_current_token(state);
+    if (path_token->type != TOKEN_STRING) {
+        parser_error("Expected module path as string after import", path_token);
+    }
+
+    ASTNode *node = calloc(1, sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for import node", path_token);
+    }
+
+    node->type = AST_IMPORT;
+    node->import.import_path = strdup(path_token->lexeme);
+    advance_token(state);
+    expect_token(state, TOKEN_DELIMITER, "Expected `;` after import statement");
+
+    return node;
+}
+
+ASTNode *parse_export_statement(ParserState *state) {
+    expect_token(state, TOKEN_KEYWORD, "Expected `export` keyword");
+
+    Token *current = get_current_token(state);
+    ASTNode *decl = NULL;
+
+    if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "let") == 0) {
+        decl = parse_variable_declaration(state);
+    } else if (current->type == TOKEN_KEYWORD &&
+               strcmp(current->lexeme, "const") == 0) {
+        decl = parse_constant_declaration(state);
+    } else if (current->type == TOKEN_KEYWORD &&
+               strcmp(current->lexeme, "create") == 0) {
+        decl = parse_function_declaration(state);
+    } else {
+        parser_error("Expected `let`, `const`, or `create` after `export`",
+                     current);
+    }
+
+    // Wrap declaration in AST_EXPORT
+    ASTNode *node = calloc(1, sizeof(ASTNode));
+    if (!node) {
+        parser_error("Memory allocation failed for export node",
+                     get_current_token(state));
+    }
+    node->type = AST_EXPORT;
+    node->export.decl = decl;
+    node->next = NULL;
+
+    return node;
 }
