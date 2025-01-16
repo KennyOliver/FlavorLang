@@ -959,11 +959,30 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
         return args_res;
     }
 
-    // Declare function pointer variable outside block
+    // If lib_path is not absolute path, prepend script directory
+    if (lib_path[0] != '/' && env->script_dir != NULL) {
+        size_t base_len = strlen(env->script_dir);
+        size_t lib_len = strlen(lib_path);
+        // Allocate enough room for "script_dir/lib_path" plus NULL terminator.
+        char *full_path = malloc(base_len + lib_len + 2);
+        if (!full_path) {
+            return raise_error("Memory allocation failed while constructing "
+                               "the full library path.");
+        }
+        strcpy(full_path, env->script_dir);
+        // Ensure env->script_dir ends with a slash
+        if (env->script_dir[base_len - 1] != '/') {
+            strcat(full_path, "/");
+        }
+        strcat(full_path, lib_path);
+        lib_path = full_path; // Now use this full path for dlopen()
+    }
+
+    // Declare function pointer variable
     FlavorLangCFunc func_ptr = NULL;
 
 #if defined(__unix__) || defined(__APPLE__)
-    // Open shared library in lazy mode
+    // Open shared library in lazy mode using resolved/original `lib_path`
     void *handle = dlopen(lib_path, RTLD_LAZY);
     if (!handle) {
         return raise_error("dlopen error: %s", dlerror());
@@ -984,13 +1003,13 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     Function cfunc;
     cfunc.name = safe_strdup(func_name);
     cfunc.parameters = NULL;
-    cfunc.body = NULL;
-    cfunc.is_builtin = true;
+    cfunc.body = NULL;       // No AST body — it’s external
+    cfunc.is_builtin = true; // Mark as builtin/external
     cfunc.c_function = func_ptr;
 
     add_function(env, cfunc);
 
-    // Also create corresponding variable (so that function is callable)
+    // Also create corresponding variable so that function is callable
     LiteralValue func_val;
     func_val.type = TYPE_FUNCTION;
     func_val.data.function_name = safe_strdup(cfunc.name);
@@ -999,6 +1018,12 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     var.value = func_val;
     var.is_constant = false;
     add_variable(env, var);
+
+    // Clean up the allocated full_path if it was used
+    if (env->script_dir != NULL && lib_path != NULL &&
+        lib_path != node->function_call.arguments->literal.value.string) {
+        free(lib_path);
+    }
 
     // Return a default value (0)
     LiteralValue ret;
