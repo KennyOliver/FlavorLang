@@ -1,3 +1,7 @@
 import "24_export.flv";
 
 serve(someVar);
+
+serve(hiddenFunc());
+serve(hiddenVar);
+serve(hiddenConst);
