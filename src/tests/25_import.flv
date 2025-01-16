@@ -19,5 +19,3 @@ try {
 } rescue {
     serve("Hidden constant error caught!");
 }
-
-# serve(hiddenConst);

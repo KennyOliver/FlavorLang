@@ -38,7 +38,9 @@ void expect_token(ParserState *state, TokenType expected,
 
 bool match_token(ParserState *state, const char *lexeme) {
     Token *token = get_current_token(state);
-    return token && strcmp(token->lexeme, lexeme) == 0;
+    if (!token || token->type == TOKEN_EOF)
+        return false;
+    return (token->lexeme && strcmp(token->lexeme, lexeme) == 0);
 }
 
 Token *peek_next_token(ParserState *state) {

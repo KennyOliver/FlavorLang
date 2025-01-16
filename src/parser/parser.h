@@ -41,7 +41,6 @@ ASTNode *create_variable_reference_node(char *name);
 
 // Helper functions
 ASTNode *parse_declaration(ParserState *state, ASTNodeType type);
-bool match_token(ParserState *state, const char *lexeme);
 Token *peek_next_token(ParserState *state);
 Token *peek_ahead(ParserState *state, size_t n);
 ASTNode *parse_expression_statement(ParserState *state);
