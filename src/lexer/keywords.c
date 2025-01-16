@@ -25,6 +25,8 @@ const char *KEYWORDS[] = {
     "recipe",  // import
     "True",    // Boolean True
     "False",   // Boolean False
+    "import",  // Import `.flv` script
+    "export",  // Export identifiers in `.flv` script
     NULL       // sentinel value
 };
 
