@@ -1,2 +1,2 @@
-cimport("myplugin.so", "printSomething");
+cimport("test_plugin.so", "printSomething");
 printSomething("Hello from plugin!");

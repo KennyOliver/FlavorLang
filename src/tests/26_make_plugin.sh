@@ -1,1 +1,1 @@
-gcc -shared -o 26_test_plugin.so -fPIC 26_test_plugin.c
+gcc -shared -fPIC -o test_plugin.so 26_test_plugin.c -undefined dynamic_lookup
