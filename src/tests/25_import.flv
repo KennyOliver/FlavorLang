@@ -1,3 +1,3 @@
-import "./25_import.flv";
+import "tests/24_export.flv";
 
 serve(someVar);

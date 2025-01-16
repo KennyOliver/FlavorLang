@@ -165,6 +165,16 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         result = interpret_array_slice_access(node, env);
         break;
 
+    case AST_IMPORT:
+        debug_print_int("\tMatched: `AST_IMPORT`\n");
+        result = interpret_import(node, env);
+        break;
+
+    case AST_EXPORT:
+        debug_print_int("\tMatched: `AST_EXPORT`\n");
+        result = interpret_export(node, env);
+        break;
+
     default:
         return raise_error("Unsupported `ASTNode` type.\n");
     }
@@ -2429,4 +2439,116 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         result.data.string = sub;
         return make_result(result, false, false);
     }
+}
+
+void merge_module_exports(Environment *dest_env, Environment *export_env) {
+    for (size_t i = 0; i < export_env->variable_count; i++) {
+        add_variable(dest_env, export_env->variables[i]);
+    }
+    for (size_t i = 0; i < export_env->function_count; i++) {
+        // Only add if not already defined
+        if (!get_function(dest_env, export_env->functions[i].name)) {
+            add_function(dest_env, export_env->functions[i]);
+        }
+    }
+}
+
+void register_export(Environment *env, const char *symbol_name) {
+    debug_print_int("Registering exported symbol: %s\n", symbol_name);
+}
+
+InterpretResult interpret_import(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_IMPORT) {
+        return raise_error(
+            "Internal error: invalid node passed to interpret_import.\n");
+    }
+
+    char *module_path = node->import.import_path;
+    if (!module_path) {
+        return raise_error("Module path is missing in import statement.\n");
+    }
+
+    // Check the module cache.
+    ModuleCacheEntry *cached = lookup_module_cache(module_path);
+    if (cached) {
+        debug_print_int("Module '%s' found in cache. Merging exports...\n",
+                        module_path);
+        merge_module_exports(env, cached->export_env);
+        return make_result(create_default_value(), false, false);
+    }
+
+    // Read file
+    char *source = read_file(module_path);
+    if (!source) {
+        return raise_error("Failed to read module file: %s\n", module_path);
+    }
+
+    // Tokenize & parse module
+    Token *tokens = tokenize(source);
+    free(source);
+    if (!tokens) {
+        return raise_error("Tokenization failed for module file: %s\n",
+                           module_path);
+    }
+    ASTNode *module_ast = parse_program(tokens);
+    free_token_array(tokens);
+    if (!module_ast) {
+        return raise_error("Parsing failed for module file: %s\n", module_path);
+    }
+
+    // Create a new Environment for the module
+    // For isolation, make current Environment the parent
+    Environment module_env;
+    init_environment_with_parent(&module_env, env);
+
+    // Interpret module
+    interpret_program(module_ast, &module_env);
+    free_ast(module_ast);
+
+    // Store module's exported symbols in cache
+    Environment *export_env = malloc(sizeof(Environment));
+    if (!export_env) {
+        fatal_error("Memory allocation failed while caching module exports.\n");
+    }
+
+    *export_env = module_env;
+    store_module_cache(module_path, export_env);
+
+    // Merge exported symbols into current Environment
+    merge_module_exports(env, export_env);
+
+    free_environment(&module_env);
+
+    return make_result(create_default_value(), false, false);
+}
+
+InterpretResult interpret_export(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_EXPORT) {
+        return raise_error(
+            "Internal error: invalid node passed to interpret_export.\n");
+    }
+
+    // Evaluate wrapped declaration
+    InterpretResult decl_res = interpret_node(node->export.decl, env);
+    if (decl_res.is_error) {
+        return decl_res; // propagate error
+    }
+
+    switch (node->export.decl->type) {
+    case AST_VAR_DECLARATION:
+        register_export(env, node->export.decl->var_declaration.variable_name);
+        break;
+    case AST_CONST_DECLARATION:
+        register_export(env,
+                        node->export.decl->const_declaration.constant_name);
+        break;
+    case AST_FUNCTION_DECLARATION:
+        register_export(env, node->export.decl->function_declaration.name);
+        break;
+    default:
+        fprintf(stderr, "Warning: Export is a non-declaration type");
+        break;
+    }
+
+    return make_result(decl_res.value, false, false);
 }
