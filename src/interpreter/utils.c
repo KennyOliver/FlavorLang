@@ -528,6 +528,7 @@ void add_function(Environment *env, Function func) {
     stored_func->parameters = copy_function_parameters(func.parameters);
     stored_func->body = copy_ast_node(func.body);
     stored_func->is_builtin = func.is_builtin;
+    stored_func->c_function = func.c_function;
 
     stored_func->name = strdup(func.name);
     if (!stored_func->name) {
