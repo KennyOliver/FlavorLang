@@ -29,7 +29,9 @@ typedef enum {
     AST_ARRAY_OPERATION,
     AST_ARRAY_INDEX_ACCESS,
     AST_ARRAY_SLICE_ACCESS,
-    AST_VARIABLE_REFERENCE
+    AST_VARIABLE_REFERENCE,
+    AST_IMPORT,
+    AST_EXPORT
 } ASTNodeType;
 
 // Literal Node
@@ -170,6 +172,13 @@ typedef struct {
     struct ASTNode *operand; // Element to operate with (e.g., to append)
 } ASTArrayOperation;
 
+typedef struct {
+    char *import_path; // Module script file path string
+} ASTImport;
+typedef struct {
+    struct ASTNode *decl; // Declaration node that's being exported
+} ASTExport;
+
 // AST Node Structure
 typedef struct ASTNode {
     ASTNodeType type;
@@ -218,6 +227,10 @@ typedef struct ASTNode {
         // Literal and Reference
         LiteralNode literal;
         char *variable_name; // For AST_VARIABLE_REFERENCE
+
+        // Import & Export
+        ASTImport import;
+        ASTExport export;
     };
 
     struct ASTNode *next;

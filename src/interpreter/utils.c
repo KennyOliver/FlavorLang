@@ -97,6 +97,11 @@ void init_environment(Environment *env) {
         fatal_error("Failed to allocate memory for functions.\n");
     }
 
+    // Initialize exported symbols
+    env->exported_symbols = NULL;
+    env->exported_count = 0;
+    env->exported_capacity = 0;
+
     // Initialize built-in functions ONLY for the GLOBAL environment
     initialize_all_builtin_functions(env);
 }
@@ -120,6 +125,11 @@ void init_environment_with_parent(Environment *env, Environment *parent) {
     if (!env->functions) {
         fatal_error("Failed to allocate memory for functions.\n");
     }
+
+    // Initialize exported symbols
+    env->exported_symbols = NULL;
+    env->exported_count = 0;
+    env->exported_capacity = 0;
 
     // Do NOT initialize built-in functions in local environments
 }

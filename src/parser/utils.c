@@ -6,7 +6,6 @@ void free_ast(ASTNode *node) {
 
         switch (node->type) {
         case AST_ASSIGNMENT:
-            // free(node->assignment.variable_name);
             free_ast(node->assignment.lhs);
             free_ast(node->assignment.rhs);
             break;
@@ -152,6 +151,14 @@ void free_ast(ASTNode *node) {
         case AST_VARIABLE_REFERENCE:
         case AST_BREAK:
             // No dynamic memory to free
+            break;
+
+        case AST_IMPORT:
+            free(node->import.import_path);
+            break;
+
+        case AST_EXPORT:
+            free_ast(node->export.decl);
             break;
 
         default:
@@ -471,6 +478,19 @@ void print_ast(ASTNode *node, int depth) {
 
             case AST_VARIABLE_REFERENCE:
                 printf("Variable Reference: %s\n", node->variable_name);
+                break;
+
+            case AST_IMPORT:
+                printf("Import Statement:\n");
+                print_indent(depth + 1);
+                printf("Path: %s\n", node->import.import_path);
+                break;
+
+            case AST_EXPORT:
+                printf("Export Statement:\n");
+                print_indent(depth + 1);
+                printf("Exported Declaration:\n");
+                print_ast(node->export.decl, depth + 2);
                 break;
 
             default:

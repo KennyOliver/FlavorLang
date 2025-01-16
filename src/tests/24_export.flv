@@ -1,0 +1,9 @@
+export create triple(x) {
+    deliver x * 3;
+}
+
+create hiddenFunc() {}
+
+export let someVar = triple(5);
+let hiddenVar = -1;
+const hiddenConst = -2;

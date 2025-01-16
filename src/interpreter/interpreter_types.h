@@ -83,6 +83,13 @@ struct Environment {
     size_t function_capacity;
 
     Environment *parent; // Parent environment for nested scopes
+
+    // For modules
+    char **exported_symbols;
+    size_t exported_count;
+    size_t exported_capacity;
+
+    char *script_dir; // Store directory of main script
 };
 
 // Structure for Interpret Results

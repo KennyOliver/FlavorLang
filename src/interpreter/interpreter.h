@@ -5,6 +5,7 @@
 #include "../shared/data_types.h"
 #include "builtins.h"
 #include "interpreter_types.h"
+#include "module_cache.h"
 #include "utils.h"
 #include <errno.h>
 #include <limits.h>
@@ -34,6 +35,8 @@ InterpretResult call_user_defined_function(Function *func_ref,
                                            ASTNode *call_node,
                                            Environment *env);
 InterpretResult interpret_try(ASTNode *node, Environment *env);
+InterpretResult interpret_import(ASTNode *node, Environment *env);
+InterpretResult interpret_export(ASTNode *node, Environment *env);
 
 // Arrays
 typedef struct {
@@ -58,5 +61,7 @@ LiteralValue create_default_value(void);
 Variable *get_variable(Environment *env, const char *variable_name);
 InterpretResult add_variable(Environment *env, Variable var);
 ASTFunctionParameter *copy_function_parameters(ASTFunctionParameter *params);
+void merge_module_exports(Environment *dest_env, Environment *export_env);
+void register_export(Environment *env, const char *symbol_name);
 
 #endif

@@ -165,6 +165,16 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         result = interpret_array_slice_access(node, env);
         break;
 
+    case AST_IMPORT:
+        debug_print_int("\tMatched: `AST_IMPORT`\n");
+        result = interpret_import(node, env);
+        break;
+
+    case AST_EXPORT:
+        debug_print_int("\tMatched: `AST_EXPORT`\n");
+        result = interpret_export(node, env);
+        break;
+
     default:
         return raise_error("Unsupported `ASTNode` type.\n");
     }
@@ -2429,4 +2439,142 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         result.data.string = sub;
         return make_result(result, false, false);
     }
+}
+
+void merge_module_exports(Environment *dest_env, Environment *export_env) {
+    // Merge only those whose name is in `exported_symbols`
+    for (size_t j = 0; j < export_env->exported_count; j++) {
+        const char *exported_name = export_env->exported_symbols[j];
+
+        // Check if it's a variable in `export_env`
+        Variable *var = get_variable(export_env, exported_name);
+        if (var) {
+            add_variable(dest_env, *var);
+        }
+
+        // Also check if it's a function in `export_env`
+        Function *fn = get_function(export_env, exported_name);
+        if (fn) {
+            // Only add if not already defined, etc
+            if (!get_function(dest_env, fn->name)) {
+                add_function(dest_env, *fn);
+            }
+        }
+    }
+}
+
+void register_export(Environment *env, const char *symbol_name) {
+    debug_print_int("Registering exported symbol: %s\n", symbol_name);
+
+    // If array is full, reallocate
+    if (env->exported_count == env->exported_capacity) {
+        size_t newcap =
+            env->exported_capacity == 0 ? 4 : env->exported_capacity * 2;
+        char **temp = realloc(env->exported_symbols, newcap * sizeof(char *));
+        if (!temp) {
+            fatal_error("Memory allocation failed while registering export.\n");
+        }
+        env->exported_symbols = temp;
+        env->exported_capacity = newcap;
+    }
+
+    // Store a copy of the exported symbol's name
+    env->exported_symbols[env->exported_count++] = strdup(symbol_name);
+}
+
+InterpretResult interpret_import(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_IMPORT) {
+        return raise_error(
+            "Internal error: invalid node passed to interpret_import.\n");
+    }
+
+    char *module_path = node->import.import_path;
+    if (!module_path) {
+        return raise_error("Module path is missing in import statement.\n");
+    }
+
+    char resolved_path[PATH_MAX];
+    if (module_path[0] == '/') {
+        // It's already an absolute path
+        strncpy(resolved_path, module_path, PATH_MAX);
+    } else {
+        // It's relative
+        snprintf(resolved_path, PATH_MAX, "%s/%s", env->script_dir,
+                 module_path);
+    }
+
+    // Read file
+    char *source = read_file(resolved_path);
+    if (!source) {
+        return raise_error("Failed to read module file: %s\n", resolved_path);
+    }
+
+    // Tokenize & parse module
+    Token *tokens = tokenize(source);
+    free(source);
+    if (!tokens) {
+        return raise_error("Tokenization failed for module file: %s\n",
+                           module_path);
+    }
+    ASTNode *module_ast = parse_program(tokens);
+    free_token_array(tokens);
+    if (!module_ast) {
+        return raise_error("Parsing failed for module file: %s\n", module_path);
+    }
+
+    // Create a new Environment for the module
+    // For isolation, make current Environment the parent
+    Environment module_env;
+    init_environment_with_parent(&module_env, env);
+
+    // Interpret module
+    interpret_program(module_ast, &module_env);
+    free_ast(module_ast);
+
+    // Store module's exported symbols in cache
+    Environment *export_env = malloc(sizeof(Environment));
+    if (!export_env) {
+        fatal_error("Memory allocation failed while caching module exports.\n");
+    }
+
+    *export_env = module_env;
+    store_module_cache(module_path, export_env);
+
+    // Merge exported symbols into current Environment
+    merge_module_exports(env, export_env);
+
+    free_environment(&module_env);
+
+    return make_result(create_default_value(), false, false);
+}
+
+InterpretResult interpret_export(ASTNode *node, Environment *env) {
+    if (!node || node->type != AST_EXPORT) {
+        return raise_error(
+            "Internal error: invalid node passed to interpret_export.\n");
+    }
+
+    // Evaluate wrapped declaration
+    InterpretResult decl_res = interpret_node(node->export.decl, env);
+    if (decl_res.is_error) {
+        return decl_res; // propagate error
+    }
+
+    switch (node->export.decl->type) {
+    case AST_VAR_DECLARATION:
+        register_export(env, node->export.decl->var_declaration.variable_name);
+        break;
+    case AST_CONST_DECLARATION:
+        register_export(env,
+                        node->export.decl->const_declaration.constant_name);
+        break;
+    case AST_FUNCTION_DECLARATION:
+        register_export(env, node->export.decl->function_declaration.name);
+        break;
+    default:
+        fprintf(stderr, "Warning: Export is a non-declaration type");
+        break;
+    }
+
+    return make_result(decl_res.value, false, false);
 }
