@@ -94,7 +94,7 @@ git push origin issue-<N>
 Submit a pull request from your branch to the `main` branch of this repository. Include:
 
 - A detailed description of your changes.
-- A screenshot demonstrating your code in action.
+- A screenshot demonstrating your code in action (not needed if the pull request is exclusively about documentation).
 - Reference to the related issue (e.g., "Closes #N").
 
 ### 8. Code Review and Testing
