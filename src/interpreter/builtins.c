@@ -13,6 +13,7 @@
 #ifdef __unix__
 #include <dlfcn.h>
 #endif
+#include <dlfcn.h>
 
 // Helper function to check if a LiteralType matches an ArgType
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
@@ -961,7 +962,7 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     // Declare function pointer variable outside block
     FlavorLangCFunc func_ptr = NULL;
 
-#ifdef __unix__
+#if defined(__unix__) || defined(__APPLE__)
     // Open shared library in lazy mode
     void *handle = dlopen(lib_path, RTLD_LAZY);
     if (!handle) {
@@ -976,15 +977,15 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
         return raise_error("dlsym error: %s", error_msg);
     }
 #else
-    return raise_error("cimport is not implemented on this platform.\n");
+    return raise_error("`cimport` is not implemented on this platform.\n");
 #endif
 
     // Create new `Function` record for external function
     Function cfunc;
     cfunc.name = safe_strdup(func_name);
     cfunc.parameters = NULL;
-    cfunc.body = NULL;       // No AST body — it’s external
-    cfunc.is_builtin = true; // Mark as builtin/external
+    cfunc.body = NULL;
+    cfunc.is_builtin = true;
     cfunc.c_function = func_ptr;
 
     add_function(env, cfunc);
