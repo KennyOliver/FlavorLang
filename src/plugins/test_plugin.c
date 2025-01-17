@@ -44,7 +44,8 @@ InterpretResult addNumbers(struct ASTNode *node, Environment *env) {
 
     INT_SIZE result = num1 + num2;
 
-    printf("Adding %lld + %lld = %lld\n", num1, num2, result);
+    printf("Adding " INT_FORMAT " + " INT_FORMAT " = " INT_FORMAT "\n", num1,
+           num2, result);
 
     // Return the result
     LiteralValue result_value;
