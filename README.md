@@ -78,7 +78,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ##### 1. Download & Extract the ZIP
 
-[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+**[Latest FlavorLang Release](https://github.com/KennyOliver/FlavorLang/releases/latest)**
 
 ##### 2. Run the Install Script
 
