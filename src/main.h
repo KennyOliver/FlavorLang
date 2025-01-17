@@ -20,11 +20,11 @@ typedef struct {
     bool make_plugin;
 } Options;
 
-void parse_cli_args(int argc, char *argv[], Options *options);
 void print_usage(const char *prog_name);
-void print_logo(void);
+void parse_cli_args(int argc, char *argv[], Options *options);
 char *generate_minified_filename(const char *input_filename);
 void minify_tokens(Token *tokens, const char *output_file);
+void print_logo(void);
 void print_about(void);
 
 // Logo
