@@ -83,11 +83,11 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
         // Log the return value for debugging
         switch (return_res.value.type) {
         case TYPE_INTEGER:
-            debug_print_int("Function returning integer: %lld\n",
+            debug_print_int("Function returning integer: " INT_FORMAT "\n",
                             return_res.value.data.integer);
             break;
         case TYPE_FLOAT:
-            debug_print_int("Function returning float: %Lf\n",
+            debug_print_int("Function returning float:" FLOAT_FORMAT "\n",
                             return_res.value.data.floating_point);
             break;
         case TYPE_STRING:
@@ -142,6 +142,14 @@ InterpretResult interpret_node(ASTNode *node, Environment *env) {
     case AST_TRY:
         debug_print_int("\tMatched: `AST_TRY`\n");
         result = interpret_try(node, env);
+        break;
+
+    case AST_CATCH:
+        debug_print_int("\tMatched: `AST_CATCH`\n");
+        break;
+
+    case AST_FINALLY:
+        debug_print_int("\tMatched: `AST_FINALLY`\n");
         break;
 
     case AST_ARRAY_LITERAL:
@@ -208,13 +216,13 @@ InterpretResult interpret_literal(ASTNode *node) {
     case LITERAL_FLOAT:
         value.type = TYPE_FLOAT;
         value.data.floating_point = node->literal.value.floating_point;
-        debug_print_int("Created float literal: `%Lf`\n",
+        debug_print_int("Created float literal: `" FLOAT_FORMAT "`\n",
                         value.data.floating_point);
         break;
     case LITERAL_INTEGER:
         value.type = TYPE_INTEGER;
         value.data.integer = node->literal.value.integer;
-        debug_print_int("Created integer literal: `%lld`\n",
+        debug_print_int("Created integer literal: `" INT_FORMAT "`\n",
                         value.data.integer);
         break;
     case LITERAL_BOOLEAN:
@@ -388,11 +396,11 @@ InterpretResult handle_string_concatenation(InterpretResult left,
     char num_str2[50] = {0};
 
     if (left_val.type == TYPE_FLOAT) {
-        snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT_SPECIFIER,
+        snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT,
                  left_val.data.floating_point);
     }
     if (right_val.type == TYPE_FLOAT) {
-        snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT_SPECIFIER,
+        snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT,
                  right_val.data.floating_point);
     }
 
@@ -844,13 +852,13 @@ Variable *get_variable(Environment *env, const char *variable_name) {
                 switch (current_env->variables[i].value.type) {
                 case TYPE_FLOAT:
                     debug_print_int(
-                        "Variable found: `%s` with value `%Lf`\n",
+                        "Variable found: `%s` with value `" FLOAT_FORMAT "`\n",
                         variable_name,
                         current_env->variables[i].value.data.floating_point);
                     break;
                 case TYPE_INTEGER:
                     debug_print_int(
-                        "Variable found: `%s` with value `%lld`\n",
+                        "Variable found: `%s` with value `" INT_FORMAT "`\n",
                         variable_name,
                         current_env->variables[i].value.data.integer);
                     break;
@@ -1983,7 +1991,8 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
             idx = (INT_SIZE)len + idx;
         }
         if (idx < 0 || (size_t)idx >= len) {
-            return raise_error("String index `%lld` out of bounds.\n", idx);
+            return raise_error("String index `" INT_FORMAT "` out of bounds.\n",
+                               idx);
         }
 
         // Extract the character at the specified index
@@ -2024,7 +2033,8 @@ InterpretResult interpret_array_index_access(ASTNode *node, Environment *env) {
         index = (INT_SIZE)array->count + index;
     }
     if (index < 0 || (size_t)index >= array->count) {
-        return raise_error("Array index `%lld` out of bounds.\n", index);
+        return raise_error("Array index `" INT_FORMAT "` out of bounds.\n",
+                           index);
     }
 
     // Access the element and return it
@@ -2158,7 +2168,8 @@ InterpretResult interpret_array_index_assignment(ASTNode *node,
 
         if (index < 0 || (size_t)index >= current_array->count) {
             free(indices);
-            return raise_error("Array index `%lld` out of bounds.\n", index);
+            return raise_error("Array index `" INT_FORMAT "` out of bounds.\n",
+                               index);
         }
 
         LiteralValue *elem = &current_array->elements[index];
@@ -2181,7 +2192,8 @@ InterpretResult interpret_array_index_assignment(ASTNode *node,
 
     if (final_index < 0 || (size_t)final_index >= current_array->count) {
         free(indices);
-        return raise_error("Array index `%lld` out of bounds.\n", final_index);
+        return raise_error("Array index `" INT_FORMAT "` out of bounds.\n",
+                           final_index);
     }
 
     // Assign new value
@@ -2303,9 +2315,9 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
                       : end_res.value.data.floating_point;
     }
 
-    debug_print_int(
-        "Interpreted slice values: start_val=%Lf, end_val=%Lf, step_val=%Lf\n",
-        start_val, end_val, step_val);
+    debug_print_int("Interpreted slice values: start_val=" FLOAT_FORMAT
+                    ", end_val=" FLOAT_FORMAT ", step_val=" FLOAT_FORMAT "\n",
+                    start_val, end_val, step_val);
 
     // Convert to integer indices
     INT_SIZE start_index = (INT_SIZE)floor(start_val);
@@ -2343,9 +2355,9 @@ InterpretResult interpret_array_slice_access(ASTNode *node, Environment *env) {
         // For negative steps, do not clamp end_index; use as-is
     }
 
-    debug_print_int(
-        "Converted indices: start_index=%lld, end_index=%lld, step=%lld\n",
-        start_index, end_index, step);
+    debug_print_int("Converted indices: start_index=" INT_FORMAT
+                    ", end_index=" INT_FORMAT ", step=" INT_FORMAT "\n",
+                    start_index, end_index, step);
 
     // Calculate the count of elements in the slice
     size_t slice_count = 0;

@@ -265,10 +265,11 @@ void print_ast(ASTNode *node, int depth) {
                     printf("String (%s)\n", node->literal.value.string);
                     break;
                 case LITERAL_FLOAT:
-                    printf("Float (%Lf)\n", node->literal.value.floating_point);
+                    printf("Float (" FLOAT_FORMAT ")\n",
+                           node->literal.value.floating_point);
                     break;
                 case LITERAL_INTEGER:
-                    printf("Integer (%lld)\n",
+                    printf("Integer (" INT_FORMAT ")\n",
                            (long long)node->literal.value.integer);
                     break;
                 case LITERAL_BOOLEAN:

@@ -41,19 +41,21 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 6. [Standard Library](docs/standard_library.md)
 
-7. [Brainf Interpreter](docs/brainf_interpreter.md)
+7. [Creating & Using Plugins](docs/plugins.md)
 
-8. [Debugging](docs/debugging.md)
+8. [Brainf Interpreter](docs/brainf_interpreter.md)
 
-9. [Language Design](docs/language_design.md)
+9. [Debugging](docs/debugging.md)
 
-10. [Lexer](docs/lexer.md)
+10. [Language Design](docs/language_design.md)
 
-11. [Parser](docs/parser.md)
+11. [Lexer](docs/lexer.md)
 
-12. [Interpreter](docs/interpreter.md)
+12. [Parser](docs/parser.md)
 
-13. [Resources &amp; Inspirations](docs/resources.md)
+13. [Interpreter](docs/interpreter.md)
+
+14. [Resources &amp; Inspirations](docs/resources.md)
 
 ---
 

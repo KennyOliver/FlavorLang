@@ -286,7 +286,8 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE random_number =
         min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
 
-    debug_print_int("Random number generated (min: %Lf, max: %Lf): `%Lf`\n",
+    debug_print_int("Random number generated (min: " FLOAT_FORMAT
+                    ", max: " FLOAT_FORMAT "): `" FLOAT_FORMAT "`\n",
                     min, max, random_number);
 
     LiteralValue result;
@@ -302,11 +303,11 @@ void print_literal_value(LiteralValue lv) {
         if ((INT_SIZE)lv.data.floating_point == lv.data.floating_point) {
             printf("%.1Lf", lv.data.floating_point);
         } else {
-            printf("%Lf", lv.data.floating_point);
+            printf(FLOAT_FORMAT, lv.data.floating_point);
         }
         break;
     case TYPE_INTEGER:
-        printf("%lld", lv.data.integer);
+        printf(INT_FORMAT, lv.data.integer);
         break;
     case TYPE_STRING:
         printf("\"%s\"", lv.data.string);
@@ -370,12 +371,12 @@ InterpretResult builtin_output(ASTNode *node, Environment *env) {
                     snprintf(temp_buffer, sizeof(temp_buffer), "%.1Lf",
                              lv.data.floating_point);
                 } else {
-                    snprintf(temp_buffer, sizeof(temp_buffer), "%Lf",
+                    snprintf(temp_buffer, sizeof(temp_buffer), FLOAT_FORMAT,
                              lv.data.floating_point);
                 }
                 break;
             case TYPE_INTEGER:
-                snprintf(temp_buffer, sizeof(temp_buffer), "%lld",
+                snprintf(temp_buffer, sizeof(temp_buffer), INT_FORMAT,
                          lv.data.integer);
                 break;
             case TYPE_STRING: {
@@ -457,14 +458,15 @@ InterpretResult builtin_error(ASTNode *node, Environment *env) {
             break;
         case TYPE_FLOAT: {
             char buffer[64];
-            snprintf(buffer, sizeof(buffer), "%Lf", lv.data.floating_point);
+            snprintf(buffer, sizeof(buffer), FLOAT_FORMAT,
+                     lv.data.floating_point);
             strncat(error_message, buffer,
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
         }
         case TYPE_INTEGER: {
             char buffer[64];
-            snprintf(buffer, sizeof(buffer), "%lld", lv.data.integer);
+            snprintf(buffer, sizeof(buffer), INT_FORMAT, lv.data.integer);
             strncat(error_message, buffer,
                     sizeof(error_message) - strlen(error_message) - 1);
             break;
@@ -552,12 +554,11 @@ InterpretResult builtin_cast(ASTNode *node, Environment *env) {
 
         switch (original.type) {
         case TYPE_INTEGER:
-            snprintf(buffer, sizeof(buffer), INT_FORMAT_SPECIFIER,
-                     original.data.integer);
+            snprintf(buffer, sizeof(buffer), INT_FORMAT, original.data.integer);
             cast_val.data.string = strdup(buffer);
             break;
         case TYPE_FLOAT:
-            snprintf(buffer, sizeof(buffer), FLOAT_FORMAT_SPECIFIER,
+            snprintf(buffer, sizeof(buffer), FLOAT_FORMAT,
                      original.data.floating_point);
             cast_val.data.string = strdup(buffer);
             break;
@@ -982,12 +983,22 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     FlavorLangCFunc func_ptr = NULL;
 
 #if defined(__unix__) || defined(__APPLE__)
-    // Open shared library in lazy mode using resolved/original `lib_path`
-    void *handle = dlopen(lib_path, RTLD_LAZY);
+    char full_lib_path[PATH_MAX];
+    // If lib_path is not absolute, prepend env->script_dir.
+    if (lib_path[0] != '/') {
+        snprintf(full_lib_path, sizeof(full_lib_path), "%s/%s", env->script_dir,
+                 lib_path);
+    } else {
+        strncpy(full_lib_path, lib_path, sizeof(full_lib_path));
+        full_lib_path[sizeof(full_lib_path) - 1] = '\0';
+    }
+
+    // Now open the shared library using the full path.
+    void *handle = dlopen(full_lib_path, RTLD_LAZY);
     if (!handle) {
         return raise_error("dlopen error: %s", dlerror());
     }
-    // Clear any existing errors
+    // Clear any existing errors.
     dlerror();
     func_ptr = (FlavorLangCFunc)dlsym(handle, func_name);
     char *error_msg = dlerror();

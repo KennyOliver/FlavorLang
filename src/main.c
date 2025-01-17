@@ -2,39 +2,56 @@
 
 // Print usage instructions
 void print_usage(const char *prog_name) {
-    fprintf(stderr, "Usage: `%s <file.flv> [--debug | --minify]`\n", prog_name);
+    fprintf(stderr, "Usage:\n");
+    fprintf(stderr, "  %s --about\n", prog_name);
+    fprintf(stderr, "  %s <file.flv> [--debug | --minify]\n", prog_name);
+    fprintf(stderr, "  %s <file.c> --make-plugin\n", prog_name);
     fprintf(stderr, "Note: Combining --debug and --minify is invalid.\n");
 }
 
-// Parse command-line arguments
+// Parse CLI arguments
 void parse_cli_args(int argc, char *argv[], Options *options) {
     if (argc < 2) {
-        fprintf(stderr, "Error: No `.flv` source file provided.\n");
+        fprintf(stderr, "Error: No source file or flag provided.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
     }
 
+    // Initialize flags
     debug_flag = false;
     options->minify = false;
+    options->make_plugin = false;
     options->filename = NULL;
 
+    // Process each argument
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "--debug") == 0) {
-            if (options->minify) {
-                fprintf(stderr,
-                        "Error: Cannot use `--debug` & `--minify` together.\n");
+        if (strcmp(argv[i], "--about") == 0) {
+            print_about();
+            exit(EXIT_SUCCESS);
+        } else if (strcmp(argv[i], "--debug") == 0) {
+            if (options->minify || options->make_plugin) {
+                fprintf(stderr, "Error: --debug cannot be combined with "
+                                "--minify or --make-plugin.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
             debug_flag = true;
         } else if (strcmp(argv[i], "--minify") == 0) {
-            if (debug_flag) {
-                fprintf(stderr,
-                        "Error: Cannot use `--debug` & `--minify` together.\n");
+            if (debug_flag || options->make_plugin) {
+                fprintf(stderr, "Error: --minify cannot be combined with "
+                                "--debug or --make-plugin.\n");
                 print_usage(argv[0]);
                 exit(EXIT_FAILURE);
             }
             options->minify = true;
+        } else if (strcmp(argv[i], "--make-plugin") == 0) {
+            if (debug_flag || options->minify) {
+                fprintf(stderr, "Error: --make-plugin cannot be combined with "
+                                "--debug or --minify.\n");
+                print_usage(argv[0]);
+                exit(EXIT_FAILURE);
+            }
+            options->make_plugin = true;
         } else if (argv[i][0] == '-') {
             fprintf(stderr, "Error: Unknown option '%s'.\n", argv[i]);
             print_usage(argv[0]);
@@ -50,23 +67,9 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
     }
 
     if (options->filename == NULL) {
-        fprintf(stderr, "Error: No `.flv` source file provided.\n");
+        fprintf(stderr, "Error: No source file provided.\n");
         print_usage(argv[0]);
         exit(EXIT_FAILURE);
-    }
-
-    // Validate file extension
-    const char *dot = strrchr(options->filename, '.');
-    if (!dot || strcmp(dot, ".flv") != 0) {
-        fprintf(stderr, "Error: Input file must have a `.flv` extension.\n");
-        exit(EXIT_FAILURE);
-    }
-}
-
-// Print FlavorLang logo
-void print_logo(void) {
-    for (int i = 0; FLAVOR_LOGO[i] != NULL; i++) {
-        printf("%s", FLAVOR_LOGO[i]);
     }
 }
 
@@ -173,6 +176,13 @@ void minify_tokens(Token *tokens, const char *output_file) {
     fclose(output);
 }
 
+// Print FlavorLang logo
+void print_logo(void) {
+    for (int i = 0; FLAVOR_LOGO[i] != NULL; i++) {
+        printf("%s", FLAVOR_LOGO[i]);
+    }
+}
+
 // Print about information
 void print_about(void) {
     printf("\n");
@@ -193,25 +203,74 @@ void print_about(void) {
 }
 
 int main(int argc, char **argv) {
-    // Handle --about flag, parse CLI args, etc.
     Options options;
     parse_cli_args(argc, argv, &options);
 
-    // Convert to absolute path.
+    // Convert input filename to an absolute path
     char absolute_path[PATH_MAX];
     if (!realpath(options.filename, absolute_path)) {
         perror("Error obtaining absolute path");
         exit(EXIT_FAILURE);
     }
 
-    // Read source file using the absolute path.
+    // Check file extension
+    const char *dot = strrchr(absolute_path, '.');
+    if (!dot) {
+        fprintf(stderr, "Error: Input file must have an extension.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (strcmp(dot, ".c") == 0) {
+        // To build a plugin from a .c file the user must include --make-plugin
+        if (!options.make_plugin) {
+            fprintf(stderr, "Error: To build a plugin from a C source file, "
+                            "specify --make-plugin.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Plugin-build mode: compile the C file into a shared object
+        char output_filename[PATH_MAX];
+        strncpy(output_filename, absolute_path, PATH_MAX);
+
+        // Replace `.c` extension with `.so`
+        char *dot_ptr = strrchr(output_filename, '.');
+        if (dot_ptr) {
+            strcpy(dot_ptr, ".so");
+        } else {
+            strncat(output_filename, ".so",
+                    PATH_MAX - strlen(output_filename) - 1);
+        }
+
+        // Construct gcc command
+        char command[1024];
+        snprintf(command, sizeof(command),
+                 "gcc -fPIC -Wall -Wextra -O2 -shared -undefined "
+                 "dynamic_lookup -rdynamic -o %s %s",
+                 output_filename, absolute_path);
+
+        printf("Compiling plugin with command:\n%s\n", command);
+
+        int ret = system(command);
+        if (ret != 0) {
+            fprintf(stderr, "Plugin compilation failed (exit code %d).\n", ret);
+            exit(EXIT_FAILURE);
+        }
+        printf("Plugin compiled successfully: %s\n", output_filename);
+        return EXIT_SUCCESS;
+    } else if (strcmp(dot, ".flv") != 0) {
+        fprintf(stderr, "Error: Input file must have a .flv extension (for "
+                        "scripts) or a .c extension (for plugins).\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read source .flv script
     char *source = read_file(absolute_path);
     if (!source) {
         fprintf(stderr, "Error: Could not read file '%s'\n", absolute_path);
         exit(EXIT_FAILURE);
     }
 
-    // Tokenize
+    // Tokenize .flv script
     Token *tokens = tokenize(source);
     if (!tokens) {
         fprintf(stderr, "Error: Tokenization failed\n");
@@ -219,7 +278,7 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    // Optional: If minify, perform minification.
+    // If --minify, output a minified version & exit
     if (options.minify) {
         char *minified_filename = generate_minified_filename(absolute_path);
         minify_tokens(tokens, minified_filename);
@@ -230,12 +289,13 @@ int main(int argc, char **argv) {
         return EXIT_SUCCESS;
     }
 
+    // --debug
     if (debug_flag) {
         debug_print_tokens(tokens);
         debug_print_basic("Lexing complete!\n\n");
     }
 
-    // Parse
+    // Parse tokens into an AST
     ASTNode *ast = parse_program(tokens);
     if (debug_flag) {
         debug_print_basic("Parsing complete!\n\n");
@@ -243,22 +303,21 @@ int main(int argc, char **argv) {
         debug_print_basic("Finished printing AST\n\n");
     }
 
-    // Create environment and store the script's directory.
+    // Create Environment and store script’s directory
     Environment env;
     init_environment(&env);
 
-    // Extract the directory part from the absolute path.
     char path_copy[PATH_MAX];
     strncpy(path_copy, absolute_path, PATH_MAX);
-    path_copy[PATH_MAX - 1] = '\0'; // ensure null-termination
+    path_copy[PATH_MAX - 1] = '\0';
     char *dir = dirname(path_copy);
-    env.script_dir = strdup(dir); // <-- New field in Environment
+    env.script_dir = strdup(dir);
     if (!env.script_dir) {
         perror("Failed to allocate memory for script_dir");
         exit(EXIT_FAILURE);
     }
 
-    // Interpret
+    // Interpret script
     interpret_program(ast, &env);
     if (debug_flag) {
         debug_print_basic("Execution complete!\n");

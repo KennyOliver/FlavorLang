@@ -5,24 +5,26 @@
 #include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
-#include <libgen.h> // for `dirname()`
+#include <libgen.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 // Structure to hold command-line options
 typedef struct {
     bool minify;
     char *filename;
+    bool make_plugin;
 } Options;
 
-void parse_cli_args(int argc, char *argv[], Options *options);
 void print_usage(const char *prog_name);
-void print_logo(void);
+void parse_cli_args(int argc, char *argv[], Options *options);
 char *generate_minified_filename(const char *input_filename);
 void minify_tokens(Token *tokens, const char *output_file);
+void print_logo(void);
 void print_about(void);
 
 // Logo
