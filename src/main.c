@@ -313,7 +313,7 @@ int main(int argc, char **argv) {
             temp_header_dir, temp_header_dir, temp_header_dir, temp_header_dir,
             temp_header_dir, temp_header_dir, output_filename, absolute_path);
 
-        printf("Compiling plugin with command:\n%s\n", command);
+        debug_print_basic("Compiling plugin with command:\n%s\n", command);
         if (system(command) != 0) {
             fprintf(stderr, "Plugin compilation failed.\n");
             snprintf(command, sizeof(command), "rm -rf %s", temp_header_dir);
@@ -331,7 +331,7 @@ int main(int argc, char **argv) {
     } else if (strcmp(dot, ".flv") == 0) { // .flv script
         snprintf(resolved_plugin_path, sizeof(resolved_plugin_path),
                  "%s/example_plugin.so", script_dir);
-        printf("Resolved plugin path: %s\n", resolved_plugin_path);
+        debug_print_basic("Resolved plugin path: %s\n", resolved_plugin_path);
 
         void *plugin_handle = dlopen(resolved_plugin_path, RTLD_LAZY);
         if (!plugin_handle) {
@@ -341,7 +341,8 @@ int main(int argc, char **argv) {
             exit(EXIT_FAILURE);
         }
 
-        printf("Plugin loaded successfully: %s\n", resolved_plugin_path);
+        debug_print_basic("Plugin loaded successfully: %s\n",
+                          resolved_plugin_path);
 
         // Read .flv script
         char *source = read_file(absolute_path);
