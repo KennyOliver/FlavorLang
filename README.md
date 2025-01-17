@@ -103,7 +103,7 @@ $ flavor --about
 
 ##### 1. Download & Extract the ZIP
 
-[Latest FlavorLang Release](https://github.com/KennyOliver/FlavorLang/releases/latest)
+**[Latest FlavorLang Release](https://github.com/KennyOliver/FlavorLang/releases/latest)**
 
 ##### 2. Run the Install Script
 
