@@ -5,12 +5,14 @@
 #include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include <dlfcn.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 // Structure to hold command-line options

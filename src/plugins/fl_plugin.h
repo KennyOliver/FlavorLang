@@ -5,9 +5,11 @@
 extern "C" {
 #endif
 
-#include "../interpreter/interpreter_types.h" // internal types
-#include "../interpreter/utils.h"
-#include "../shared/ast_types.h" // for ASTNode, etc.
+// Relative paths aren't used since these reference header files
+// from within the tarball that gets generated via the Makefile
+#include "interpreter/interpreter_types.h" // internal types
+#include "interpreter/utils.h"
+#include "shared/ast_types.h" // for ASTNode, etc.
 
 #ifdef __cplusplus
 }
