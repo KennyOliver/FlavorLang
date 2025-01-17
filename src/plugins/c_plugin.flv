@@ -1,5 +1,7 @@
-cimport("test_plugin.so", "printSomething");
-printSomething("Hello from plugin!");
+cimport("example_plugin.so", "printSomething");
+cimport("example_plugin.so", "addNumbers");
 
-cimport("test_plugin.so", "addNumbers");
-addNumbers(5, 6);
+printSomething("Hello, Plugin!");
+
+let result = addNumbers(10, 20);
+serve("Addition Result:", result);

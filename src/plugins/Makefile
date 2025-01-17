@@ -2,8 +2,8 @@
 # Makefile for building a FlavorLang C plugin
 # ==================================================
 
-PLUGIN_SRC = test_plugin.c  # Name of plugin source file
-PLUGIN_SO = test_plugin.so  # Name of output shared object
+PLUGIN_SRC = example_plugin.c  # Name of plugin source file
+PLUGIN_SO = example_plugin.so  # Name of output shared object
 
 # Set compiler here (defaults to gcc)
 CC = gcc
