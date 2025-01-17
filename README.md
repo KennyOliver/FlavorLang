@@ -31,7 +31,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 2. [⚡ Quick Start](#quick-start)
 
-3. [🚀 Execution Flags &amp; Behaviors](#execution-flags--behaviors)
+3. [🚀 Terminal Flags &amp; Behaviors](#terminal-flags--behaviors)
 
 4. [🎨 Install Syntax Highlighter Extension](#extension)
 
@@ -160,7 +160,7 @@ This will print detailed information about the tokenization and parsing process.
 
 ---
 
-## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
+## 🚀 Terminal Flags & Behaviors <a id="terminal-flags--behaviors"></a>
 
 ```bash
 $ flavor recipe.flv            # Run a FlavorLang script
