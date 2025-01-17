@@ -31,6 +31,7 @@ char *generate_minified_filename(const char *input_filename);
 void minify_tokens(Token *tokens, const char *output_file);
 void print_logo(void);
 void print_about(void);
+void open_url(const char *url);
 
 // Logo
 const char *FLAVOR_LOGO[] = {

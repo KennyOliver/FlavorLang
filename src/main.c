@@ -61,6 +61,7 @@ void extract_embedded_headers(const char *output_dir) {
 void print_usage(const char *prog_name) {
     fprintf(stderr, "Usage:\n");
     fprintf(stderr, "  %s --help\n", prog_name);
+    fprintf(stderr, "  %s --github\n", prog_name);
     fprintf(stderr, "  %s --about\n", prog_name);
     fprintf(stderr, "  %s <file.flv> [--debug | --minify]\n", prog_name);
     fprintf(stderr, "  %s <file.c> --make-plugin\n", prog_name);
@@ -85,6 +86,11 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--help") == 0) {
             print_usage(argv[0]);
+            exit(EXIT_SUCCESS);
+        } else if (strcmp(argv[i], "--github") == 0) {
+            const char *github_repo_url =
+                "https://github.com/KennyOliver/FlavorLang";
+            open_url(github_repo_url);
             exit(EXIT_SUCCESS);
         } else if (strcmp(argv[i], "--about") == 0) {
             print_about();
@@ -261,6 +267,24 @@ void print_about(void) {
     printf("| Visit https://github.com/KennyOliver/FlavorLang |\n");
     printf("| for more information.                           |\n");
     printf("%s", border);
+}
+
+// Open a URL in the user's default browser
+void open_url(const char *url) {
+#if defined(_WIN32) // for future Windows support
+    ShellExecute(0, 0, url, 0, 0, SW_SHOW);
+#elif defined(__APPLE__)
+    char command[256];
+    snprintf(command, sizeof(command), "open \"%s\"", url);
+    system(command);
+#elif defined(__linux__)
+    char command[256];
+    snprintf(command, sizeof(command), "xdg-open \"%s\"", url);
+    system(command);
+#else
+    fprintf(stderr, "Error: Unsupported platform. Cannot open URL.\n");
+    exit(EXIT_FAILURE);
+#endif
 }
 
 int main(int argc, char **argv) {
