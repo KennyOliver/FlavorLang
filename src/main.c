@@ -106,7 +106,7 @@ void print_usage(const char *prog_name) {
 }
 
 // Parse CLI arguments
-void parse_cli_args(int argc, char *argv[], Options *options) {
+void handle_cli_args(int argc, char *argv[], Options *options) {
     if (argc < 2) {
         fprintf(stderr, "Error: No source file or flag provided.\n");
         print_usage(argv[0]);
@@ -127,6 +127,7 @@ void parse_cli_args(int argc, char *argv[], Options *options) {
         } else if (strcmp(argv[i], "--github") == 0) {
             const char *github_repo_url =
                 "https://github.com/KennyOliver/FlavorLang";
+            printf("Opening FlavorLang's GitHub repo in your browser...\n");
             open_url(github_repo_url);
             exit(EXIT_SUCCESS);
         } else if (strcmp(argv[i], "--about") == 0) {
@@ -331,7 +332,7 @@ void open_url(const char *url) {
 
 int main(int argc, char **argv) {
     Options options;
-    parse_cli_args(argc, argv, &options);
+    handle_cli_args(argc, argv, &options);
 
     char absolute_path[PATH_MAX];
     if (!realpath(options.filename, absolute_path)) {
