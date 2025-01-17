@@ -11,7 +11,7 @@ Thanks for considering contributing to FlavorLang! All types of contributions ar
   - [2. Get Authorization](#2-get-authorization)
   - [3. Clone the Repository](#3-clone-the-repository)
   - [4. Create a Branch](#4-create-a-branch)
-  - [5. Make Frequent and Descriptive Commits](#5-make-frequent-and-descriptive-commits)
+  - [5. Make Frequent &amp; Descriptive Commits](#5-make-frequent--descriptive-commits)
   - [6. Push Changes](#6-push-changes)
   - [7. Open a Pull Request](#7-open-a-pull-request)
   - [8. Code Review and Testing](#8-code-review-and-testing)
@@ -53,9 +53,13 @@ git checkout -b issue-<N>
 
 Where `N` is the number of the issue you are addressing. E.g., `issue-123`.
 
-### 5. Make Frequent and Descriptive Commits
+### 5. Make Frequent &amp; Descriptive Commits
 
-Commit your changes often to ensure progress is clear. Avoid committing large bulk changes; keep changes atomic and focused. Use descriptive commit messages in the format:
+Commit your changes often to ensure progress is clear. Avoid committing large bulk changes; keep changes atomic &amp; focused.
+
+#### Titles (Present Tense)
+
+Use descriptive commit message titles in the format:
 
 ```
 Action: Title
@@ -66,6 +70,8 @@ Action: Title
 ```
 Fix: Error caused by `function`
 ```
+
+#### Descriptions (Past Tense)
 
 Provide a detailed description for each commit in the commit body. Mention the issue number using `#N` in the commit description. Enclose any mentions of code (e.g., `my_func`, `my_var`) in backticks for clarity.
 Also ensure that any text in the git commit description is done in bullet points.
