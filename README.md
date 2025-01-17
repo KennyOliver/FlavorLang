@@ -27,35 +27,35 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### `README.md`
 
-1. [🌶️ Why FlavorLang?](#why-flavorlang)
+1. **[🌶️ Why FlavorLang?](#why-flavorlang)**
 
-2. [⚡ Quick Start](#quick-start)
+2. **[⚡ Quick Start](#quick-start)**
 
-3. [🚀 Terminal Flags &amp; Behaviors](#terminal-flags--behaviors)
+3. **[🚀 Terminal Flags &amp; Behaviors](#terminal-flags--behaviors)**
 
-4. [🎨 Install Syntax Highlighter Extension](#extension)
+4. **[🎨 Install Syntax Highlighter Extension](#extension)**
 
 ### `docs/`
 
-5. [Tutorial](docs/tutorial.md)
+5. **[📚 Tutorial](docs/tutorial.md)**
 
-6. [Standard Library](docs/standard_library.md)
+6. **[📦 Standard Library](docs/standard_library.md)**
 
-7. [Creating & Using Plugins](docs/plugins.md)
+7. **[🔌 Creating & Using Plugins](docs/plugins.md)**
 
-8. [Brainf Interpreter](docs/brainf_interpreter.md)
+8. **[🧠 Brainf Interpreter](docs/brainf_interpreter.md)**
 
-9. [Debugging](docs/debugging.md)
+9. **[🐞 Debugging](docs/debugging.md)**
 
-10. [Language Design](docs/language_design.md)
+10. **[🛠️ Language Design](docs/language_design.md)**
 
-11. [Lexer](docs/lexer.md)
+11. **[🔤 Lexer](docs/lexer.md)**
 
-12. [Parser](docs/parser.md)
+12. **[📜 Parser](docs/parser.md)**
 
-13. [Interpreter](docs/interpreter.md)
+13. **[🌀 Interpreter](docs/interpreter.md)**
 
-14. [Resources &amp; Inspirations](docs/resources.md)
+14. **[🌟 Resources &amp; Inspirations](docs/resources.md)**
 
 ---
 
