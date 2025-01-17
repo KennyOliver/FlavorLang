@@ -59,13 +59,50 @@ void extract_embedded_headers(const char *output_dir) {
 
 // Print usage instructions
 void print_usage(const char *prog_name) {
-    fprintf(stderr, "Usage:\n");
-    fprintf(stderr, "  %s --help\n", prog_name);
-    fprintf(stderr, "  %s --github\n", prog_name);
-    fprintf(stderr, "  %s --about\n", prog_name);
-    fprintf(stderr, "  %s <file.flv> [--debug | --minify]\n", prog_name);
-    fprintf(stderr, "  %s <file.c> --make-plugin\n", prog_name);
-    fprintf(stderr, "Note: Combining --debug and --minify is invalid.\n");
+    const char *bold = "\033[1m";
+    const char *reset = "\033[0m";
+    const char *border = "+------------------------------------------------+\n";
+
+    printf("%s\n", bold);
+    printf("%s", border);
+    printf("| FlavorLang CLI                                 |\n");
+    printf("%s", border);
+    printf("| Run FlavorLang programs & build plugins! |\n");
+    printf("%s", border);
+    printf("%s\n", reset);
+
+    printf("%sUsage:%s\n", bold, reset);
+    printf("  %s [options] <file>\n", prog_name);
+    printf("  %s --help\n", prog_name);
+    printf("  %s --github\n", prog_name);
+    printf("  %s --about\n", prog_name);
+    printf("\n");
+
+    printf("%sOptions:%s\n", bold, reset);
+    printf("  --help           Show help\n");
+    printf("  --github         Open GitHub repo\n");
+    printf("  --about          Show FlavorLang info\n");
+    printf("\n");
+
+    printf("%sFile Options:%s\n", bold, reset);
+    printf("  <file.flv>       Run a FlavorLang script\n");
+    printf("    --debug        Debug mode (verbose )\n");
+    printf("    --minify       Minify a script (no --debug)\n");
+    printf("\n");
+    printf("  <file.c>         Build a C plugin\n");
+    printf("    --make-plugin  Compile shared library\n");
+    printf("\n");
+
+    printf("%sNotes:%s\n", bold, reset);
+    printf("  - Combining --debug & --minify is invalid\n");
+    printf("  - Use relative or absolute paths for files\n");
+    printf("\n");
+
+    printf("%sExamples:%s\n", bold, reset);
+    printf("  %s my_script.flv --debug       Debug a script\n", prog_name);
+    printf("  %s my_script.flv --minify      Minify the output\n", prog_name);
+    printf("  %s plugin.c --make-plugin      Build a C plugin\n", prog_name);
+    printf("\n");
 }
 
 // Parse CLI arguments
@@ -252,11 +289,15 @@ void print_logo(void) {
 
 // Print about information
 void print_about(void) {
+    const char *bold = "\033[1m";
+    const char *reset = "\033[0m";
+
     printf("\n");
     print_logo();
     printf("\n");
     const char *border =
         "+-------------------------------------------------+\n";
+    printf("%s", bold);
     printf("%s", border);
     printf("| FlavorLang                                      |\n");
     printf("%s", border);
@@ -267,6 +308,7 @@ void print_about(void) {
     printf("| Visit https://github.com/KennyOliver/FlavorLang |\n");
     printf("| for more information.                           |\n");
     printf("%s", border);
+    printf("%s", reset);
 }
 
 // Open a URL in the user's default browser
