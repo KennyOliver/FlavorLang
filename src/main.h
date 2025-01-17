@@ -5,6 +5,7 @@
 #include "interpreter/interpreter.h"
 #include "lexer/lexer.h"
 #include "parser/parser.h"
+#include <dlfcn.h>
 #include <libgen.h>
 #include <limits.h>
 #include <stdbool.h>

@@ -1,5 +1,8 @@
 #include "main.h"
 
+// Global variable to store the resolved plugin path
+char resolved_plugin_path[PATH_MAX] = {0};
+
 // Utility to write embedded header files to disk
 void write_header_to_disk(const char *header_name, const char *content,
                           const char *output_dir) {
@@ -44,10 +47,8 @@ void extract_embedded_headers(const char *output_dir) {
     char command[512];
     snprintf(command, sizeof(command), "tar -xzf %s -C %s", tar_path,
              output_dir);
-    int ret = system(command);
-    if (ret != 0) {
-        fprintf(stderr, "Error extracting embedded headers (exit code %d).\n",
-                ret);
+    if (system(command) != 0) {
+        fprintf(stderr, "Error extracting embedded headers.\n");
         unlink(tar_path);
         exit(EXIT_FAILURE);
     }
@@ -262,112 +263,111 @@ int main(int argc, char **argv) {
     Options options;
     parse_cli_args(argc, argv, &options);
 
-    // Convert input filename to an absolute path
     char absolute_path[PATH_MAX];
     if (!realpath(options.filename, absolute_path)) {
         perror("Error obtaining absolute path");
         exit(EXIT_FAILURE);
     }
 
-    // Check file extension
+    char script_dir[PATH_MAX];
+    strncpy(script_dir, absolute_path, PATH_MAX);
+    char *last_slash = strrchr(script_dir, '/');
+    if (last_slash) {
+        *last_slash = '\0'; // NULL-terminate to get directory
+    } else {
+        fprintf(stderr, "Error: Could not determine script directory.\n");
+        exit(EXIT_FAILURE);
+    }
+
     const char *dot = strrchr(absolute_path, '.');
     if (!dot) {
         fprintf(stderr, "Error: Input file must have an extension.\n");
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(dot, ".c") == 0) {
+    if (strcmp(dot, ".c") == 0) { // C plugin
         if (!options.make_plugin) {
-            fprintf(stderr, "Error: To build a plugin from a C source file, "
-                            "specify --make-plugin.\n");
+            fprintf(stderr,
+                    "Error: To build a plugin, specify --make-plugin.\n");
             exit(EXIT_FAILURE);
         }
 
-        // Extract headers to a temporary directory
         const char *temp_header_dir = "/tmp/flavor_headers";
         extract_embedded_headers(temp_header_dir);
 
-        // Define output filename and replace `.c` with `.so`
         char output_filename[PATH_MAX];
         strncpy(output_filename, absolute_path, PATH_MAX);
         char *dot_ptr = strrchr(output_filename, '.');
         if (dot_ptr) {
             strcpy(dot_ptr, ".so");
-        } else {
-            strncat(output_filename, ".so",
-                    PATH_MAX - strlen(output_filename) - 1);
         }
 
         // Construct the GCC command
         char command[1024];
-        snprintf(command, sizeof(command),
-                 "gcc -fPIC -Wall -Wextra -O2 -shared -undefined "
-                 "dynamic_lookup -rdynamic "
-                 "-I%s -I%s/shared -I%s/interpreter -I%s/lexer -I%s/parser "
-                 "-I%s/debug "
-                 "-o %s %s",
-                 temp_header_dir, temp_header_dir, temp_header_dir,
-                 temp_header_dir, temp_header_dir, temp_header_dir,
-                 output_filename, absolute_path);
+        snprintf(
+            command, sizeof(command),
+            "gcc -fPIC -Wall -Wextra -O2 -shared -undefined dynamic_lookup "
+            "-I%s -I%s/shared -I%s/interpreter -I%s/lexer -I%s/parser "
+            "-I%s/debug "
+            "-o %s %s",
+            temp_header_dir, temp_header_dir, temp_header_dir, temp_header_dir,
+            temp_header_dir, temp_header_dir, output_filename, absolute_path);
 
         printf("Compiling plugin with command:\n%s\n", command);
-
-        int ret = system(command);
-        if (ret != 0) {
-            fprintf(stderr, "Plugin compilation failed (exit code %d).\n", ret);
-
-            // Cleanup extracted headers on failure
+        if (system(command) != 0) {
+            fprintf(stderr, "Plugin compilation failed.\n");
             snprintf(command, sizeof(command), "rm -rf %s", temp_header_dir);
             system(command);
             exit(EXIT_FAILURE);
         }
 
         printf("Plugin compiled successfully: %s\n", output_filename);
-
-        // Cleanup extracted headers
+        snprintf(resolved_plugin_path, sizeof(resolved_plugin_path), "%s",
+                 output_filename);
         snprintf(command, sizeof(command), "rm -rf %s", temp_header_dir);
         system(command);
 
         return EXIT_SUCCESS;
-    } else if (strcmp(dot, ".flv") != 0) {
-        fprintf(stderr, "Error: Input file must have a .flv extension (for "
-                        "scripts) or a .c extension (for plugins).\n");
-        exit(EXIT_FAILURE);
-    }
+    } else if (strcmp(dot, ".flv") == 0) { // .flv script
+        snprintf(resolved_plugin_path, sizeof(resolved_plugin_path),
+                 "%s/example_plugin.so", script_dir);
+        printf("Resolved plugin path: %s\n", resolved_plugin_path);
 
-    // Process .flv script as usual
-    char *source = read_file(absolute_path);
-    if (!source) {
-        fprintf(stderr, "Error: Could not read file '%s'\n", absolute_path);
-        exit(EXIT_FAILURE);
-    }
+        void *plugin_handle = dlopen(resolved_plugin_path, RTLD_LAZY);
+        if (!plugin_handle) {
+            fprintf(stderr, "Error: dlopen error: %s\n", dlerror());
+            fprintf(stderr, "Plugin file could not be found: %s\n",
+                    resolved_plugin_path);
+            exit(EXIT_FAILURE);
+        }
 
-    Token *tokens = tokenize(source);
-    if (!tokens) {
-        fprintf(stderr, "Error: Tokenization failed\n");
-        free(source);
-        exit(EXIT_FAILURE);
-    }
+        printf("Plugin loaded successfully: %s\n", resolved_plugin_path);
 
-    if (options.minify) {
-        char *minified_filename = generate_minified_filename(absolute_path);
-        minify_tokens(tokens, minified_filename);
-        printf("Minified script written to '%s'\n", minified_filename);
-        free(minified_filename);
+        // Read .flv script
+        char *source = read_file(absolute_path);
+        if (!source) {
+            fprintf(stderr, "Error: Could not read file '%s'.\n",
+                    absolute_path);
+            exit(EXIT_FAILURE);
+        }
+
+        // Execute script
+        Token *tokens = tokenize(source);
+        ASTNode *ast = parse_program(tokens);
+        Environment env;
+        init_environment(&env);
+        env.script_dir = strdup(script_dir);
+        interpret_program(ast, &env);
+
+        // Clean up memory
         free(tokens);
         free(source);
+        free_environment(&env);
+        free_ast(ast);
+
         return EXIT_SUCCESS;
     }
 
-    ASTNode *ast = parse_program(tokens);
-    Environment env;
-    init_environment(&env);
-    interpret_program(ast, &env);
-
-    free(tokens);
-    free(source);
-    free_environment(&env);
-    free_ast(ast);
-
-    return EXIT_SUCCESS;
+    fprintf(stderr, "Error: Unknown file extension.\n");
+    return EXIT_FAILURE;
 }
