@@ -163,10 +163,11 @@ This will print detailed information about the tokenization and parsing process.
 ## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
 
 ```bash
-$ flavor recipe.flv           # Default execution
-$ flavor recipe.flv --debug   # Debug mode
-$ flavor recipe.flv --minify  # Minify a script
-$ flavor --about              # About FlavorLang
+$ flavor recipe.flv            # Run a FlavorLang script
+$ flavor recipe.flv --debug    # Debug mode (verbose output)
+$ flavor recipe.flv --minify   # Minify the script (creates recipe.min.flv)
+$ flavor --about               # Show information about FlavorLang
+$ flavor --github              # Open the GitHub repository
 ```
 
 > [!Note]
