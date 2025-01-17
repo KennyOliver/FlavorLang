@@ -10,3 +10,7 @@ obj
 vscode-extension/node_modules/
 vscode-extension/*.vsix
 !vscode-extension/.vscodeignore
+
+# Generated Headers Tarball
+headers.tar.gz
+headers_data.c
