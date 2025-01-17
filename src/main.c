@@ -99,9 +99,9 @@ void print_usage(const char *prog_name) {
     printf("\n");
 
     printf("%sExamples:%s\n", bold, reset);
-    printf("  %s my_script.flv --debug       Debug a script\n", prog_name);
-    printf("  %s my_script.flv --minify      Minify the output\n", prog_name);
-    printf("  %s plugin.c --make-plugin      Build a C plugin\n", prog_name);
+    printf("  %s my_script.flv --debug       Debug script\n", prog_name);
+    printf("  %s my_script.flv --minify      Minify script\n", prog_name);
+    printf("  %s plugin.c --make-plugin      Build C plugin\n", prog_name);
     printf("\n");
 }
 
