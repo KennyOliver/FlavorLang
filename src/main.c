@@ -95,7 +95,7 @@ void print_usage(const char *prog_name) {
 
     printf("%sNotes:%s\n", bold, reset);
     printf("  - Combining --debug & --minify is invalid\n");
-    printf("  - Use relative or absolute paths for files\n");
+    printf("  - Use relative or absolute file paths\n");
     printf("\n");
 
     printf("%sExamples:%s\n", bold, reset);
