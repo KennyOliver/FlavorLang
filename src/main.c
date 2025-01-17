@@ -227,9 +227,11 @@ int main(int argc, char **argv) {
                             "specify --make-plugin.\n");
             exit(EXIT_FAILURE);
         }
+
         // Plugin-build mode: compile the C file into a shared object
         char output_filename[PATH_MAX];
         strncpy(output_filename, absolute_path, PATH_MAX);
+
         // Replace `.c` extension with `.so`
         char *dot_ptr = strrchr(output_filename, '.');
         if (dot_ptr) {
@@ -245,7 +247,9 @@ int main(int argc, char **argv) {
                  "gcc -fPIC -Wall -Wextra -O2 -shared -undefined "
                  "dynamic_lookup -rdynamic -o %s %s",
                  output_filename, absolute_path);
+
         printf("Compiling plugin with command:\n%s\n", command);
+
         int ret = system(command);
         if (ret != 0) {
             fprintf(stderr, "Plugin compilation failed (exit code %d).\n", ret);
