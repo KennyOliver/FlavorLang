@@ -99,6 +99,10 @@ $ bash install.sh
 $ flavor --about
 ```
 
+> ![Note]
+>
+> If this step fails (expected on macOS due to security) go back to step 3.
+
 #### For Ubuntu Users
 
 ##### 1. Download & Extract the ZIP
