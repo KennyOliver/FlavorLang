@@ -1,2 +1,5 @@
 cimport("test_plugin.so", "printSomething");
 printSomething("Hello from plugin!");
+
+cimport("test_plugin.so", "addNumbers");
+addNumbers(5, 6);
