@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 InterpretResult printSomething(struct ASTNode *node, Environment *env) {
+    (void)env;
     // Get the arguments list from the function call AST node
     ASTNode *args = node->function_call.arguments;
     char *msg = "No message";
