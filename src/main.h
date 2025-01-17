@@ -22,12 +22,16 @@ typedef struct {
     bool make_plugin;
 } Options;
 
+void write_header_to_disk(const char *header_name, const char *content,
+                          const char *output_dir);
+void extract_embedded_headers(const char *output_dir);
 void print_usage(const char *prog_name);
-void parse_cli_args(int argc, char *argv[], Options *options);
+void handle_cli_args(int argc, char *argv[], Options *options);
 char *generate_minified_filename(const char *input_filename);
 void minify_tokens(Token *tokens, const char *output_file);
 void print_logo(void);
 void print_about(void);
+void open_url(const char *url);
 
 // Logo
 const char *FLAVOR_LOGO[] = {

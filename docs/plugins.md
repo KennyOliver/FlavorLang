@@ -165,7 +165,11 @@ Execute the script using the `flavor` command:
 
 ```bash
 $ flavor test_plugin.flv
+```
 
+Output:
+
+```
 Plugin says: Hello, Plugin!
 Adding 10 + 20 = 30
 Addition Result: 30

@@ -27,35 +27,35 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ### `README.md`
 
-1. [🌶️ Why FlavorLang?](#why-flavorlang)
+1. **[🌶️ Why FlavorLang?](#why-flavorlang)**
 
-2. [⚡ Quick Start](#quick-start)
+2. **[⚡ Quick Start](#quick-start)**
 
-3. [🚀 Execution Flags &amp; Behaviors](#execution-flags--behaviors)
+3. **[🚀 Terminal Flags &amp; Behaviors](#terminal-flags--behaviors)**
 
-4. [🎨 Install Syntax Highlighter Extension](#extension)
+4. **[🎨 Install Syntax Highlighter Extension](#extension)**
 
 ### `docs/`
 
-5. [Tutorial](docs/tutorial.md)
+5. **[📚 Tutorial](docs/tutorial.md)**
 
-6. [Standard Library](docs/standard_library.md)
+6. **[📦 Standard Library](docs/standard_library.md)**
 
-7. [Creating & Using Plugins](docs/plugins.md)
+7. **[🔌 Creating & Using Plugins](docs/plugins.md)**
 
-8. [Brainf Interpreter](docs/brainf_interpreter.md)
+8. **[🧠 Brainf Interpreter](docs/brainf_interpreter.md)**
 
-9. [Debugging](docs/debugging.md)
+9. **[🐞 Debugging](docs/debugging.md)**
 
-10. [Language Design](docs/language_design.md)
+10. **[🛠️ Language Design](docs/language_design.md)**
 
-11. [Lexer](docs/lexer.md)
+11. **[🔤 Lexer](docs/lexer.md)**
 
-12. [Parser](docs/parser.md)
+12. **[📜 Parser](docs/parser.md)**
 
-13. [Interpreter](docs/interpreter.md)
+13. **[🌀 Interpreter](docs/interpreter.md)**
 
-14. [Resources &amp; Inspirations](docs/resources.md)
+14. **[🌟 Resources &amp; Inspirations](docs/resources.md)**
 
 ---
 
@@ -78,7 +78,7 @@ FlavorLang blends coding with culinary creativity! Write programs like recipes &
 
 ##### 1. Download & Extract the ZIP
 
-[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+**[Latest FlavorLang Release](https://github.com/KennyOliver/FlavorLang/releases/latest)**
 
 ##### 2. Run the Install Script
 
@@ -99,11 +99,15 @@ $ bash install.sh
 $ flavor --about
 ```
 
+> ![Note]
+>
+> If this step fails (expected on macOS due to security) go back to step 3.
+
 #### For Ubuntu Users
 
 ##### 1. Download & Extract the ZIP
 
-[FlavorLang Releases](https://github.com/KennyOliver/FlavorLang/releases)
+**[Latest FlavorLang Release](https://github.com/KennyOliver/FlavorLang/releases/latest)**
 
 ##### 2. Run the Install Script
 
@@ -160,13 +164,14 @@ This will print detailed information about the tokenization and parsing process.
 
 ---
 
-## 🚀 Execution Flags & Behaviors <a id="execution-flags--behaviors"></a>
+## 🚀 Terminal Flags & Behaviors <a id="terminal-flags--behaviors"></a>
 
 ```bash
-$ flavor recipe.flv           # Default execution
-$ flavor recipe.flv --debug   # Debug mode
-$ flavor recipe.flv --minify  # Minify a script
-$ flavor --about              # About FlavorLang
+$ flavor recipe.flv            # Run a FlavorLang script
+$ flavor recipe.flv --debug    # Debug mode (verbose output)
+$ flavor recipe.flv --minify   # Minify the script (creates recipe.min.flv)
+$ flavor --about               # Show information about FlavorLang
+$ flavor --github              # Open the GitHub repository
 ```
 
 > [!Note]
