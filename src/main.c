@@ -400,21 +400,6 @@ int main(int argc, char **argv) {
 
         return EXIT_SUCCESS;
     } else if (strcmp(dot, ".flv") == 0) { // .flv script
-        snprintf(resolved_plugin_path, sizeof(resolved_plugin_path),
-                 "%s/example_plugin.so", script_dir);
-        debug_print_basic("Resolved plugin path: %s\n", resolved_plugin_path);
-
-        void *plugin_handle = dlopen(resolved_plugin_path, RTLD_LAZY);
-        if (!plugin_handle) {
-            fprintf(stderr, "Error: dlopen error: %s\n", dlerror());
-            fprintf(stderr, "Plugin file could not be found: %s\n",
-                    resolved_plugin_path);
-            exit(EXIT_FAILURE);
-        }
-
-        debug_print_basic("Plugin loaded successfully: %s\n",
-                          resolved_plugin_path);
-
         // Read .flv script
         char *source = read_file(absolute_path);
         if (!source) {
