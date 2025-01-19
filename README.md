@@ -99,7 +99,7 @@ $ bash install.sh
 $ flavor --about
 ```
 
-> ![Note]
+> [!Note]
 >
 > If this step fails (expected on macOS due to security) go back to step 3.
 
@@ -174,9 +174,17 @@ $ flavor --about               # Show information about FlavorLang
 $ flavor --github              # Open the GitHub repository
 ```
 
+| Command                      | Description                      |
+| ---------------------------- | -------------------------------- |
+| `flavor recipe.flv`          | Run a FlavorLang script          |
+| `flavor recipe.flv --debug`  | Debug mode (verbose output)      |
+| `flavor recipe.flv --minify` | Minify script (`recipe.min.flv`) |
+| `flavor --about`             | Show info about FlavorLang       |
+| `flavor --github`            | Open GitHub repository           |
+
 > [!Note]
 >
-> The `--debug` flag is really useful for understanding how FlavorLang is executing (tokenizing, parsing, and interpreting) your file.
+> The `--debug` flag is especially useful for understanding how FlavorLang processes your file, including tokenizing, parsing, and interpreting.
 
 ---
 
