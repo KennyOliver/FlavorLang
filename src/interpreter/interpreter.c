@@ -1153,10 +1153,56 @@ InterpretResult interpret_while_loop(ASTNode *node, Environment *env) {
 InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     if (node->type != AST_FOR_LOOP) {
         return raise_error(
-            "`interpret_for_loop` called with non-`for`-loop `ASTNode`\n");
+            "`interpret_for_loop` called with non-`for`-loop ASTNode\n");
     }
 
-    // Extract loop components
+    // If it's an iterable loop: "for item in collection { ... }"
+    if (node->for_loop.is_iterable_loop) {
+        InterpretResult coll_res =
+            interpret_node(node->for_loop.collection_expr, env);
+        if (coll_res.is_error) {
+            return coll_res;
+        }
+        if (coll_res.value.type != TYPE_ARRAY) {
+            return raise_error("For loop iterable must be an array.\n");
+        }
+        ArrayValue *array = &coll_res.value.data.array;
+
+        char *loop_var = strdup(node->for_loop.loop_variable);
+        if (!loop_var) {
+            return raise_error("Memory allocation failed for loop variable\n");
+        }
+        InterpretResult var_res = allocate_variable(env, loop_var);
+        if (var_res.is_error) {
+            free(loop_var);
+            return var_res;
+        }
+        // Iterate over each element in the array
+        for (size_t i = 0; i < array->count; i++) {
+            Variable *var = get_variable(env, loop_var);
+            if (!var) {
+                free(loop_var);
+                return raise_error(
+                    "Loop variable `%s` not found in environment\n", loop_var);
+            }
+            var->value = array->elements[i];
+            // Execute loop body
+            ASTNode *current_stmt = node->for_loop.body;
+            while (current_stmt) {
+                InterpretResult body_res = interpret_node(current_stmt, env);
+                if (body_res.did_return || body_res.did_break) {
+                    free(loop_var);
+                    return body_res;
+                }
+                current_stmt = current_stmt->next;
+            }
+        }
+        free(loop_var);
+        return make_result(create_default_value(), false, false);
+    }
+
+    // Otherwise, handle range-based loop: "for i in start_expr ..[=] end_expr
+    // [by step] { ... }"
     char *loop_var = strdup(node->for_loop.loop_variable);
     if (!loop_var) {
         return raise_error("Memory allocation failed for loop variable\n");
@@ -1164,23 +1210,20 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
     ASTNode *start_expr = node->for_loop.start_expr;
     ASTNode *end_expr = node->for_loop.end_expr;
     bool inclusive = node->for_loop.inclusive;
-    ASTNode *step_expr = node->for_loop.step_expr; // may be `NULL`
+    ASTNode *step_expr = node->for_loop.step_expr; // may be NULL
     ASTNode *body = node->for_loop.body;
 
-    // Evaluate start and end expressions
     InterpretResult start_res = interpret_node(start_expr, env);
     if (start_res.is_error) {
         free(loop_var);
         return start_res;
     }
-
     InterpretResult end_res = interpret_node(end_expr, env);
     if (end_res.is_error) {
         free(loop_var);
         return end_res;
     }
 
-    // Determine start & end as FLOAT_SIZEs for flexibility
     FLOAT_SIZE start_val, end_val;
     if (start_res.value.type == TYPE_FLOAT) {
         start_val = start_res.value.data.floating_point;
@@ -1190,7 +1233,6 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
         free(loop_var);
         return raise_error("Start expression in `for` loop must be numeric\n");
     }
-
     if (end_res.value.type == TYPE_FLOAT) {
         end_val = end_res.value.data.floating_point;
     } else if (end_res.value.type == TYPE_INTEGER) {
@@ -1200,15 +1242,13 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
         return raise_error("End expression in `for` loop must be numeric\n");
     }
 
-    // Evaluate step expression if present
-    FLOAT_SIZE step = 1.0; // default
+    FLOAT_SIZE step = 1.0;
     if (step_expr) {
         InterpretResult step_res = interpret_node(step_expr, env);
         if (step_res.is_error) {
             free(loop_var);
             return step_res;
         }
-
         if (step_res.value.type == TYPE_FLOAT) {
             step = step_res.value.data.floating_point;
         } else if (step_res.value.type == TYPE_INTEGER) {
@@ -1219,35 +1259,24 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
                 "Step expression in `for` loop must be numeric\n");
         }
     } else {
-        // Determine implied step based on range direction
-        if (start_val < end_val) {
-            step = 1.0;
-        } else {
-            step = -1.0;
-        }
+        step = (start_val < end_val) ? 1.0 : -1.0;
     }
-
-    // Validate step to prevent infinite loops
     if (step < 1e-9 && step > -1e-9) {
         free(loop_var);
         return raise_error("Step value cannot be zero in `for` loop\n");
     }
 
-    // Assign or update loop variable in the environment
     InterpretResult var_res = allocate_variable(env, loop_var);
     if (var_res.is_error) {
         free(loop_var);
-        return var_res; // Propagate the error
+        return var_res;
     }
-
-    // Initialize the loop variable with the start value
     Variable *var = get_variable(env, loop_var);
     if (!var) {
         free(loop_var);
-        return raise_error("Failed to allocate and retrieve variable `%s`.\n",
+        return raise_error("Failed to retrieve loop variable `%s`.\n",
                            loop_var);
     }
-
     if (start_res.value.type == TYPE_FLOAT) {
         var->value.type = TYPE_FLOAT;
         var->value.data.floating_point = start_val;
@@ -1255,19 +1284,14 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
         var->value.type = TYPE_INTEGER;
         var->value.data.integer = (INT_SIZE)start_val;
     }
-
-    // Determine loop direction
     bool is_ascending = step > 0.0;
-
     while (1) {
-        // Re-fetch the variable pointer at the start of each iteration
         var = get_variable(env, loop_var);
         if (!var) {
             free(loop_var);
             return raise_error("Loop variable `%s` not found in environment\n",
                                loop_var);
         }
-
         FLOAT_SIZE current_val;
         if (var->value.type == TYPE_FLOAT) {
             current_val = var->value.data.floating_point;
@@ -1278,8 +1302,6 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
             return raise_error("Loop variable `%s` must be numeric\n",
                                loop_var);
         }
-
-        // Check if the loop should continue
         bool condition_true = false;
         if (is_ascending) {
             condition_true =
@@ -1288,43 +1310,31 @@ InterpretResult interpret_for_loop(ASTNode *node, Environment *env) {
             condition_true =
                 inclusive ? (current_val >= end_val) : (current_val > end_val);
         }
-
         if (!condition_true) {
             break;
         }
-
-        // Interpret the loop body
-        ASTNode *current = body;
-        while (current) {
-            InterpretResult body_res = interpret_node(current, env);
+        ASTNode *current_stmt = body;
+        while (current_stmt) {
+            InterpretResult body_res = interpret_node(current_stmt, env);
             if (body_res.did_return || body_res.did_break) {
                 free(loop_var);
                 return body_res;
             }
-            current = current->next;
+            current_stmt = current_stmt->next;
         }
-
-        // Re-fetch the variable pointer after interpreting the loop body
         var = get_variable(env, loop_var);
         if (!var) {
             free(loop_var);
-            return raise_error(
-                "Loop variable `%s` not found in environment after loop body\n",
-                loop_var);
+            return raise_error("Loop variable `%s` not found after loop body\n",
+                               loop_var);
         }
-
-        // Update loop variable
         if (var->value.type == TYPE_FLOAT) {
             var->value.data.floating_point += step;
         } else if (var->value.type == TYPE_INTEGER) {
             var->value.data.integer += (INT_SIZE)step;
         }
     }
-
-    // Clean up
     free(loop_var);
-
-    // Loops do not return values
     return make_result(create_default_value(), false, false);
 }
 
