@@ -18,7 +18,7 @@ if [[ "$USER_SHELL" == "bash" ]]; then
     COMPLETION_FILE="$COMPLETION_DIR/flavor_completion.bash"
 
     sudo mkdir -p "$COMPLETION_DIR"
-    sudo cp autocomplete/bash_completion.bash "$COMPLETION_FILE"
+    sudo cp autocomplete/bash_completion.sh "$COMPLETION_FILE"
 
     echo "Bash completion script installed to $COMPLETION_FILE."
     echo "The script will automatically load when you start a new shell."
@@ -29,7 +29,7 @@ elif [[ "$USER_SHELL" == "zsh" ]]; then
     COMPLETION_FILE="$COMPLETION_DIR/_flavor"
 
     mkdir -p "$COMPLETION_DIR"
-    cp autocomplete/zsh_completion.zsh "$COMPLETION_FILE"
+    cp autocomplete/zsh_completion.sh "$COMPLETION_FILE"
 
     echo "Zsh completion script installed to $COMPLETION_FILE."
     echo "Add the following line to your ~/.zshrc if not already present:"
