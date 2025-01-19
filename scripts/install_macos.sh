@@ -10,7 +10,6 @@ sudo mv flavor /usr/local/bin/
 
 # Install autocompletion scripts
 USER_SHELL=$(basename "$SHELL")
-AUTO_DIR="/path/to/project/autocomplete"
 
 echo "Installing autocomplete script for $USER_SHELL..."
 
@@ -19,7 +18,7 @@ if [[ "$USER_SHELL" == "bash" ]]; then
     COMPLETION_FILE="$COMPLETION_DIR/flavor_completion.bash"
 
     mkdir -p "$COMPLETION_DIR"
-    cp "$AUTO_DIR/bash_completion.bash" "$COMPLETION_FILE"
+    cp autocomplete/bash_completion.bash "$COMPLETION_FILE"
 
     echo "Bash completion script installed to $COMPLETION_FILE."
     echo "Run 'source ~/.bashrc' or restart your shell to enable it."
@@ -29,7 +28,7 @@ elif [[ "$USER_SHELL" == "zsh" ]]; then
     COMPLETION_FILE="$COMPLETION_DIR/_flavor"
 
     mkdir -p "$COMPLETION_DIR"
-    cp "$AUTO_DIR/zsh_completion.zsh" "$COMPLETION_FILE"
+    cp autocomplete/zsh_completion.zsh "$COMPLETION_FILE"
 
     echo "Zsh completion script installed to $COMPLETION_FILE."
     echo "Add the following line to your ~/.zshrc if not already present:"
