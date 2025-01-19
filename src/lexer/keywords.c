@@ -22,7 +22,6 @@ const char *KEYWORDS[] = {
     "plate",   // write file
     "garnish", // append file
     "taste",   // read file
-    "recipe",  // import
     "True",    // Boolean True
     "False",   // Boolean False
     "import",  // Import `.flv` script
