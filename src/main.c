@@ -67,7 +67,7 @@ void print_usage(const char *prog_name) {
     printf("%s", border);
     printf("| FlavorLang CLI                                 |\n");
     printf("%s", border);
-    printf("| Run FlavorLang programs & build plugins! |\n");
+    printf("| Run FlavorLang programs & build plugins!       |\n");
     printf("%s", border);
     printf("%s\n", reset);
 
