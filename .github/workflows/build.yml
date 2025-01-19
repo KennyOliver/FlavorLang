@@ -17,12 +17,15 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v4
 
+      # Set up Node.js for VS Code extension build
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # Build the VS Code extension
       - name: Build VS Code extension
         working-directory: vscode-extension
         run: |
@@ -30,21 +33,25 @@ jobs:
           npm audit fix --force || true
           npx @vscode/vsce package
 
+      # Build the FlavorLang interpreter
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
 
+      # Prepare release package
       - name: Prepare release package
         run: |
           # Create staging directory
-          mkdir -p staging
+          mkdir -p staging/autocomplete
 
-          # Copy and rename files
+          # Copy VS Code extension
           cp vscode-extension/*.vsix staging/flavorlang-extension-${{ matrix.os }}.vsix
+
+          # Copy FlavorLang binary
           cp src/flavor staging/flavor
           chmod +x staging/flavor
 
-          # Copy appropriate install script
+          # Copy install script based on OS
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             cp scripts/install_macos.sh staging/install.sh
           else
@@ -52,10 +59,14 @@ jobs:
           fi
           chmod +x staging/install.sh
 
-          # Create ZIP
+          # Copy autocomplete scripts
+          cp scripts/autocomplete/* staging/autocomplete/
+
+          # Create ZIP package
           cd staging
           zip -r ../flavorlang-${{ matrix.os }}.zip ./*
 
+      # Upload artifact
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
@@ -68,12 +79,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Download build artifacts
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
-      - name: Upload to release
+      # Upload artifacts to the release
+      - name: Upload to GitHub Release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v1
