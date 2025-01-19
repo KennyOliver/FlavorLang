@@ -1,0 +1,9 @@
+let tally = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
+
+for i in 1..=20 {
+    let x = random(0, 10);
+    let random_num = int(x);
+    tally[random_num] = tally[random_num] + 1;
+}
+
+serve(tally);
