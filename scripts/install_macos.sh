@@ -12,4 +12,9 @@ sudo mv flavor /usr/local/bin/
 
 # Show how to run the executable
 echo "To run the FlavorLang interpreter:"
-echo "flavor --about"
+echo "  flavor --about"
+echo ""
+echo "Note: On macOS, the executable may be blocked by Gatekeeper."
+echo "To allow execution, go to System Settings > Privacy & Security,"
+echo "locate the blocked FlavorLang binary, and click 'Allow Anyway.'"
+echo "Afterward, run the command again, and select 'Open Anyway' on the security prompt."
