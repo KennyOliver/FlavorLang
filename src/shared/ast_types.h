@@ -93,10 +93,17 @@ typedef struct {
 // AST For Loop Node
 typedef struct {
     char *loop_variable;
+
+    // Range-based
     struct ASTNode *start_expr;
     struct ASTNode *end_expr;
     bool inclusive;
     struct ASTNode *step_expr;
+
+    // Iterables
+    bool is_iterable_loop;           // true if `for X in Y`
+    struct ASTNode *collection_expr; // e.g. `recipes` or any expression
+
     struct ASTNode *body;
 } ASTForLoop;
 
