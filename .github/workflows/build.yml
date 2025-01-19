@@ -17,12 +17,15 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
+      # Checkout the repository
       - uses: actions/checkout@v4
 
+      # Set up Node.js for VS Code extension build
       - uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # Build the VS Code extension
       - name: Build VS Code extension
         working-directory: vscode-extension
         run: |
@@ -30,10 +33,12 @@ jobs:
           npm audit fix --force || true
           npx @vscode/vsce package
 
+      # Build the FlavorLang interpreter
       - name: Build FlavorLang interpreter
         working-directory: src
         run: make
 
+      # Prepare release package
       - name: Prepare release package
         run: |
           # Create staging directory
@@ -56,6 +61,7 @@ jobs:
           cd staging
           zip -r ../flavorlang-${{ matrix.os }}.zip ./*
 
+      # Upload artifact
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
@@ -68,12 +74,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Download build artifacts
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: ./artifacts
 
       - name: Upload to release
+      # Upload artifacts to the release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v1
