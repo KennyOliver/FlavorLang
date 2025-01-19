@@ -58,6 +58,12 @@ elif [[ "$USER_SHELL" == "zsh" ]]; then
         echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Added 'fpath' configuration to ~/.zshrc."
     fi
 
+    # Ensure autoload and compinit are configured
+    if ! grep -q "autoload -Uz compinit && compinit" "$HOME/.zshrc"; then
+        echo "autoload -Uz compinit && compinit" >> "$HOME/.zshrc"
+        echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Added 'compinit' initialization to ~/.zshrc."
+    fi
+
     echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Zsh completion script installed to:"
     echo "   $COMPLETION_FILE"
     echo ""
