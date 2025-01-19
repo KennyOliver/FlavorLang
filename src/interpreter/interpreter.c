@@ -395,16 +395,26 @@ InterpretResult handle_string_concatenation(InterpretResult left,
     char num_str1[50] = {0};
     char num_str2[50] = {0};
 
+    // If left operand is a float or an integer, convert it
     if (left_val.type == TYPE_FLOAT) {
         snprintf(num_str1, sizeof(num_str1), FLOAT_FORMAT,
                  left_val.data.floating_point);
+    } else if (left_val.type == TYPE_INTEGER) {
+        snprintf(num_str1, sizeof(num_str1), INT_FORMAT, left_val.data.integer);
     }
+
+    // If right operand is a float or an integer, convert it
     if (right_val.type == TYPE_FLOAT) {
         snprintf(num_str2, sizeof(num_str2), FLOAT_FORMAT,
                  right_val.data.floating_point);
+    } else if (right_val.type == TYPE_INTEGER) {
+        snprintf(num_str2, sizeof(num_str2), INT_FORMAT,
+                 right_val.data.integer);
     }
 
-    // Allocate memory for the concatenated string
+    // Calculate the total size of the new string:
+    // For operands that are already strings, use them directly.
+    // For numbers, we now have num_str1 or num_str2.
     size_t new_size =
         strlen(num_str1) + strlen(num_str2) +
         strlen(left_val.type == TYPE_STRING ? left_val.data.string : "") +
@@ -416,12 +426,19 @@ InterpretResult handle_string_concatenation(InterpretResult left,
             "Memory allocation failed for string concatenation.\n");
     }
 
-    strcpy(new_string,
-           left_val.type == TYPE_STRING ? left_val.data.string : num_str1);
-    strcat(new_string,
-           right_val.type == TYPE_STRING ? right_val.data.string : num_str2);
-    lv_result.data.string = new_string;
+    // Start by copying the left part:
+    if (left_val.type == TYPE_STRING)
+        strcpy(new_string, left_val.data.string);
+    else
+        strcpy(new_string, num_str1);
 
+    // Then concatenate the right part:
+    if (right_val.type == TYPE_STRING)
+        strcat(new_string, right_val.data.string);
+    else
+        strcat(new_string, num_str2);
+
+    lv_result.data.string = new_string;
     return make_result(lv_result, false, false);
 }
 

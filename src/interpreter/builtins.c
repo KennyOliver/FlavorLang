@@ -271,7 +271,7 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     // Seed the random number generator once
     static bool seeded = false;
     if (!seeded) {
-        srand((unsigned int)time(NULL));
+        srand((unsigned int)(time(NULL) ^ getpid()));
         seeded = true;
     }
 
