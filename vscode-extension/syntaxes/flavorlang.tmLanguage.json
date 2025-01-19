@@ -5,6 +5,7 @@
     { "include": "#comments" },
     { "include": "#strings" },
     { "include": "#keywords" },
+    { "include": "#builtin-functions" },
     { "include": "#functions" },
     { "include": "#numbers" },
     { "include": "#operators" },
@@ -40,11 +41,19 @@
       "patterns": [
         {
           "name": "keyword.control.flavorlang",
-          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|rescue|finish|break|continue|import|export|cimport|floor|ceil|round|abs)\\b"
+          "match": "\\b(let|const|if|elif|else|for|in|while|create|burn|deliver|check|is|rescue|try|finish|break|continue)\\b"
         },
         {
           "name": "keyword.other.flavorlang",
           "match": "\\b(True|False|None)\\b"
+        }
+      ]
+    },
+    "builtin-functions": {
+      "patterns": [
+        {
+          "name": "support.function.builtin.flavorlang",
+          "match": "\\b(?:sample|serve|burn|random|floor|ceil|round|abs|get_time|taste_file|plate_file|garnish_file|length|sleep|cimport)\\b(?=\\()"
         }
       ]
     },
@@ -56,7 +65,7 @@
         },
         {
           "name": "entity.name.function.call.flavorlang",
-          "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b(?=\\()"
+          "match": "\\b(?!sample\\b|serve\\b|burn\\b|random\\b|floor\\b|ceil\\b|round\\b|abs\\b|get_time\\b|taste_file\\b|plate_file\\b|garnish_file\\b|length\\b|sleep\\b|cimport\\b)[a-zA-Z_][a-zA-Z0-9_]*\\b(?=\\()"
         }
       ]
     },

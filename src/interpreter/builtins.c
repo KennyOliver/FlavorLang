@@ -1,19 +1,4 @@
 #include "builtins.h"
-#include "../interpreter/interpreter.h"
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-#ifdef __unix__
-#include <dlfcn.h>
-#endif
-#include <dlfcn.h>
 
 // Helper function to check if a LiteralType matches an ArgType
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
@@ -230,8 +215,8 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     FLOAT_SIZE min = 0.0L; // default min
     FLOAT_SIZE max = 1.0L; // default max
 
+    // Determine how many arguments were passed
     ASTNode *arg_node = node->function_call.arguments;
-
     size_t num_args = 0;
     ASTNode *temp = arg_node;
     while (temp) {
@@ -243,48 +228,46 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
                            "(integer or float), but %zu provided.\n",
                            num_args);
     }
-
     if (num_args == 1) {
-        // One argument provided: set max, min remains 0.0
         ArgumentSpec specs[1];
         specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &max;
-
         InterpretResult args_res = interpret_arguments(arg_node, env, 1, specs);
         if (args_res.is_error) {
             return args_res;
         }
     } else if (num_args == 2) {
-        // Two arguments provided: set min and max
         ArgumentSpec specs[2];
         specs[0].type = ARG_TYPE_NUMERIC;
         specs[0].out_ptr = &min;
         specs[1].type = ARG_TYPE_NUMERIC;
         specs[1].out_ptr = &max;
-
         InterpretResult args_res = interpret_arguments(arg_node, env, 2, specs);
         if (args_res.is_error) {
             return args_res;
         }
     }
 
-    // Seed the random number generator once
-    static bool seeded = false;
-    if (!seeded) {
-        srand((unsigned int)(time(NULL) ^ getpid()));
-        seeded = true;
-    }
-
-    // Swap min & max if min > max to ensure correct range
     if (min > max) {
         FLOAT_SIZE temp_val = min;
         min = max;
         max = temp_val;
     }
 
-    // Generate random number
-    FLOAT_SIZE random_number =
-        min + ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX) * (max - min);
+    static bool seeded = false;
+    if (!seeded) {
+#ifdef _WIN32
+        srand((unsigned int)(time(NULL) ^ GetTickCount()));
+#else
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+        srand((unsigned int)(tv.tv_sec ^ tv.tv_usec ^ getpid()));
+#endif
+        seeded = true;
+    }
+
+    FLOAT_SIZE random_fraction = ((FLOAT_SIZE)rand() / (FLOAT_SIZE)RAND_MAX);
+    FLOAT_SIZE random_number = min + random_fraction * (max - min);
 
     debug_print_int("Random number generated (min: " FLOAT_FORMAT
                     ", max: " FLOAT_FORMAT "): `" FLOAT_FORMAT "`\n",
@@ -293,7 +276,6 @@ InterpretResult builtin_random(ASTNode *node, Environment *env) {
     LiteralValue result;
     result.type = TYPE_FLOAT;
     result.data.floating_point = random_number;
-
     return make_result(result, false, false);
 }
 
