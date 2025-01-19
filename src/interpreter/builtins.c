@@ -1099,19 +1099,33 @@ InterpretResult builtin_round(ASTNode *node, Environment *env) {
 }
 
 InterpretResult builtin_abs(ASTNode *node, Environment *env) {
-    FLOAT_SIZE value;
-    ArgumentSpec specs[1];
-    specs[0].type = ARG_TYPE_NUMERIC;
-    specs[0].out_ptr = &value;
-
-    InterpretResult args_res =
-        interpret_arguments(node->function_call.arguments, env, 1, specs);
-    if (args_res.is_error) {
-        return args_res;
+    // Get the first argument node
+    ASTNode *arg = node->function_call.arguments;
+    if (!arg) {
+        return raise_error("abs() requires one numeric argument.\n");
     }
 
+    // Interpret the argument without forcing a conversion
+    InterpretResult arg_res = interpret_node(arg, env);
+    if (arg_res.is_error) {
+        return arg_res;
+    }
+
+    LiteralValue original = arg_res.value;
     LiteralValue result;
-    result.type = TYPE_FLOAT;
-    result.data.floating_point = fabs(value);
+
+    // Check the type of the argument and compute absolute accordingly
+    if (original.type == TYPE_INTEGER) {
+        result.type = TYPE_INTEGER;
+        result.data.integer = (original.data.integer < 0)
+                                  ? -original.data.integer
+                                  : original.data.integer;
+    } else if (original.type == TYPE_FLOAT) {
+        result.type = TYPE_FLOAT;
+        result.data.floating_point = fabs(original.data.floating_point);
+    } else {
+        return raise_error("abs() requires a numeric argument.\n");
+    }
+
     return make_result(result, false, false);
 }
