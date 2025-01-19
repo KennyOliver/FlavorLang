@@ -1042,3 +1042,76 @@ InterpretResult builtin_cimport(ASTNode *node, Environment *env) {
     ret.data.integer = 0;
     return make_result(ret, false, false);
 }
+
+InterpretResult builtin_floor(ASTNode *node, Environment *env) {
+    // Expect exactly one numeric argument
+    FLOAT_SIZE value;
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_NUMERIC;
+    specs[0].out_ptr = &value;
+
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        return args_res;
+    }
+
+    LiteralValue result;
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = floor(value);
+    return make_result(result, false, false);
+}
+
+InterpretResult builtin_ceil(ASTNode *node, Environment *env) {
+    FLOAT_SIZE value;
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_NUMERIC;
+    specs[0].out_ptr = &value;
+
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        return args_res;
+    }
+
+    LiteralValue result;
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = ceil(value);
+    return make_result(result, false, false);
+}
+
+InterpretResult builtin_round(ASTNode *node, Environment *env) {
+    FLOAT_SIZE value;
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_NUMERIC;
+    specs[0].out_ptr = &value;
+
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        return args_res;
+    }
+
+    LiteralValue result;
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = round(value);
+    return make_result(result, false, false);
+}
+
+InterpretResult builtin_abs(ASTNode *node, Environment *env) {
+    FLOAT_SIZE value;
+    ArgumentSpec specs[1];
+    specs[0].type = ARG_TYPE_NUMERIC;
+    specs[0].out_ptr = &value;
+
+    InterpretResult args_res =
+        interpret_arguments(node->function_call.arguments, env, 1, specs);
+    if (args_res.is_error) {
+        return args_res;
+    }
+
+    LiteralValue result;
+    result.type = TYPE_FLOAT;
+    result.data.floating_point = fabs(value);
+    return make_result(result, false, false);
+}

@@ -1,0 +1,4 @@
+serve("floor(3.7) =", floor(3.7));
+serve("ceil(3.3) =", ceil(3.3));
+serve("round(3.5) =", round(3.5));
+serve("abs(-42) =", abs(-42));

@@ -1642,6 +1642,14 @@ InterpretResult interpret_function_call(ASTNode *node, Environment *env) {
             return builtin_length(node, env);
         } else if (strcmp(func->name, "sleep") == 0) {
             return builtin_sleep(node, env);
+        } else if (strcmp(func->name, "floor") == 0) {
+            return builtin_floor(node, env);
+        } else if (strcmp(func->name, "ceil") == 0) {
+            return builtin_ceil(node, env);
+        } else if (strcmp(func->name, "round") == 0) {
+            return builtin_round(node, env);
+        } else if (strcmp(func->name, "abs") == 0) {
+            return builtin_abs(node, env);
         } else {
             return raise_error("Unknown built-in function `%s`\n", func->name);
         }
