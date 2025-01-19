@@ -9,5 +9,5 @@ for i in 1..=10000 {
 serve(tally);
 
 for i in 0..=9 {
-    serve(i, "->", tally[i]);
+    serve(i + ":", tally[i]);
 }
