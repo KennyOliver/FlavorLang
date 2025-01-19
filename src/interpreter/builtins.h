@@ -2,14 +2,28 @@
 #define BUILTINS_H
 
 #include "../debug/debug.h"
+#include "../interpreter/interpreter.h"
 #include "../shared/ast_types.h"
 #include "interpreter_types.h"
 #include "utils.h"
+#include <ctype.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+#ifdef __unix__
+#include <dlfcn.h>
+#endif
+#include <dlfcn.h>
+#ifndef _WIN32
+#include <sys/time.h>
+#endif
 
 typedef enum {
     ARG_TYPE_INTEGER,
