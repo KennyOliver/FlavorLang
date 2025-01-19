@@ -4,14 +4,20 @@
 set -e
 
 # Move the binary
-echo "Moving flavor binary to /usr/local/bin/"
+echo "=========================================="
+echo "Step 1: Moving FlavorLang binary to /usr/local/bin/"
+echo "=========================================="
 chmod +x flavor
 sudo mv flavor /usr/local/bin/
+echo "[SUCCESS] FlavorLang binary moved successfully."
+echo ""
 
 # Install autocompletion scripts
 USER_SHELL=$(basename "$SHELL")
 
-echo "Installing autocomplete script for $USER_SHELL..."
+echo "=========================================="
+echo "Step 2: Installing autocomplete script for $USER_SHELL"
+echo "=========================================="
 
 if [[ "$USER_SHELL" == "bash" ]]; then
     COMPLETION_DIR="$HOME/.bash_completion.d"
@@ -20,8 +26,13 @@ if [[ "$USER_SHELL" == "bash" ]]; then
     mkdir -p "$COMPLETION_DIR"
     cp autocomplete/bash_completion.sh "$COMPLETION_FILE"
 
-    echo "Bash completion script installed to $COMPLETION_FILE."
-    echo "Run 'source ~/.bashrc' or restart your shell to enable it."
+    echo "[SUCCESS] Bash completion script installed to:"
+    echo "   $COMPLETION_FILE"
+    echo ""
+    echo "To activate it, run:"
+    echo "   source ~/.bashrc"
+    echo "Or restart your shell."
+    echo ""
 
 elif [[ "$USER_SHELL" == "zsh" ]]; then
     COMPLETION_DIR="$HOME/.zsh/completion"
@@ -30,22 +41,31 @@ elif [[ "$USER_SHELL" == "zsh" ]]; then
     mkdir -p "$COMPLETION_DIR"
     cp autocomplete/zsh_completion.sh "$COMPLETION_FILE"
 
-    echo "Zsh completion script installed to $COMPLETION_FILE."
-    echo "Add the following line to your ~/.zshrc if not already present:"
-    echo "fpath+=$COMPLETION_DIR"
-    echo "Then run 'source ~/.zshrc' or restart your shell to enable it."
+    echo "[SUCCESS] Zsh completion script installed to:"
+    echo "   $COMPLETION_FILE"
+    echo ""
+    echo "Add the following line to your ~/.zshrc (if not already present):"
+    echo "   fpath+=$COMPLETION_DIR"
+    echo "Then run:"
+    echo "   source ~/.zshrc"
+    echo "Or restart your shell."
+    echo ""
 
 else
-    echo "Autocomplete installation not supported for shell: $USER_SHELL"
+    echo "[FAIL] Autocomplete installation is not supported for shell: $USER_SHELL"
+    echo ""
 fi
 
-echo "Installation complete!"
-
-# Show how to run the executable
-echo "To run the FlavorLang interpreter:"
-echo "  flavor --about"
+echo "=========================================="
+echo "Step 3: Installation Complete"
+echo "=========================================="
+echo "To run the FlavorLang interpreter, use:"
+echo "   flavor --about"
 echo ""
-echo "Note: On macOS, the executable may be blocked by Gatekeeper."
-echo "To allow execution, go to System Settings > Privacy & Security,"
-echo "locate the blocked FlavorLang binary, and click 'Allow Anyway.'"
-echo "Afterward, run the command again, and select 'Open Anyway' on the security prompt."
+
+echo "[WARNING]  Note: On macOS, the executable may be blocked by Gatekeeper."
+echo "To allow execution:"
+echo "  1. Open System Settings > Privacy & Security."
+echo "  2. Locate the blocked FlavorLang binary and click 'Allow Anyway.'"
+echo "  3. Run the command again and select 'Open Anyway' on the security prompt."
+echo ""
