@@ -496,8 +496,8 @@ ASTNode *parse_for_loop(ParserState *state) {
     expect_token(state, TOKEN_KEYWORD, "Expected `in` keyword");
     debug_print_par("Found `in` keyword\n");
 
-    // Parse start expression as a literal
-    ASTNode *start_expr = parse_literal_or_identifier(state);
+    // Parse start expression
+    ASTNode *start_expr = parse_expression(state);
     if (!start_expr) {
         parser_error("Expected start expression in for loop",
                      get_current_token(state));
@@ -519,8 +519,8 @@ ASTNode *parse_for_loop(ParserState *state) {
     debug_print_par("Found range operator: %s\n", range_op->lexeme);
     advance_token(state); // Consume range operator
 
-    // Parse end expression as a literal
-    ASTNode *end_expr = parse_literal_or_identifier(state);
+    // Parse end expression
+    ASTNode *end_expr = parse_expression(state);
     if (!end_expr) {
         parser_error("Expected end expression in for loop",
                      get_current_token(state));
