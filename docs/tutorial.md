@@ -109,10 +109,16 @@ if temperature > 180 {
 
 #### For Loops
 
+`for` loops allow you to iterate over a range or a collection.
+
+##### Iterating Over a Range
+
+You can use the range operator (exclusive `..` or inclusive `..=`) to specify the start &amp; end of the loop. Use the optional `by` keyword to specify a step:
+
 ```py
 # Count up
 for i in 1..5 {
-    serve("Step", i);
+    serve(i);  # Counts: 1, 2, 3, 4
 }
 
 # Count down
@@ -121,7 +127,21 @@ for i in 10..=1 by -2 {
 }
 ```
 
+##### Iterating Over an Array
+
+```py
+let recipes = ["Cake", "Cookies", "Pasta"];
+
+for recipe in recipes {
+    serve("Preparing:", recipe);
+}
+
+serve("All recipes are ready!");
+```
+
 #### While Loops
+
+`while` loops allow you to iterate whilst a condition holds `True`.
 
 ```js
 let ingredients = 3;

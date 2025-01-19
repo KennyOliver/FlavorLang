@@ -410,17 +410,22 @@ int main(int argc, char **argv) {
 
         // Execute script
         Token *tokens = tokenize(source);
+        debug_print_tokens(tokens);
+        debug_print_basic("Tokenization complete!\n\n");
         ASTNode *ast = parse_program(tokens);
+        debug_print_basic("Parsing complete!\n\n");
         Environment env;
         init_environment(&env);
         env.script_dir = strdup(script_dir);
         interpret_program(ast, &env);
+        debug_print_basic("Execution complete!\n\n");
 
         // Clean up memory
         free(tokens);
         free(source);
         free_environment(&env);
         free_ast(ast);
+        debug_print_basic("Memory cleared!\n\n");
 
         return EXIT_SUCCESS;
     }

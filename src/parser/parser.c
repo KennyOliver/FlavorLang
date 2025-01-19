@@ -469,20 +469,21 @@ ASTNode *parse_while_loop(ParserState *state) {
 
 ASTNode *parse_for_loop(ParserState *state) {
     debug_print_par("Parsing a `for` loop...\n");
-
     ASTNode *node = calloc(1, sizeof(ASTNode));
     if (!node) {
         parser_error("Memory allocation failed", get_current_token(state));
     }
     node->type = AST_FOR_LOOP;
 
-    // Expect `for` keyword
+    // Expect 'for' keyword
     expect_token(state, TOKEN_KEYWORD, "Expected `for` keyword");
     debug_print_par("Found `for` keyword\n");
 
-    // Parse loop variable
+    // Parse loop variable: instead of checking token type strictly,
+    // ensure the lexeme is not a reserved word like "for" or "in"
     Token *var_token = get_current_token(state);
-    if (var_token->type != TOKEN_IDENTIFIER) {
+    if (strcmp(var_token->lexeme, "for") == 0 ||
+        strcmp(var_token->lexeme, "in") == 0) {
         parser_error("Expected loop variable identifier", var_token);
     }
     char *loop_var = strdup(var_token->lexeme);
@@ -492,83 +493,114 @@ ASTNode *parse_for_loop(ParserState *state) {
     debug_print_par("Loop variable: %s\n", loop_var);
     advance_token(state); // Consume loop variable
 
-    // Expect `in` keyword
+    // Expect 'in' keyword
     expect_token(state, TOKEN_KEYWORD, "Expected `in` keyword");
     debug_print_par("Found `in` keyword\n");
 
-    // Parse start expression
-    ASTNode *start_expr = parse_expression(state);
-    if (!start_expr) {
-        parser_error("Expected start expression in for loop",
-                     get_current_token(state));
-    }
-    debug_print_par("Parsed start expression\n");
+    // Peek to decide if it is a range-based or iterable loop
+    Token *next_token = get_current_token(state);
+    if (next_token->type == TOKEN_OPERATOR &&
+        (strcmp(next_token->lexeme, "..") == 0 ||
+         strcmp(next_token->lexeme, "..=") == 0)) {
+        // Range-based loop branch
+        node->for_loop.is_iterable_loop = false;
 
-    // Parse `..` or `..=` operator
-    Token *range_op = get_current_token(state);
-    bool inclusive = false;
-    if (range_op->type == TOKEN_OPERATOR &&
-        strcmp(range_op->lexeme, "..") == 0) {
-        inclusive = false;
-    } else if (range_op->type == TOKEN_OPERATOR &&
-               strcmp(range_op->lexeme, "..=") == 0) {
-        inclusive = true;
-    } else {
-        parser_error("Expected `..` or `..=` operator in for loop", range_op);
-    }
-    debug_print_par("Found range operator: %s\n", range_op->lexeme);
-    advance_token(state); // Consume range operator
-
-    // Parse end expression
-    ASTNode *end_expr = parse_expression(state);
-    if (!end_expr) {
-        parser_error("Expected end expression in for loop",
-                     get_current_token(state));
-    }
-    debug_print_par("Parsed end expression\n");
-
-    // Initialize step expression to NULL
-    ASTNode *step_expr = NULL;
-
-    // Check for optional `by` keyword
-    Token *current = get_current_token(state);
-    if (current->type == TOKEN_KEYWORD && strcmp(current->lexeme, "by") == 0) {
-        debug_print_par("Found `by` keyword\n");
-        advance_token(state); // Consume `by` keyword
-
-        // Parse step expression as a full expression
-        step_expr = parse_expression(state);
-        if (!step_expr) {
-            parser_error("Expected step expression after `by`",
+        // Parse start expression
+        ASTNode *start_expr = parse_expression(state);
+        if (!start_expr) {
+            parser_error("Expected start expression in for loop",
                          get_current_token(state));
         }
-        debug_print_par("Parsed step expression\n");
+        debug_print_par("Parsed start expression\n");
+
+        // Parse range operator
+        Token *range_op = get_current_token(state);
+        bool inclusive = false;
+        if (range_op->type == TOKEN_OPERATOR &&
+            strcmp(range_op->lexeme, "..") == 0) {
+            inclusive = false;
+        } else if (range_op->type == TOKEN_OPERATOR &&
+                   strcmp(range_op->lexeme, "..=") == 0) {
+            inclusive = true;
+        } else {
+            parser_error("Expected `..` or `..=` operator in for loop",
+                         range_op);
+        }
+        debug_print_par("Found range operator: %s\n", range_op->lexeme);
+        advance_token(state); // Consume operator
+
+        // Parse end expression
+        ASTNode *end_expr = parse_expression(state);
+        if (!end_expr) {
+            parser_error("Expected end expression in for loop",
+                         get_current_token(state));
+        }
+        debug_print_par("Parsed end expression\n");
+
+        // Optional: Parse 'by' keyword and step expression
+        ASTNode *step_expr = NULL;
+        Token *current = get_current_token(state);
+        if (current->type == TOKEN_KEYWORD &&
+            strcmp(current->lexeme, "by") == 0) {
+            debug_print_par("Found `by` keyword\n");
+            advance_token(state); // Consume 'by'
+            step_expr = parse_expression(state);
+            if (!step_expr) {
+                parser_error("Expected step expression after `by`",
+                             get_current_token(state));
+            }
+            debug_print_par("Parsed step expression\n");
+        }
+
+        // Parse loop body
+        expect_token(state, TOKEN_BRACE_OPEN,
+                     "Expected `{` delimiter to start loop body");
+        debug_print_par("Found `{` to start loop body\n");
+        ASTNode *body = parse_block(state);
+        if (!body) {
+            parser_error("Expected loop body", get_current_token(state));
+        }
+        debug_print_par("Parsed loop body\n");
+        expect_token(state, TOKEN_BRACE_CLOSE,
+                     "Expected `}` delimiter to end loop body");
+        debug_print_par("Found `}` to end loop body\n");
+
+        // Populate range-based loop fields
+        node->for_loop.loop_variable = loop_var;
+        node->for_loop.start_expr = start_expr;
+        node->for_loop.end_expr = end_expr;
+        node->for_loop.inclusive = inclusive;
+        node->for_loop.step_expr = step_expr;
+        node->for_loop.body = body;
+    } else {
+        // Iterable loop branch: e.g., "for recipe in recipes { ... }"
+        node->for_loop.is_iterable_loop = true;
+        ASTNode *collection_expr = parse_expression(state);
+        if (!collection_expr) {
+            parser_error("Expected collection expression after `in`",
+                         get_current_token(state));
+        }
+        debug_print_par("Parsed collection expression for iterable loop\n");
+
+        // Parse loop body
+        expect_token(state, TOKEN_BRACE_OPEN,
+                     "Expected `{` delimiter to start loop body");
+        debug_print_par("Found `{` to start loop body\n");
+        ASTNode *body = parse_block(state);
+        if (!body) {
+            parser_error("Expected loop body", get_current_token(state));
+        }
+        debug_print_par("Parsed loop body\n");
+        expect_token(state, TOKEN_BRACE_CLOSE,
+                     "Expected `}` delimiter to end loop body");
+        debug_print_par("Found `}` to end loop body\n");
+
+        node->for_loop.loop_variable = loop_var;
+        node->for_loop.collection_expr = collection_expr;
+        node->for_loop.body = body;
     }
 
-    expect_token(state, TOKEN_BRACE_OPEN,
-                 "Expected `{` delimiter to start loop body");
-    debug_print_par("Found `{` to start loop body\n");
-
-    // Parse loop body
-    ASTNode *body = parse_block(state);
-    if (!body) {
-        parser_error("Expected loop body", get_current_token(state));
-    }
-    debug_print_par("Parsed loop body\n");
-
-    expect_token(state, TOKEN_BRACE_CLOSE,
-                 "Expected `}` delimiter to end loop body");
-    debug_print_par("Found `}` to end loop body\n");
-
-    // Assign parsed components to ASTForLoop
-    node->for_loop.loop_variable = loop_var;
-    node->for_loop.start_expr = start_expr;
-    node->for_loop.end_expr = end_expr;
-    node->for_loop.inclusive = inclusive;
-    node->for_loop.step_expr = step_expr;
-    node->for_loop.body = body;
     node->next = NULL;
-
     debug_print_par("Successfully parsed a `for` loop\n");
     return node;
 }
