@@ -7,6 +7,17 @@ for j in 10..=1 by -3 {
 }
 
 
+let recipes = ["Cake", "Cookies", "Pasta"];
+
+serve("We have", length(recipes), "recipes today!");
+
+for recipe in recipes {
+    serve("Preparing:", recipe);
+}
+
+serve("All recipes are ready!");
+
+
 # Invalid loop - interpreter throws an error
 # for j in 10..=1 by 2 {
 #     serve(j);
