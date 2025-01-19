@@ -53,14 +53,14 @@ jobs:
 
           # Copy install script based on OS
           if [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            cp src/scripts/install_macos.sh staging/install.sh
+            cp scripts/install_macos.sh staging/install.sh
           else
-            cp src/scripts/install_ubuntu.sh staging/install.sh
+            cp scripts/install_ubuntu.sh staging/install.sh
           fi
           chmod +x staging/install.sh
 
           # Copy autocomplete scripts
-          cp src/scripts/autocomplete/* staging/autocomplete/
+          cp scripts/autocomplete/* staging/autocomplete/
 
           # Create ZIP package
           cd staging
