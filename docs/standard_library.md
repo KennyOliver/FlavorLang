@@ -22,6 +22,11 @@ The FlavorLang Standard Library provides a comprehensive set of built-in functio
      - [`random() → float`](#random--float)
      - [`random(max) → int`](#randommax--int)
      - [`random(min, max) → int`](#randommin-max--int)
+   - [Math Functions](#math-functions)
+     - [`floor(value) → int`](#floorvalue--int)
+     - [`ceil(value) → int`](#ceilvalue--int)
+     - [`round(value) → int`](#roundvalue--int)
+     - [`abs(value) → numeric`](#absvalue--numeric)
    - [Time Operations](#time-operations)
      - [`get_time() → int`](#get_time--int)
    - [File Operations](#file-operations)
@@ -193,6 +198,86 @@ random();       # 0.0 to 1.0
 random(10);     # 0 to 9
 random(5, 10);  # 5 to 9
 ```
+
+### Math Functions
+
+#### `floor(value) → int`
+
+Rounds a floating-point number down to the nearest integer.
+
+##### Parameters
+
+- **value:** A floating-point number.
+
+##### Returns
+
+- **int:** The largest integer less than or equal to value.
+
+##### Examples
+
+```py
+serve(floor(3.8));  # Output: 3
+serve(floor(-2.4)); # Output: -3
+```
+
+#### `ceil(value) → int`
+
+Rounds a floating-point number up to the nearest integer.
+
+##### Parameters
+
+- **value:** A floating-point number.
+
+##### Returns
+
+- **int:** The smallest integer greater than or equal to value.
+
+##### Examples
+
+```py
+serve(ceil(3.2));   # Output: 4
+serve(ceil(-2.8));  # Output: -2
+```
+
+#### `round(value) → int`
+
+Rounds a floating-point number to the nearest integer.
+
+##### Parameters
+
+- **value:** A floating-point number.
+
+##### Returns
+
+- **int:** The nearest integer to value.
+
+##### Examples
+
+```
+serve(round(3.5));   # Output: 4
+serve(round(-2.5));  # Output: -2
+```
+
+#### `abs(value) → numeric`
+
+Returns the absolute value of a number.
+
+##### Parameters
+
+- **numeric:** An integer or floating-point number.
+
+##### Returns
+
+- **numeric:** The absolute value of the input.
+
+##### Examples
+
+```py
+serve(abs(-42));   # Output: 42
+serve(abs(-3.8));  # Output: 3.8
+```
+
+###
 
 ### Time Operations
 
