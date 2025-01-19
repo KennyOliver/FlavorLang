@@ -5,6 +5,7 @@
 #include "../shared/ast_types.h"
 #include "interpreter_types.h"
 #include "utils.h"
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,10 @@ InterpretResult builtin_file_append(ASTNode *node, Environment *env);
 InterpretResult builtin_length(ASTNode *node, Environment *env);
 InterpretResult builtin_sleep(ASTNode *node, Environment *env);
 InterpretResult builtin_cimport(ASTNode *node, Environment *env);
+InterpretResult builtin_floor(ASTNode *node, Environment *env);
+InterpretResult builtin_ceil(ASTNode *node, Environment *env);
+InterpretResult builtin_round(ASTNode *node, Environment *env);
+InterpretResult builtin_abs(ASTNode *node, Environment *env);
 
 // Helpers
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type);
