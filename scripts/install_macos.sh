@@ -3,21 +3,26 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-# Move the binary
-echo "=========================================="
-echo "Step 1: Moving FlavorLang binary to /usr/local/bin/"
-echo "=========================================="
+# Colors and formatting
+RESET="\033[0m"
+BOLD="\033[1m"
+GREEN="\033[32m"
+RED="\033[31m"
+YELLOW="\033[33m"
+
+echo -e "${BOLD}==========================================${RESET}"
+echo -e "${BOLD}Step 1: Moving FlavorLang binary to /usr/local/bin/${RESET}"
+echo -e "${BOLD}==========================================${RESET}"
 chmod +x flavor
 sudo mv flavor /usr/local/bin/
-echo "[SUCCESS] FlavorLang binary moved successfully."
+echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] FlavorLang binary moved successfully."
 echo ""
 
-# Install autocompletion scripts
 USER_SHELL=$(basename "$SHELL")
 
-echo "=========================================="
-echo "Step 2: Installing autocomplete script for $USER_SHELL"
-echo "=========================================="
+echo -e "${BOLD}==========================================${RESET}"
+echo -e "${BOLD}Step 2: Installing autocomplete script for $USER_SHELL${RESET}"
+echo -e "${BOLD}==========================================${RESET}"
 
 if [[ "$USER_SHELL" == "bash" ]]; then
     COMPLETION_DIR="$HOME/.bash_completion.d"
@@ -26,12 +31,19 @@ if [[ "$USER_SHELL" == "bash" ]]; then
     mkdir -p "$COMPLETION_DIR"
     cp autocomplete/bash_completion.sh "$COMPLETION_FILE"
 
-    echo "[SUCCESS] Bash completion script installed to:"
+    echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Bash completion script installed to:"
     echo "   $COMPLETION_FILE"
     echo ""
-    echo "To activate it, run:"
-    echo "   source ~/.bashrc"
-    echo "Or restart your shell."
+
+    if ! command -v complete &> /dev/null; then
+        echo -e "[${YELLOW}${BOLD}WARNING${RESET}] Bash Completion is not enabled on your system."
+        echo "Please install it using Homebrew:"
+        echo "  brew install bash-completion"
+        echo ""
+    else
+        echo "The script will load automatically when you start a new shell."
+        echo "If it doesn't, ensure that Bash Completion is sourced in your ~/.bashrc."
+    fi
     echo ""
 
 elif [[ "$USER_SHELL" == "zsh" ]]; then
@@ -41,29 +53,31 @@ elif [[ "$USER_SHELL" == "zsh" ]]; then
     mkdir -p "$COMPLETION_DIR"
     cp autocomplete/zsh_completion.sh "$COMPLETION_FILE"
 
-    echo "[SUCCESS] Zsh completion script installed to:"
+    if ! grep -q "fpath+=$COMPLETION_DIR" "$HOME/.zshrc"; then
+        echo "fpath+=$COMPLETION_DIR" >> "$HOME/.zshrc"
+        echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Added 'fpath' configuration to ~/.zshrc."
+    fi
+
+    echo -e "[${GREEN}${BOLD}SUCCESS${RESET}] Zsh completion script installed to:"
     echo "   $COMPLETION_FILE"
     echo ""
-    echo "Add the following line to your ~/.zshrc (if not already present):"
-    echo "   fpath+=$COMPLETION_DIR"
-    echo "Then run:"
+    echo "The script will load automatically after restarting your shell or running:"
     echo "   source ~/.zshrc"
-    echo "Or restart your shell."
     echo ""
 
 else
-    echo "[FAIL] Autocomplete installation is not supported for shell: $USER_SHELL"
+    echo -e "[${RED}${BOLD}FAIL${RESET}] Autocomplete installation is not supported for shell: $USER_SHELL"
     echo ""
 fi
 
-echo "=========================================="
-echo "Step 3: Installation Complete"
-echo "=========================================="
+echo -e "${BOLD}==========================================${RESET}"
+echo -e "${BOLD}Step 3: Installation Complete${RESET}"
+echo -e "${BOLD}==========================================${RESET}"
 echo "To run the FlavorLang interpreter, use:"
 echo "   flavor --about"
 echo ""
 
-echo "[WARNING]  Note: On macOS, the executable may be blocked by Gatekeeper."
+echo -e "[${YELLOW}${BOLD}WARNING${RESET}] On macOS, the executable may be blocked by Gatekeeper."
 echo "To allow execution:"
 echo "  1. Open System Settings > Privacy & Security."
 echo "  2. Locate the blocked FlavorLang binary and click 'Allow Anyway.'"
