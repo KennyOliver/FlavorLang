@@ -1057,8 +1057,8 @@ InterpretResult builtin_floor(ASTNode *node, Environment *env) {
     }
 
     LiteralValue result;
-    result.type = TYPE_FLOAT;
-    result.data.floating_point = floor(value);
+    result.type = TYPE_INTEGER;
+    result.data.integer = floor(value);
     return make_result(result, false, false);
 }
 
@@ -1075,8 +1075,8 @@ InterpretResult builtin_ceil(ASTNode *node, Environment *env) {
     }
 
     LiteralValue result;
-    result.type = TYPE_FLOAT;
-    result.data.floating_point = ceil(value);
+    result.type = TYPE_INTEGER;
+    result.data.integer = ceil(value);
     return make_result(result, false, false);
 }
 
@@ -1093,8 +1093,8 @@ InterpretResult builtin_round(ASTNode *node, Environment *env) {
     }
 
     LiteralValue result;
-    result.type = TYPE_FLOAT;
-    result.data.floating_point = round(value);
+    result.type = TYPE_INTEGER;
+    result.data.integer = round(value);
     return make_result(result, false, false);
 }
 
