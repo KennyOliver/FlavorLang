@@ -1,4 +1,2 @@
-serve("What's your favorite dessert?");
-const favorite = sample();
-
+const favorite = sample("What's your favorite dessert?");
 serve("You chose:", favorite);

@@ -3,7 +3,7 @@ create check_even_odd(num) {
 }
 
 for _ in 1..=5 {
-    serve("Enter a number:");
-    let input = int(sample());
+    serve();
+    let input = int(sample("Enter a number:"));
     serve(check_even_odd(input));
 }

@@ -8,8 +8,7 @@ serve(b == c);
 serve(b != c);
 
 for _ in 1..=2 {
-    serve("Enter a number:");
-    let user_input = int(sample());
+    let user_input = int(sample("Enter a number:"));
     let positive = user_input >= 0;
     serve("Positive?", positive);
 }
