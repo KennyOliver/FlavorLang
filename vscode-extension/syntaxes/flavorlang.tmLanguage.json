@@ -85,7 +85,7 @@
       "patterns": [
         {
           "name": "keyword.operator.flavorlang",
-          "match": "==|!=|<=|>=|<|>|\\+|\\-|\\*\\*|\\/\\/|\\/|%|=|\\.\\.|\\.\\."
+          "match": "\\^|==|!=|<=|>=|<|>|\\+|\\-|\\*\\*|\\/\\/|\\/|%|=|\\.\\.|\\.\\."
         },
         {
           "name": "punctuation.separator.range.flavorlang",
