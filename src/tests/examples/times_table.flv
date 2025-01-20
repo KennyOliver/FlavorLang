@@ -29,7 +29,6 @@ create times_table(num) {
 
 
 serve("Times table generator");
-serve("Enter number:");
-let user_request = int(sample());
+let user_request = int(sample("Enter number:"));
 
 serve(times_table(user_request));

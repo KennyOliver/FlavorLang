@@ -1,6 +1,5 @@
 let a = 5;
-serve("Enter a number:");
-let b = int(sample());
+let b = int(sample("Enter a number:"));
 let c = b > a ? 5 : b;
 serve(c);
 

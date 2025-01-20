@@ -58,6 +58,7 @@ InterpretResult builtin_round(ASTNode *node, Environment *env);
 InterpretResult builtin_abs(ASTNode *node, Environment *env);
 
 // Helpers
+char *literal_value_to_string(LiteralValue lv);
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type);
 InterpretResult interpret_arguments(ASTNode *node, Environment *env,
                                     size_t num_args, ArgumentSpec *specs);

@@ -132,8 +132,7 @@ check dessert {
 # ==================================================
 # 9
 # ==================================================
-serve("What's your favorite dessert?");
-const favorite = sample();
+const favorite = sample("What's your favorite dessert?");
 
 serve("You chose:", favorite);
 
@@ -199,8 +198,7 @@ serve(b == c);
 serve(b != c);
 
 for _ in 1..=2 {
-    serve("Enter a number:");
-    let user_input = int(sample());
+    let user_input = int(sample("Enter a number:"));
     let positive = user_input >= 0;
     serve("Positive?", positive);
 }
@@ -216,8 +214,7 @@ serve(float(False));
 # 14
 # ==================================================
 # Using `sample()` to get user input
-serve("Enter your favorite number:");
-const favorite2 = sample();
+const favorite2 = sample("Enter your favorite number:");
 serve("Your favorite is:", favorite2);
 
 # Using `random()` with different argument counts
@@ -272,8 +269,7 @@ create check_even_odd(num) {
 }
 
 for _ in 1..=5 {
-    serve("Enter a number:");
-    let input = int(sample());
+    let input = int(sample("Enter a number:"));
     serve(check_even_odd(input));
 }
 

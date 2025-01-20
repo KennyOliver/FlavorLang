@@ -1,6 +1,5 @@
 # Using `sample()` to get user input
-serve("Enter your favorite number:");
-const favorite = sample();
+const favorite = sample("Enter your favorite number:");
 serve("Your favorite is:", favorite);
 
 # Using `random()` with different argument counts

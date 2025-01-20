@@ -66,8 +66,7 @@ serve("Multiple", "values", "work"); # Spaces between values
 Use `sample()` to get user input:
 
 ```js
-serve("What's your favorite dish?");
-let favorite = sample();
+let favorite = sample("What's your favorite dish?");
 serve("Ah,", favorite, "is delicious!");
 ```
 

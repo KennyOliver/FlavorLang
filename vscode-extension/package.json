@@ -2,7 +2,7 @@
   "name": "flavorlang-vscode",
   "displayName": "FlavorLang Support",
   "description": "Syntax highlighting for FlavorLang programming language.",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "publisher": "KennyOliver",
   "repository": {
     "type": "git",

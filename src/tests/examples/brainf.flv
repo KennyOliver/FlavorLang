@@ -80,8 +80,7 @@ create brainf_interpreter(code) {
             let character = chr(ascii_val);
             serve(character, False);
         } elif command == "," {
-            serve("Input a character:");
-            let input_char = sample();
+            let input_char = sample("Input a character:");
             let ascii_val = ord(input_char);
             data_tape[data_ptr] = ascii_val;
         } elif command == "[" {

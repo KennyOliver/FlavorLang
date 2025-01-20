@@ -33,29 +33,29 @@ FlavorLang is a programming language designed with a cooking-inspired syntax, co
 
 ### 1. Keywords
 
-| Category                 | Keyword   | Description                    | Example                     |
-| ------------------------ | --------- | ------------------------------ | --------------------------- |
-| **Variable Declaration** | `let`     | Mutable variable declaration   | `let x = 5;`                |
-|                          | `const`   | Immutable constant declaration | `const PI = 3.14;`          |
-| **Control Flow**         | `if`      | Conditional execution          | `if condition { ... }`      |
-|                          | `elif`    | Alternative condition          | `elif condition { ... }`    |
-|                          | `else`    | Default condition              | `else { ... }`              |
-|                          | `for`     | Loop iteration                 | `for i in range { ... }`    |
-|                          | `while`   | Conditional loop               | `while condition { ... }`   |
-|                          | `break`   | Exit loop or switch            | `break;`                    |
-| **Pattern Matching**     | `check`   | Pattern matching construct     | `check value { ... }`       |
-|                          | `is`      | Pattern case                   | `is pattern:`               |
-| **Functions**            | `create`  | Function declaration           | `create func() { ... }`     |
-|                          | `deliver` | Return value                   | `deliver result;`           |
-| **Error Handling**       | `try`     | Exception handling             | `try { ... }`               |
-|                          | `rescue`  | Error catching                 | `rescue { ... }`            |
-|                          | `finish`  | Cleanup block                  | `finish { ... }`            |
-|                          | `burn`    | Raise error                    | `burn "Error message";`     |
-| **I/O Operations**       | `serve`   | Output                         | `serve("message");`         |
-|                          | `sample`  | Input                          | `let input = sample();`     |
-|                          | `plate`   | File write                     | `plate_file(path, data);`   |
-|                          | `garnish` | File append                    | `garnish_file(path, data);` |
-|                          | `taste`   | File read                      | `taste_file(path);`         |
+| Category                 | Keyword   | Description                    | Example                                  |
+| ------------------------ | --------- | ------------------------------ | ---------------------------------------- |
+| **Variable Declaration** | `let`     | Mutable variable declaration   | `let x = 5;`                             |
+|                          | `const`   | Immutable constant declaration | `const PI = 3.14;`                       |
+| **Control Flow**         | `if`      | Conditional execution          | `if condition { ... }`                   |
+|                          | `elif`    | Alternative condition          | `elif condition { ... }`                 |
+|                          | `else`    | Default condition              | `else { ... }`                           |
+|                          | `for`     | Loop iteration                 | `for i in range { ... }`                 |
+|                          | `while`   | Conditional loop               | `while condition { ... }`                |
+|                          | `break`   | Exit loop or switch            | `break;`                                 |
+| **Pattern Matching**     | `check`   | Pattern matching construct     | `check value { ... }`                    |
+|                          | `is`      | Pattern case                   | `is pattern:`                            |
+| **Functions**            | `create`  | Function declaration           | `create func() { ... }`                  |
+|                          | `deliver` | Return value                   | `deliver result;`                        |
+| **Error Handling**       | `try`     | Exception handling             | `try { ... }`                            |
+|                          | `rescue`  | Error catching                 | `rescue { ... }`                         |
+|                          | `finish`  | Cleanup block                  | `finish { ... }`                         |
+|                          | `burn`    | Raise error                    | `burn "Error message";`                  |
+| **I/O Operations**       | `serve`   | Output                         | `serve("message");`                      |
+|                          | `sample`  | Input                          | `let input = sample("Enter a number:");` |
+|                          | `plate`   | File write                     | `plate_file(path, data);`                |
+|                          | `garnish` | File append                    | `garnish_file(path, data);`              |
+|                          | `taste`   | File read                      | `taste_file(path);`                      |
 
 ### 2. Data Types
 

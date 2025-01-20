@@ -14,7 +14,7 @@ The FlavorLang Standard Library provides a comprehensive set of built-in functio
      - [`float(value) → float`](#floatvalue--float)
      - [`int(value) → int`](#intvalue--int)
    - [Input/Output](#inputoutput)
-     - [`sample() → string`](#sample--string)
+     - [`sample(prompt) → string`](#sampleprompt--string)
      - [`serve(*args, newline=True)`](#serveargs-newlinetrue)
    - [Error Handling](#error-handling)
      - [`burn(*messages)`](#burnmessages)
@@ -110,9 +110,13 @@ int("-17");  # -17
 
 ### Input/Output
 
-#### `sample() → string`
+#### `sample(prompt) → string`
 
-Reads a line of input from the terminal.
+Reads a line of input from the terminal with an optional prompt.
+
+**Parameters:**
+
+- `prompt`: any value
 
 **Returns:**
 
