@@ -163,15 +163,60 @@ void print_formatted_string(const char *str) {
 
 // Built-in `input()` function
 InterpretResult builtin_input(ASTNode *node, Environment *env) {
-    (void)node; // Unused parameter, suppress compiler warning
-    (void)env;  // Unused parameter
+    // If arguments are provided, treat them as prompt
+    if (node->function_call.arguments != NULL) {
+        // Prepare a prompt buffer similar to builtin_output
+        char prompt_buffer[1024] = {0};
+        size_t buffer_index = 0;
+        ASTNode *arg = node->function_call.arguments;
+        while (arg != NULL) {
+            InterpretResult r = interpret_node(arg, env);
+            if (r.is_error) {
+                return r; // propagate error
+            }
+            char temp_buffer[128] = {0};
+            // Convert the argument to string based on its type
+            if (r.value.type == TYPE_STRING) {
+                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
+                         r.value.data.string);
+            } else if (r.value.type == TYPE_INTEGER) {
+                snprintf(temp_buffer, sizeof(temp_buffer), INT_FORMAT,
+                         r.value.data.integer);
+            } else if (r.value.type == TYPE_FLOAT) {
+                snprintf(temp_buffer, sizeof(temp_buffer), FLOAT_FORMAT,
+                         r.value.data.floating_point);
+            } else if (r.value.type == TYPE_BOOLEAN) {
+                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
+                         r.value.data.boolean ? "True" : "False");
+            } else {
+                // For other types, you might call a utility function like
+                // print_literal_value() to produce a string representation or
+                // skip it.
+                snprintf(temp_buffer, sizeof(temp_buffer), "<Unsupported>");
+            }
+            size_t t_len = strlen(temp_buffer);
+            if (buffer_index + t_len < sizeof(prompt_buffer)) {
+                strcpy(&prompt_buffer[buffer_index], temp_buffer);
+                buffer_index += t_len;
+            }
+            // Add a space between multiple prompt arguments
+            if (arg->next != NULL && buffer_index < sizeof(prompt_buffer) - 1) {
+                prompt_buffer[buffer_index++] = ' ';
+            }
+            arg = arg->next;
+        }
+        // Print the prompt (without an added newline)
+        printf("%s", prompt_buffer);
+        fflush(stdout);
+    }
 
+    // Now, proceed to read input from the user
     size_t buffer_size = 128;
     size_t input_length = 0;
     char *input_buffer = malloc(buffer_size);
     if (!input_buffer) {
         fprintf(stderr, "Error: Failed to allocate memory for input buffer.\n");
-        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = {.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
 
@@ -185,7 +230,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
                     stderr,
                     "Error: Failed to reallocate memory for input buffer.\n");
                 free(input_buffer);
-                LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+                LiteralValue lv = {.type = TYPE_ERROR};
                 return make_result(lv, false, false);
             }
             input_buffer = new_buffer;
@@ -201,7 +246,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
 
     if (!result.data.string) {
         fprintf(stderr, "Error: Failed to duplicate input string.\n");
-        LiteralValue lv = (LiteralValue){.type = TYPE_ERROR};
+        LiteralValue lv = {.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
 
