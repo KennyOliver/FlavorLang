@@ -1,5 +1,86 @@
 #include "builtins.h"
 
+char *literal_value_to_string(LiteralValue lv) {
+    char buffer[128];
+    switch (lv.type) {
+    case TYPE_INTEGER: {
+        snprintf(buffer, sizeof(buffer), INT_FORMAT, lv.data.integer);
+        return strdup(buffer);
+    }
+    case TYPE_FLOAT: {
+        snprintf(buffer, sizeof(buffer), FLOAT_FORMAT, lv.data.floating_point);
+        return strdup(buffer);
+    }
+    case TYPE_STRING: {
+        return strdup(lv.data.string);
+    }
+    case TYPE_BOOLEAN: {
+        return strdup(lv.data.boolean ? "True" : "False");
+    }
+    case TYPE_ARRAY: {
+        // Estimate needed buffer size: assume roughly 32 chars per element plus
+        // brackets
+        size_t estimate = lv.data.array.count * 32 + 3;
+        char *result = malloc(estimate);
+        if (!result)
+            return NULL;
+        strcpy(result, "[");
+        for (size_t i = 0; i < lv.data.array.count; i++) {
+            char *elemStr = literal_value_to_string(lv.data.array.elements[i]);
+            if (!elemStr) {
+                free(result);
+                return NULL;
+            }
+            strncat(result, elemStr, estimate - strlen(result) - 1);
+            free(elemStr);
+            if (i < lv.data.array.count - 1) {
+                strncat(result, ", ", estimate - strlen(result) - 1);
+            }
+        }
+        strncat(result, "]", estimate - strlen(result) - 1);
+        return result;
+    }
+    default:
+        return strdup("<Unsupported>");
+    }
+}
+
+/**
+ * @brief Builds a single string by converting each function call argument
+ * (using literal_value_to_string) and concatenating them (separated by a single
+ * space).
+ *
+ * @param arg_node
+ * @param env
+ * @return char*
+ */
+char *build_arguments_string(ASTNode *arg_node, Environment *env) {
+    char buffer[1024] = {0};
+    size_t buffer_index = 0;
+
+    while (arg_node != NULL) {
+        InterpretResult r = interpret_node(arg_node, env);
+        if (r.is_error) {
+            return NULL; // If an error occurs, return NULL.
+        }
+        // Convert the evaluated argument to string.
+        char *s = literal_value_to_string(r.value);
+        if (!s)
+            return NULL;
+        size_t len = strlen(s);
+        if (buffer_index + len + 1 < sizeof(buffer)) {
+            strcpy(&buffer[buffer_index], s);
+            buffer_index += len;
+            if (arg_node->next != NULL && buffer_index < sizeof(buffer) - 1) {
+                buffer[buffer_index++] = ' ';
+            }
+        }
+        free(s);
+        arg_node = arg_node->next;
+    }
+    return strdup(buffer);
+}
+
 // Helper function to check if a LiteralType matches an ArgType
 bool literal_type_matches_arg_type(LiteralType lit_type, ArgType arg_type) {
     switch (arg_type) {
@@ -161,56 +242,20 @@ void print_formatted_string(const char *str) {
     }
 }
 
-// Built-in `input()` function
+// Built-in `input()` function with optional arguments for a prompt
 InterpretResult builtin_input(ASTNode *node, Environment *env) {
-    // If arguments are provided, treat them as prompt
+    // If a prompt argument is provided, build and print it.
     if (node->function_call.arguments != NULL) {
-        // Prepare a prompt buffer similar to builtin_output
-        char prompt_buffer[1024] = {0};
-        size_t buffer_index = 0;
-        ASTNode *arg = node->function_call.arguments;
-        while (arg != NULL) {
-            InterpretResult r = interpret_node(arg, env);
-            if (r.is_error) {
-                return r; // propagate error
-            }
-            char temp_buffer[128] = {0};
-            // Convert the argument to string based on its type
-            if (r.value.type == TYPE_STRING) {
-                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
-                         r.value.data.string);
-            } else if (r.value.type == TYPE_INTEGER) {
-                snprintf(temp_buffer, sizeof(temp_buffer), INT_FORMAT,
-                         r.value.data.integer);
-            } else if (r.value.type == TYPE_FLOAT) {
-                snprintf(temp_buffer, sizeof(temp_buffer), FLOAT_FORMAT,
-                         r.value.data.floating_point);
-            } else if (r.value.type == TYPE_BOOLEAN) {
-                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
-                         r.value.data.boolean ? "True" : "False");
-            } else {
-                // For other types, you might call a utility function like
-                // print_literal_value() to produce a string representation or
-                // skip it.
-                snprintf(temp_buffer, sizeof(temp_buffer), "<Unsupported>");
-            }
-            size_t t_len = strlen(temp_buffer);
-            if (buffer_index + t_len < sizeof(prompt_buffer)) {
-                strcpy(&prompt_buffer[buffer_index], temp_buffer);
-                buffer_index += t_len;
-            }
-            // Add a space between multiple prompt arguments
-            if (arg->next != NULL && buffer_index < sizeof(prompt_buffer) - 1) {
-                prompt_buffer[buffer_index++] = ' ';
-            }
-            arg = arg->next;
+        char *prompt =
+            build_arguments_string(node->function_call.arguments, env);
+        if (prompt) {
+            printf("%s", prompt);
+            fflush(stdout);
+            free(prompt);
         }
-        // Print the prompt (without an added newline)
-        printf("%s", prompt_buffer);
-        fflush(stdout);
     }
 
-    // Now, proceed to read input from the user
+    // Now read input from the user.
     size_t buffer_size = 128;
     size_t input_length = 0;
     char *input_buffer = malloc(buffer_size);
@@ -219,7 +264,6 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
         LiteralValue lv = {.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
-
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {
         if (input_length + 1 >= buffer_size) {
@@ -249,9 +293,7 @@ InterpretResult builtin_input(ASTNode *node, Environment *env) {
         LiteralValue lv = {.type = TYPE_ERROR};
         return make_result(lv, false, false);
     }
-
     debug_print_int("Input received: `%s`\n", result.data.string);
-
     return make_result(result, false, false);
 }
 
@@ -365,106 +407,11 @@ void print_literal_value(LiteralValue lv) {
 
 // Built-in `serve()` function for printing with optional newline control
 InterpretResult builtin_output(ASTNode *node, Environment *env) {
-    debug_print_int("builtin_output() called\n");
-
-    ASTNode *arg_node = node->function_call.arguments;
-
-    bool add_newline = true; // by default
-
-    // Buffer to store all arguments as strings
-    char output_buffer[1024] = {0};
-    size_t buffer_index = 0;
-
-    // Iterate through arguments
-    while (arg_node != NULL) {
-        InterpretResult r = interpret_node(arg_node, env);
-        if (r.is_error) {
-            return r; // propagate error
-        }
-
-        LiteralValue lv = r.value;
-
-        // If last argument & is boolean, check for newline control
-        if (arg_node->next == NULL && lv.type == TYPE_BOOLEAN) {
-            add_newline = lv.data.boolean;
-        } else {
-            // Append the current argument's string representation to the buffer
-            char temp_buffer[128] = {0};
-
-            switch (lv.type) {
-            case TYPE_FLOAT:
-                if ((INT_SIZE)lv.data.floating_point ==
-                    lv.data.floating_point) {
-                    snprintf(temp_buffer, sizeof(temp_buffer), "%.1Lf",
-                             lv.data.floating_point);
-                } else {
-                    snprintf(temp_buffer, sizeof(temp_buffer), FLOAT_FORMAT,
-                             lv.data.floating_point);
-                }
-                break;
-            case TYPE_INTEGER:
-                snprintf(temp_buffer, sizeof(temp_buffer), INT_FORMAT,
-                         lv.data.integer);
-                break;
-            case TYPE_STRING: {
-                char *processed = process_escape_sequences(lv.data.string);
-                if (processed) {
-                    snprintf(temp_buffer, sizeof(temp_buffer), "%s", processed);
-                    free(processed);
-                } else {
-                    // Fallback
-                    snprintf(temp_buffer, sizeof(temp_buffer), "%s",
-                             lv.data.string);
-                }
-                break;
-            }
-            case TYPE_BOOLEAN:
-                snprintf(temp_buffer, sizeof(temp_buffer), "%s",
-                         lv.data.boolean ? "True" : "False");
-                break;
-            case TYPE_ARRAY:
-                printf("[");
-                for (size_t i = 0; i < lv.data.array.count; i++) {
-                    LiteralValue elem = lv.data.array.elements[i];
-                    print_literal_value(elem);
-
-                    if (i < lv.data.array.count - 1) {
-                        printf(", ");
-                    }
-                }
-                printf("]");
-                break;
-            default:
-                snprintf(temp_buffer, sizeof(temp_buffer), "<Unsupported>");
-                break;
-            }
-
-            // Append to the output buffer with a space if needed
-            size_t temp_len = strlen(temp_buffer);
-            if (buffer_index + temp_len + 1 < sizeof(output_buffer)) {
-                if (buffer_index > 0) {
-                    output_buffer[buffer_index++] =
-                        ' '; // Add space between arguments
-                }
-                strcpy(&output_buffer[buffer_index], temp_buffer);
-                buffer_index += temp_len;
-            } else {
-                return raise_error("Output buffer overflow in `serve()`.\n");
-            }
-        }
-
-        arg_node = arg_node->next;
+    char *output = build_arguments_string(node->function_call.arguments, env);
+    if (output) {
+        printf("%s\n", output);
+        free(output);
     }
-
-    // Print final output buffer
-    printf("%s", output_buffer);
-
-    // Add newline if flag is true
-    if (add_newline) {
-        printf("\n");
-    }
-
-    // Return default value
     LiteralValue lv = {.type = TYPE_INTEGER, .data.integer = 0};
     return make_result(lv, false, false);
 }
